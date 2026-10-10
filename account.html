@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>My Account — PRIME-CBT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#060b1a' },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b1a;
+      --card-bg: #0f172a; /* slate-900 */
+      --card-bg-hover: #1e293b; /* slate-800 */
+      --border: #334155; /* slate-700 */
+      --muted: #94a3b8; /* slate-400 */
+      --text-main: #f1f5f9; /* slate-100 */
+      --emerald-bright: #34d399;
+      --amber: #fbbf24;
+      --red: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text-main);
+      overflow-y: auto;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    .card {
+      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #475569;
+    }
+
+    input, button {
+      transition: all 0.3s ease;
+    }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+
+  </style>
+</head>
+<body class="bg-[#060b1a] text-slate-100 antialiased flex justify-center">
+
+  <div class="w-full max-w-2xl relative border-x border-slate-800/60 flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 h-14 bg-[#060b1a]/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button onclick="window.history.back()" type="button" aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800/80 transition active:scale-90 text-slate-300">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        </button>
+        <h1 class="text-lg font-semibold tracking-tight text-slate-100">My Account</h1>
+      </div>
+      <button id="editToggleBtn" type="button" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 transition active:scale-95">
+        Edit Profile
+      </button>
+    </header>
+
+    <main class="px-4 pt-6 pb-12 space-y-6 flex-1">
+      
+      <!-- Profile Header Card -->
+      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col items-center text-center relative card">
+        <div class="relative mb-3">
+          <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-emerald-500/40 flex items-center justify-center text-xl font-bold text-slate-200 overflow-hidden shadow-inner">
+            <span>AS</span>
+          </div>
+          <button type="button" aria-label="Change photo" class="absolute bottom-0 right-0 w-7 h-7 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center border-2 border-slate-900 shadow hover:bg-emerald-400 transition active:scale-90">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+        </div>
+        <h2 class="text-lg font-bold text-slate-100">Aisha Suleiman</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Computer Science · 400 Level</p>
+        <div class="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          Active Student Plan
+        </div>
+      </section>
+
+      <!-- Quick Metrics Grid -->
+      <section class="grid grid-cols-3 gap-3">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-center card">
+          <p class="text-[11px] text-slate-400 font-medium">Total XP</p>
+          <p class="text-base font-bold text-emerald-400 mt-1">2,450</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-center card">
+          <p class="text-[11px] text-slate-400 font-medium">Streak</p>
+          <p class="text-base font-bold text-amber-400 mt-1">14 Days</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-center card">
+          <p class="text-[11px] text-slate-400 font-medium">Accuracy</p>
+          <p class="text-base font-bold text-slate-100 mt-1">76%</p>
+        </div>
+      </section>
+
+      <!-- Personal & Academic Details -->
+      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 card">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Personal & Academic Details</h3>
+        
+        <form id="accountForm" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
+            <input type="text" id="fullName" value="Aisha Suleiman" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
+            <input type="email" id="email" value="aisha.suleiman@student.edu" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Department</label>
+              <input type="text" id="department" value="Computer Science" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Level</label>
+              <input type="text" id="level" value="400 Level" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+            </div>
+          </div>
+          <div id="formActions" class="hidden pt-2 flex gap-2">
+            <button type="submit" class="flex-1 bg-emerald-500 text-slate-950 font-semibold text-xs py-2.5 rounded-xl hover:bg-emerald-400 transition active:scale-95">Save Changes</button>
+            <button type="button" id="cancelEditBtn" class="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-4 py-2.5 rounded-xl hover:bg-slate-700 transition active:scale-95">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Recent Mock Exam Milestones -->
+      <section class="space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">Recent Practice Milestones</h3>
+        
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
+              92%
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-100">Data Structures & Algorithms</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Mock Exam #4 · 45 mins ago</p>
+            </div>
+          </div>
+          <span class="text-xs font-medium text-emerald-400">+120 XP</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
+              85%
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-100">Operating Systems Concepts</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Practice Session · Yesterday</p>
+            </div>
+          </div>
+          <span class="text-xs font-medium text-emerald-400">+95 XP</span>
+        </div>
+      </section>
+
+      <!-- Account Security & Danger Zone -->
+      <section class="space-y-3 pb-4">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">Security & Session</h3>
+        
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-100">Change Password</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Update your account password</p>
+            </div>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-red-500/15 flex items-center justify-center text-red-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-red-400">Log Out</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Sign out from this device</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const editToggleBtn = document.getElementById('editToggleBtn');
+      const accountForm = document.getElementById('accountForm');
+      const cancelEditBtn = document.getElementById('cancelEditBtn');
+      const formActions = document.getElementById('formActions');
+      const inputs = accountForm.querySelectorAll('input');
+
+      let isEditing = false;
+
+      editToggleBtn.addEventListener('click', () => {
+        isEditing = !isEditing;
+        toggleEditMode(isEditing);
+      });
+
+      cancelEditBtn.addEventListener('click', () => {
+        isEditing = false;
+        toggleEditMode(false);
+      });
+
+      accountForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        isEditing = false;
+        toggleEditMode(false);
+      });
+
+      function toggleEditMode(editing) {
+        inputs.forEach(input => {
+          input.disabled = !editing;
+        });
+
+        if (editing) {
+          formActions.classList.remove('hidden');
+          editToggleBtn.textContent = 'Cancel';
+          inputs[0].focus();
+        } else {
+          formActions.classList.add('hidden');
+          editToggleBtn.textContent = 'Edit Profile';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
