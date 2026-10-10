@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>Achievements — PRIME-CBT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#060b1a' },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b1a;
+      --card-bg: #0f172a; /* slate-900 */
+      --card-bg-hover: #1e293b; /* slate-800 */
+      --border: #334155; /* slate-700 */
+      --muted: #94a3b8; /* slate-400 */
+      --text-main: #f1f5f9; /* slate-100 */
+      --emerald-bright: #34d399;
+      --amber: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    header {
+      flex-shrink: 0;
+    }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px 40px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    .card { 
+      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease; 
+    }
+    
+    .card:hover { 
+      transform: translateY(-2px) scale(1.01); 
+      border-color: #475569; 
+    }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-40 h-14 bg-navy/95 backdrop-blur-md border-b border-slate-800 px-4 flex items-center gap-3">
+      <button type="button" onclick="window.history.back()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 transition active:scale-90 text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </button>
+      <h1 class="text-lg font-semibold tracking-tight text-slate-100">Achievements</h1>
+    </header>
+
+    <main class="space-y-6">
+
+      <!-- Level Card -->
+      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-5 card">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-xs text-slate-400">Current Level</p>
+            <h2 class="text-2xl font-bold tracking-tight mt-0.5 text-slate-100">Level 12</h2>
+          </div>
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+            <span class="text-xl font-bold text-emerald-400">12</span>
+          </div>
+        </div>
+
+        <div class="mb-2 flex items-center justify-between text-xs">
+          <span class="text-slate-300 font-medium">2,450 XP</span>
+          <span class="text-slate-500">3,000 XP</span>
+        </div>
+        <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style="width: 81.6%"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-2">550 XP to Level 13</p>
+      </section>
+
+      <!-- Streak -->
+      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center gap-4 card">
+        <div class="w-12 h-12 rounded-xl bg-amber-400/15 flex items-center justify-center text-xl flex-shrink-0">
+          🔥
+        </div>
+        <div>
+          <p class="text-xl font-bold tracking-tight text-slate-100">14 Day Streak</p>
+          <p class="text-xs text-slate-400 mt-0.5">Keep it going! You’re on fire.</p>
+        </div>
+      </section>
+
+      <!-- Achievements Grid -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-slate-100">Unlocked Achievements</h3>
+          <span class="text-xs text-slate-500">12 / 28</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Unlocked -->
+          <div class="card bg-slate-900 border border-slate-700 rounded-xl p-3 flex flex-col items-center text-center">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            </div>
+            <p class="text-xs font-medium text-slate-100">First Steps</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">Complete 10 questions</p>
+          </div>
+
+          <div class="card bg-slate-900 border border-slate-700 rounded-xl p-3 flex flex-col items-center text-center">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            </div>
+            <p class="text-xs font-medium text-slate-100">On Fire</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">7-day streak</p>
+          </div>
+
+          <div class="card bg-slate-900 border border-slate-700 rounded-xl p-3 flex flex-col items-center text-center">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+            </div>
+            <p class="text-xs font-medium text-slate-100">Consistent</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">Study 5 days in a row</p>
+          </div>
+
+          <div class="card bg-slate-900 border border-slate-700 rounded-xl p-3 flex flex-col items-center text-center">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+            </div>
+            <p class="text-xs font-medium text-slate-100">Top Performer</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">Score 90%+ in a mock</p>
+          </div>
+
+          <!-- Locked -->
+          <div class="card bg-slate-900 border border-slate-700 rounded-xl p-3 flex flex-col items-center text-center opacity-50">
+            <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+            </div>
+            <p class="text-xs font-medium text-slate-400">Centurion</p>
+            <p class="text-[10px] text-slate-600 mt-0.5">Answer 100 questions</p>
+          </div>
+
+          <div class="card bg-slate-900 border border-slate-700 rounded-xl p-3 flex flex-col items-center text-center opacity-50">
+            <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+            </div>
+            <p class="text-xs font-medium text-slate-400">Scholar</p>
+            <p class="text-[10px] text-slate-600 mt-0.5">Read 20 materials</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</body>
+</html>
