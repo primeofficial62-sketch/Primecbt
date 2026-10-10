@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — PRIME-CBT</title>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      /* Backgrounds & Surfaces */
+      --bg-dark: #060b1a;         /* deep navy-black */
+      --card-bg: #0f172a;         /* slate-900 */
+      --card-bg-alt: #1e293b;     /* slate-800 */
+      --input-bg: #1e293b;        /* slate-800 */
+      --border-color: #334155;    /* slate-700 */
+
+      /* Text Tiers */
+      --text-primary: #f8fafc;    /* slate-100 */
+      --text-secondary: #cbd5e1;  /* slate-300 */
+      --text-muted: #94a3b8;      /* slate-400 */
+      --text-subtle: #64748b;     /* slate-500 */
+      --text-disabled: #475569;   /* slate-600 */
+
+      /* Functional Status Colors */
+      --emerald-400: #34d399;
+      --emerald-500: #10b981;
+      --teal-400: #2dd4bf;
+      --red-400: #f87171;
+      --red-500: #ef4444;
+      --amber-400: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Top Bar Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      background-color: var(--bg-dark);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    /* Settings Content Layout */
+    .settings-content {
+      padding: 0 16px 32px 16px;
+    }
+
+    .section-title {
+      color: var(--text-subtle);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin: 20px 0 8px 8px;
+    }
+
+    .settings-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+
+    .settings-item:active {
+      background-color: var(--card-bg-alt);
+    }
+
+    .item-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .item-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .chevron {
+      color: var(--text-subtle);
+      font-size: 0.85rem;
+    }
+
+    .value-label {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .app-version {
+      text-align: center;
+      color: var(--text-disabled);
+      font-size: 0.8rem;
+      margin-top: 28px;
+    }
+
+    /* Functional Toggles */
+    .toggle-switch {
+      position: relative;
+      width: 46px;
+      height: 24px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--border-color);
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-primary);
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--emerald-500);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    /* Functional Status Indicators */
+    .status-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-correct {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--emerald-400);
+      border: 1px solid var(--emerald-500);
+    }
+
+    .status-incorrect {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: var(--red-400);
+      border: 1px solid var(--red-500);
+    }
+
+    .status-flagged {
+      background-color: rgba(251, 191, 36, 0.15);
+      color: var(--amber-400);
+      border: 1px solid var(--amber-400);
+    }
+
+    /* Sub-Views Switch Panel (Standard Web Visibility Switch) */
+    .sub-view {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--bg-dark);
+      z-index: 100;
+    }
+
+    .sub-view.active {
+      display: block;
+    }
+
+    .view-body {
+      padding: 16px;
+    }
+
+    /* Form Components */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .form-input.textarea {
+      resize: vertical;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--emerald-400);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--emerald-500), var(--teal-400));
+      color: #060b1a;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    /* Selection Lists */
+    .selectable-list {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .select-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+
+    .select-item:last-child {
+      border-bottom: none;
+    }
+
+    .check-icon {
+      display: none;
+      color: var(--emerald-400);
+    }
+
+    .select-item.active {
+      color: var(--text-primary);
+      background-color: var(--card-bg-alt);
+    }
+
+    .select-item.active .check-icon {
+      display: inline-block;
+    }
+
+    /* Toast Overlay */
+    .toast {
+      visibility: hidden;
+      min-width: 220px;
+      background: linear-gradient(135deg, var(--emerald-500), var(--teal-400));
+      color: #060b1a;
+      text-align: center;
+      border-radius: 20px;
+      padding: 10px 16px;
+      position: fixed;
+      z-index: 200;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 700;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .toast.show {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== MAIN SETTINGS VIEW ==================== -->
+  <div id="profile.html" class="sub-view active">
+    <div class="header">
+      <a href="profile.html" class="icon-btn"><i class="fas fa-arrow-left"></i></a>
+      <h2>Settings</h2>
+    </div>
+
+    <div class="settings-content">
+      <!-- ACCOUNT -->
+      <div class="section-title">ACCOUNT</div>
+      <div class="settings-card">
+        <div class="settings-item" onclick="openSubView('view-edit-profile')">
+          <span class="item-title">Edit Profile</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-item" onclick="openSubView('view-change-password')">
+          <span class="item-title">Change Password</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-item" onclick="openSubView('view-email-phone')">
+          <span class="item-title">Email & Phone</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+      </div>
+
+      <!-- STUDY -->
+      <div class="section-title">STUDY</div>
+      <div class="settings-card">
+        <div class="settings-item">
+          <div>
+            <div class="item-title">Daily Goal Reminder</div>
+            <div class="item-desc">Get notified about your daily target</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-daily-goal" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-item">
+          <div>
+            <div class="item-title">Sound Effects</div>
+            <div class="item-desc">Play sounds on correct/incorrect</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-sound-effects" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-item" onclick="openSubView('view-practice-mode')">
+          <span class="item-title">Default Practice Mode</span>
+          <span class="value-label" id="current-practice-label">Practice <i class="fas fa-chevron-right chevron"></i></span>
+        </div>
+      </div>
+
+      <!-- PREFERENCES -->
+      <div class="section-title">PREFERENCES</div>
+      <div class="settings-card">
+        <div class="settings-item">
+          <div>
+            <div class="item-title">Dark Mode</div>
+            <div class="item-desc">Always on</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked disabled>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-item" onclick="openSubView('view-language')">
+          <span class="item-title">Language</span>
+          <span class="value-label">English <i class="fas fa-chevron-right chevron"></i></span>
+        </div>
+
+        <div class="settings-item" onclick="openSubView('view-app-theme')">
+          <span class="item-title">App Theme</span>
+          <span class="value-label">Emerald <i class="fas fa-chevron-right chevron"></i></span>
+        </div>
+      </div>
+
+      <!-- PRIVACY & SECURITY -->
+      <div class="section-title">PRIVACY & SECURITY</div>
+      <div class="settings-card">
+        <div class="settings-item" onclick="openSubView('view-privacy-policy')">
+          <span class="item-title">Privacy Policy</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-item" onclick="openSubView('view-terms')">
+          <span class="item-title">Terms of Service</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-item" onclick="openSubView('view-2fa')">
+          <span class="item-title">Two-Factor Authentication</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+      </div>
+
+      <!-- SUPPORT -->
+      <div class="section-title">SUPPORT</div>
+      <div class="settings-card">
+        <div class="settings-item" onclick="openSubView('view-help-center')">
+          <span class="item-title">Help Center</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-item" onclick="openSubView('view-contact-support')">
+          <span class="item-title">Contact Support</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-item" onclick="openSubView('view-rate-app')">
+          <span class="item-title">Rate the App</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+      </div>
+
+      <div class="app-version">PRIME-CBT v1.0.0</div>
+    </div>
+  </div>
+
+
+  <!-- ==================== LINKED SUB-VIEWS ==================== -->
+
+  <!-- 1. EDIT PROFILE VIEW -->
+  <div id="view-edit-profile" class="sub-view">
+    <div class="header">
+      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
+      <h2>Edit Profile</h2>
+    </div>
+    <div class="view-body">
+      <form onsubmit="handleFormSubmit(event, 'Profile updated successfully!')">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" class="form-input" value="Aliu Micheal Imodu" required>
+        </div>
+        <div class="form-group">
+          <label>Institution</label>
+          <input type="text" class="form-input" value="FUNAAB" required>
+        </div>
+        <button type="submit" class="btn-primary">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. CHANGE PASSWORD VIEW -->
+  <div id="view-change-password" class="sub-view">
+    <div class="header">
+      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
+      <h2>Change Password</h2>
+    </div>
+    <div class="view-body">
+      <form onsubmit="handleFormSubmit(event, 'Password changed successfully!')">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-primary">Update Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. EMAIL & PHONE VIEW -->
+  <div id="view-email-phone" class="sub-view">
+    <div class="header">
+      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
+      <h2>Email & Phone</h2>
+    </div>
+    <div class="view-body">
+      <form onsubmit="handleFormSubmit(event, 'Contact details saved!')">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" class="form-input" value="user@prime-cbt.com" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" class="form-input" placeholder="+234 800 000 0000">
+        </div>
+        <button type="submit" class="btn-primary">Save Info</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. DEFAULT PRACTICE MODE VIEW -->
+  <div id="view-practice-mode" class="sub-view">
+    <div class="header">
+      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
+      <h2>Default Practice Mode</h2>
+    </div>
+    <div class="view-body">
+      <div class="selectable-list">
+        <div class="select-item active" onclick="selectOption(this, 'Practice')">
+          <span>Practice Mode (Untimed)</span>
+          <i class="fas fa-check check-icon"></i>
+        </div>
+        <div class="select-item" onclick="selectOption(this, 'Exam')">
+          <span>Exam Simulation (Timed)</span>
+          <i class="fas fa-check check-icon"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. CONTACT SUPPORT VIEW -->
+  <div id="view-contact-support" class="sub-view">
+    <div class="header">
+      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
+      <h2>Contact Support</h2>
+    </div>
+    <div class="view-body">
+      <form onsubmit="handleFormSubmit(event, 'Support ticket submitted!')">
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" class="form-input" placeholder="How can we help?" required>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea class="form-input textarea" rows="5" placeholder="Describe your issue..." required></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Submit Ticket</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. PRIVACY POLICY VIEW -->
+  <div id="view-privacy-policy" class="sub-view">
+    <div class="header">
+      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
+      <h2>Privacy Policy</h2>
+    </div>
+    <div class="view-body">
+      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
+        Your privacy is paramount. PRIME-CBT stores test metrics and practice history locally and securely. No personal academic data is shared with third parties.
+      </p>
+    </div>
+  </div>
+
+  <!-- TOAST OVERLAY -->
+  <div id="toast" class="toast">Action completed!</div>
+
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script>
+    function openSubView(viewId) {
+      const allViews = document.querySelectorAll('.sub-view');
+      allViews.forEach(view => view.classList.remove('active'));
+
+      const targetView = document.getElementById(viewId);
+      if (targetView) {
+        targetView.classList.add('active');
+        history.pushState({ subView: viewId }, '', `#${viewId}`);
+        window.scrollTo(0, 0);
+      }
+    }
+
+    window.addEventListener('popstate', function (event) {
+      if (event.state && event.state.subView) {
+        openSubView(event.state.subView);
+      } else {
+        openSubView('profile.html');
+      }
+    });
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.innerText = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    function handleFormSubmit(event, successMessage) {
+      event.preventDefault();
+      showToast(successMessage);
+      
+      setTimeout(() => {
+        openSubView('profile.html');
+      }, 600);
+    }
+
+    function selectOption(element, valueName) {
+      const parent = element.parentElement;
+      const items = parent.querySelectorAll('.select-item');
+      items.forEach(item => item.classList.remove('active'));
+      
+      element.classList.add('active');
+      
+      const mainLabel = document.getElementById('current-practice-label');
+      if (mainLabel) {
+        mainLabel.innerHTML = `${valueName} <i class="fas fa-chevron-right chevron"></i>`;
+      }
+      
+      showToast(`Default mode updated to ${valueName}`);
+    }
+  </script>
+</body>
+</html>
