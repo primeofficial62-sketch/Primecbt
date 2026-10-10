@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>Create Study Plan — PRIME-CBT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#060b1a' },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b1a;
+      --border: #334155;
+      --muted: #94a3b8;
+      --emerald-bright: #34d399;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    header { flex-shrink: 0; }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 16px 40px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.4s ease-out both; }
+    .animate-slide-up { animation: slideUp 0.45s ease-out both; }
+
+    .option { 
+      transition: all 0.2s ease; 
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option.selected { 
+      border-color: #34d399; 
+      background-color: rgba(52, 211, 153, 0.12); 
+      color: #34d399; 
+    }
+    
+    /* Remove slide-up, fade-in, and scale entrance animations globally */
+    .animate-fade-up, 
+    .animate-scale, 
+    .animate-fade-in,
+    .animate-slide-up,
+    [class*="animate-"] {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-40 h-14 bg-navy/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center gap-3 animate-fade-in">
+      <a href="home.html" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 transition active:scale-90 text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </a>
+      <h1 class="text-lg font-semibold tracking-tight">Create Study Plan</h1>
+    </header>
+
+    <main class="space-y-6">
+      <!-- When is your exam? -->
+      <section class="animate-slide-up">
+        <h2 class="text-sm font-semibold mb-2.5">When is your exam?</h2>
+        <input type="date" id="examDate"
+          class="w-full h-11 bg-slate-900 border border-slate-700 rounded-xl px-4 text-sm text-slate-100 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition">
+      </section>
+
+      <!-- Target Score -->
+      <section class="animate-slide-up" style="animation-delay: 0.05s">
+        <h2 class="text-sm font-semibold mb-2.5">Target Score</h2>
+        <div class="grid grid-cols-3 gap-2.5" id="scoreGroup">
+          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium selected" data-value="70%+">70%+</button>
+          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="80%+">80%+</button>
+          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="90%+">90%+</button>
+        </div>
+      </section>
+
+      <!-- Daily Study Time -->
+      <section class="animate-slide-up" style="animation-delay: 0.1s">
+        <h2 class="text-sm font-semibold mb-2.5">Daily Study Time</h2>
+        <div class="grid grid-cols-2 gap-2.5" id="timeGroup">
+          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="30 mins">30 mins</button>
+          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium selected" data-value="1 hour">1 hour</button>
+          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="1.5 hours">1.5 hours</button>
+          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="2+ hours">2+ hours</button>
+        </div>
+      </section>
+
+      <!-- Days of the week -->
+      <section class="animate-slide-up" style="animation-delay: 0.15s">
+        <h2 class="text-sm font-semibold mb-2.5">Study Days</h2>
+        <div class="flex flex-wrap gap-2" id="daysGroup">
+          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Mon">Mon</button>
+          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Tue">Tue</button>
+          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Wed">Wed</button>
+          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Thu">Thu</button>
+          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Fri">Fri</button>
+          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium" data-day="Sat">Sat</button>
+          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium" data-day="Sun">Sun</button>
+        </div>
+      </section>
+
+      <!-- Generate Button -->
+      <div class="pt-2 animate-slide-up" style="animation-delay: 0.2s">
+        <button type="button" id="generateBtn" class="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold rounded-xl text-sm transition active:scale-[0.98] shadow-lg shadow-emerald-500/20">
+          Generate My Study Plan
+        </button>
+        <p class="text-center text-xs text-slate-500 mt-3 mb-2">We’ll create a personalized plan based on your goals</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const examDateInput = document.getElementById('examDate');
+      const scoreGroup = document.getElementById('scoreGroup');
+      const timeGroup = document.getElementById('timeGroup');
+      const daysGroup = document.getElementById('daysGroup');
+      const generateBtn = document.getElementById('generateBtn');
+
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 30);
+      examDateInput.value = defaultDate.toISOString().split('T')[0];
+
+      function setupSingleSelect(container) {
+        if (!container) return;
+        const buttons = container.querySelectorAll('.option');
+        buttons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+          });
+        });
+      }
+
+      setupSingleSelect(scoreGroup);
+      setupSingleSelect(timeGroup);
+
+      if (daysGroup) {
+        const dayButtons = daysGroup.querySelectorAll('.option');
+        dayButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            btn.classList.toggle('selected');
+          });
+        });
+      }
+
+      if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+          const examDate = examDateInput.value;
+          const targetScore = scoreGroup.querySelector('.option.selected')?.getAttribute('data-value') || '70%+';
+          const studyTime = timeGroup.querySelector('.option.selected')?.getAttribute('data-value') || '1 hour';
+          
+          const selectedDays = Array.from(daysGroup.querySelectorAll('.option.selected'))
+            .map(el => el.getAttribute('data-day'));
+
+          if (!examDate) {
+            alert('Please select your exam date.');
+            return;
+          }
+
+          if (selectedDays.length === 0) {
+            alert('Please select at least one study day.');
+            return;
+          }
+
+          const studyPlanConfig = {
+            examDate,
+            targetScore,
+            studyTime,
+            selectedDays
+          };
+
+          console.log('Study Plan Config Created:', studyPlanConfig);
+          
+          // Flag that a new study plan has been created so the notification dot triggers
+          localStorage.setItem('hasNewStudyPlan', 'true');
+
+          alert('Study plan generated successfully!');
+          window.location.href = 'home.html';
+        });
+      }
+    });
+  </script>
+</body>
+</html>
