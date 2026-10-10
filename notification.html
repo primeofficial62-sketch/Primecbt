@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>PRIME-CBT — Notifications</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#060b1a' },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #060b1a;
+      --border: #334155;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: #f1f5f9;
+      overflow-y: auto;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 42rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      background-color: rgba(6, 11, 26, 0.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .back-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      color: #cbd5e1;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .back-btn:hover {
+      background-color: rgba(30, 41, 59, 0.8);
+    }
+
+    .back-btn svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .topbar-text {
+      text-align: center;
+      flex: 1;
+    }
+
+    .topbar-text h1 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #f8fafc;
+      letter-spacing: -0.025em;
+    }
+
+    .topbar-text p {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.125rem;
+    }
+
+    .text-btn {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .text-btn:hover {
+      background: rgba(52, 211, 153, 0.2);
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .filter-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-chip {
+      padding: 0.375rem 0.875rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      color: #94a3b8;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .filter-chip.active {
+      background-color: #34d399;
+      color: #022c22;
+      border-color: #34d399;
+      font-weight: 600;
+    }
+
+    .filter-chip:hover:not(.active) {
+      background-color: #1e293b;
+      color: #f1f5f9;
+    }
+
+    .content {
+      padding: 0.5rem 1rem 2rem 1rem;
+      flex: 1;
+    }
+
+    .notif-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .notif-card {
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 1rem;
+      padding: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .notif-card:hover {
+      border-color: #334155;
+      transform: translateY(-1px);
+    }
+
+    .notif-card.unread {
+      background-color: rgba(15, 23, 42, 0.95);
+      border-color: rgba(52, 211, 153, 0.3);
+    }
+
+    .notif-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .notif-icon svg {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+
+    .notif-icon.green { background-color: rgba(52, 211, 153, 0.15); color: #34d399; }
+    .notif-icon.amber { background-color: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+    .notif-icon.purple { background-color: rgba(168, 85, 247, 0.15); color: #a855f7; }
+    .notif-icon.blue { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+
+    .notif-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notif-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .notif-desc {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
+
+    .notif-time {
+      font-size: 0.6875rem;
+      color: #64748b;
+      margin-top: 0.375rem;
+    }
+
+    .unread-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      background-color: #34d399;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      margin-top: 0.25rem;
+    }
+
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1rem;
+      color: #64748b;
+    }
+
+    .empty-state.show {
+      display: flex;
+    }
+
+    .empty-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 1rem;
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      margin-bottom: 1rem;
+    }
+
+    .empty-icon svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .empty-state p {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .empty-state span {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+    
+    /* Remove slide-up, fade-in, and scale entrance animations globally */
+.animate-fade-up, 
+.animate-scale, 
+.animate-fade-in,
+.animate-slide-up,
+[class*="animate-"] {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <a href="home.html" class="back-btn" aria-label="Back to Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </a>
+
+      <div class="topbar-text">
+        <h1>Notifications</h1>
+        <p>Stay updated</p>
+      </div>
+
+      <button class="text-btn" id="markAllBtn" type="button">Mark all read</button>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button class="filter-chip active" type="button" data-type="all">All</button>
+      <button class="filter-chip" type="button" data-type="exams">Exams</button>
+      <button class="filter-chip" type="button" data-type="study">Study</button>
+      <button class="filter-chip" type="button" data-type="community">Community</button>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="notif-list" id="notifList">
+
+        <!-- Unread - Study -->
+        <div class="notif-card unread" data-category="study">
+          <div class="notif-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+          <div class="notif-body">
+            <div class="notif-title">New study streak record!</div>
+            <div class="notif-desc">You’ve reached a 14-day streak. Keep it up!</div>
+            <div class="notif-time">2 minutes ago</div>
+          </div>
+          <div class="unread-dot"></div>
+        </div>
+
+        <!-- Unread - Exams -->
+        <div class="notif-card unread" data-category="exams">
+          <div class="notif-icon amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+          </div>
+          <div class="notif-body">
+            <div class="notif-title">Upcoming Mock Exam</div>
+            <div class="notif-desc">BIO 101 Mock Exam starts tomorrow at 10:00 AM</div>
+            <div class="notif-time">1 hour ago</div>
+          </div>
+          <div class="unread-dot"></div>
+        </div>
+
+        <!-- Read - Community -->
+        <div class="notif-card" data-category="community">
+          <div class="notif-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="notif-body">
+            <div class="notif-title">New reply on your post</div>
+            <div class="notif-desc">Aisha replied to “How do you remember mitosis?”</div>
+            <div class="notif-time">5 hours ago</div>
+          </div>
+        </div>
+
+        <!-- Read - Study -->
+        <div class="notif-card" data-category="study">
+          <div class="notif-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+            </svg>
+          </div>
+          <div class="notif-body">
+            <div class="notif-title">Daily goal completed</div>
+            <div class="notif-desc">You answered 30 questions today. +50 XP earned!</div>
+            <div class="notif-time">Yesterday</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="notifEmptyState">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </div>
+        <p>No notifications found</p>
+        <span>Try another category or check back later.</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const filterChips = document.querySelectorAll('.filter-chip');
+      const notifCards = document.querySelectorAll('.notif-card');
+      const markAllBtn = document.getElementById('markAllBtn');
+      const emptyState = document.getElementById('notifEmptyState');
+
+      filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          filterChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+
+          const type = chip.getAttribute('data-type');
+          let visibleCount = 0;
+
+          notifCards.forEach(card => {
+            const category = card.getAttribute('data-category');
+            if (type === 'all' || category === type) {
+              card.style.display = 'flex';
+              visibleCount++;
+            } else {
+              card.style.display = 'none';
+            }
+          });
+
+          if (visibleCount === 0) {
+            emptyState.classList.add('show');
+          } else {
+            emptyState.classList.remove('show');
+          }
+        });
+      });
+
+      markAllBtn.addEventListener('click', () => {
+        notifCards.forEach(card => {
+          card.classList.remove('unread');
+          const dot = card.querySelector('.unread-dot');
+          if (dot) dot.remove();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
