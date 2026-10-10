@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>PRIME-CBT — Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #060b1a;
+      --card-bg: #0f172a; /* slate-900 equivalent */
+      --card-bg-hover: #1e293b; /* slate-800 equivalent */
+      --text-main: #f1f5f9; /* slate-100 */
+      --text-muted: #94a3b8; /* slate-400 */
+      --text-submuted: #64748b; /* slate-500 */
+      --primary: #34d399; /* emerald-400 */
+      --primary-hover: #10b981; /* emerald-500 */
+      --green-bg: rgba(52, 211, 153, 0.15);
+      --green-text: #34d399;
+      --blue-bg: rgba(59, 130, 246, 0.15);
+      --blue-text: #60a5fa;
+      --amber-bg: rgba(251, 191, 36, 0.15);
+      --amber-text: #fbbf24;
+      --border-color: #334155; /* slate-700 */
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+      position: relative;
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(6, 11, 26, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .menu-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .menu-toggle:hover {
+      background: var(--card-bg-hover);
+    }
+
+    .menu-toggle:active {
+      transform: scale(0.9);
+    }
+
+    .menu-toggle span {
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: var(--text-main);
+      border-radius: 2px;
+      transition: transform 0.2s;
+    }
+
+    .greeting {
+      flex: 1;
+    }
+
+    .greeting h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .greeting p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      text-decoration: none;
+      position: relative;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .icon-btn:hover {
+      background: var(--card-bg-hover);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.9);
+    }
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .badge-dot {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 1px solid var(--bg-color);
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    /* Streak Card */
+    .streak-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .streak-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .streak-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .fire {
+      font-size: 24px;
+    }
+
+    .xp-pill {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--amber-text);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .goal-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .goal-text {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 65%;
+      height: 100%;
+      background: linear-gradient(90deg, #34d399, #38bdf8);
+      border-radius: 4px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Primary CTA */
+    .primary-cta {
+      width: 100%;
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      color: #060b1a;
+      border: none;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(52, 211, 153, 0.3);
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .primary-cta:hover {
+      opacity: 0.9;
+    }
+
+    .primary-cta:active {
+      transform: scale(0.98);
+    }
+
+    .primary-cta svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Sections */
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .see-all {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .see-all:hover {
+      text-decoration: underline;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .card:hover {
+      background: var(--card-bg-hover);
+      border-color: #475569;
+      transform: translateY(-1px);
+    }
+
+    .card:active {
+      transform: scale(0.98);
+    }
+
+    .card-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .card-icon.green { background: var(--green-bg); color: var(--green-text); }
+    .card-icon.blue { background: var(--blue-bg); color: var(--blue-text); }
+    .card-icon.amber { background: var(--amber-bg); color: var(--amber-text); }
+
+    .card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .card-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .tag.weak {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .card-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-color);
+      padding-top: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .card-action svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Menu Drawer */
+    .menu-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 11, 26, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+    }
+
+    .menu-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .site-menu {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 280px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border-color);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 101;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+    }
+
+    .site-menu.active {
+      transform: translateX(0);
+    }
+
+    .site-menu-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #34d399, #10b981);
+      color: #060b1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .menu-username {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .menu-usersub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .menu-list {
+      list-style: none;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+    }
+
+    .menu-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .menu-link:hover, .menu-link.active {
+      background: var(--card-bg-hover);
+      color: var(--primary);
+    }
+
+    .menu-link svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .menu-footer {
+      font-size: 0.75rem;
+      color: var(--text-submuted);
+      text-align: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+
+  </style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <div class="page">
+      <!-- Top Bar -->
+      <div class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteMenu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="greeting">
+          <h1 id="greetingText">Good morning, Alex 👋</h1>
+          <p>Ready to make progress today?</p>
+        </div>
+        <div class="top-actions">
+          <a href="notification.html" class="icon-btn" aria-label="Notifications" id="notificationsBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 01-3.46 0" />
+            </svg>
+            <span class="badge-dot"></span>
+          </a>
+          <a href="my-study-plan.html" class="icon-btn" aria-label="My Study Plan" id="studyPlanTopBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <!-- Streak Card -->
+        <div class="streak-card">
+          <div class="streak-header">
+            <div class="streak-badge">
+              <span class="fire">🔥</span>
+              <div>
+                <div style="font-size:15px;font-weight:600;color:var(--text-main)">7 Day Streak</div>
+                <div style="font-size:12px;color:var(--text-muted)">Keep it going!</div>
+              </div>
+            </div>
+            <div class="xp-pill">+50 XP</div>
+          </div>
+          <div class="goal-label">Today's Goal</div>
+          <div class="goal-text">Complete 30 questions</div>
+          <div class="progress-track">
+            <div class="progress-fill" id="goalProgress"></div>
+          </div>
+          <div class="progress-meta">
+            <span>19 / 30 questions</span>
+            <span>65%</span>
+          </div>
+        </div>
+
+        <!-- Primary CTA -->
+        <button class="primary-cta" id="continuePracticeBtn">
+          Continue Practice
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- Study Plan Card -->
+        <div class="section">
+          <a href="create-plan.html" class="card">
+            <div class="card-row">
+              <div class="card-icon green">📅</div>
+              <div class="card-body">
+                <div class="card-title">Personal Study Plan</div>
+                <div class="card-sub">Set your exam date, goals, and daily schedule</div>
+              </div>
+            </div>
+            <div class="card-action">
+              Create plan
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        </div>
+
+        <!-- Continue Learning -->
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">Continue Learning</h2>
+          </div>
+          <a href="materials.html" class="card">
+            <div class="card-row">
+              <div class="card-icon green">📘</div>
+              <div class="card-body">
+                <div class="card-title">BIO 101 — Cell Biology</div>
+                <div class="card-sub">Page 14 of 82</div>
+              </div>
+            </div>
+            <div class="card-action">
+              Continue Reading
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        </div>
+
+        <!-- Recommended -->
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">Recommended For You</h2>
+            <a href="practice.html" class="see-all">See all</a>
+          </div>
+          <a href="practice.html" class="card">
+            <div class="card-row">
+              <div class="card-icon amber">🧬</div>
+              <div class="card-body">
+                <div class="card-title">Genetics</div>
+                <div class="card-sub">You scored 42% on your last attempt</div>
+                <span class="tag weak">Needs Improvement</span>
+              </div>
+            </div>
+            <div class="card-action">
+              Practice this topic
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+          <a href="practice.html" class="card">
+            <div class="card-row">
+              <div class="card-icon blue">🧪</div>
+              <div class="card-body">
+                <div class="card-title">Organic Chemistry</div>
+                <div class="card-sub">You haven't studied this in 5 days</div>
+              </div>
+            </div>
+            <div class="card-action">
+              Review now
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        </div>
+
+        <!-- Upcoming Exam -->
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">Upcoming Exam</h2>
+          </div>
+          <a href="practice.html" class="card">
+            <div class="card-row">
+              <div class="card-icon green">📝</div>
+              <div class="card-body">
+                <div class="card-title">BIO 101 Mock Exam</div>
+                <div class="card-sub">Tomorrow · 10:00 AM</div>
+              </div>
+            </div>
+            <div class="card-action">
+              View Exam
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backdrop -->
+    <div class="menu-backdrop" id="menuBackdrop"></div>
+
+    <!-- Site Menu -->
+    <nav class="site-menu" id="siteMenu" aria-hidden="true">
+      <div class="site-menu-header">
+        <div class="avatar">A</div>
+        <div>
+          <div class="menu-username">Alex</div>
+          <div class="menu-usersub">🔥 7 day streak</div>
+        </div>
+      </div>
+      <ul class="menu-list">
+        <li>
+          <a href="home.html" class="menu-link active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Home
+          </a>
+        </li>
+        <li>
+          <a href="practice.html" class="menu-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Practice
+          </a>
+        </li>
+        <li>
+          <a href="community.html" class="menu-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Community
+          </a>
+        </li>
+        <li>
+          <a href="progress.html" class="menu-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            Progress
+          </a>
+        </li>
+        <li>
+          <a href="materials.html" class="menu-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+            </svg>
+            Materials
+          </a>
+        </li>
+        <li>
+          <a href="ai-assistant.html" class="menu-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 8V4H8"/>
+              <rect width="16" height="12" x="4" y="8" rx="2"/>
+              <path d="M2 14h2"/><path d="M20 14h2"/>
+              <path d="M15 13v2"/><path d="M9 13v2"/>
+            </svg>
+            AI Assistant
+          </a>
+        </li>
+        <li>
+          <a href="profile.html" class="menu-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+          </a>
+        </li>
+      </ul>
+      <div class="menu-footer">PRIME-CBT</div>
+    </nav>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const menuToggle = document.getElementById('menuToggle');
+      const siteMenu = document.getElementById('siteMenu');
+      const menuBackdrop = document.getElementById('menuBackdrop');
+      const continuePracticeBtn = document.getElementById('continuePracticeBtn');
+
+      function toggleMenu() {
+        const isOpen = siteMenu.classList.toggle('active');
+        menuBackdrop.classList.toggle('active');
+        menuToggle.setAttribute('aria-expanded', isOpen);
+        siteMenu.setAttribute('aria-hidden', !isOpen);
+      }
+
+      menuToggle.addEventListener('click', toggleMenu);
+      menuBackdrop.addEventListener('click', toggleMenu);
+
+      // Handle continue practice action
+      continuePracticeBtn.addEventListener('click', () => {
+        window.location.href = 'practice.html';
+      });
+    });
+  </script>
+</body>
+</html>
