@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>PRIME-CBT — Log In / Sign Up</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #060b1a;
+      --surface: #0f172a; /* slate-900 */
+      --surface-2: #1e293b; /* slate-800 */
+      --border: #334155; /* slate-700 */
+      --text: #f1f5f9; /* slate-100 */
+      --muted: #94a3b8; /* slate-400 */
+      --emerald: #34d399; /* emerald-400 */
+      --emerald-dark: #059669;
+      --teal: #2dd4bf; /* teal-400 */
+      --red: #f87171; /* red-400 */
+      --amber: #fbbf24; /* amber-400 */
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* ========== STAGE ========== */
+    .stage {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0 20px 40px;
+      background: var(--bg);
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    /* ========== TOPBAR ========== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0 10px;
+      background: rgba(6, 11, 26, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .icon-btn:hover {
+      color: var(--text);
+      border-color: #475569;
+      background: var(--surface-2);
+      transform: scale(0.95);
+    }
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .topbrand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-family: 'Lora', serif;
+      font-weight: 700;
+      font-size: 17px;
+    }
+
+    .mark {
+      width: 32px;
+      height: 32px;
+      background: var(--emerald);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mark svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .spacer {
+      width: 40px;
+    }
+
+    /* ========== CONTENT ========== */
+    .content {
+      flex: 1;
+      padding-top: 10px;
+      position: relative;
+    }
+
+    /* Headlines */
+    .mode-headline {
+      display: none;
+      margin-bottom: 28px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .mode-headline.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .headline {
+      font-family: 'Lora', serif;
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+    }
+
+    .headline .accent {
+      color: var(--emerald);
+    }
+
+    .subtext {
+      font-size: 15px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ========== SWITCHER ========== */
+    .switcher {
+      position: relative;
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 5px;
+      margin-bottom: 32px;
+    }
+
+    .switch-btn {
+      flex: 1;
+      height: 42px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+      transition: color 0.3s ease;
+    }
+
+    .switch-btn.active {
+      color: #060b1a;
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: calc(50% - 5px);
+      height: 42px;
+      background: linear-gradient(135deg, var(--emerald), var(--teal));
+      border-radius: 10px;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1;
+    }
+
+    .switcher[data-mode="login"] .switch-thumb {
+      transform: translateX(100%);
+    }
+
+    /* ========== PANELS ========== */
+    .panel {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .panel.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ========== STEPS ========== */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 28px;
+    }
+
+    .step-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all 0.3s ease;
+    }
+
+    .step-dot.active {
+      background: var(--emerald);
+      border-color: var(--emerald);
+      color: #060b1a;
+    }
+
+    .step-dot.done {
+      background: rgba(52, 211, 153, 0.15);
+      border-color: var(--emerald);
+      color: var(--emerald);
+    }
+
+    .step-line {
+      width: 40px;
+      height: 2px;
+      background: var(--border);
+      transition: background 0.3s ease;
+    }
+
+    .step-line.done {
+      background: var(--emerald);
+    }
+
+    /* ========== REG STEPS ========== */
+    .reg-step {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .reg-step.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ========== FORM ========== */
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .field input,
+    .field select {
+      height: 50px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0 16px;
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--emerald);
+      background: var(--surface-2);
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+    }
+
+    .field input::placeholder {
+      color: #64748b;
+    }
+
+    .field-error {
+      font-size: 12px;
+      color: var(--red);
+      display: none;
+    }
+
+    .field.error .field-error {
+      display: block;
+    }
+
+    .field.error input,
+    .field.error select {
+      border-color: var(--red);
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* Password */
+    .pw-wrap {
+      position: relative;
+    }
+
+    .pw-wrap input {
+      width: 100%;
+      padding-right: 48px;
+    }
+
+    .pw-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      transition: color 0.3s ease;
+    }
+
+    .pw-toggle:hover {
+      color: var(--text);
+    }
+
+    .pw-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .pw-strength {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .pw-strength-bars {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .pw-strength-bars span {
+      height: 4px;
+      flex: 1;
+      background: var(--border);
+      border-radius: 99px;
+      transition: background 0.3s ease;
+    }
+
+    .pw-strength-bars.weak span:nth-child(1) { background: var(--red); }
+    .pw-strength-bars.medium span:nth-child(1),
+    .pw-strength-bars.medium span:nth-child(2) { background: var(--amber); }
+    .pw-strength-bars.strong span { background: var(--emerald); }
+
+    .pw-strength-text {
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 50px;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 22px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Buttons */
+    .cta {
+      height: 52px;
+      background: linear-gradient(135deg, var(--emerald), var(--teal));
+      color: #060b1a;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 8px 20px rgba(52, 211, 153, 0.2);
+      width: 100%;
+    }
+
+    .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(52, 211, 153, 0.3);
+    }
+
+    .cta:active {
+      transform: translateY(0);
+    }
+
+    .cta.loading .cta-text {
+      opacity: 0;
+    }
+
+    .cta .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(6, 11, 26, 0.3);
+      border-top-color: #060b1a;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .cta.loading .spinner {
+      display: block;
+      position: absolute;
+    }
+
+    .btn-oauth {
+      height: 50px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .btn-oauth:hover {
+      background: var(--surface-2);
+      border-color: #475569;
+    }
+
+    .btn-back-step {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 10px 0;
+      margin-right: auto;
+      transition: color 0.3s ease;
+    }
+
+    .btn-back-step:hover {
+      color: var(--text);
+    }
+
+    .reg-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* Course chips */
+    .course-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0 24px;
+      border: none;
+    }
+
+    .course-chip {
+      cursor: pointer;
+    }
+
+    .course-chip input {
+      display: none;
+    }
+
+    .course-chip span {
+      display: inline-block;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all 0.3s ease;
+    }
+
+    .course-chip input:checked + span {
+      background: rgba(52, 211, 153, 0.12);
+      border-color: var(--emerald);
+      color: var(--emerald);
+    }
+
+    .course-chip span:hover {
+      border-color: #475569;
+      background: var(--surface-2);
+    }
+
+    /* Checkbox */
+    .checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    .checkbox input {
+      display: none;
+    }
+
+    .checkbox .box {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 5px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .checkbox input:checked + .box {
+      background: var(--emerald);
+      border-color: var(--emerald);
+    }
+
+    .checkbox input:checked + .box::after {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 5px;
+      height: 9px;
+      border: solid #060b1a;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .link-sm {
+      color: var(--emerald);
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.3s ease;
+    }
+
+    .link-sm:hover {
+      text-decoration: underline;
+    }
+
+    .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 6px 0 4px;
+    }
+
+    .switch-line {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .switch-line a {
+      color: var(--emerald);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .switch-line a:hover {
+      text-decoration: underline;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      border: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      width: 90%;
+      max-width: 360px;
+    }
+
+    .toast {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: translateY(-8px);
+      animation: toastIn 0.3s ease forwards;
+    }
+
+    .toast.success {
+      border-color: var(--emerald);
+    }
+
+    .toast.error {
+      border-color: var(--red);
+    }
+
+    @keyframes toastIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+
+  </style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <header class="topbar">
+    <button class="icon-btn" id="backBtn" type="button" aria-label="Go back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <a href="index.html" class="topbrand">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 3L2 8l10 5 8-4.09V15h2V8L12 3z" fill="#060b1a"/>
+          <path d="M6 10.5V15c0 1.5 2.5 4 6 4s6-2.5 6-4v-4.5" stroke="#060b1a" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      PRIME-CBT
+    </a>
+
+    <span class="spacer"></span>
+  </header>
+
+  <main class="content">
+
+    <div class="mode-headline mode-headline-register active" id="headlineRegister">
+      <h1 class="headline">Create your<br><span class="accent">account.</span></h1>
+    </div>
+
+    <div class="mode-headline mode-headline-login" id="headlineLogin">
+      <h1 class="headline">Welcome back.<br><span class="accent">Let's get studying.</span></h1>
+    </div>
+
+    <!-- Switcher -->
+    <div class="switcher" id="switcher" data-mode="register">
+      <button class="switch-btn active" data-mode="register" type="button">Sign Up</button>
+      <button class="switch-btn" data-mode="login" type="button">Log In</button>
+      <span class="switch-thumb"></span>
+    </div>
+
+    <!-- ==================== REGISTER ==================== -->
+    <div class="panel active" id="panel-register">
+
+      <div class="steps" id="steps">
+        <div class="step-dot active" data-step="0"><span>1</span></div>
+        <div class="step-line" data-line="0"></div>
+        <div class="step-dot" data-step="1"><span>2</span></div>
+        <div class="step-line" data-line="1"></div>
+        <div class="step-dot" data-step="2"><span>3</span></div>
+      </div>
+
+      <!-- Step 1 -->
+      <div class="reg-step active" data-index="0">
+        <form class="form" id="regForm1" novalidate>
+          <label class="field">
+            <span class="field-label">Full name</span>
+            <input type="text" name="fullname" placeholder="e.g. Aliu Micheal Imodu" required autocomplete="name">
+            <span class="field-error">Please enter your full name</span>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Email</span>
+            <input type="email" name="email" placeholder="you@school.edu.ng" required autocomplete="email">
+            <span class="field-error">Enter a valid email address</span>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Password</span>
+            <div class="pw-wrap">
+              <input type="password" name="password" placeholder="Create a password" required id="regPw" minlength="6" autocomplete="new-password">
+              <button type="button" class="pw-toggle" data-target="regPw">
+                <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="pw-strength">
+              <div class="pw-strength-bars" id="pwBars"><span></span><span></span><span></span></div>
+              <span class="pw-strength-text" id="pwText">Weak</span>
+            </div>
+            <span class="field-error">Password must be at least 6 characters</span>
+          </label>
+        </form>
+
+        <div class="divider"><span>or continue with</span></div>
+
+        <button type="button" class="btn-oauth" id="googleReg">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.28 1.48-1.13 2.73-2.4 3.57v3h3.88c2.27-2.09 3.54-5.17 3.54-8.81z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.88-3c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.75-2.1-6.69-4.92H1.3v3.09C3.26 21.3 7.31 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.31 14.33A7.2 7.2 0 015 12c0-.82.14-1.6.31-2.33V6.58H1.3A11.98 11.98 0 000 12c0 1.94.46 3.77 1.3 5.42l4.01-3.09z"/>
+            <path fill="#EA4335" d="M12 4.76c1.77 0 3.36.61 4.61 1.8l3.44-3.44C17.94 1.19 15.23 0 12 0 7.31 0 3.26 2.7 1.3 6.58l4.01 3.09C6.25 6.85 8.89 4.76 12 4.76z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="reg-step" data-index="1">
+        <h2 class="headline" style="font-size:26px;margin-bottom:6px">Tell us about<br><span class="accent">yourself.</span></h2>
+        <p class="subtext">This helps us match you with the right courses.</p>
+
+        <form class="form" id="regForm2" style="margin-top:22px" novalidate>
+          <label class="field">
+            <span class="field-label">School</span>
+            <select name="school">
+              <option>Federal University of Agriculture, Abeokuta (FUNAAB)</option>
+              <option>Other institution</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Department</span>
+            <input type="text" name="department" placeholder="e.g. Wildlife & Ecotourism Management">
+            <span class="field-error">Please enter your department</span>
+          </label>
+
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Level</span>
+              <select name="level">
+                <option>100L</option>
+                <option>200L</option>
+                <option>300L</option>
+                <option>400L</option>
+                <option>500L</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Matric number</span>
+              <input type="text" name="matric" placeholder="Optional">
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="reg-step" data-index="2">
+        <h2 class="headline" style="font-size:26px;margin-bottom:6px">Personalize your<br><span class="accent">study.</span></h2>
+        <p class="subtext">Pick the courses you want to focus on first.</p>
+
+        <fieldset class="course-list">
+          <legend class="visually-hidden">Courses</legend>
+          <label class="course-chip"><input type="checkbox" name="courses" value="Biology" checked><span>Biology</span></label>
+          <label class="course-chip"><input type="checkbox" name="courses" value="Chemistry" checked><span>Chemistry</span></label>
+          <label class="course-chip"><input type="checkbox" name="courses" value="Physics"><span>Physics</span></label>
+          <label class="course-chip"><input type="checkbox" name="courses" value="Mathematics"><span>Mathematics</span></label>
+          <label class="course-chip"><input type="checkbox" name="courses" value="Agricultural Science"><span>Agricultural Science</span></label>
+          <label class="course-chip"><input type="checkbox" name="courses" value="Use of English"><span>Use of English</span></label>
+        </fieldset>
+
+        <label class="checkbox terms">
+          <input type="checkbox" name="terms" id="termsCheck">
+          <span class="box"></span>
+          <span>I agree to the <a href="#" class="link-sm">Terms of Service</a> and <a href="#" class="link-sm">Privacy Policy</a></span>
+        </label>
+        <span class="field-error" id="termsError" style="display:none;margin-top:8px">You must accept the terms to continue</span>
+      </div>
+
+      <div class="reg-actions">
+        <button type="button" class="btn-back-step" id="stepBack" hidden>← Back</button>
+        <button type="button" class="cta" id="stepNext">
+          <span class="spinner"></span>
+          <span class="cta-text">Continue →</span>
+        </button>
+      </div>
+
+      <p class="switch-line">
+        Already have an account? <a href="#" data-switch="login">Log In</a>
+      </p>
+    </div>
+
+    <!-- ==================== CHECK EMAIL (LINK) ==================== -->
+    <div class="panel" id="panel-verify">
+      <h2 class="headline" style="font-size:26px;margin-bottom:6px">Check your<br><span class="accent">email.</span></h2>
+      <p class="subtext" id="verifySubtext">We sent a confirmation link to your email.</p>
+
+      <div style="margin-top:22px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px">
+        <p class="subtext" style="margin-top:0">
+          Click the link in that email to confirm your account, then come back here and log in.
+        </p>
+      </div>
+
+      <p class="switch-line" style="margin-top:18px">
+        Didn't get it? <a href="#" id="resendCodeLink">Resend email</a>
+      </p>
+
+      <p class="switch-line">
+        Already confirmed? <a href="#" data-switch="login">Log In</a>
+      </p>
+    </div>
+
+    <!-- ==================== LOGIN ==================== -->
+    <div class="panel" id="panel-login">
+      <form class="form" id="loginForm" novalidate>
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input type="email" name="email" placeholder="you@school.edu.ng" required autocomplete="email">
+          <span class="field-error">Enter a valid email address</span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Password</span>
+          <div class="pw-wrap">
+            <input type="password" name="password" placeholder="Enter your password" required id="loginPw" autocomplete="current-password">
+            <button type="button" class="pw-toggle" data-target="loginPw">
+              <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <span class="field-error">Password is required</span>
+        </label>
+
+        <div class="row-between">
+          <label class="checkbox">
+            <input type="checkbox" name="remember">
+            <span class="box"></span>
+            Remember me
+          </label>
+          <a href="#" class="link-sm">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="cta" id="loginBtn" style="margin-top:10px">
+          <span class="spinner"></span>
+          <span class="cta-text">Log In →</span>
+        </button>
+      </form>
+
+      <div class="divider"><span>or continue with</span></div>
+
+      <button type="button" class="btn-oauth">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.28 1.48-1.13 2.73-2.4 3.57v3h3.88c2.27-2.09 3.54-5.17 3.54-8.81z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.88-3c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.75-2.1-6.69-4.92H1.3v3.09C3.26 21.3 7.31 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.31 14.33A7.2 7.2 0 015 12c0-.82.14-1.6.31-2.33V6.58H1.3A11.98 11.98 0 000 12c0 1.94.46 3.77 1.3 5.42l4.01-3.09z"/>
+          <path fill="#EA4335" d="M12 4.76c1.77 0 3.36.61 4.61 1.8l3.44-3.44C17.94 1.19 15.23 0 12 0 7.31 0 3.26 2.7 1.3 6.58l4.01 3.09C6.25 6.85 8.89 4.76 12 4.76z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <p class="switch-line">
+        Don't have an account? <a href="#" data-switch="register">Sign Up</a>
+      </p>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ========== SUPABASE CLIENT ==========
+  const SUPABASE_URL = "https://ikyqahzhtckpelzkmgyh.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_wTVQsPGD6nxZmh4aZmmgtA_MRdoA-1c";
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ========== READ URL MODE ==========
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialMode = urlParams.get('mode') === 'login' ? 'login' : 'register';
+  
+  // ========== MODE SWITCHING ==========
+  let pendingVerifyEmail = null;
+  const switcher = document.getElementById('switcher');
+  const switchBtns = document.querySelectorAll('.switch-btn');
+  const panelRegister = document.getElementById('panel-register');
+  const panelLogin = document.getElementById('panel-login');
+  const panelVerify = document.getElementById('panel-verify');
+  const headlineRegister = document.getElementById('headlineRegister');
+  const headlineLogin = document.getElementById('headlineLogin');
+  
+  function setMode(mode) {
+    // The verify panel has no headline/switcher tab of its own — it just
+    // replaces whichever panel is showing, keeping the switcher on
+    // whatever it was last set to.
+    if (mode === 'verify') {
+      panelRegister.classList.remove('active');
+      panelLogin.classList.remove('active');
+      panelVerify.classList.add('active');
+      return;
+    }
+
+    panelVerify.classList.remove('active');
+    switcher.dataset.mode = mode;
+    
+    switchBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+    
+    panelRegister.classList.toggle('active', mode === 'register');
+    panelLogin.classList.toggle('active', mode === 'login');
+    
+    headlineRegister.classList.toggle('active', mode === 'register');
+    headlineLogin.classList.toggle('active', mode === 'login');
+  }
+  
+  // Set initial mode from URL
+  setMode(initialMode);
+  
+  switchBtns.forEach(btn => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+  
+  document.querySelectorAll('[data-switch]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      setMode(link.dataset.switch);
+    });
+  });
+  
+  // ========== MULTI-STEP REGISTER ==========
+  let currentStep = 0;
+  const regSteps = document.querySelectorAll('.reg-step');
+  const stepDots = document.querySelectorAll('.step-dot');
+  const stepLines = document.querySelectorAll('.step-line');
+  const stepNext = document.getElementById('stepNext');
+  const stepBack = document.getElementById('stepBack');
+  const ctaText = stepNext.querySelector('.cta-text');
+  
+  function updateSteps() {
+    regSteps.forEach((step, i) => {
+      step.classList.toggle('active', i === currentStep);
+    });
+    
+    stepDots.forEach((dot, i) => {
+      dot.classList.remove('active', 'done');
+      if (i === currentStep) dot.classList.add('active');
+      if (i < currentStep) dot.classList.add('done');
+    });
+    
+    stepLines.forEach((line, i) => {
+      line.classList.toggle('done', i < currentStep);
+    });
+    
+    stepBack.hidden = currentStep === 0;
+    ctaText.textContent = currentStep === 2 ? 'Create Account →' : 'Continue →';
+  }
+  
+  stepNext.addEventListener('click', async () => {
+    if (currentStep === 0) {
+      const form = document.getElementById('regForm1');
+      const name = form.fullname.value.trim();
+      const email = form.email.value.trim();
+      const pw = form.password.value;
+      
+      if (!name || !email || pw.length < 6) {
+        showToast('Please fill all fields correctly', 'error');
+        return;
+      }
+    }
+    
+    if (currentStep === 2) {
+      if (!document.getElementById('termsCheck').checked) {
+        document.getElementById('termsError').style.display = 'block';
+        return;
+      }
+
+      stepNext.classList.add('loading');
+
+      // Gather data from all 3 steps
+      const form1 = document.getElementById('regForm1');
+      const form2 = document.getElementById('regForm2');
+      const fullname = form1.fullname.value.trim();
+      const email = form1.email.value.trim();
+      const password = form1.password.value;
+      const school = form2.school.value;
+      const department = form2.department.value.trim();
+      const level = form2.level.value;
+      const matric = form2.matric.value.trim();
+      const courses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(c => c.value);
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth-2.html?mode=login`,
+          data: {
+            full_name: fullname,
+            school: school,
+            department: department,
+            level: level,
+            matric: matric,
+            courses: courses
+          }
+        }
+      });
+
+      stepNext.classList.remove('loading');
+
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+
+      if (data.session) {
+        showToast('Account created successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1200);
+      } else {
+        // Email confirmation is required — show the "check your email" panel
+        pendingVerifyEmail = email;
+        document.getElementById('verifySubtext').textContent = `We sent a confirmation link to ${email}.`;
+        setMode('verify');
+        showToast('Check your email to confirm your account!', 'success');
+      }
+      return;
+    }
+    
+    currentStep++;
+    updateSteps();
+  });
+  
+  stepBack.addEventListener('click', () => {
+    if (currentStep > 0) {
+      currentStep--;
+      updateSteps();
+    }
+  });
+  
+  // ========== PASSWORD STRENGTH ==========
+  const regPw = document.getElementById('regPw');
+  const pwBars = document.getElementById('pwBars');
+  const pwText = document.getElementById('pwText');
+  
+  if (regPw) {
+    regPw.addEventListener('input', () => {
+      const val = regPw.value;
+      let strength = 0;
+      if (val.length >= 6) strength++;
+      if (val.length >= 9) strength++;
+      if (/[A-Z]/.test(val) && /[0-9]/.test(val)) strength++;
+      
+      pwBars.className = 'pw-strength-bars';
+      if (strength === 1) {
+        pwBars.classList.add('weak');
+        pwText.textContent = 'Weak';
+      } else if (strength === 2) {
+        pwBars.classList.add('medium');
+        pwText.textContent = 'Medium';
+      } else if (strength >= 3) {
+        pwBars.classList.add('strong');
+        pwText.textContent = 'Strong';
+      } else {
+        pwText.textContent = 'Weak';
+      }
+    });
+  }
+  
+  // ========== PASSWORD TOGGLE ==========
+  document.querySelectorAll('.pw-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+  });
+  
+  // ========== LOGIN ==========
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const form = e.target;
+    const email = form.email.value.trim();
+    const password = form.password.value;
+
+    btn.classList.add('loading');
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+    btn.classList.remove('loading');
+
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+
+    showToast('Logged in successfully!', 'success');
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1000);
+  });
+  
+  // ========== RESEND CONFIRMATION LINK ==========
+  document.getElementById('resendCodeLink').addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!pendingVerifyEmail) return;
+
+    const { error } = await supabaseClient.auth.resend({
+      type: 'signup',
+      email: pendingVerifyEmail
+    });
+
+    if (error) {
+      showToast(error.message, 'error');
+    } else {
+      showToast('Confirmation email resent!', 'success');
+    }
+  });
+
+  // ========== BACK BUTTON ==========
+  document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+  
+  // ========== TOAST ==========
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-8px)';
+      toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      setTimeout(() => toast.remove(), 3000);
+    }, 2700);
+  }
+  
+  // Init
+  updateSteps();
+
+  // ========== GOOGLE OAUTH ==========
+  // Requires Google enabled as a provider in your Supabase dashboard
+  // (Authentication → Providers → Google) before this will work.
+  document.querySelectorAll('.btn-oauth').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google'
+      });
+      if (error) {
+        showToast(error.message, 'error');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
