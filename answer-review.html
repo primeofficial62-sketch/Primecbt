@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>PRIME-CBT — Answer Review</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#060b1a',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Lora', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b1a;
+      --card-bg: #0f172a; /* slate-900 */
+      --card-hover: #1e293b; /* slate-800 */
+      --border: #334155; /* slate-700 */
+      --text-main: #f1f5f9; /* slate-100 */
+      --text-muted: #94a3b8; /* slate-400 */
+      --emerald-bright: #34d399; /* emerald-400 */
+      --teal-bright: #2dd4bf; /* teal-400 */
+      --red-bright: #f87171; /* red-400 */
+      --amber-bright: #fbbf24; /* amber-400 */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      position: relative;
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 11, 26, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      text-decoration: none;
+      margin-right: 12px;
+      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--card-hover);
+      border-color: #475569;
+      transform: scale(0.95);
+    }
+
+    .back-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .topbar-title h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .topbar-title p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 11, 26, 0.95);
+      overflow-x: auto;
+      white-space: nowrap;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+
+    .filters::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .filter-chip:hover {
+      background: var(--card-hover);
+      color: var(--text-main);
+    }
+
+    .filter-chip.active {
+      background: var(--emerald-bright);
+      color: #060b1a;
+      border-color: var(--emerald-bright);
+      font-weight: 600;
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+      position: relative;
+    }
+
+    .review-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      display: none; /* Managed by JS transitions */
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .review-card.active-card {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .q-number {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .status-badge.correct {
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--emerald-bright);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .status-badge.wrong {
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--red-bright);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    .status-badge.flagged {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--amber-bright);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.4;
+    }
+
+    .answer-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: rgba(6, 11, 26, 0.5);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .answer-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .answer-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .answer-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .answer-value.correct {
+      color: var(--emerald-bright);
+    }
+
+    .answer-value.wrong {
+      color: var(--red-bright);
+    }
+
+    .explanation {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      background: rgba(6, 11, 26, 0.5);
+      padding: 12px 14px;
+      border-radius: 10px;
+      border-left: 3px solid var(--emerald-bright);
+      line-height: 1.5;
+      border-top: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(6, 11, 26, 0.95);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--card-hover);
+      border-color: var(--emerald-bright);
+      color: var(--emerald-bright);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .nav-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .page-indicator {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <a href="results.html" class="back-btn" aria-label="Back to Results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <div class="topbar-title">
+        <h1>Answer Review</h1>
+        <p>BIO 101 • 30 Questions</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All</button>
+      <button type="button" class="filter-chip" data-filter="wrong">Incorrect</button>
+      <button type="button" class="filter-chip" data-filter="flagged">Flagged</button>
+      <button type="button" class="filter-chip" data-filter="correct">Correct</button>
+    </div>
+
+    <!-- Content -->
+    <div class="content" id="reviewList">
+      <!-- Question 1 - Correct -->
+      <div class="review-card" data-status="correct">
+        <div class="review-header">
+          <span class="q-number">Question 1</span>
+          <span class="status-badge correct">Correct</span>
+        </div>
+        <div class="question-text">
+          Which of the following organelles is known as the powerhouse of the cell?
+        </div>
+        <div class="answer-row">
+          <div class="answer-item">
+            <span class="answer-label">Your Answer</span>
+            <span class="answer-value correct">B. Mitochondria</span>
+          </div>
+          <div class="answer-item">
+            <span class="answer-label">Correct</span>
+            <span class="answer-value correct">B. Mitochondria</span>
+          </div>
+        </div>
+        <div class="explanation">
+          Mitochondria produce ATP through cellular respiration, making them the powerhouse of the cell.
+        </div>
+      </div>
+
+      <!-- Question 2 - Wrong -->
+      <div class="review-card" data-status="wrong">
+        <div class="review-header">
+          <span class="q-number">Question 2</span>
+          <span class="status-badge wrong">Incorrect</span>
+        </div>
+        <div class="question-text">
+          What is the basic unit of heredity?
+        </div>
+        <div class="answer-row">
+          <div class="answer-item">
+            <span class="answer-label">Your Answer</span>
+            <span class="answer-value wrong">A. Chromosome</span>
+          </div>
+          <div class="answer-item">
+            <span class="answer-label">Correct</span>
+            <span class="answer-value correct">C. Gene</span>
+          </div>
+        </div>
+        <div class="explanation">
+          A gene is the basic physical and functional unit of heredity. Chromosomes carry many genes.
+        </div>
+      </div>
+
+      <!-- Question 3 - Flagged + Wrong -->
+      <div class="review-card" data-status="wrong flagged">
+        <div class="review-header">
+          <span class="q-number">Question 3</span>
+          <div style="display:flex;gap:6px">
+            <span class="status-badge flagged">Flagged</span>
+            <span class="status-badge wrong">Incorrect</span>
+          </div>
+        </div>
+        <div class="question-text">
+          Which process converts glucose into pyruvate?
+        </div>
+        <div class="answer-row">
+          <div class="answer-item">
+            <span class="answer-label">Your Answer</span>
+            <span class="answer-value wrong">D. Krebs cycle</span>
+          </div>
+          <div class="answer-item">
+            <span class="answer-label">Correct</span>
+            <span class="answer-value correct">B. Glycolysis</span>
+          </div>
+        </div>
+        <div class="explanation">
+          Glycolysis is the first step of cellular respiration where glucose is broken down into pyruvate.
+        </div>
+      </div>
+
+      <!-- Question 4 - Correct -->
+      <div class="review-card" data-status="correct">
+        <div class="review-header">
+          <span class="q-number">Question 4</span>
+          <span class="status-badge correct">Correct</span>
+        </div>
+        <div class="question-text">
+          DNA replication is described as:
+        </div>
+        <div class="answer-row">
+          <div class="answer-item">
+            <span class="answer-label">Your Answer</span>
+            <span class="answer-value correct">A. Semi-conservative</span>
+          </div>
+          <div class="answer-item">
+            <span class="answer-label">Correct</span>
+            <span class="answer-value correct">A. Semi-conservative</span>
+          </div>
+        </div>
+        <div class="explanation">
+          Each new DNA molecule contains one original strand and one newly synthesized strand.
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-bar">
+      <button type="button" class="nav-btn" id="prevBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg> Prev
+      </button>
+      <span class="page-indicator" id="pageIndicator">1 of 4</span>
+      <button type="button" class="nav-btn" id="nextBtn">
+        Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const cards = Array.from(document.querySelectorAll('.review-card'));
+      const filterChips = document.querySelectorAll('.filter-chip');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const pageIndicator = document.getElementById('pageIndicator');
+      const reviewList = document.getElementById('reviewList');
+
+      let currentFilter = 'all';
+      let currentIndex = 0;
+
+      function getFilteredCards() {
+        if (currentFilter === 'all') return cards;
+        return cards.filter(card => card.getAttribute('data-status').includes(currentFilter));
+      }
+
+      function updateView() {
+        const filtered = getFilteredCards();
+
+        // Fade out current active cards smoothly
+        cards.forEach(card => card.classList.remove('active-card'));
+
+        if (filtered.length === 0) {
+          pageIndicator.textContent = '0 of 0';
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
+          return;
+        }
+
+        // Clamp index bounds
+        if (currentIndex >= filtered.length) currentIndex = filtered.length - 1;
+        if (currentIndex < 0) currentIndex = 0;
+
+        // Brief timeout to ensure clean DOM re-trigger of transition animation
+        setTimeout(() => {
+          filtered[currentIndex].classList.add('active-card');
+        }, 50);
+        
+        // Update pagination UI
+        pageIndicator.textContent = `${currentIndex + 1} of ${filtered.length}`;
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.disabled = currentIndex === filtered.length - 1;
+
+        reviewList.scrollTop = 0;
+      }
+
+      filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          filterChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          currentFilter = chip.getAttribute('data-filter');
+          currentIndex = 0;
+          updateView();
+        });
+      });
+
+      prevBtn.addEventListener('click', () => {
+        if (currentIndex > 0) {
+          currentIndex--;
+          updateView();
+        }
+      });
+
+      nextBtn.addEventListener('click', () => {
+        const filtered = getFilteredCards();
+        if (currentIndex < filtered.length - 1) {
+          currentIndex++;
+          updateView();
+        }
+      });
+
+      // Initial render call
+      updateView();
+    });
+  </script>
+</body>
+</html>
