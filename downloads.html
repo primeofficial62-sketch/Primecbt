@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>PRIME-CBT — Downloads</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      --bg-deep: #060b1a;
+      --card-bg: #0f172a; /* slate-900 */
+      --card-bg-alt: #1e293b; /* slate-800 */
+      --border-color: #334155; /* slate-700 */
+      --text-main: #f1f5f9; /* slate-100 */
+      --text-muted-1: #cbd5e1; /* slate-300 */
+      --text-muted-2: #94a3b8; /* slate-400 */
+      --text-muted-3: #64748b; /* slate-500 */
+      --emerald-prime: #34d399; /* emerald-400 */
+      --emerald-dark: #10b981; /* emerald-500 */
+      --red-prime: #f87171; /* red-400 */
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .app {
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      max-width: 100vw;
+    }
+
+    /* Topbar */
+    .topbar {
+      background-color: var(--bg-deep);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      flex-shrink: 0;
+    }
+    .topbar-text h1 { color: var(--text-main); font-size: 1.25rem; font-weight: 700; margin: 0; }
+    .topbar-text p { color: var(--text-muted-2); font-size: 0.8rem; margin: 2px 0 0 0; }
+
+    .back-btn, .icon-btn {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .back-btn svg, .icon-btn svg { width: 20px; height: 20px; }
+
+    /* Content Area with strict width containment */
+    .content {
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    /* Download Banner / Stats Header */
+    .downloads-overview {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .downloads-overview-info h2 { font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin: 0; }
+    .downloads-overview-info p { font-size: 0.8rem; color: var(--text-muted-2); margin: 2px 0 0 0; }
+    .storage-badge {
+      background: var(--card-bg-alt);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--emerald-prime);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* PDF Download List Container & Cards with explicit max-width and wrapping */
+    .download-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .download-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.2s ease;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .download-card:hover {
+      background: var(--card-bg-alt);
+      border-color: var(--text-muted-3);
+    }
+
+    .pdf-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      color: var(--red-prime);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .download-info {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .download-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+    .download-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted-2);
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .download-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .action-icon-btn {
+      background: var(--card-bg-alt);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted-1);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .action-icon-btn:hover {
+      background: var(--border-color);
+      color: var(--text-main);
+    }
+    .action-icon-btn.delete:hover {
+      background: rgba(248, 113, 113, 0.15);
+      border-color: var(--red-prime);
+      color: var(--red-prime);
+    }
+    .action-icon-btn svg { width: 16px; height: 16px; }
+
+    /* Empty State */
+    .empty-downloads {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted-3);
+      display: none;
+    }
+    .empty-downloads svg {
+      width: 48px;
+      height: 48px;
+      stroke: var(--text-muted-3);
+      margin-bottom: 12px;
+    }
+    .empty-downloads p { font-size: 0.9rem; color: var(--text-muted-2); margin: 0; }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <a href="materials.html" class="back-btn" aria-label="Back to Materials">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </a>
+
+      <div class="topbar-text" style="text-align: center;">
+        <h1>Downloaded PDFs</h1>
+        <p>Offline study materials & past questions</p>
+      </div>
+
+      <button class="icon-btn" id="clearAllDownloads" type="button" aria-label="Clear All" title="Clear All Downloads">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content">
+      
+      <!-- Overview Storage Bar -->
+      <div class="downloads-overview">
+        <div class="downloads-overview-info">
+          <h2>Device Storage</h2>
+          <p id="downloadCountText">3 files stored offline</p>
+        </div>
+        <div class="storage-badge" id="storageSizeBadge">45.2 MB used</div>
+      </div>
+
+      <!-- Downloads List -->
+      <div class="download-list" id="downloadListContainer">
+        
+        <!-- BIO 101 Item -->
+        <div class="download-card" data-id="bio101">
+          <div class="pdf-icon-box">PDF</div>
+          <div class="download-info">
+            <div class="download-title">BIO 101 Comprehensive Cell Biology Lecture Notes</div>
+            <div class="download-meta">
+              <span>15.4 MB</span> • 
+              <span>Downloaded Oct 12</span>
+            </div>
+          </div>
+          <div class="download-actions">
+            <a href="pdf-reader.html?file=bio101.pdf" class="action-icon-btn open-pdf" title="Open PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+            <button class="action-icon-btn delete delete-pdf" title="Remove Download" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- CHM 102 Item -->
+        <div class="download-card" data-id="chm102">
+          <div class="pdf-icon-box">PDF</div>
+          <div class="download-info">
+            <div class="download-title">CHM 102 Organic Chemistry Reaction Mechanisms</div>
+            <div class="download-meta">
+              <span>18.1 MB</span> • 
+              <span>Downloaded Oct 10</span>
+            </div>
+          </div>
+          <div class="download-actions">
+            <a href="pdf-reader.html?file=chm102.pdf" class="action-icon-btn open-pdf" title="Open PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+            <button class="action-icon-btn delete delete-pdf" title="Remove Download" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ECO 101 Item -->
+        <div class="download-card" data-id="eco101">
+          <div class="pdf-icon-box">PDF</div>
+          <div class="download-info">
+            <div class="download-title">ECO 101 Macroeconomics Past Questions & Answers</div>
+            <div class="download-meta">
+              <span>11.7 MB</span> • 
+              <span>Downloaded Sep 28</span>
+            </div>
+          </div>
+          <div class="download-actions">
+            <a href="pdf-reader.html?file=eco101.pdf" class="action-icon-btn open-pdf" title="Open PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+            <button class="action-icon-btn delete delete-pdf" title="Remove Download" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-downloads" id="emptyDownloadsState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <p>No offline downloads available right now.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const downloadListContainer = document.getElementById('downloadListContainer');
+      const emptyDownloadsState = document.getElementById('emptyDownloadsState');
+      const downloadCountText = document.getElementById('downloadCountText');
+      const storageSizeBadge = document.getElementById('storageSizeBadge');
+      const clearAllBtn = document.getElementById('clearAllDownloads');
+
+      function updateStats() {
+        const cards = downloadListContainer.querySelectorAll('.download-card');
+        const count = cards.length;
+        
+        if (count === 0) {
+          downloadListContainer.style.display = 'none';
+          emptyDownloadsState.style.display = 'block';
+          downloadCountText.textContent = '0 files stored offline';
+          storageSizeBadge.textContent = '0 MB used';
+        } else {
+          downloadListContainer.style.display = 'flex';
+          emptyDownloadsState.style.display = 'none';
+          downloadCountText.textContent = `${count} file${count > 1 ? 's' : ''} stored offline`;
+          const simulatedSize = (count * 15.1).toFixed(1);
+          storageSizeBadge.textContent = `${simulatedSize} MB used`;
+        }
+      }
+
+      downloadListContainer.addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.delete-pdf');
+        if (deleteBtn) {
+          const card = deleteBtn.closest('.download-card');
+          if (card) {
+            card.remove();
+            updateStats();
+          }
+        }
+      });
+
+      if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+          if (confirm('Are you sure you want to remove all downloaded materials?')) {
+            downloadListContainer.innerHTML = '';
+            updateStats();
+          }
+        });
+      }
+
+      updateStats();
+    });
+  </script>
+</body>
+</html>
