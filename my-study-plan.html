@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>My Study Plan — PRIME-CBT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#060b1a' },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          animation: {
+            'fade-in': 'fadeIn 0.4s ease-out',
+            'slide-up': 'slideUp 0.45s ease-out',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { opacity: '0', transform: 'translateY(14px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b1a;
+      --border: #334155;
+      --muted: #94a3b8;
+      --emerald-bright: #34d399;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    header {
+      flex-shrink: 0;
+    }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px 40px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    .card { 
+      transition: all 0.2s ease; 
+    }
+    .card:active { 
+      transform: scale(0.98); 
+    }
+    
+    /* Remove slide-up, fade-in, and scale entrance animations globally */
+.animate-fade-up, 
+.animate-scale, 
+.animate-fade-in,
+.animate-slide-up,
+[class*="animate-"] {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+Use this color and make sure u add the CSS . It should switch normally not sudden. 
+**Background**
+- `#060b1a` — deep navy-black (page background, header/footer bars)
+- `slate-900` / `slate-800` — card and stat-tile surfaces
+- `slate-700` — borders
+
+**Text**
+- `slate-100` — primary text
+- `slate-300` / `slate-400` / `slate-500` / `slate-600` — secondary/muted text tiers
+
+**Status colors (functional, not just decorative)**
+- `emerald-400` / `emerald-500` — correct answers, active filter, progress bar start
+- `teal-400` — progress bar gradient end
+- `red-400` / `red-500` — incorrect answers/picks
+- `amber-400` — flagged questions/badge
+- `slate-400`/`slate-700` — skipped questions
+
+ 
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-40 h-14 bg-navy/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between animate-fade-in">
+      <div class="flex items-center gap-3">
+        <a href="home.html" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 transition active:scale-90">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        </a>
+        <h1 class="text-lg font-semibold tracking-tight">My Study Plan</h1>
+      </div>
+      <button id="resetTasks" class="text-xs text-slate-400 hover:text-emerald-400 transition">Reset Tasks</button>
+    </header>
+
+    <main class="space-y-6">
+
+      <!-- Exam Countdown -->
+      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-5 text-center animate-slide-up">
+        <p class="text-xs text-slate-400 mb-1">Exam Countdown</p>
+        <h2 class="text-3xl font-bold tracking-tight text-emerald-400">18 DAYS</h2>
+        <p class="text-xs text-slate-400 mt-0.5">to Final Examinations</p>
+        
+        <div class="mt-4 h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300" style="width: 60%"></div>
+        </div>
+        <p id="progressText" class="text-[11px] text-slate-500 mt-2">3 of 5 tasks completed (60%)</p>
+      </section>
+
+      <!-- Today's Tasks -->
+      <section class="animate-slide-up" style="animation-delay: 0.08s">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <h3 class="text-sm font-semibold">Today’s Tasks</h3>
+          <span id="taskCounter" class="text-xs text-slate-500">3 of 5 done</span>
+        </div>
+
+        <div class="space-y-2.5" id="taskList">
+          <!-- Task 1 -->
+          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
+            <input type="checkbox" checked class="task-checkbox hidden peer">
+            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
+              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Practice 20 Genetics questions</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">BIO 101</p>
+            </div>
+          </label>
+
+          <!-- Task 2 -->
+          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
+            <input type="checkbox" checked class="task-checkbox hidden peer">
+            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
+              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Read Cell Biology Chapter 4</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Materials</p>
+            </div>
+          </label>
+
+          <!-- Task 3 -->
+          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
+            <input type="checkbox" checked class="task-checkbox hidden peer">
+            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
+              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Complete Timed Practice (30 Qs)</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">BIO 101 · 45 mins</p>
+            </div>
+          </label>
+
+          <!-- Task 4 -->
+          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
+            <input type="checkbox" class="task-checkbox hidden peer">
+            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
+              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Review Incorrect Answers</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">From last mock exam</p>
+            </div>
+          </label>
+
+          <!-- Task 5 -->
+          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
+            <input type="checkbox" class="task-checkbox hidden peer">
+            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
+              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Study Organic Chemistry Notes</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">CHM 101 · 30 mins</p>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <div class="pt-1 animate-slide-up" style="animation-delay: 0.15s">
+        <button type="button" class="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold rounded-xl text-sm transition active:scale-[0.98] shadow-lg shadow-emerald-500/25">
+          Continue Today’s Plan
+        </button>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const checkboxes = document.querySelectorAll('.task-checkbox');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const taskCounter = document.getElementById('taskCounter');
+    const resetBtn = document.getElementById('resetTasks');
+
+    function updateProgress() {
+      const total = checkboxes.length;
+      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+      const percentage = Math.round((checkedCount / total) * 100);
+
+      progressBar.style.width = `${percentage}%`;
+      progressText.textContent = `${checkedCount} of ${total} tasks completed (${percentage}%)`;
+      taskCounter.textContent = `${checkedCount} of ${total} done`;
+    }
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', updateProgress);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      checkboxes.forEach(cb => cb.checked = false);
+      updateProgress();
+    });
+
+    updateProgress();
+  </script>
+</body>
+</html>
