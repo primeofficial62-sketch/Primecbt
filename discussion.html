@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>PRIME-CBT — Discussion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b1a;                 /* deep navy-black */
+      --surface: #0f172a;          /* slate-900 */
+      --surface-2: #1e293b;        /* slate-800 */
+      --border: #334155;           /* slate-700 */
+      
+      --text: #f1f5f9;             /* slate-100 */
+      --muted-1: #cbd5e1;          /* slate-300 */
+      --muted-2: #94a3b8;          /* slate-400 */
+      --muted-3: #64748b;          /* slate-500 */
+      --muted-4: #475569;          /* slate-600 */
+
+      --emerald: #10b981;          /* emerald-500 */
+      --emerald-bright: #34d399;   /* emerald-400 */
+      --teal: #2dd4bf;             /* teal-400 */
+      --red: #f87171;              /* red-400 */
+      --amber: #fbbf24;            /* amber-400 */
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      margin-right: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .back-btn:hover {
+      background: var(--muted-4);
+      border-color: var(--muted-3);
+    }
+
+    .back-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .topbar-text h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .topbar-text p {
+      font-size: 0.8rem;
+      color: var(--muted-2);
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .post-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .author-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    /* Functional Status-based Avatar Palettes */
+    .author-avatar.green { background: rgba(16, 185, 129, 0.15); color: var(--emerald-bright); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .author-avatar.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .author-avatar.amber { background: rgba(251, 191, 36, 0.15); color: var(--amber); border: 1px solid rgba(251, 191, 36, 0.3); }
+    .author-avatar.purple { background: rgba(124, 58, 237, 0.15); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.3); }
+
+    .author-info {
+      flex: 1;
+    }
+
+    .author-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .author-meta {
+      font-size: 0.75rem;
+      color: var(--muted-2);
+    }
+
+    .pinned-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--amber);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      padding: 3px 8px;
+      border-radius: 8px;
+      text-transform: uppercase;
+    }
+
+    .post-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+      font-family: 'Lora', serif;
+    }
+
+    .post-body {
+      font-size: 0.95rem;
+      color: var(--muted-1);
+      line-height: 1.5;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .action-btn {
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted-2);
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .action-btn:hover {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--muted-4);
+    }
+
+    .action-btn.active {
+      color: var(--emerald-bright);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .action-btn.static {
+      cursor: default;
+    }
+
+    .action-btn.static:hover {
+      background: transparent;
+      color: var(--muted-2);
+    }
+
+    .action-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .replies-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4px;
+    }
+
+    .replies-header h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .sort-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted-2);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sort-btn:hover {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--muted-4);
+    }
+
+    .reply-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .reply-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reply-card:hover {
+      background: var(--surface-2);
+      border-color: var(--muted-4);
+    }
+
+    .reply-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .reply-body {
+      font-size: 0.9rem;
+      color: var(--muted-1);
+      line-height: 1.45;
+      padding-left: 50px;
+    }
+
+    .reply-actions {
+      display: flex;
+      gap: 16px;
+      padding-left: 50px;
+    }
+
+    .reply-actions button {
+      background: transparent;
+      border: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted-2);
+      cursor: pointer;
+      transition: color 0.2s ease;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .reply-actions button:hover {
+      color: var(--emerald-bright);
+      background: var(--surface-2);
+    }
+
+    .you-tag {
+      background: rgba(124, 58, 237, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .reply-dock {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(12px);
+    }
+
+    .reply-form {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .reply-input-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 6px 6px 6px 16px;
+      transition: border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reply-input-wrap:focus-within {
+      border-color: var(--emerald-bright);
+    }
+
+    .reply-input-wrap input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .reply-input-wrap input::placeholder {
+      color: var(--muted-3);
+    }
+
+    .reply-input-wrap button {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--emerald);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .reply-input-wrap button:hover {
+      background: var(--emerald-bright);
+      transform: scale(1.05);
+    }
+
+    .reply-input-wrap button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Instant View Switcher */
+.sub-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  z-index: 100;
+  display: none; /* Hidden by default */
+  overflow-y: auto;
+  max-width: 480px;
+}
+
+.sub-view.active {
+  display: block; /* Shows immediately when clicked */
+}
+
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <a href="community.html" class="back-btn" aria-label="Back to Community">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </a>
+      <div class="topbar-text">
+        <h1>Discussion</h1>
+        <p>BIO 101</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content" id="scrollContent">
+      <!-- Original Post -->
+      <article class="post-card">
+        <div class="post-author">
+          <div class="author-avatar green">AS</div>
+          <div class="author-info">
+            <div class="author-name">Aisha Suleiman</div>
+            <div class="author-meta">2 hours ago · 400 Level</div>
+          </div>
+          <span class="pinned-badge">Pinned</span>
+        </div>
+
+        <h2 class="post-title">How do you remember the stages of mitosis easily?</h2>
+        <p class="post-body">
+          I’ve been struggling to remember the correct order of prophase, metaphase, anaphase and telophase. 
+          Does anyone have a good mnemonic or simple way to memorize it? Would really appreciate any tips!
+        </p>
+
+        <div class="post-actions">
+          <button type="button" class="action-btn" id="likePostBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 10v12"/>
+              <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
+            </svg>
+            <span id="likeCount">56</span>
+          </button>
+
+          <div class="action-btn static">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span id="replyCount">24</span>
+          </div>
+
+          <button type="button" class="action-btn" id="shareBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"/>
+              <circle cx="6" cy="12" r="3"/>
+              <circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/>
+              <line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>
+            </svg>
+            Share
+          </button>
+        </div>
+      </article>
+
+      <!-- Replies Header -->
+      <div class="replies-header">
+        <h3 id="repliesHeaderTitle">Replies (24)</h3>
+        <button type="button" class="sort-btn">Most Relevant</button>
+      </div>
+
+      <!-- Replies -->
+      <div class="reply-list" id="replyList">
+        <div class="reply-card">
+          <div class="reply-author">
+            <div class="author-avatar blue">TO</div>
+            <div>
+              <div class="author-name">Tunde Okonkwo</div>
+              <div class="author-meta">1 hour ago</div>
+            </div>
+          </div>
+          <p class="reply-body">
+            I use “PMAT” — Prophase, Metaphase, Anaphase, Telophase. 
+            Just remember “Please Make Another Twirl” 😄
+          </p>
+          <div class="reply-actions">
+            <button type="button">Like · 18</button>
+            <button type="button">Reply</button>
+          </div>
+        </div>
+
+        <div class="reply-card">
+          <div class="reply-author">
+            <div class="author-avatar amber">CM</div>
+            <div>
+              <div class="author-name">Chioma Mwangi</div>
+              <div class="author-meta">45 min ago</div>
+            </div>
+          </div>
+          <p class="reply-body">
+            Drawing it out helped me a lot. Sketch the chromosomes at each stage a few times and it sticks.
+          </p>
+          <div class="reply-actions">
+            <button type="button">Like · 9</button>
+            <button type="button">Reply</button>
+          </div>
+        </div>
+
+        <div class="reply-card">
+          <div class="reply-author">
+            <div class="author-avatar purple">JD</div>
+            <div>
+              <div class="author-name">John Doe <span class="you-tag">You</span></div>
+              <div class="author-meta">20 min ago</div>
+            </div>
+          </div>
+          <p class="reply-body">
+            Thanks everyone! PMAT is actually very helpful. I’ll try the drawing method too.
+          </p>
+          <div class="reply-actions">
+            <button type="button">Like · 3</button>
+            <button type="button">Reply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reply Input Bar -->
+    <div class="reply-dock">
+      <form id="replyForm" class="reply-form">
+        <div class="author-avatar purple" style="width: 36px; height: 36px; font-size: 0.8rem;">JD</div>
+        <div class="reply-input-wrap">
+          <input type="text" id="replyInput" placeholder="Write a reply..." autocomplete="off">
+          <button type="submit" aria-label="Send reply">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="m22 2-7 20-4-9-9-4Z"/>
+              <path d="M22 2 11 13"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const likePostBtn = document.getElementById('likePostBtn');
+      const likeCount = document.getElementById('likeCount');
+      const shareBtn = document.getElementById('shareBtn');
+      const replyForm = document.getElementById('replyForm');
+      const replyInput = document.getElementById('replyInput');
+      const replyList = document.getElementById('replyList');
+      const replyCount = document.getElementById('replyCount');
+      const repliesHeaderTitle = document.getElementById('repliesHeaderTitle');
+      const scrollContent = document.getElementById('scrollContent');
+
+      // Like interaction logic
+      let isLiked = false;
+      let count = 56;
+      likePostBtn.addEventListener('click', () => {
+        isLiked = !isLiked;
+        if (isLiked) {
+          count++;
+          likePostBtn.classList.add('active');
+        } else {
+          count--;
+          likePostBtn.classList.remove('active');
+        }
+        likeCount.textContent = count;
+      });
+
+      // Share button feedback
+      shareBtn.addEventListener('click', () => {
+        if (navigator.share) {
+          navigator.share({
+            title: 'How do you remember the stages of mitosis easily?',
+            text: 'Check out this discussion on PRIME-CBT.',
+            url: window.location.href
+          }).catch(() => {});
+        } else {
+          alert('Discussion link copied to clipboard!');
+        }
+      });
+
+      // Add new reply dynamically
+      let currentReplyTotal = 24;
+      replyForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = replyInput.value.trim();
+        if (!text) return;
+
+        const newReply = document.createElement('div');
+        newReply.classList.add('reply-card');
+        newReply.innerHTML = `
+          <div class="reply-author">
+            <div class="author-avatar purple">JD</div>
+            <div>
+              <div class="author-name">John Doe <span class="you-tag">You</span></div>
+              <div class="author-meta">Just now</div>
+            </div>
+          </div>
+          <p class="reply-body">${escapeHTML(text)}</p>
+          <div class="reply-actions">
+            <button type="button">Like · 0</button>
+            <button type="button">Reply</button>
+          </div>
+        `;
+
+        replyList.appendChild(newReply);
+        replyInput.value = '';
+        currentReplyTotal++;
+        
+        replyCount.textContent = currentReplyTotal;
+        repliesHeaderTitle.textContent = `Replies (${currentReplyTotal})`;
+
+        scrollContent.scrollTop = scrollContent.scrollHeight;
+      });
+
+      function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+          tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+      }
+    });
+  </script>
+</body>
+</html>
