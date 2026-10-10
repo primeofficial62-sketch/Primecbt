@@ -973,8 +973,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ========== SUPABASE CLIENT ==========
-  const SUPABASE_URL = "https://ikyqahzhtckpelzkmgyh.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_wTVQsPGD6nxZmh4aZmmgtA_MRdoA-1c";
+  const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // ========== READ URL MODE ==========
@@ -1251,13 +1251,9 @@
   document.querySelectorAll('.btn-oauth').forEach(btn => {
     btn.addEventListener('click', async () => {
       const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google'
-      });
-      if (error) {
-        showToast(error.message, 'error');
-      }
-    });
-  });
+  provider: 'google',
+  options: { redirectTo: window.location.origin + '/' }
+});
 </script>
 
 </body>
