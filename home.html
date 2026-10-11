@@ -847,6 +847,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="profile-gate.js"></script>
   <script>
     // ========== SUPABASE CLIENT ==========
     const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
@@ -910,6 +911,12 @@
         // Not logged in -> back to the login page
         if (!session) {
           window.location.replace('auth.html?mode=login');
+          return;
+        }
+
+        // Google sign-up not finished -> profile setup first
+        if (needsProfileSetup(session.user)) {
+          window.location.replace('profile-setup.html');
           return;
         }
 
