@@ -185,81 +185,6 @@
       scrollbar-color: rgba(255,255,255,0.15) transparent;
     }
 
-    /* Streak Card */
-    .streak-card {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    .streak-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .streak-badge {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .fire {
-      font-size: 24px;
-    }
-
-    .xp-pill {
-      background: rgba(251, 191, 36, 0.15);
-      color: var(--amber-text);
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid rgba(251, 191, 36, 0.3);
-    }
-
-    .goal-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-
-    .goal-text {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .progress-track {
-      width: 100%;
-      height: 8px;
-      background: var(--border-color);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      width: 65%;
-      height: 100%;
-      background: linear-gradient(90deg, #34d399, #38bdf8);
-      border-radius: 4px;
-    }
-
-    .progress-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
     /* Primary CTA */
     .primary-cta {
       width: 100%;
@@ -564,11 +489,6 @@
     .card-body { min-width: 0; }
     .card-title, .card-sub { overflow-wrap: anywhere; }
     .site-menu { width: min(280px, 86vw); }
-    #courseList {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
 
     /* Small phones */
     @media (max-width: 360px) {
@@ -578,7 +498,6 @@
       .greeting p { font-size: 0.7rem; }
       .icon-btn, .menu-toggle { width: 36px; height: 36px; }
       .top-actions { gap: 6px; }
-      .streak-card { padding: 14px; }
       .card { padding: 14px; }
     }
 
@@ -589,11 +508,6 @@
       .topbar { padding-left: 28px; padding-right: 28px; }
       .greeting h1 { font-size: 1.2rem; }
       .greeting p { font-size: 0.85rem; }
-      #courseList {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-      }
     }
 
     /* Desktop: permanent sidebar + two-column content */
@@ -625,10 +539,9 @@
         gap: 20px;
         padding: 32px;
       }
-      .streak-card, .primary-cta { grid-column: 1 / -1; }
+      .span-all { grid-column: 1 / -1; }
+      .online-pill { justify-self: start; }
       .primary-cta { justify-self: stretch; }
-      #courseList { grid-template-columns: repeat(3, 1fr); }
-      .section:last-child { grid-column: 1 / -1; }
     }
 
     /* Short landscape screens: tighter spacing */
@@ -681,10 +594,165 @@
     .notif-popup-text { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
     .notif-popup-close { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px; }
 
+    /* ===== Online pill ===== */
+    .online-pill {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      align-self: flex-start;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+    .online-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #34d399;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+      70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    /* ===== Panels ===== */
+    .panel {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .panel-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    .link-btn { background: none; border: none; color: var(--primary); font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .link-btn:hover { text-decoration: underline; }
+    .big-line { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+
+    .btn-solid {
+      height: 46px; padding: 0 20px; border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      color: #060b1a; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-solid:hover { opacity: 0.9; }
+    .btn-solid:active { transform: scale(0.97); }
+    .btn-ghost {
+      height: 46px; padding: 0 20px; border-radius: 12px;
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      color: var(--text-main); font-weight: 600; font-size: 0.9rem; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-ghost:hover { background: var(--card-bg-hover); }
+
+    /* Countdown */
+    .cd-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .cd-box {
+      background: rgba(6, 11, 26, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 12px; padding: 12px 4px; text-align: center;
+    }
+    .cd-num { font-size: 1.5rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+    .cd-lab { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .date-row { display: flex; gap: 10px; }
+    .date-input {
+      flex: 1; min-width: 0; height: 46px;
+      background: var(--bg-color); border: 1px solid var(--border-color);
+      border-radius: 12px; padding: 0 14px;
+      color: var(--text-main); font-size: 16px; color-scheme: dark; outline: none;
+    }
+    .date-input:focus { border-color: var(--primary); }
+
+    /* Focus timer */
+    .chip-row { display: flex; gap: 6px; }
+    .chip {
+      padding: 5px 11px; border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+    }
+    .chip.active { background: rgba(52, 211, 153, 0.15); border-color: var(--primary); color: var(--primary); }
+    .chip:disabled { opacity: 0.5; cursor: not-allowed; }
+    .timer-ring { position: relative; width: 150px; height: 150px; margin: 0 auto; }
+    .timer-ring svg { transform: rotate(-90deg); display: block; }
+    .timer-ring circle { transition: stroke-dashoffset 0.3s linear; }
+    .timer-time {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-main);
+    }
+    .timer-actions { display: flex; gap: 10px; justify-content: center; }
+    .timer-actions .btn-solid { min-width: 120px; }
+    .focus-stats { display: flex; border-top: 1px solid var(--border-color); padding-top: 14px; }
+    .focus-stats > div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .focus-stats b { font-size: 1.2rem; color: var(--text-main); font-variant-numeric: tabular-nums; }
+    .focus-stats span { font-size: 0.72rem; color: var(--text-muted); }
+
+    /* Quick actions */
+    .qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .qa {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius); padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      text-decoration: none; color: var(--text-main); transition: all 0.2s ease;
+    }
+    .qa:hover { background: var(--card-bg-hover); border-color: #475569; transform: translateY(-1px); }
+    .qa:active { transform: scale(0.97); }
+    .qa-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .qa-icon.green { background: var(--green-bg); }
+    .qa-icon.blue { background: var(--blue-bg); }
+    .qa-icon.amber { background: var(--amber-bg); }
+    .qa-icon.purple { background: rgba(168, 85, 247, 0.15); }
+    .qa-title { font-size: 0.9rem; font-weight: 600; }
+    .qa-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* Latest updates */
+    #updatesList { display: flex; flex-direction: column; gap: 10px; }
+    .update-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius); padding: 12px 14px;
+      text-decoration: none; color: var(--text-main); transition: all 0.2s ease;
+    }
+    .update-row:hover { background: var(--card-bg-hover); border-color: #475569; }
+    .update-row.unread { border-color: rgba(52, 211, 153, 0.35); }
+    .update-emoji { font-size: 20px; flex-shrink: 0; }
+    .update-body { flex: 1; min-width: 0; }
+    .update-title { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .update-time { font-size: 0.7rem; color: var(--text-submuted); margin-top: 2px; }
+    .update-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+
+    /* Tip */
+    .tip { border-left: 3px solid var(--primary); }
+    .tip-text { font-size: 0.9rem; line-height: 1.55; color: var(--text-main); }
+
+    /* Toast */
+    .toast {
+      position: absolute; left: 16px; right: 16px; bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 210; background: var(--card-bg); border: 1px solid var(--primary);
+      color: var(--text-main); font-size: 0.85rem; font-weight: 600;
+      padding: 14px 16px; border-radius: 14px; text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      opacity: 0; transform: translateY(16px); pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 360px) {
+      .cd-num { font-size: 1.2rem; }
+      .panel { padding: 14px; }
+    }
+
   </style>
 </head>
 <body>
   <div class="app" id="appRoot">
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="notif-popup" id="notifPopup" role="status" aria-live="polite">
       <div class="notif-popup-icon">🔔</div>
       <div class="notif-popup-body">
@@ -726,16 +794,77 @@
 
       <!-- Content -->
       <div class="content">
+
+        <!-- Live: students online (Supabase Presence) -->
+        <div class="online-pill span-all" id="onlinePill">
+          <span class="online-dot"></span>
+          <span id="onlineText"></span>
+        </div>
+
         <!-- Primary CTA -->
-        <button class="primary-cta" id="continuePracticeBtn">
+        <button class="primary-cta span-all" id="continuePracticeBtn">
           Continue Practice
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
 
+        <!-- Exam countdown -->
+        <section class="panel" id="examPanel">
+          <div class="panel-head">
+            <span class="panel-title">⏳ Exam countdown</span>
+            <button class="link-btn" id="examEdit" type="button" style="display:none">Change date</button>
+          </div>
+
+          <div id="examSet" style="display:none">
+            <div class="big-line" id="examCaption" style="margin-bottom:12px"></div>
+            <div class="cd-grid" id="cdGrid">
+              <div class="cd-box"><div class="cd-num" id="cdD">0</div><div class="cd-lab">Days</div></div>
+              <div class="cd-box"><div class="cd-num" id="cdH">0</div><div class="cd-lab">Hours</div></div>
+              <div class="cd-box"><div class="cd-num" id="cdM">0</div><div class="cd-lab">Mins</div></div>
+              <div class="cd-box"><div class="cd-num" id="cdS">0</div><div class="cd-lab">Secs</div></div>
+            </div>
+          </div>
+
+          <div id="examForm">
+            <div class="big-line" id="examFormTitle">When is your exam?</div>
+            <div class="card-sub" style="margin:4px 0 12px">Pick the date and we'll count down to it live.</div>
+            <div class="date-row">
+              <input type="date" class="date-input" id="examDate">
+              <button type="button" class="btn-solid" id="examSave">Save</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Focus session -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">🎯 Focus session</span>
+            <div class="chip-row" id="durChips">
+              <button type="button" class="chip" data-min="15">15m</button>
+              <button type="button" class="chip active" data-min="25">25m</button>
+              <button type="button" class="chip" data-min="45">45m</button>
+            </div>
+          </div>
+          <div class="timer-ring">
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="64" fill="none" stroke="#334155" stroke-width="8"/>
+              <circle id="ringFg" cx="75" cy="75" r="64" fill="none" stroke="#34d399" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+            <div class="timer-time" id="timerTime">25:00</div>
+          </div>
+          <div class="timer-actions">
+            <button type="button" class="btn-solid" id="timerToggle">Start</button>
+            <button type="button" class="btn-ghost" id="timerReset">Reset</button>
+          </div>
+          <div class="focus-stats">
+            <div><b id="focusToday">0</b><span>min focused today</span></div>
+            <div><b id="focusStreak">0</b><span>day streak</span></div>
+          </div>
+        </section>
+
         <!-- Study Plan Card -->
-        <div class="section">
+        <div class="section span-all">
           <a href="create-plan.html" class="card">
             <div class="card-row">
               <div class="card-icon green">📅</div>
@@ -752,6 +881,46 @@
             </div>
           </a>
         </div>
+
+        <!-- Explore -->
+        <div class="section span-all">
+          <div class="section-header">
+            <h2 class="section-title">Explore</h2>
+          </div>
+          <div class="qa-grid">
+            <a href="materials.html" class="qa">
+              <div class="qa-icon blue">📚</div>
+              <div><div class="qa-title">Materials</div><div class="qa-sub">Study resources</div></div>
+            </a>
+            <a href="progress.html" class="qa">
+              <div class="qa-icon green">📊</div>
+              <div><div class="qa-title">Progress</div><div class="qa-sub">Track your results</div></div>
+            </a>
+            <a href="community.html" class="qa">
+              <div class="qa-icon purple">💬</div>
+              <div><div class="qa-title">Community</div><div class="qa-sub">Learn together</div></div>
+            </a>
+            <a href="ai-assistant.html" class="qa">
+              <div class="qa-icon amber">🤖</div>
+              <div><div class="qa-title">AI Assistant</div><div class="qa-sub">Get help instantly</div></div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Latest updates (realtime, from notifications) -->
+        <div class="section span-all" id="updatesSection" style="display:none">
+          <div class="section-header">
+            <h2 class="section-title">Latest updates</h2>
+            <a href="notification.html" class="see-all">See all</a>
+          </div>
+          <div id="updatesList"></div>
+        </div>
+
+        <!-- Tip of the day -->
+        <section class="panel tip span-all">
+          <div class="panel-head"><span class="panel-title">💡 Tip of the day</span></div>
+          <div class="tip-text" id="tipText"></div>
+        </section>
 
       </div>
     </div>
@@ -837,11 +1006,11 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     document.addEventListener('DOMContentLoaded', () => {
-      const appRoot = document.getElementById('appRoot');
-      const menuToggle = document.getElementById('menuToggle');
-      const siteMenu = document.getElementById('siteMenu');
-      const menuBackdrop = document.getElementById('menuBackdrop');
-      const continuePracticeBtn = document.getElementById('continuePracticeBtn');
+      const $ = (id) => document.getElementById(id);
+      const appRoot = $('appRoot');
+      const menuToggle = $('menuToggle');
+      const siteMenu = $('siteMenu');
+      const menuBackdrop = $('menuBackdrop');
 
       // ----- Menu -----
       function setMenu(open) {
@@ -850,37 +1019,63 @@
         menuToggle.setAttribute('aria-expanded', open);
         siteMenu.setAttribute('aria-hidden', !open);
       }
-
       menuToggle.addEventListener('click', () => setMenu(!siteMenu.classList.contains('active')));
       menuBackdrop.addEventListener('click', () => setMenu(false));
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') setMenu(false);
-      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
-      continuePracticeBtn.addEventListener('click', () => {
-        window.location.href = 'practice.html';
-      });
+      $('continuePracticeBtn').addEventListener('click', () => { window.location.href = 'practice.html'; });
 
-      document.getElementById('logoutBtn').addEventListener('click', async () => {
+      $('logoutBtn').addEventListener('click', async () => {
         await supabaseClient.auth.signOut();
         window.location.replace('auth.html?mode=login');
       });
 
-      // ----- Notifications (realtime) -----
-      const notifDot = document.getElementById('notifDot');
-      const popup = document.getElementById('notifPopup');
+      // ----- Helpers -----
+      const pad = (n) => String(n).padStart(2, '0');
+      const dateStr = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+
+      function timeAgo(iso) {
+        const secs = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+        if (secs < 60) return 'Just now';
+        const mins = Math.floor(secs / 60);
+        if (mins < 60) return mins + (mins === 1 ? ' minute ago' : ' minutes ago');
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + (hrs === 1 ? ' hour ago' : ' hours ago');
+        const days = Math.floor(hrs / 24);
+        if (days === 1) return 'Yesterday';
+        if (days < 7) return days + ' days ago';
+        return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      let toastTimer = null;
+      function showToast(msg) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+      }
+
+      // =====================================================
+      //  NOTIFICATIONS: popup + bell dot + latest updates (realtime)
+      // =====================================================
+      const notifDot = $('notifDot');
+      const popup = $('notifPopup');
       const popupQueue = [];
       const seen = new Set();
       let popupBusy = false;
       let popupTimer = null;
+      let notifs = [];
+
+      const TYPE_EMOJI = { welcome: '🎉', exam: '🎓', exams: '🎓', study: '📘', community: '💬' };
 
       function showNextPopup() {
         if (popupBusy || !popupQueue.length) return;
         popupBusy = true;
         const n = popupQueue.shift();
-        document.getElementById('notifPopupTitle').textContent = n.title || 'Notification';
-        document.getElementById('notifPopupText').textContent = n.body || '';
-        popup.querySelector('.notif-popup-icon').textContent = n.type === 'welcome' ? '🎉' : '🔔';
+        $('notifPopupTitle').textContent = n.title || 'Notification';
+        $('notifPopupText').textContent = n.body || '';
+        popup.querySelector('.notif-popup-icon').textContent = TYPE_EMOJI[n.type] || '🔔';
         popup.classList.add('show');
         supabaseClient.from('notifications').update({ popup_shown: true }).eq('id', n.id).then(() => {});
         popupTimer = setTimeout(closePopup, 8000);
@@ -908,16 +1103,62 @@
         notifDot.hidden = !count;
       }
 
+      function renderUpdates() {
+        const section = $('updatesSection');
+        const list = $('updatesList');
+        const latest = notifs
+          .slice()
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 3);
+
+        section.style.display = latest.length ? '' : 'none';
+        list.innerHTML = '';
+        latest.forEach((n) => {
+          const row = document.createElement('a');
+          row.href = 'notification.html';
+          row.className = 'update-row' + (n.is_read ? '' : ' unread');
+
+          const emoji = document.createElement('div');
+          emoji.className = 'update-emoji';
+          emoji.textContent = TYPE_EMOJI[n.type] || '🔔';
+
+          const body = document.createElement('div');
+          body.className = 'update-body';
+          const title = document.createElement('div');
+          title.className = 'update-title';
+          title.textContent = n.title || '';
+          const time = document.createElement('div');
+          time.className = 'update-time';
+          time.textContent = timeAgo(n.created_at);
+          body.appendChild(title);
+          body.appendChild(time);
+
+          row.appendChild(emoji);
+          row.appendChild(body);
+          if (!n.is_read) {
+            const dot = document.createElement('div');
+            dot.className = 'update-dot';
+            row.appendChild(dot);
+          }
+          list.appendChild(row);
+        });
+      }
+
       async function startNotifications(user) {
         try {
           const { data } = await supabaseClient
             .from('notifications')
             .select('*')
             .eq('user_id', user.id)
-            .eq('popup_shown', false)
-            .order('created_at', { ascending: true })
-            .limit(5);
-          (data || []).forEach(queuePopup);
+            .order('created_at', { ascending: false })
+            .limit(20);
+          notifs = data || [];
+          notifs
+            .filter((n) => !n.popup_shown)
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+            .slice(0, 5)
+            .forEach(queuePopup);
+          renderUpdates();
           refreshUnread(user.id);
 
           supabaseClient
@@ -925,20 +1166,252 @@
             .on('postgres_changes',
               { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id },
               (payload) => {
-                if (payload.eventType === 'INSERT') queuePopup(payload.new);
+                if (payload.eventType === 'INSERT') {
+                  if (!notifs.some((n) => n.id === payload.new.id)) notifs.unshift(payload.new);
+                  queuePopup(payload.new);
+                } else if (payload.eventType === 'UPDATE') {
+                  const i = notifs.findIndex((n) => n.id === payload.new.id);
+                  if (i > -1) notifs[i] = payload.new; else notifs.unshift(payload.new);
+                } else if (payload.eventType === 'DELETE') {
+                  notifs = notifs.filter((n) => n.id !== payload.old.id);
+                }
+                renderUpdates();
                 refreshUnread(user.id);
               })
             .subscribe();
-        } catch (e) { /* notifications table not created yet */ }
+
+          setInterval(renderUpdates, 60000); // keep "x minutes ago" fresh
+        } catch (e) { /* notifications table not available */ }
       }
 
-      document.getElementById('notifPopupClose').addEventListener('click', (e) => {
-        e.stopPropagation();
-        closePopup();
-      });
+      $('notifPopupClose').addEventListener('click', (e) => { e.stopPropagation(); closePopup(); });
       popup.addEventListener('click', () => { window.location.href = 'notification.html'; });
 
-      // ----- Recognise the user -----
+      // =====================================================
+      //  STUDENTS ONLINE (Supabase Realtime Presence)
+      // =====================================================
+      function initPresence(user) {
+        try {
+          const ch = supabaseClient.channel('online-students', { config: { presence: { key: user.id } } });
+          ch.on('presence', { event: 'sync' }, () => {
+            const n = Object.keys(ch.presenceState()).length;
+            $('onlineText').textContent = n > 1 ? n + ' students online now' : "You're online";
+            $('onlinePill').style.display = 'inline-flex';
+          }).subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') await ch.track({ online_at: new Date().toISOString() });
+          });
+        } catch (e) { /* realtime unavailable: pill stays hidden */ }
+      }
+
+      // =====================================================
+      //  EXAM COUNTDOWN (date saved on the user's account)
+      // =====================================================
+      function initExam(user) {
+        let examDate = (user.user_metadata && user.user_metadata.exam_date) || null;
+        let ticker = null;
+
+        const examSet = $('examSet');
+        const examForm = $('examForm');
+        const examEdit = $('examEdit');
+        const input = $('examDate');
+        input.min = dateStr(new Date());
+
+        function target() {
+          const p = examDate.split('-').map(Number);
+          return new Date(p[0], p[1] - 1, p[2]).getTime();
+        }
+
+        function showForm(title) {
+          examSet.style.display = 'none';
+          examForm.style.display = '';
+          examEdit.style.display = examDate ? '' : 'none';
+          $('examFormTitle').textContent = title || 'When is your exam?';
+          if (examDate) input.value = examDate;
+        }
+
+        function tick() {
+          const diff = target() - Date.now();
+          if (diff <= 0) {
+            clearInterval(ticker);
+            if (examDate === dateStr(new Date())) {
+              examForm.style.display = 'none';
+              examSet.style.display = '';
+              examEdit.style.display = '';
+              $('examCaption').textContent = "Today is exam day. You've got this! 💪";
+              $('cdGrid').style.display = 'none';
+            } else {
+              showForm('Your exam date has passed. Set a new one?');
+            }
+            return;
+          }
+          const s = Math.floor(diff / 1000);
+          $('cdD').textContent = Math.floor(s / 86400);
+          $('cdH').textContent = pad(Math.floor((s % 86400) / 3600));
+          $('cdM').textContent = pad(Math.floor((s % 3600) / 60));
+          $('cdS').textContent = pad(s % 60);
+        }
+
+        function render() {
+          clearInterval(ticker);
+          if (!examDate) { showForm(); return; }
+          examForm.style.display = 'none';
+          examSet.style.display = '';
+          examEdit.style.display = '';
+          $('cdGrid').style.display = '';
+          const pretty = new Date(target()).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          $('examCaption').textContent = 'Until ' + pretty;
+          tick();
+          ticker = setInterval(tick, 1000);
+        }
+
+        $('examSave').addEventListener('click', async () => {
+          const val = input.value;
+          if (!val) { showToast('Pick your exam date first'); return; }
+          if (val < dateStr(new Date())) { showToast('Choose a date from today onwards'); return; }
+          const btn = $('examSave');
+          btn.disabled = true;
+          const { error } = await supabaseClient.auth.updateUser({ data: { exam_date: val } });
+          btn.disabled = false;
+          if (error) { showToast(error.message); return; }
+          examDate = val;
+          render();
+          showToast('Exam date saved ✅');
+        });
+
+        examEdit.addEventListener('click', () => { clearInterval(ticker); showForm('Change your exam date'); });
+
+        render();
+      }
+
+      // =====================================================
+      //  FOCUS SESSION (timer + today's minutes + streak)
+      //  Stored on this device, per account.
+      // =====================================================
+      function initFocus(user) {
+        const KEY = 'pcbt_focus_' + user.id;
+        const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+        const save = (o) => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} };
+
+        const C = 2 * Math.PI * 64;
+        const ring = $('ringFg');
+        ring.style.strokeDasharray = C;
+
+        const chips = document.querySelectorAll('#durChips .chip');
+        let minutes = 25;
+        let remaining = minutes * 60;
+        let running = false;
+        let endAt = 0;
+        let timer = null;
+
+        function draw() {
+          $('timerTime').textContent = pad(Math.floor(remaining / 60)) + ':' + pad(remaining % 60);
+          ring.style.strokeDashoffset = C * (1 - remaining / (minutes * 60));
+        }
+
+        function streakOf(data) {
+          let n = 0;
+          const d = new Date();
+          if (!(data[dateStr(d)] > 0)) d.setDate(d.getDate() - 1);
+          while (data[dateStr(d)] > 0) { n++; d.setDate(d.getDate() - 1); }
+          return n;
+        }
+
+        function drawStats() {
+          const data = load();
+          $('focusToday').textContent = data[dateStr(new Date())] || 0;
+          $('focusStreak').textContent = streakOf(data);
+        }
+
+        function setRunningUI(on) {
+          running = on;
+          $('timerToggle').textContent = on ? 'Pause' : (remaining < minutes * 60 ? 'Resume' : 'Start');
+          chips.forEach((c) => { c.disabled = on; });
+        }
+
+        function stopTicker() { clearInterval(timer); timer = null; }
+
+        function complete() {
+          stopTicker();
+          const data = load();
+          const key = dateStr(new Date());
+          data[key] = (data[key] || 0) + minutes;
+          save(data);
+          remaining = minutes * 60;
+          setRunningUI(false);
+          draw();
+          drawStats();
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          showToast('Session complete! +' + minutes + ' min 🎉');
+        }
+
+        function tick() {
+          remaining = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+          draw();
+          if (remaining <= 0) complete();
+        }
+
+        $('timerToggle').addEventListener('click', () => {
+          if (running) {
+            stopTicker();
+            setRunningUI(false);
+            return;
+          }
+          if (remaining <= 0) remaining = minutes * 60;
+          endAt = Date.now() + remaining * 1000;
+          setRunningUI(true);
+          timer = setInterval(tick, 250);
+        });
+
+        $('timerReset').addEventListener('click', () => {
+          stopTicker();
+          remaining = minutes * 60;
+          setRunningUI(false);
+          draw();
+        });
+
+        chips.forEach((chip) => {
+          chip.addEventListener('click', () => {
+            if (running) return;
+            chips.forEach((c) => c.classList.remove('active'));
+            chip.classList.add('active');
+            minutes = Number(chip.dataset.min);
+            remaining = minutes * 60;
+            setRunningUI(false);
+            draw();
+          });
+        });
+
+        draw();
+        drawStats();
+      }
+
+      // =====================================================
+      //  TIP OF THE DAY
+      // =====================================================
+      const TIPS = [
+        'Read every option before you pick one. CBT questions often include answers that are almost right.',
+        'Skip the hard questions first and flag them. Come back with the time you saved.',
+        'Do a quick first pass at about a minute per question, then use leftover time on the tough ones.',
+        'Practise under timed conditions at least twice a week so exam pressure feels familiar.',
+        'Review your wrong answers, not just your score. Mistakes are the fastest way to improve.',
+        'Study in short focused blocks with a 5-minute break after each one.',
+        'A good night of sleep before the exam beats an all-night cram.',
+        'Eliminate the two clearly wrong options first, then decide between the rest.',
+        'If time allows, re-read flagged questions and fix careless slips.',
+        'Explain a topic out loud in your own words. If you can\'t, you haven\'t learnt it yet.',
+        'The night before, review formulas and key terms instead of starting new topics.',
+        'Eat and drink water before your exam. A hungry brain is a slow brain.',
+        'Write a one-line summary for each topic and revise those lines daily.',
+        'Test yourself instead of rereading. Recalling answers sticks better than highlighting.'
+      ];
+      function initTip() {
+        const day = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+        $('tipText').textContent = TIPS[day % TIPS.length];
+      }
+
+      // =====================================================
+      //  RECOGNISE THE USER, THEN START EVERYTHING
+      // =====================================================
       async function loadUser() {
         let session = null;
         try {
@@ -968,11 +1441,12 @@
         // Greeting by time of day
         const hour = new Date().getHours();
         const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-        document.getElementById('greetingText').textContent = part + ', ' + firstName + ' 👋';
+        $('greetingText').textContent = part + ', ' + firstName + ' 👋';
 
-        // Menu header: name + avatar (Google photo if there is one)
-        document.getElementById('menuUsername').textContent = fullName;
-        const avatar = document.getElementById('menuAvatar');
+        // Menu header: name, email + avatar (Google photo if there is one)
+        $('menuUsername').textContent = fullName;
+        $('menuUsersub').textContent = user.email || '';
+        const avatar = $('menuAvatar');
         const photo = meta.avatar_url || meta.picture;
         if (photo) {
           avatar.textContent = '';
@@ -981,8 +1455,11 @@
           avatar.textContent = firstName.charAt(0).toUpperCase();
         }
 
-        document.getElementById('menuUsersub').textContent = user.email || '';
+        initTip();
+        initExam(user);
+        initFocus(user);
         startNotifications(user);
+        initPresence(user);
 
         appRoot.classList.add('ready');
       }
