@@ -916,6 +916,7 @@
       window.location.replace('home.html');
       return;
     }
+    document.documentElement.classList.remove('checking');
     const meta = session.user.user_metadata || {};
     const name = (meta.full_name || meta.name || '').trim();
     form.fullname.value = name;
