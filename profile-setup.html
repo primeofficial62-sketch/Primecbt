@@ -811,7 +811,7 @@
     <!-- SETUP FORM -->
     <div class="view active" id="viewForm">
       <h1 class="headline">Finish setting up<br><span class="accent">your profile.</span></h1>
-      <p class="subtext" id="welcomeText">Just a few details so we can match you with the right courses.</p>
+      <p class="subtext" id="welcomeText">Just a few details to get you started.</p>
 
       <form class="form" id="setupForm" style="margin-top:26px" novalidate>
         <label class="field">
@@ -848,16 +848,6 @@
             <input type="text" name="matric" placeholder="Optional">
           </label>
         </div>
-
-        <fieldset class="course-list" style="margin:6px 0 0">
-          <legend class="field-label" style="margin-bottom:10px">Courses to focus on first</legend>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Biology" checked><span>Biology</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Chemistry" checked><span>Chemistry</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Physics"><span>Physics</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Mathematics"><span>Mathematics</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Agricultural Science"><span>Agricultural Science</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Use of English"><span>Use of English</span></label>
-        </fieldset>
 
         <label class="checkbox terms">
           <input type="checkbox" name="terms" id="termsCheck">
@@ -931,7 +921,7 @@
     form.fullname.value = name;
     if (name) {
       document.getElementById('welcomeText').textContent =
-        'Welcome, ' + name.split(/\s+/)[0] + '! Just a few details so we can match you with the right courses.';
+        'Welcome, ' + name.split(/\s+/)[0] + '! Just a few details to get you started.';
     }
   });
 
@@ -952,8 +942,6 @@
 
     saveBtn.classList.add('loading');
 
-    const courses = Array.from(form.querySelectorAll('input[name="courses"]:checked')).map(c => c.value);
-
     const { error } = await supabaseClient.auth.updateUser({
       data: {
         full_name: fullname,
@@ -961,7 +949,6 @@
         department: form.department.value.trim(),
         level: form.level.value,
         matric: form.matric.value.trim(),
-        courses: courses,
         profile_completed: true
       }
     });
