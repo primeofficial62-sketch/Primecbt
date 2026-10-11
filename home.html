@@ -656,10 +656,43 @@
 }
 
 
+    /* Notification popup */
+    .notif-popup {
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top));
+      left: 12px; right: 12px;
+      z-index: 200;
+      display: flex; align-items: center; gap: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(-24px);
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .notif-popup.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .notif-popup-icon { font-size: 26px; flex-shrink: 0; }
+    .notif-popup-body { flex: 1; min-width: 0; }
+    .notif-popup-title { font-size: 0.9rem; font-weight: 700; color: var(--text-main); }
+    .notif-popup-text { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+    .notif-popup-close { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px; }
+
   </style>
 </head>
 <body>
   <div class="app" id="appRoot">
+    <div class="notif-popup" id="notifPopup" role="status" aria-live="polite">
+      <div class="notif-popup-icon">🔔</div>
+      <div class="notif-popup-body">
+        <div class="notif-popup-title" id="notifPopupTitle"></div>
+        <div class="notif-popup-text" id="notifPopupText"></div>
+      </div>
+      <button type="button" class="notif-popup-close" id="notifPopupClose" aria-label="Dismiss">✕</button>
+    </div>
     <div class="page">
       <!-- Top Bar -->
       <div class="topbar">
@@ -678,7 +711,7 @@
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 01-3.46 0" />
             </svg>
-            <span class="badge-dot"></span>
+            <span class="badge-dot" id="notifDot" hidden></span>
           </a>
           <a href="my-study-plan.html" class="icon-btn" aria-label="My Study Plan" id="studyPlanTopBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -693,29 +726,6 @@
 
       <!-- Content -->
       <div class="content">
-        <!-- Streak Card -->
-        <div class="streak-card">
-          <div class="streak-header">
-            <div class="streak-badge">
-              <span class="fire">🔥</span>
-              <div>
-                <div id="streakTitle" style="font-size:15px;font-weight:600;color:var(--text-main)">0 Day Streak</div>
-                <div id="streakSub" style="font-size:12px;color:var(--text-muted)">Start your streak today</div>
-              </div>
-            </div>
-            <div class="xp-pill" id="xpPill">0 XP</div>
-          </div>
-          <div class="goal-label">Today's Goal</div>
-          <div class="goal-text" id="goalText">Complete 30 questions</div>
-          <div class="progress-track">
-            <div class="progress-fill" id="goalProgress" style="width:0%"></div>
-          </div>
-          <div class="progress-meta">
-            <span id="goalCount">0 / 30 questions</span>
-            <span id="goalPercent">0%</span>
-          </div>
-        </div>
-
         <!-- Primary CTA -->
         <button class="primary-cta" id="continuePracticeBtn">
           Continue Practice
@@ -743,34 +753,6 @@
           </a>
         </div>
 
-        <!-- Continue Learning -->
-        <div class="section">
-          <div class="section-header">
-            <h2 class="section-title">Continue Learning</h2>
-          </div>
-          <a href="materials.html" class="card">
-            <div class="card-row">
-              <div class="card-icon green">📘</div>
-              <div class="card-body">
-                <div class="card-title">Nothing started yet</div>
-                <div class="card-sub">Open a course in Materials and it will show up here</div>
-              </div>
-            </div>
-            <div class="card-action">
-              Browse materials
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-          </a>
-        </div>
-
-        <!-- Your Courses -->
-        <div class="section">
-          <div class="section-header">
-            <h2 class="section-title">Your Courses</h2>
-            <a href="practice.html" class="see-all">See all</a>
-          </div>
-          <div id="courseList"></div>
-        </div>
       </div>
     </div>
 
@@ -783,7 +765,7 @@
         <div class="avatar" id="menuAvatar">A</div>
         <div>
           <div class="menu-username" id="menuUsername">Student</div>
-          <div class="menu-usersub" id="menuUsersub">🔥 0 day streak</div>
+          <div class="menu-usersub" id="menuUsersub"></div>
         </div>
       </div>
       <ul class="menu-list">
@@ -884,19 +866,77 @@
         window.location.replace('auth.html?mode=login');
       });
 
-      // ----- Helpers -----
-      function esc(str) {
-        return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      // ----- Notifications (realtime) -----
+      const notifDot = document.getElementById('notifDot');
+      const popup = document.getElementById('notifPopup');
+      const popupQueue = [];
+      const seen = new Set();
+      let popupBusy = false;
+      let popupTimer = null;
+
+      function showNextPopup() {
+        if (popupBusy || !popupQueue.length) return;
+        popupBusy = true;
+        const n = popupQueue.shift();
+        document.getElementById('notifPopupTitle').textContent = n.title || 'Notification';
+        document.getElementById('notifPopupText').textContent = n.body || '';
+        popup.querySelector('.notif-popup-icon').textContent = n.type === 'welcome' ? '🎉' : '🔔';
+        popup.classList.add('show');
+        supabaseClient.from('notifications').update({ popup_shown: true }).eq('id', n.id).then(() => {});
+        popupTimer = setTimeout(closePopup, 8000);
       }
 
-      const COURSE_ICONS = {
-        'Biology': '🧬',
-        'Chemistry': '🧪',
-        'Physics': '⚛️',
-        'Mathematics': '📐',
-        'Agricultural Science': '🌱',
-        'Use of English': '📖'
-      };
+      function closePopup() {
+        clearTimeout(popupTimer);
+        popup.classList.remove('show');
+        setTimeout(() => { popupBusy = false; showNextPopup(); }, 350);
+      }
+
+      function queuePopup(n) {
+        if (!n || seen.has(n.id) || n.popup_shown) return;
+        seen.add(n.id);
+        popupQueue.push(n);
+        showNextPopup();
+      }
+
+      async function refreshUnread(userId) {
+        const { count } = await supabaseClient
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('is_read', false);
+        notifDot.hidden = !count;
+      }
+
+      async function startNotifications(user) {
+        try {
+          const { data } = await supabaseClient
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('popup_shown', false)
+            .order('created_at', { ascending: true })
+            .limit(5);
+          (data || []).forEach(queuePopup);
+          refreshUnread(user.id);
+
+          supabaseClient
+            .channel('notifications-' + user.id)
+            .on('postgres_changes',
+              { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id },
+              (payload) => {
+                if (payload.eventType === 'INSERT') queuePopup(payload.new);
+                refreshUnread(user.id);
+              })
+            .subscribe();
+        } catch (e) { /* notifications table not created yet */ }
+      }
+
+      document.getElementById('notifPopupClose').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closePopup();
+      });
+      popup.addEventListener('click', () => { window.location.href = 'notification.html'; });
 
       // ----- Recognise the user -----
       async function loadUser() {
@@ -941,62 +981,8 @@
           avatar.textContent = firstName.charAt(0).toUpperCase();
         }
 
-        // Stats (read from a "profiles" table if it exists; new users start at zero)
-        let stats = { streak: 0, xp: 0, goal: 30, done: 0 };
-        try {
-          const { data } = await supabaseClient
-            .from('profiles')
-            .select('streak, xp, daily_goal, questions_today')
-            .eq('id', user.id)
-            .maybeSingle();
-          if (data) {
-            stats.streak = data.streak || 0;
-            stats.xp = data.xp || 0;
-            stats.goal = data.daily_goal || 30;
-            stats.done = data.questions_today || 0;
-          }
-        } catch (e) { /* no table yet: keep zeros */ }
-
-        const pct = Math.min(100, Math.round((stats.done / stats.goal) * 100));
-        document.getElementById('streakTitle').textContent = stats.streak + ' Day Streak';
-        document.getElementById('streakSub').textContent = stats.streak > 0 ? 'Keep it going!' : 'Start your streak today';
-        document.getElementById('xpPill').textContent = stats.xp + ' XP';
-        document.getElementById('goalText').textContent = 'Complete ' + stats.goal + ' questions';
-        document.getElementById('goalCount').textContent = stats.done + ' / ' + stats.goal + ' questions';
-        document.getElementById('goalPercent').textContent = pct + '%';
-        document.getElementById('goalProgress').style.width = pct + '%';
-        document.getElementById('menuUsersub').textContent = '🔥 ' + stats.streak + ' day streak';
-
-        // Courses the user picked when signing up
-        const courses = Array.isArray(meta.courses) ? meta.courses : [];
-        const list = document.getElementById('courseList');
-        const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
-        if (courses.length) {
-          list.innerHTML = courses.map((c) => (
-            '<a href="practice.html" class="card">' +
-              '<div class="card-row">' +
-                '<div class="card-icon green">' + (COURSE_ICONS[c] || '📚') + '</div>' +
-                '<div class="card-body">' +
-                  '<div class="card-title">' + esc(c) + '</div>' +
-                  '<div class="card-sub">Practice questions</div>' +
-                '</div>' +
-              '</div>' +
-              '<div class="card-action">Practice ' + esc(c) + ' ' + arrow + '</div>' +
-            '</a>'
-          )).join('');
-        } else {
-          list.innerHTML =
-            '<a href="practice.html" class="card">' +
-              '<div class="card-row">' +
-                '<div class="card-icon green">📚</div>' +
-                '<div class="card-body">' +
-                  '<div class="card-title">No courses yet</div>' +
-                  '<div class="card-sub">Pick a course to start practising</div>' +
-                '</div>' +
-              '</div>' +
-              '<div class="card-action">Browse practice ' + arrow + '</div>' +
-            '</a>';
-        }
+        document.getElementById('menuUsersub').textContent = user.email || '';
+        startNotifications(user);
 
         appRoot.classList.add('ready');
       }
