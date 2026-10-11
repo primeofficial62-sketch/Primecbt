@@ -820,8 +820,6 @@
         <div class="step-dot active" data-step="0"><span>1</span></div>
         <div class="step-line" data-line="0"></div>
         <div class="step-dot" data-step="1"><span>2</span></div>
-        <div class="step-line" data-line="1"></div>
-        <div class="step-dot" data-step="2"><span>3</span></div>
       </div>
 
       <!-- Step 1 -->
@@ -873,7 +871,7 @@
       <!-- Step 2 -->
       <div class="reg-step" data-index="1">
         <h2 class="headline" style="font-size:26px;margin-bottom:6px">Tell us about<br><span class="accent">yourself.</span></h2>
-        <p class="subtext">This helps us match you with the right courses.</p>
+        <p class="subtext">Just a few details to get you started.</p>
 
         <form class="form" id="regForm2" style="margin-top:22px" novalidate>
           <label class="field">
@@ -907,24 +905,8 @@
             </label>
           </div>
         </form>
-      </div>
 
-      <!-- Step 3 -->
-      <div class="reg-step" data-index="2">
-        <h2 class="headline" style="font-size:26px;margin-bottom:6px">Personalize your<br><span class="accent">study.</span></h2>
-        <p class="subtext">Pick the courses you want to focus on first.</p>
-
-        <fieldset class="course-list">
-          <legend class="visually-hidden">Courses</legend>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Biology" checked><span>Biology</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Chemistry" checked><span>Chemistry</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Physics"><span>Physics</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Mathematics"><span>Mathematics</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Agricultural Science"><span>Agricultural Science</span></label>
-          <label class="course-chip"><input type="checkbox" name="courses" value="Use of English"><span>Use of English</span></label>
-        </fieldset>
-
-        <label class="checkbox terms">
+        <label class="checkbox terms" style="margin-top:22px">
           <input type="checkbox" name="terms" id="termsCheck">
           <span class="box"></span>
           <span>I agree to the <a href="#" class="link-sm">Terms of Service</a> and <a href="#" class="link-sm">Privacy Policy</a></span>
@@ -1108,7 +1090,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     });
     
     stepBack.hidden = currentStep === 0;
-    ctaText.textContent = currentStep === 2 ? 'Create Account →' : 'Continue →';
+    ctaText.textContent = currentStep === 1 ? 'Create Account →' : 'Continue →';
   }
   
   stepNext.addEventListener('click', async () => {
@@ -1124,7 +1106,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       }
     }
     
-    if (currentStep === 2) {
+    if (currentStep === 1) {
       if (!document.getElementById('termsCheck').checked) {
         document.getElementById('termsError').style.display = 'block';
         return;
@@ -1142,7 +1124,6 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       const department = form2.department.value.trim();
       const level = form2.level.value;
       const matric = form2.matric.value.trim();
-      const courses = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(c => c.value);
 
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
@@ -1154,8 +1135,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
             school: school,
             department: department,
             level: level,
-            matric: matric,
-            courses: courses
+            matric: matric
           }
         }
       });
