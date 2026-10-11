@@ -1023,6 +1023,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="profile-gate.js"></script>
 <script>
   // ========== SUPABASE CLIENT ==========
   const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
@@ -1297,11 +1298,29 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   // Init
   updateSteps();
 
-  // If the user is already signed in (e.g. just returned from Google), go to home
-  supabaseClient.auth.getSession().then(({ data }) => {
-    if (data && data.session) {
-      window.location.replace('home.html');
+  // ========== ROUTE AFTER AUTH ==========
+  // Runs when the page loads with a session (e.g. just returned from Google).
+  async function routeAfterAuth(session) {
+    const intent = localStorage.getItem('authIntent');
+    localStorage.removeItem('authIntent');
+
+    if (needsProfileSetup(session.user)) {
+      if (intent === 'login') {
+        // Tapped Google on the Log In tab but never signed up: no account.
+        await supabaseClient.rpc('delete_unfinished_google_account');
+        await supabaseClient.auth.signOut();
+        showToast('No account found for that Google email. Please sign up first.', 'error');
+        setMode('register');
+        return;
+      }
+      window.location.replace('profile-setup.html');
+      return;
     }
+    window.location.replace('home.html');
+  }
+
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if (data && data.session) routeAfterAuth(data.session);
   });
 
   // ========== GOOGLE OAUTH ==========
@@ -1309,9 +1328,10 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   // (Authentication → Providers → Google) before this will work.
   document.querySelectorAll('.btn-oauth').forEach(btn => {
     btn.addEventListener('click', async () => {
+      localStorage.setItem('authIntent', switcher.dataset.mode === 'login' ? 'login' : 'register');
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + '/home.html' }
+        options: { redirectTo: window.location.origin + '/auth.html' }
       });
       if (error) {
         showToast(error.message, 'error');
