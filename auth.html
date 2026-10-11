@@ -1301,18 +1301,9 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   // ========== ROUTE AFTER AUTH ==========
   // Runs when the page loads with a session (e.g. just returned from Google).
   async function routeAfterAuth(session) {
-    const intent = localStorage.getItem('authIntent');
-    localStorage.removeItem('authIntent');
-
+    // Every Google user is kept. If setup isn't finished, send them to it
+    // (whichever tab they used); otherwise straight to home.
     if (needsProfileSetup(session.user)) {
-      if (intent === 'login') {
-        // Tapped Google on the Log In tab but never signed up: no account.
-        await supabaseClient.rpc('delete_unfinished_google_account');
-        await supabaseClient.auth.signOut();
-        showToast('No account found for that Google email. Please sign up first.', 'error');
-        setMode('register');
-        return;
-      }
       window.location.replace('profile-setup.html');
       return;
     }
@@ -1328,7 +1319,6 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   // (Authentication → Providers → Google) before this will work.
   document.querySelectorAll('.btn-oauth').forEach(btn => {
     btn.addEventListener('click', async () => {
-      localStorage.setItem('authIntent', switcher.dataset.mode === 'login' ? 'login' : 'register');
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin + '/auth.html' }
