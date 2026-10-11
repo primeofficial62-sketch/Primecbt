@@ -1252,6 +1252,13 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   provider: 'google',
   options: { redirectTo: window.location.origin + '/' }
 });
+
+    if (error) {
+        showToast(error.message, 'error');
+      }
+    });
+  });
+  
 </script>
 
 </body>
