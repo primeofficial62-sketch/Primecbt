@@ -549,6 +549,94 @@
       border-top: 1px solid var(--border-color);
     }
     
+
+    /* ========== RESPONSIVE ========== */
+
+    /* All sizes */
+    .greeting { min-width: 0; }
+    .greeting h1, .greeting p {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar { padding-top: max(16px, env(safe-area-inset-top)); }
+    .content { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+    .card-body { min-width: 0; }
+    .card-title, .card-sub { overflow-wrap: anywhere; }
+    .site-menu { width: min(280px, 86vw); }
+    #courseList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Small phones */
+    @media (max-width: 360px) {
+      .topbar { padding-left: 12px; padding-right: 12px; gap: 8px; }
+      .content { padding: 14px; gap: 14px; }
+      .greeting h1 { font-size: 0.95rem; }
+      .greeting p { font-size: 0.7rem; }
+      .icon-btn, .menu-toggle { width: 36px; height: 36px; }
+      .top-actions { gap: 6px; }
+      .streak-card { padding: 14px; }
+      .card { padding: 14px; }
+    }
+
+    /* Large phones in landscape / small tablets */
+    @media (min-width: 600px) {
+      .app { max-width: 720px; }
+      .content { padding: 28px; gap: 20px; }
+      .topbar { padding-left: 28px; padding-right: 28px; }
+      .greeting h1 { font-size: 1.2rem; }
+      .greeting p { font-size: 0.85rem; }
+      #courseList {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+    }
+
+    /* Desktop: permanent sidebar + two-column content */
+    @media (min-width: 1024px) {
+      .app {
+        max-width: 1180px;
+        flex-direction: row;
+        border-radius: 0;
+      }
+      .menu-toggle, .menu-backdrop { display: none; }
+      .site-menu {
+        position: static;
+        order: -1;
+        height: 100%;
+        width: 260px;
+        flex-shrink: 0;
+        transform: none;
+        visibility: visible;
+        box-shadow: none;
+        transition: none;
+        padding: 28px 20px;
+      }
+      .page { flex: 1; min-width: 0; }
+      .topbar { padding: 20px 32px; }
+      .content {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: start;
+        gap: 20px;
+        padding: 32px;
+      }
+      .streak-card, .primary-cta { grid-column: 1 / -1; }
+      .primary-cta { justify-self: stretch; }
+      #courseList { grid-template-columns: repeat(3, 1fr); }
+      .section:last-child { grid-column: 1 / -1; }
+    }
+
+    /* Short landscape screens: tighter spacing */
+    @media (max-height: 480px) and (orientation: landscape) {
+      .topbar { padding-top: 8px; padding-bottom: 8px; }
+      .content { padding-top: 12px; gap: 12px; }
+    }
+
     /* Instant View Switcher */
 .sub-view {
   position: fixed;
