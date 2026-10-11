@@ -53,8 +53,14 @@
       height: 100%;
       box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
       position: relative;
+      overflow: hidden; /* keeps the closed menu from peeking out at the side */
+      visibility: hidden; /* shown once the login check passes */
       border-left: 1px solid rgba(51, 65, 85, 0.4);
       border-right: 1px solid rgba(51, 65, 85, 0.4);
+    }
+
+    .app.ready {
+      visibility: visible;
     }
 
     .page {
@@ -439,7 +445,8 @@
       border-right: 1px solid var(--border-color);
       box-shadow: 4px 0 24px rgba(0,0,0,0.5);
       transform: translateX(-100%);
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      visibility: hidden;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.3s;
       z-index: 101;
       display: flex;
       flex-direction: column;
@@ -448,6 +455,8 @@
 
     .site-menu.active {
       transform: translateX(0);
+      visibility: visible;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0s;
     }
 
     .site-menu-header {
@@ -460,6 +469,9 @@
     }
 
     .avatar {
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
       width: 44px;
       height: 44px;
       border-radius: 50%;
@@ -515,6 +527,20 @@
       height: 20px;
     }
 
+    .menu-logout {
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+
+    .menu-logout:hover {
+      color: #f87171;
+    }
+
     .menu-footer {
       font-size: 0.75rem;
       color: var(--text-submuted);
@@ -555,7 +581,7 @@
           <span></span>
         </button>
         <div class="greeting">
-          <h1 id="greetingText">Good morning, Alex 👋</h1>
+          <h1 id="greetingText">Welcome 👋</h1>
           <p>Ready to make progress today?</p>
         </div>
         <div class="top-actions">
@@ -585,20 +611,20 @@
             <div class="streak-badge">
               <span class="fire">🔥</span>
               <div>
-                <div style="font-size:15px;font-weight:600;color:var(--text-main)">7 Day Streak</div>
-                <div style="font-size:12px;color:var(--text-muted)">Keep it going!</div>
+                <div id="streakTitle" style="font-size:15px;font-weight:600;color:var(--text-main)">0 Day Streak</div>
+                <div id="streakSub" style="font-size:12px;color:var(--text-muted)">Start your streak today</div>
               </div>
             </div>
-            <div class="xp-pill">+50 XP</div>
+            <div class="xp-pill" id="xpPill">0 XP</div>
           </div>
           <div class="goal-label">Today's Goal</div>
-          <div class="goal-text">Complete 30 questions</div>
+          <div class="goal-text" id="goalText">Complete 30 questions</div>
           <div class="progress-track">
-            <div class="progress-fill" id="goalProgress"></div>
+            <div class="progress-fill" id="goalProgress" style="width:0%"></div>
           </div>
           <div class="progress-meta">
-            <span>19 / 30 questions</span>
-            <span>65%</span>
+            <span id="goalCount">0 / 30 questions</span>
+            <span id="goalPercent">0%</span>
           </div>
         </div>
 
@@ -638,78 +664,24 @@
             <div class="card-row">
               <div class="card-icon green">📘</div>
               <div class="card-body">
-                <div class="card-title">BIO 101 — Cell Biology</div>
-                <div class="card-sub">Page 14 of 82</div>
+                <div class="card-title">Nothing started yet</div>
+                <div class="card-sub">Open a course in Materials and it will show up here</div>
               </div>
             </div>
             <div class="card-action">
-              Continue Reading
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
+              Browse materials
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
           </a>
         </div>
 
-        <!-- Recommended -->
+        <!-- Your Courses -->
         <div class="section">
           <div class="section-header">
-            <h2 class="section-title">Recommended For You</h2>
+            <h2 class="section-title">Your Courses</h2>
             <a href="practice.html" class="see-all">See all</a>
           </div>
-          <a href="practice.html" class="card">
-            <div class="card-row">
-              <div class="card-icon amber">🧬</div>
-              <div class="card-body">
-                <div class="card-title">Genetics</div>
-                <div class="card-sub">You scored 42% on your last attempt</div>
-                <span class="tag weak">Needs Improvement</span>
-              </div>
-            </div>
-            <div class="card-action">
-              Practice this topic
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </div>
-          </a>
-          <a href="practice.html" class="card">
-            <div class="card-row">
-              <div class="card-icon blue">🧪</div>
-              <div class="card-body">
-                <div class="card-title">Organic Chemistry</div>
-                <div class="card-sub">You haven't studied this in 5 days</div>
-              </div>
-            </div>
-            <div class="card-action">
-              Review now
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </div>
-          </a>
-        </div>
-
-        <!-- Upcoming Exam -->
-        <div class="section">
-          <div class="section-header">
-            <h2 class="section-title">Upcoming Exam</h2>
-          </div>
-          <a href="practice.html" class="card">
-            <div class="card-row">
-              <div class="card-icon green">📝</div>
-              <div class="card-body">
-                <div class="card-title">BIO 101 Mock Exam</div>
-                <div class="card-sub">Tomorrow · 10:00 AM</div>
-              </div>
-            </div>
-            <div class="card-action">
-              View Exam
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </div>
-          </a>
+          <div id="courseList"></div>
         </div>
       </div>
     </div>
@@ -720,10 +692,10 @@
     <!-- Site Menu -->
     <nav class="site-menu" id="siteMenu" aria-hidden="true">
       <div class="site-menu-header">
-        <div class="avatar">A</div>
+        <div class="avatar" id="menuAvatar">A</div>
         <div>
-          <div class="menu-username">Alex</div>
-          <div class="menu-usersub">🔥 7 day streak</div>
+          <div class="menu-username" id="menuUsername">Student</div>
+          <div class="menu-usersub" id="menuUsersub">🔥 0 day streak</div>
         </div>
       </div>
       <ul class="menu-list">
@@ -778,31 +750,163 @@
           </a>
         </li>
       </ul>
+      <button type="button" class="menu-link menu-logout" id="logoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out
+      </button>
       <div class="menu-footer">PRIME-CBT</div>
     </nav>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // ========== SUPABASE CLIENT ==========
+    const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     document.addEventListener('DOMContentLoaded', () => {
+      const appRoot = document.getElementById('appRoot');
       const menuToggle = document.getElementById('menuToggle');
       const siteMenu = document.getElementById('siteMenu');
       const menuBackdrop = document.getElementById('menuBackdrop');
       const continuePracticeBtn = document.getElementById('continuePracticeBtn');
 
-      function toggleMenu() {
-        const isOpen = siteMenu.classList.toggle('active');
-        menuBackdrop.classList.toggle('active');
-        menuToggle.setAttribute('aria-expanded', isOpen);
-        siteMenu.setAttribute('aria-hidden', !isOpen);
+      // ----- Menu -----
+      function setMenu(open) {
+        siteMenu.classList.toggle('active', open);
+        menuBackdrop.classList.toggle('active', open);
+        menuToggle.setAttribute('aria-expanded', open);
+        siteMenu.setAttribute('aria-hidden', !open);
       }
 
-      menuToggle.addEventListener('click', toggleMenu);
-      menuBackdrop.addEventListener('click', toggleMenu);
+      menuToggle.addEventListener('click', () => setMenu(!siteMenu.classList.contains('active')));
+      menuBackdrop.addEventListener('click', () => setMenu(false));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setMenu(false);
+      });
 
-      // Handle continue practice action
       continuePracticeBtn.addEventListener('click', () => {
         window.location.href = 'practice.html';
       });
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await supabaseClient.auth.signOut();
+        window.location.replace('auth.html?mode=login');
+      });
+
+      // ----- Helpers -----
+      function esc(str) {
+        return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+
+      const COURSE_ICONS = {
+        'Biology': '🧬',
+        'Chemistry': '🧪',
+        'Physics': '⚛️',
+        'Mathematics': '📐',
+        'Agricultural Science': '🌱',
+        'Use of English': '📖'
+      };
+
+      // ----- Recognise the user -----
+      async function loadUser() {
+        let session = null;
+        try {
+          const res = await supabaseClient.auth.getSession();
+          session = res.data && res.data.session;
+        } catch (e) {
+          session = null;
+        }
+
+        // Not logged in -> back to the login page
+        if (!session) {
+          window.location.replace('auth.html?mode=login');
+          return;
+        }
+
+        const user = session.user;
+        const meta = user.user_metadata || {};
+        const fullName = (meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : '') || 'Student').trim();
+        const firstName = fullName.split(/\s+/)[0];
+
+        // Greeting by time of day
+        const hour = new Date().getHours();
+        const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        document.getElementById('greetingText').textContent = part + ', ' + firstName + ' 👋';
+
+        // Menu header: name + avatar (Google photo if there is one)
+        document.getElementById('menuUsername').textContent = fullName;
+        const avatar = document.getElementById('menuAvatar');
+        const photo = meta.avatar_url || meta.picture;
+        if (photo) {
+          avatar.textContent = '';
+          avatar.style.backgroundImage = 'url("' + String(photo).replace(/"/g, '') + '")';
+        } else {
+          avatar.textContent = firstName.charAt(0).toUpperCase();
+        }
+
+        // Stats (read from a "profiles" table if it exists; new users start at zero)
+        let stats = { streak: 0, xp: 0, goal: 30, done: 0 };
+        try {
+          const { data } = await supabaseClient
+            .from('profiles')
+            .select('streak, xp, daily_goal, questions_today')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (data) {
+            stats.streak = data.streak || 0;
+            stats.xp = data.xp || 0;
+            stats.goal = data.daily_goal || 30;
+            stats.done = data.questions_today || 0;
+          }
+        } catch (e) { /* no table yet: keep zeros */ }
+
+        const pct = Math.min(100, Math.round((stats.done / stats.goal) * 100));
+        document.getElementById('streakTitle').textContent = stats.streak + ' Day Streak';
+        document.getElementById('streakSub').textContent = stats.streak > 0 ? 'Keep it going!' : 'Start your streak today';
+        document.getElementById('xpPill').textContent = stats.xp + ' XP';
+        document.getElementById('goalText').textContent = 'Complete ' + stats.goal + ' questions';
+        document.getElementById('goalCount').textContent = stats.done + ' / ' + stats.goal + ' questions';
+        document.getElementById('goalPercent').textContent = pct + '%';
+        document.getElementById('goalProgress').style.width = pct + '%';
+        document.getElementById('menuUsersub').textContent = '🔥 ' + stats.streak + ' day streak';
+
+        // Courses the user picked when signing up
+        const courses = Array.isArray(meta.courses) ? meta.courses : [];
+        const list = document.getElementById('courseList');
+        const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+        if (courses.length) {
+          list.innerHTML = courses.map((c) => (
+            '<a href="practice.html" class="card">' +
+              '<div class="card-row">' +
+                '<div class="card-icon green">' + (COURSE_ICONS[c] || '📚') + '</div>' +
+                '<div class="card-body">' +
+                  '<div class="card-title">' + esc(c) + '</div>' +
+                  '<div class="card-sub">Practice questions</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="card-action">Practice ' + esc(c) + ' ' + arrow + '</div>' +
+            '</a>'
+          )).join('');
+        } else {
+          list.innerHTML =
+            '<a href="practice.html" class="card">' +
+              '<div class="card-row">' +
+                '<div class="card-icon green">📚</div>' +
+                '<div class="card-body">' +
+                  '<div class="card-title">No courses yet</div>' +
+                  '<div class="card-sub">Pick a course to start practising</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="card-action">Browse practice ' + arrow + '</div>' +
+            '</a>';
+        }
+
+        appRoot.classList.add('ready');
+      }
+
+      loadUser();
     });
   </script>
 </body>
