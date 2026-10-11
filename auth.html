@@ -1241,23 +1241,29 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   }
   
   // Init
+  // If the user is already signed in (e.g. just returned from Google), go to home
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if (data && data.session) {
+      window.location.replace('index.html');
+    }
+  });
+  
   updateSteps();
 
   // ========== GOOGLE OAUTH ==========
   // Requires Google enabled as a provider in your Supabase dashboard
   // (Authentication → Providers → Google) before this will work.
   document.querySelectorAll('.btn-oauth').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-  provider: 'google',
-  options: { redirectTo: window.location.origin + '/' }
-});
-
-    if (error) {
-        showToast(error.message, 'error');
-      }
+  btn.addEventListener('click', async () => {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/index.html' }
     });
+    if (error) {
+      showToast(error.message, 'error');
+    }
   });
+});
   
 </script>
 
