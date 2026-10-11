@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <script>document.documentElement.classList.add('checking');</script>
   <style>
     :root {
       --bg: #060b1a;
@@ -22,7 +22,7 @@
       --red: #f87171; /* red-400 */
       --amber: #fbbf24; /* amber-400 */
     }
-
+html.checking .stage { visibility: hidden; }
     * {
       margin: 0;
       padding: 0;
@@ -1290,9 +1290,16 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     window.location.replace('home.html');
   }
 
-  supabaseClient.auth.getSession().then(({ data }) => {
-    if (data && data.session) routeAfterAuth(data.session);
-  });
+  const showPage = () => document.documentElement.classList.remove('checking');
+setTimeout(showPage, 4000);
+
+supabaseClient.auth.getSession().then(({ data }) => {
+  if (data && data.session) {
+    routeAfterAuth(data.session);
+  } else {
+    showPage();
+  }
+}).catch(showPage);
 
   // ========== GOOGLE OAUTH ==========
   // Requires Google enabled as a provider in your Supabase dashboard
