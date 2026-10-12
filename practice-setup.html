@@ -786,7 +786,8 @@
         count: String(state.count),
         difficulty: state.difficulty,
         mode: state.mode,
-        randomize: String(state.randomize)
+        randomize: String(state.randomize),
+        s: Date.now().toString(36)
       });
       location.href = `${CONFIG.nextPage}?${out.toString()}`;
     });
