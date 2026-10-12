@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-  <title>AI CBT Session - PRIME-CBT</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>PRIME-CBT — Session</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #060b1a;
@@ -18,640 +21,693 @@
       --teal: #2dd4bf;
       --red: #f87171;
       --amber: #fbbf24;
-      --slate-300: #cbd5e1;
-      --slate-400: #94a3b8;
-      --slate-500: #64748b;
       --slate-600: #475569;
       --slate-700: #334155;
-      --slate-800: #1e293b;
-      --slate-900: #0f172a;
+
+      --pad: clamp(14px, 4.5vw, 28px);
+      --fs-title: clamp(15px, 4vw, 18px);
+      --fs-sub: clamp(11px, 3vw, 12.5px);
+      --fs-q: clamp(15.5px, 4.3vw, 19px);
+      --fs-body: clamp(13.5px, 3.7vw, 15.5px);
+      --fs-small: clamp(11.5px, 3.1vw, 13px);
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      margin: 0;
-      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
       -webkit-font-smoothing: antialiased;
+      min-height: 100vh; min-height: 100dvh;
+      display: flex; justify-content: center; align-items: stretch;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
+    button { font-family: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
 
+    /* ---------- Shell ---------- */
     .app {
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
+      width: 100%; max-width: 760px;
+      height: 100vh; height: 100dvh;
+      display: flex; flex-direction: column;
       background: var(--bg);
-      position: relative;
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+      overflow: hidden;
+    }
+    @media (min-width: 780px) and (min-height: 640px) {
+      body { align-items: center; padding-block: 24px; }
+      .app {
+        height: min(100dvh - 48px, 900px);
+        border: 1px solid rgba(51, 65, 85, 0.8);
+        border-radius: 24px;
+        box-shadow: 0 30px 80px rgba(0,0,0,.5);
+      }
     }
 
+    /* ---------- Top bar ---------- */
     .topbar {
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      background: rgba(15, 23, 42, 0.9);
+      display: flex; align-items: center; gap: clamp(8px, 2.5vw, 14px);
+      padding: 12px var(--pad);
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: rgba(15, 23, 42, 0.92);
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      flex-shrink: 0; z-index: 10;
     }
-
     .back-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text);
-      text-decoration: none;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text); cursor: pointer; text-decoration: none;
+      transition: background .2s, border-color .2s;
     }
-
-    .back-btn:hover {
-      background: var(--slate-700);
-      border-color: var(--slate-600);
-    }
-
+    .topbar-text { min-width: 0; flex: 1; }
     .topbar-text h1 {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
-      margin: 0;
+      font-size: var(--fs-title); font-weight: 700; line-height: 1.2;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-
     .topbar-text p {
-      font-size: 12px;
-      color: var(--slate-400);
-      margin: 2px 0 0 0;
+      font-size: var(--fs-sub); color: var(--muted); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .timer {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface-2);
+      font-weight: 700; font-size: var(--fs-small);
+      font-variant-numeric: tabular-nums; flex-shrink: 0;
+    }
+    .timer.warn { color: var(--amber); border-color: rgba(251,191,36,.5); }
+    .timer.danger { color: var(--red); border-color: rgba(248,113,113,.6); animation: pulse 1s ease-in-out infinite; }
+    .offline-pill {
+      padding: 5px 10px; border-radius: 999px; flex-shrink: 0;
+      border: 1px solid rgba(251,191,36,.4); color: var(--amber);
+      background: rgba(251,191,36,.08); font-size: 11.5px; font-weight: 600;
+    }
+    .submit-top {
+      min-height: 38px; padding: 0 14px; border-radius: 10px; flex-shrink: 0;
+      border: 1px solid var(--emerald); background: rgba(16,185,129,.12);
+      color: var(--emerald-bright); font-weight: 700; font-size: var(--fs-small); cursor: pointer;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+    /* ---------- Content ---------- */
+    .content {
+      flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+      padding: clamp(14px, 4vw, 24px) var(--pad);
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent;
     }
 
-    .cbt-palette-card {
+    .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
-      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: clamp(14px, 4vw, 24px);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,.3);
+      animation: cardIn .3s ease both;
+    }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .q-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .q-count { font-size: var(--fs-small); font-weight: 600; color: var(--muted); }
+    .flag-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 36px; padding: 0 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface-2);
+      color: var(--muted); font-size: var(--fs-small); font-weight: 600; cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+    .flag-btn svg { width: 14px; height: 14px; }
+    .flag-btn[aria-pressed="true"] { color: var(--amber); border-color: rgba(251,191,36,.5); background: rgba(251,191,36,.1); }
+
+    .question-text {
+      font-size: var(--fs-q); font-weight: 600; line-height: 1.5;
+      margin-bottom: clamp(14px, 3.5vw, 22px);
+      overflow-wrap: anywhere; white-space: pre-line;
     }
 
+    .options { display: flex; flex-direction: column; gap: clamp(8px, 2.4vw, 12px); }
     .option-btn {
-      padding: 14px 16px;
-      text-align: left;
-      border: 1.5px solid var(--border);
-      background: var(--surface-2);
-      color: var(--text);
-      cursor: pointer;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: flex-start; gap: 12px; width: 100%;
+      min-height: 48px; padding: 12px 14px; text-align: left;
+      border: 1.5px solid var(--border); background: var(--surface-2);
+      border-radius: 12px; cursor: pointer;
+      font-size: var(--fs-body); font-weight: 500; line-height: 1.4;
+      transition: border-color .2s, background .2s, color .2s, transform .15s;
     }
-
-    .option-btn:hover:not(:disabled) {
-      border-color: var(--emerald-bright);
-      background: rgba(52, 211, 153, 0.05);
-      transform: translateY(-1px);
+    .option-btn .letter {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(148,163,184,.12); color: var(--muted);
+      font-size: 12px; font-weight: 700;
     }
+    .option-btn .label { flex: 1; min-width: 0; overflow-wrap: anywhere; padding-top: 2px; }
+    .option-btn:active:not(:disabled) { transform: scale(.99); }
+    .option-btn.selected { border-color: var(--emerald-bright); background: rgba(52,211,153,.1); }
+    .option-btn.selected .letter { background: var(--emerald-bright); color: #060b1a; }
+    .option-btn.right { border-color: var(--emerald); background: rgba(16,185,129,.15); color: var(--emerald-bright); }
+    .option-btn.right .letter { background: var(--emerald); color: #022c22; }
+    .option-btn.wrong { border-color: var(--red); background: rgba(248,113,113,.15); color: var(--red); }
+    .option-btn.wrong .letter { background: var(--red); color: #2a0a0a; }
+    .option-btn:disabled { cursor: default; }
 
-    .explanation-box {
-      margin-top: 20px;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      display: none;
-      opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    .feedback {
+      margin-top: clamp(14px, 3.5vw, 20px);
+      padding: 14px 16px; border-radius: 12px;
+      font-size: var(--fs-body); line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line;
+      animation: cardIn .3s ease both;
     }
+    .feedback.ok  { background: rgba(16,185,129,.12); border: 1px solid var(--emerald); color: var(--emerald-bright); }
+    .feedback.bad { background: rgba(248,113,113,.12); border: 1px solid var(--red); color: var(--red); }
+    .feedback strong { display: block; margin-bottom: 4px; }
 
-    .explanation-box.visible {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .explanation-box.correct-feedback {
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid var(--emerald);
-      color: var(--emerald-bright);
-    }
-
-    .explanation-box.incorrect-feedback {
-      background: rgba(248, 113, 113, 0.12);
-      border: 1px solid var(--red);
-      color: var(--red);
-    }
-
-    .question-tracker {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      margin-top: 25px;
-      padding-top: 20px;
+    /* ---------- Tracker ---------- */
+    .tracker {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px;
+      margin-top: clamp(16px, 4vw, 24px); padding-top: clamp(14px, 3.5vw, 20px);
       border-top: 1px solid var(--border);
     }
-
     .tracker-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--surface-2);
-      color: var(--slate-400);
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      height: 40px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--surface-2);
+      color: var(--muted); font-weight: 600; font-size: .9rem; cursor: pointer;
+      position: relative; transition: border-color .2s, background .2s, color .2s;
     }
-
-    .tracker-btn:hover {
-      border-color: var(--slate-500);
-      background: var(--slate-700);
-      color: var(--text);
+    .tracker-btn.answered { border-color: var(--emerald); color: var(--emerald-bright); background: rgba(16,185,129,.1); }
+    .tracker-btn.t-wrong { border-color: var(--red); color: var(--red); background: rgba(248,113,113,.1); }
+    .tracker-btn.flagged::after {
+      content: ''; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--amber);
     }
-
     .tracker-btn.active {
-      background: var(--emerald-bright) !important;
-      border-color: var(--emerald-bright) !important;
-      color: #060b1a !important;
-      box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
-      transform: scale(1.05);
+      background: var(--emerald-bright); border-color: var(--emerald-bright); color: #060b1a;
+      box-shadow: 0 0 12px rgba(52,211,153,.4);
     }
 
-    .tracker-btn.answered {
-      border-color: var(--emerald);
-      color: var(--emerald-bright);
-      background: rgba(16, 185, 129, 0.1);
+    /* ---------- Bottom bar ---------- */
+    .bottom-bar {
+      display: flex; gap: 10px; align-items: center; justify-content: space-between;
+      padding: 12px var(--pad);
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      flex-shrink: 0;
     }
-
     .btn {
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      color: var(--text);
+      min-height: 46px; padding: 0 clamp(14px, 4vw, 24px);
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text);
+      font-weight: 600; font-size: var(--fs-body); cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+    .btn:active:not(:disabled) { transform: scale(.97); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn.primary {
+      flex: 1; max-width: 260px;
+      background: linear-gradient(135deg, var(--emerald), var(--teal));
+      color: #022c22; border-color: transparent; font-weight: 700;
+    }
+    .btn.ghost { flex: 0 0 auto; }
+
+    @media (hover: hover) {
+      .back-btn:hover { background: var(--slate-700); border-color: var(--slate-600); }
+      .option-btn:hover:not(:disabled):not(.right):not(.wrong) { border-color: var(--emerald-bright); background: rgba(52,211,153,.05); }
+      .btn:hover:not(:disabled):not(.primary) { background: var(--slate-700); border-color: var(--slate-600); }
+      .tracker-btn:not(.active):hover { border-color: var(--slate-600); color: var(--text); }
     }
 
-    .btn:hover:not(:disabled) {
-      background: var(--slate-700);
-      border-color: var(--slate-600);
-      transform: translateY(-1px);
+    /* ---------- States ---------- */
+    .state-panel {
+      min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 10px; padding: 32px 12px;
+    }
+    .state-panel h2 { font-size: var(--fs-title); }
+    .state-panel p { color: var(--muted); font-size: var(--fs-body); max-width: 40ch; line-height: 1.5; }
+    .state-btn {
+      margin-top: 8px; min-height: 44px; padding: 0 20px; border-radius: 12px;
+      border: 1.5px solid var(--emerald); background: rgba(16,185,129,.12);
+      color: var(--emerald-bright); font-weight: 600; font-size: var(--fs-body);
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+    }
+    .spinner {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--emerald);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Dialog + toast ---------- */
+    dialog {
+      margin: auto; width: min(92vw, 420px);
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 18px; padding: 22px;
+    }
+    dialog::backdrop { background: rgba(2, 6, 23, .7); }
+    dialog h2 { font-size: 1.05rem; margin-bottom: 8px; }
+    dialog p { color: var(--muted); font-size: var(--fs-body); line-height: 1.55; }
+    dialog .row { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+    dialog .row .btn { flex: 1 1 120px; max-width: none; }
+    #dlgError { color: var(--red); margin-top: 10px; font-size: var(--fs-small); }
+
+    .toast {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: max(88px, calc(env(safe-area-inset-bottom) + 76px)); z-index: 1000;
+      max-width: 90vw; padding: 10px 16px; border-radius: 12px;
+      background: var(--surface); color: var(--text); border: 1px solid var(--border);
+      font-size: var(--fs-small); font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,.4);
     }
 
-    .btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    @media (max-height: 480px) {
+      .topbar { padding-block: 6px; }
+      .bottom-bar { padding-block: 6px; }
+      .btn { min-height: 40px; }
     }
-
-    /* Smooth Transition Panels & States */
-    .fade-container {
-      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .fade-container.hidden-state {
-      opacity: 0;
-      transform: translateY(8px);
-      pointer-events: none;
-      display: none !important;
-    }
-
-    @keyframes pulseGlow {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
-
-    .loading-pulse {
-      animation: pulseGlow 1.8s infinite ease-in-out;
-    }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
-
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
-
-
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="topbar">
-      <a href="practice.html" class="back-btn" aria-label="Back to Practice">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+    <header class="topbar">
+      <a href="practice-setup.html" class="back-btn" id="backLink" aria-label="Leave session">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <div class="topbar-text">
-        <h1 id="cbtTitle">AI CBT Session</h1>
-        <p id="cbtSubtitle">Live AI-generated examination</p>
+        <h1 id="cbtTitle">Practice session</h1>
+        <p id="cbtSubtitle">Loading…</p>
       </div>
-    </div>
+      <span class="offline-pill" id="offlinePill" hidden role="status">Offline</span>
+      <span class="timer" id="timer" hidden role="timer" aria-live="off">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span id="timerText">--:--</span>
+      </span>
+      <button type="button" class="submit-top" id="submitTop" hidden>Submit</button>
+    </header>
 
-    <div class="content" style="padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-      <!-- Loading State Panel -->
-      <div id="loadingState" class="fade-container" style="display: flex; align-items: center; justify-content: center;">
-        <div class="cbt-palette-card loading-pulse" style="text-align: center; max-width: 360px; width: 100%; padding: 32px 24px;">
-          <div style="font-size: 32px; margin-bottom: 12px;">🤖</div>
-          <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 6px;">Generating Session</h3>
-          <p style="font-size: 0.9rem; color: var(--slate-400); margin-bottom: 24px;">Gemini AI is crafting your customized questions & explanations...</p>
-          
-          <div style="background: var(--surface-2); border-radius: 999px; height: 8px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border);">
-            <div id="loadingProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--emerald), var(--teal)); transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-          </div>
-          <div id="loadingPercentage" style="font-size: 0.85rem; font-weight: 600; color: var(--emerald-bright);">0%</div>
-        </div>
+    <main class="content" id="content">
+      <div class="state-panel" id="loadingPanel">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading your questions…</p>
       </div>
-      
-      <!-- Question Container Panel -->
-      <div id="questionContainer" class="cbt-palette-card fade-container hidden-state">
-        <div id="questionText" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; line-height: 1.5; color: var(--text);"></div>
-        <div id="optionsList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;"></div>
-        
-        <div id="explanationBox" class="explanation-box"></div>
-        
-        <div style="display: flex; justify-content: space-between; margin-top: 25px;">
-          <button id="prevQBtn" class="btn" disabled>Previous</button>
-          <button id="nextQBtn" class="btn" style="background: linear-gradient(135deg, var(--emerald), var(--teal)); color: #060b1a; border-color: transparent; font-weight: 700;">Next Question</button>
-        </div>
+    </main>
 
-        <div id="trackerContainer" class="question-tracker"></div>
-      </div>
-    </div>
+    <footer class="bottom-bar" id="bottomBar" hidden>
+      <button type="button" class="btn ghost" id="prevBtn">Previous</button>
+      <button type="button" class="btn primary" id="nextBtn">Next Question</button>
+    </footer>
   </div>
 
-  <div id="toastNotification" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--surface); color: var(--emerald-bright); border: 1px solid var(--emerald); padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 10px 25px rgba(0,0,0,0.4); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; display: flex; align-items: center; gap: 8px;">
-    <span>✨</span> Successfully Generated!
-  </div>
+  <dialog id="submitDialog">
+    <h2>Submit session?</h2>
+    <p id="dlgBody"></p>
+    <p id="dlgError" role="alert" hidden></p>
+    <div class="row">
+      <button type="button" class="btn" id="dlgCancel">Keep going</button>
+      <button type="button" class="btn primary" id="dlgConfirm">Submit</button>
+    </div>
+  </dialog>
 
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // CHANGED: switched from Groq to Gemini. Get your key from
-    // https://aistudio.google.com/apikey — Gemini keys start with "AIza".
-    const GEMINI_API_KEY = "AQ.Ab8RN6KedyJK-vCpr9zjOoAauIBCdFay3ghz2A1YBeAvG4o_bA";
+  (() => {
+    'use strict';
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      conqst urlParams = new URLSearchParams(window.location.search);
-      const topic = urlParams.get('topic') || 'Cell Biology';
-      const count = urlParams.get('count') || '5';
-      const difficulty = urlParams.get('difficulty') || 'medium';
-      const mode = urlParams.get('mode') || 'practice';
-      const randomize = urlParams.get('randomize') === 'true';
-      
-      document.getElementById('cbtTitle').textContent = `AI Session: ${topic}`;
-      document.getElementById('cbtSubtitle').textContent = `${count} Questions • ${difficulty.toUpperCase()} • ${mode.toUpperCase()} Mode`;
-      
-      let questions = [];
-      let currentIndex = 0;
-      let userAnswers = {};
+    /* ============================================================
+       CONFIG — questions come live from your Supabase database.
+       Scoring and XP are calculated on the server by the
+       submit_practice_session() function (see the SQL provided).
+       ============================================================ */
+    const CONFIG = {
+      SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+      loginPage: 'login.html',
+      setupPage: 'practice-setup.html',
+      resultsPage: 'results.html',
+      secondsPerQuestion: 60,          // timed mode: total time = questions x this
+      resumeWindowMs: 6 * 60 * 60 * 1000
+    };
 
-      const progressBar = document.getElementById('loadingProgressBar');
-      const percentageText = document.getElementById('loadingPercentage');
-      let currentProgress = 0;
-      const progressInterval = setInterval(() => {
-        if (currentProgress < 90) {
-          currentProgress += Math.floor(Math.random() * 8) + 3;
-          if (currentProgress > 90) currentProgress = 90;
-          progressBar.style.width = `${currentProgress}%`;
-          percentageText.textContent = `${currentProgress}%`;
-        }
-      }, 150);
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      back: $('backLink'), title: $('cbtTitle'), sub: $('cbtSubtitle'),
+      offline: $('offlinePill'), timer: $('timer'), timerText: $('timerText'), submitTop: $('submitTop'),
+      content: $('content'), bar: $('bottomBar'), prev: $('prevBtn'), next: $('nextBtn'),
+      dlg: $('submitDialog'), dlgBody: $('dlgBody'), dlgError: $('dlgError'), dlgCancel: $('dlgCancel'), dlgConfirm: $('dlgConfirm'),
+      toast: $('toast')
+    };
+    const LETTERS = 'ABCDEFGHIJ';
 
-      // NEW: fallback mock question bank, used if the Groq call fails for any
-      // reason (missing/invalid key, network error, rate limit, bad response).
-      function getMockQuestions(topicName, questionCount) {
-        const bank = [
-          {
-            question: `Sample question on ${topicName} (AI unavailable — offline question bank in use).`,
-            options: ["Option A", "Option B", "Option C", "Option D"],
-            answer: "Option A",
-            explanation: "This is a placeholder question shown because the AI service was unreachable. Check your Gemini API key and try again for real AI-generated questions."
-          }
-        ];
-        const result = [];
-        for (let i = 0; i < questionCount; i++) {
-          result.push(bank[0]);
-        }
-        return result;
+    /* ---------- URL params ---------- */
+    const params = new URLSearchParams(location.search);
+    const courseParam = (params.get('course') || '').trim();
+    const topicParam = (params.get('topic') || '').trim();
+    const wantCount = Math.max(1, parseInt(params.get('count'), 10) || 10);
+    const difficulty = ['easy', 'medium', 'hard', 'mixed'].includes(params.get('difficulty')) ? params.get('difficulty') : 'mixed';
+    const mode = params.get('mode') === 'timed' ? 'timed' : 'practice';
+    const randomize = params.get('randomize') !== 'false';
+    const sessionNonce = params.get('s') || '';
+
+    el.back.href = CONFIG.setupPage + (courseParam ? `?course=${encodeURIComponent(courseParam)}` : topicParam ? `?topic=${encodeURIComponent(topicParam)}` : '');
+
+    /* ---------- state ---------- */
+    const S = {
+      user: null, course: null, qs: [],
+      answers: {},            // question id -> selected index
+      flags: new Set(),       // question ids
+      index: 0, endAt: null, startedAt: Date.now(),
+      submitting: false, done: false
+    };
+
+    /* ---------- helpers ---------- */
+    let toastTimer;
+    function toast(msg) {
+      el.toast.textContent = msg; el.toast.hidden = false;
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.toast.hidden = true; }, 3500);
+    }
+    function showMessage(title, body, btnText, action, href) {
+      const wrap = document.createElement('div'); wrap.className = 'state-panel';
+      const h = document.createElement('h2'); h.textContent = title;
+      const p = document.createElement('p'); p.textContent = body;
+      wrap.append(h, p);
+      if (btnText) {
+        const b = href ? document.createElement('a') : document.createElement('button');
+        b.className = 'state-btn'; b.textContent = btnText;
+        if (href) b.href = href; else { b.type = 'button'; b.addEventListener('click', action); }
+        wrap.append(b);
       }
+      el.content.replaceChildren(wrap);
+      el.bar.hidden = true; el.submitTop.hidden = true; el.timer.hidden = true;
+    }
+    function redirectToLogin() {
+      const next = location.pathname.split('/').pop() + location.search;
+      location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(next)}`);
+    }
+    function shuffle(a) {
+      const arr = a.slice();
+      for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+      return arr;
+    }
+    const optText = (o) => (o && typeof o === 'object') ? (o.text ?? o.label ?? '') : String(o ?? '');
+    const answered = (q) => S.answers[q.id] !== undefined;
 
+    if (!window.supabase) {
+      el.sub.textContent = 'Not connected';
+      showMessage('Couldn’t load the app', 'Check your connection and refresh the page.', 'Refresh', () => location.reload());
+      return;
+    }
+    const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+    /* ---------- resume support (per tab) ---------- */
+    const storeKey = () => `primecbt:session:${S.user.id}:${courseParam || topicParam}:${mode}:${difficulty}:${wantCount}:${randomize}:${sessionNonce}`;
+    function save() {
+      if (S.done || !S.qs.length) return;
       try {
-        const prompt = `You are an expert academic examiner for PRIME-CBT. Generate a rigorous set of exactly ${count} multiple-choice questions based on the academic subject or material: "${topic}". 
-        Difficulty level: ${difficulty}. Mode: ${mode}.
-        Ensure the questions test deep understanding appropriate for university-level study.
+        sessionStorage.setItem(storeKey(), JSON.stringify({
+          ids: S.qs.map((q) => q.id), answers: S.answers, flags: [...S.flags],
+          index: S.index, startedAt: S.startedAt, endAt: S.endAt
+        }));
+      } catch (_) {}
+    }
+    function loadSaved() {
+      try {
+        const raw = sessionStorage.getItem(storeKey());
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        if (!d || !Array.isArray(d.ids) || !d.ids.length) return null;
+        if (Date.now() - (d.startedAt || 0) > CONFIG.resumeWindowMs) return null;
+        return d;
+      } catch (_) { return null; }
+    }
+    const clearSaved = () => { try { sessionStorage.removeItem(storeKey()); } catch (_) {} };
 
-        You must output ONLY a valid JSON object in this exact structure, with no markdown code blocks, backticks, or extra commentary:
-        {
-          "quiz": [
-            {
-              "question": "Clear, specific question text here?",
-              "options": ["Option A", "Option B", "Option C", "Option D"],
-              "answer": "Exact matching correct option string from the options list",
-              "explanation": "Clear explanation of why this correct answer is right, and why alternate typical choices are incorrect."
-            }
-          ]
-        }`;
-
-        // CHANGED: Gemini's endpoint takes the key as a URL param (not an
-        // Authorization header), and the request/response shape is different
-        // from Groq's OpenAI-style format.
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: 'application/json' }
-            })
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error?.message || `Gemini API request failed with status ${response.status}`);
-        }
-
-        // CHANGED: Gemini nests the text differently than Groq —
-        // candidates[0].content.parts[0].text instead of choices[0].message.content
-        if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
-          throw new Error("Invalid response format received from Gemini.");
-        }
-
-        let rawText = data.candidates[0].content.parts[0].text;
-        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsedData = JSON.parse(rawText);
-        questions = parsedData.quiz || parsedData;
-
-        if (randomize) {
-          questions.sort(() => Math.random() - 0.5);
-        }
-
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        percentageText.textContent = '100%';
-
-        const toast = document.getElementById('toastNotification');
-        toast.style.transform = 'translateX(-50%) translateY(0)';
-        setTimeout(() => {
-          toast.style.transform = 'translateX(-50%) translateY(100px)';
-        }, 3000);
-
-        // Smooth transition from loading to active question UI
-        setTimeout(() => {
-          const loadingEl = document.getElementById('loadingState');
-          const questionEl = document.getElementById('questionContainer');
-          
-          loadingEl.classList.add('hidden-state');
-          setTimeout(() => {
-            loadingEl.style.display = 'none';
-            questionEl.style.display = 'block';
-            // Trigger reflow for smooth transition entrance
-            void questionEl.offsetWidth;
-            questionEl.classList.remove('hidden-state');
-            buildTracker();
-            loadQuestion(currentIndex);
-          }, 50);
-        }, 400);
-
-      } catch (error) {
-        // FIXED: instead of dead-ending on an error screen, fall back to mock
-        // questions so the session is still usable when the AI call fails.
-        console.error("AI Generation Error, falling back to mock questions:", error);
-        questions = getMockQuestions(topic, parseInt(count));
-
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        percentageText.textContent = '100%';
-
-        setTimeout(() => {
-          const loadingEl = document.getElementById('loadingState');
-          const questionEl = document.getElementById('questionContainer');
-
-          loadingEl.classList.add('hidden-state');
-          setTimeout(() => {
-            loadingEl.style.display = 'none';
-            questionEl.style.display = 'block';
-            void questionEl.offsetWidth;
-            questionEl.classList.remove('hidden-state');
-            buildTracker();
-            loadQuestion(currentIndex);
-          }, 50);
-        }, 400);
+    /* ---------- data ---------- */
+    async function resolveCourse() {
+      let q = db.from('courses').select('id,title,code').limit(1);
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseParam) || /^\d+$/.test(courseParam);
+      if (courseParam && isId) q = q.eq('id', courseParam);
+      else {
+        const t = (courseParam || topicParam).replace(/[%,()*]/g, ' ').trim();
+        if (!t) return null;
+        q = q.or(`title.ilike.${t},code.ilike.${t}`);
       }
+      const { data, error } = await q;
+      if (error) throw error;
+      return data && data[0] ? data[0] : null;
+    }
 
-      function buildTracker() {
-        const trackerContainer = document.getElementById('trackerContainer');
-        trackerContainer.innerHTML = '';
-        questions.forEach((_, idx) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'tracker-btn';
-          btn.textContent = idx + 1;
-          btn.id = `tracker-${idx}`;
-          btn.addEventListener('click', () => {
-            transitionQuestion(idx);
-          });
-          trackerContainer.appendChild(btn);
-        });
+    const QCOLS = 'id,question,options,correct_index,explanation';
+
+    async function fetchQuestions(saved) {
+      if (saved) {
+        const { data, error } = await db.from('questions').select(QCOLS).in('id', saved.ids);
+        if (error) throw error;
+        const byId = new Map((data || []).map((q) => [q.id, q]));
+        return saved.ids.map((id) => byId.get(id)).filter(Boolean);
       }
+      let q = db.from('questions').select(QCOLS).eq('course_id', S.course.id).limit(2000);
+      if (difficulty !== 'mixed') q = q.ilike('difficulty', difficulty);
+      if (!randomize) q = q.order('created_at', { ascending: true });
+      const { data, error } = await q;
+      if (error) throw error;
+      const rows = (data || []).filter((r) => Array.isArray(r.options) && r.options.length >= 2);
+      return (randomize ? shuffle(rows) : rows).slice(0, wantCount);
+    }
 
-      function updateTrackerUI() {
-        questions.forEach((_, idx) => {
-          const btn = document.getElementById(`tracker-${idx}`);
-          if (!btn) return;
-          btn.classList.remove('active');
-          if (userAnswers[idx] !== undefined) {
-            btn.classList.add('answered');
-          } else {
-            btn.classList.remove('answered');
-          }
-        });
-        const activeBtn = document.getElementById(`tracker-${currentIndex}`);
-        if (activeBtn) {
-          activeBtn.classList.add('active');
-        }
-      }
+    /* ---------- render ---------- */
+    function renderHeader() {
+      el.title.textContent = S.course.title || 'Practice session';
+      const n = S.qs.length;
+      el.sub.textContent = `${n} ${n === 1 ? 'Question' : 'Questions'} • ${difficulty.toUpperCase()} • ${mode === 'timed' ? 'TIMED' : 'PRACTICE'}`;
+      document.title = `${S.course.title || 'Session'} — PRIME-CBT`;
+    }
 
-      function transitionQuestion(index) {
-        if (index < 0 || index >= questions.length) {
-          if (index >= questions.length) showResults();
-          return;
-        }
+    function render(animate = true) {
+      const q = S.qs[S.index];
+      const locked = mode === 'practice' && answered(q);
+      const chosen = S.answers[q.id];
 
-        const container = document.getElementById('questionContainer');
-        container.style.opacity = '0';
-        container.style.transform = 'translateY(6px)';
+      const card = document.createElement('section');
+      card.className = 'card';
+      if (!animate) card.style.animation = 'none';
 
-        setTimeout(() => {
-          loadQuestionData(index);
-          container.style.opacity = '1';
-          container.style.transform = 'translateY(0)';
-        }, 200);
-      }
+      const meta = document.createElement('div'); meta.className = 'q-meta';
+      const count = document.createElement('span'); count.className = 'q-count';
+      count.textContent = `Question ${S.index + 1} of ${S.qs.length}`;
+      const flag = document.createElement('button');
+      flag.type = 'button'; flag.className = 'flag-btn';
+      flag.setAttribute('aria-pressed', String(S.flags.has(q.id)));
+      flag.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>';
+      flag.append(S.flags.has(q.id) ? 'Flagged' : 'Flag');
+      flag.addEventListener('click', toggleFlag);
+      meta.append(count, flag);
 
-      function loadQuestionData(index) {
-        currentIndex = index;
-        const q = questions[index];
-        document.getElementById('questionText').textContent = `Q${index + 1}: ${q.question}`;
-        
-        const optionsList = document.getElementById('optionsList');
-        optionsList.innerHTML = '';
+      const text = document.createElement('div'); text.className = 'question-text'; text.textContent = q.question;
 
-        const explanationBox = document.getElementById('explanationBox');
-        explanationBox.style.display = 'none';
-        explanationBox.classList.remove('visible');
-        explanationBox.className = 'explanation-box';
-
-        q.options.forEach(opt => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'option-btn';
-          btn.textContent = opt;
-          
-          const chosenAnswer = userAnswers[index];
-          
-          if (chosenAnswer !== undefined) {
-            btn.disabled = true;
-            if (opt === q.answer) {
-              btn.style.borderColor = 'var(--emerald)';
-              btn.style.background = 'rgba(16, 185, 129, 0.15)';
-              btn.style.color = 'var(--emerald-bright)';
-            } else if (opt === chosenAnswer && chosenAnswer !== q.answer) {
-              btn.style.borderColor = 'var(--red)';
-              btn.style.background = 'rgba(248, 113, 113, 0.15)';
-              btn.style.color = 'var(--red)';
-            }
-          }
-
-          btn.addEventListener('click', () => {
-            if (userAnswers[index] !== undefined) return;
-            
-            userAnswers[index] = opt;
-            
-            Array.from(optionsList.children).forEach(b => {
-              b.disabled = true;
-              if (b.textContent === q.answer) {
-                b.style.borderColor = 'var(--emerald)';
-                b.style.background = 'rgba(16, 185, 129, 0.15)';
-                b.style.color = 'var(--emerald-bright)';
-              } else if (b.textContent === opt && opt !== q.answer) {
-                b.style.borderColor = 'var(--red)';
-                b.style.background = 'rgba(248, 113, 113, 0.15)';
-                b.style.color = 'var(--red)';
-              }
-            });
-
-            if (opt === q.answer) {
-              explanationBox.className = 'explanation-box correct-feedback';
-              explanationBox.innerHTML = `<strong>Correct! 🎉</strong> ${q.explanation || 'No explanation provided.'}`;
-            } else {
-              explanationBox.className = 'explanation-box incorrect-feedback';
-              explanationBox.innerHTML = `<strong>Incorrect.</strong> You chose "${opt}". The correct option is "${q.answer}".<br><br>${q.explanation || ''}`;
-            }
-            explanationBox.style.display = 'block';
-            void explanationBox.offsetWidth;
-            explanationBox.classList.add('visible');
-
-            updateTrackerUI();
-          });
-
-          optionsList.appendChild(btn);
-        });
-
-        if (userAnswers[index] !== undefined) {
-          const chosen = userAnswers[index];
-          if (chosen === q.answer) {
-            explanationBox.className = 'explanation-box correct-feedback';
-            explanationBox.innerHTML = `<strong>Correct! 🎉</strong> ${q.explanation || ''}`;
-          } else {
-            explanationBox.className = 'explanation-box incorrect-feedback';
-            explanationBox.innerHTML = `<strong>Incorrect.</strong> You chose "${chosen}". The correct option is "${q.answer}".<br><br>${q.explanation || ''}`;
-          }
-          explanationBox.style.display = 'block';
-          explanationBox.classList.add('visible');
-        }
-
-        document.getElementById('prevQBtn').disabled = index === 0;
-        document.getElementById('nextQBtn').textContent = index === questions.length - 1 ? 'Submit Exam' : 'Next Question';
-        
-        updateTrackerUI();
-      }
-
-      function loadQuestion(index) {
-        loadQuestionData(index);
-      }
-
-      document.getElementById('nextQBtn').addEventListener('click', () => {
-        if (currentIndex < questions.length - 1) {
-          transitionQuestion(currentIndex + 1);
-        } else {
-          showResults();
-        }
+      const list = document.createElement('div'); list.className = 'options'; list.setAttribute('role', 'radiogroup');
+      q.options.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'option-btn'; b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', String(chosen === i));
+        const l = document.createElement('span'); l.className = 'letter'; l.textContent = LETTERS[i] || String(i + 1);
+        const t = document.createElement('span'); t.className = 'label'; t.textContent = optText(opt);
+        b.append(l, t);
+        if (locked) {
+          b.disabled = true;
+          if (i === q.correct_index) b.classList.add('right');
+          else if (i === chosen) b.classList.add('wrong');
+        } else if (chosen === i) b.classList.add('selected');
+        b.addEventListener('click', () => choose(i));
+        list.append(b);
       });
 
-      document.getElementById('prevQBtn').addEventListener('click', () => {
-        if (currentIndex > 0) {
-          transitionQuestion(currentIndex - 1);
+      card.append(meta, text, list);
+
+      if (locked) {
+        const ok = chosen === q.correct_index;
+        const fb = document.createElement('div'); fb.className = 'feedback ' + (ok ? 'ok' : 'bad');
+        const s = document.createElement('strong');
+        s.textContent = ok ? 'Correct!' : `Incorrect. The correct answer is ${LETTERS[q.correct_index]}. ${optText(q.options[q.correct_index])}`;
+        fb.append(s);
+        if (q.explanation && q.explanation.trim()) fb.append(q.explanation);
+        card.append(fb);
+      }
+
+      const tracker = document.createElement('div'); tracker.className = 'tracker'; tracker.id = 'tracker';
+      S.qs.forEach((x, i) => {
+        const t = document.createElement('button');
+        t.type = 'button'; t.textContent = String(i + 1); t.setAttribute('aria-label', `Go to question ${i + 1}`);
+        t.className = 'tracker-btn';
+        if (answered(x)) {
+          t.classList.add('answered');
+          if (mode === 'practice' && S.answers[x.id] !== x.correct_index) { t.classList.remove('answered'); t.classList.add('t-wrong'); }
         }
+        if (S.flags.has(x.id)) t.classList.add('flagged');
+        if (i === S.index) t.classList.add('active');
+        t.addEventListener('click', () => go(i));
+        tracker.append(t);
       });
+      card.append(tracker);
 
-      function showResults() {
-        let score = 0;
-        questions.forEach((q, idx) => {
-          if (userAnswers[idx] === q.answer) score++;
-        });
+      el.content.replaceChildren(card);
+      el.prev.disabled = S.index === 0;
+      el.next.textContent = S.index === S.qs.length - 1 ? 'Submit' : 'Next Question';
+      el.bar.hidden = false; el.submitTop.hidden = false;
+    }
 
-        const total = questions.length;
-        const incorrect = total - score;
-        const percentage = Math.round((score / total) * 100);
-
-        const resultParams = new URLSearchParams({
-          topic: topic,
-          score: score,
-          total: total,
-          incorrect: incorrect,
-          percentage: percentage
-        });
-
-        window.location.href = `results.html?${resultParams.toString()}`;
+    /* ---------- actions ---------- */
+    function choose(i) {
+      const q = S.qs[S.index];
+      if (mode === 'practice' && answered(q)) return;
+      if (mode === 'timed' && S.answers[q.id] === i) delete S.answers[q.id]; // tap again to clear
+      else S.answers[q.id] = i;
+      save(); render(false);
+    }
+    function toggleFlag() {
+      const q = S.qs[S.index];
+      if (S.flags.has(q.id)) S.flags.delete(q.id); else S.flags.add(q.id);
+      save(); render(false);
+    }
+    function go(i) {
+      if (i < 0 || i >= S.qs.length) return;
+      S.index = i; save(); render(true); el.content.scrollTop = 0;
+    }
+    el.prev.addEventListener('click', () => go(S.index - 1));
+    el.next.addEventListener('click', () => { if (S.index < S.qs.length - 1) go(S.index + 1); else openSubmit(); });
+    el.submitTop.addEventListener('click', openSubmit);
+    document.addEventListener('keydown', (e) => {
+      if (!S.qs.length || el.dlg.open) return;
+      if (e.key === 'ArrowRight') go(S.index + 1);
+      else if (e.key === 'ArrowLeft') go(S.index - 1);
+      else {
+        const k = e.key.toUpperCase(); let i = LETTERS.indexOf(k);
+        if (i < 0 && /^[1-9]$/.test(e.key)) i = Number(e.key) - 1;
+        if (i >= 0 && i < S.qs[S.index].options.length) choose(i);
       }
     });
+
+    /* ---------- timer (timed mode) ---------- */
+    let tick = null;
+    function startTimer() {
+      if (mode !== 'timed') return;
+      if (!S.endAt) S.endAt = Date.now() + S.qs.length * CONFIG.secondsPerQuestion * 1000;
+      el.timer.hidden = false;
+      const update = () => {
+        const left = Math.max(0, Math.round((S.endAt - Date.now()) / 1000));
+        const m = Math.floor(left / 60), s = left % 60;
+        el.timerText.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        el.timer.classList.toggle('warn', left <= 120 && left > 60);
+        el.timer.classList.toggle('danger', left <= 60);
+        if (left <= 0 && !S.submitting && !S.done) { clearInterval(tick); toast('Time’s up — submitting your answers.'); submit(true); }
+      };
+      update(); tick = setInterval(update, 500);
+    }
+
+    /* ---------- submit ---------- */
+    function openSubmit() {
+      if (S.submitting) return;
+      const un = S.qs.filter((q) => !answered(q)).length;
+      const fl = S.flags.size;
+      const parts = [];
+      parts.push(un > 0 ? `You have ${un} unanswered ${un === 1 ? 'question' : 'questions'}.` : 'You’ve answered every question.');
+      if (fl > 0) parts.push(`${fl} ${fl === 1 ? 'question is' : 'questions are'} flagged.`);
+      parts.push('You can’t change your answers after submitting.');
+      el.dlgBody.textContent = parts.join(' ');
+      el.dlgError.hidden = true;
+      el.dlgConfirm.disabled = false; el.dlgConfirm.textContent = 'Submit';
+      if (!el.dlg.open) el.dlg.showModal();
+    }
+    el.dlgCancel.addEventListener('click', () => el.dlg.close());
+    el.dlgConfirm.addEventListener('click', () => submit(false));
+
+    async function submit(auto) {
+      if (S.submitting || S.done) return;
+      S.submitting = true;
+      el.dlgConfirm.disabled = true; el.dlgConfirm.textContent = 'Submitting…';
+      if (auto && !el.dlg.open) { el.dlgBody.textContent = 'Saving your answers…'; el.dlgError.hidden = true; el.dlg.showModal(); }
+
+      const payload = S.qs.map((q, i) => ({
+        question_id: q.id, position: i,
+        selected_index: S.answers[q.id] ?? null,
+        flagged: S.flags.has(q.id)
+      }));
+      const { data, error } = await db.rpc('submit_practice_session', {
+        p_course_id: S.course.id, p_mode: mode, p_answers: payload
+      });
+      S.submitting = false;
+      if (error || !data) {
+        console.error('[cbt] submit failed:', error);
+        el.dlgError.textContent = navigator.onLine
+          ? 'Couldn’t save your session. Your answers are still here — try again.'
+          : 'You’re offline. Reconnect, then try again — your answers are still here.';
+        el.dlgError.hidden = false;
+        el.dlgConfirm.disabled = false; el.dlgConfirm.textContent = 'Try again';
+        if (auto) el.dlgCancel.hidden = true;
+        return;
+      }
+      S.done = true; clearInterval(tick); clearSaved();
+      location.href = `${CONFIG.resultsPage}?result=${encodeURIComponent(data)}`;
+    }
+
+    /* ---------- connectivity ---------- */
+    const syncOnline = () => { el.offline.hidden = navigator.onLine; };
+    window.addEventListener('online', syncOnline); window.addEventListener('offline', syncOnline); syncOnline();
+
+    /* ---------- boot ---------- */
+    async function init() {
+      try {
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) return redirectToLogin();
+        const { data: { user }, error: uerr } = await db.auth.getUser();
+        if (uerr || !user) return redirectToLogin();
+        S.user = user;
+        db.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') redirectToLogin(); });
+
+        if (!courseParam && !topicParam) {
+          el.sub.textContent = 'No course selected';
+          return showMessage('No course selected', 'Choose a course and set up your session first.', 'Set up a session', null, CONFIG.setupPage);
+        }
+        S.course = await resolveCourse();
+        if (!S.course) {
+          el.sub.textContent = 'Course not found';
+          return showMessage('Course not found', 'We couldn’t find that course.', 'Set up a session', null, CONFIG.setupPage);
+        }
+
+        const saved = loadSaved();
+        S.qs = await fetchQuestions(saved);
+        if (!S.qs.length) {
+          el.title.textContent = S.course.title || 'Practice session';
+          el.sub.textContent = 'No questions available';
+          return showMessage('No questions available', 'There aren’t any questions for these settings. Go back and adjust the difficulty or course.', 'Back to setup', null, el.back.href);
+        }
+
+        if (saved) {
+          const ids = new Set(S.qs.map((q) => q.id));
+          Object.keys(saved.answers || {}).forEach((k) => { if (ids.has(k)) S.answers[k] = saved.answers[k]; });
+          (saved.flags || []).forEach((k) => { if (ids.has(k)) S.flags.add(k); });
+          S.index = Math.min(Math.max(0, saved.index || 0), S.qs.length - 1);
+          S.startedAt = saved.startedAt || Date.now();
+          S.endAt = saved.endAt || null;
+          toast('Resumed your session');
+        }
+        renderHeader();
+        startTimer();
+        render(false);
+        save();
+      } catch (err) {
+        console.error('[cbt] init failed:', err);
+        el.sub.textContent = 'Connection problem';
+        showMessage('Couldn’t load your questions', 'Check your connection and try again.', 'Retry', () => location.reload());
+      }
+    }
+    init();
+  })();
   </script>
 </body>
 </html>
