@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Create Study Plan — PRIME-CBT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,12 +17,23 @@
       --text-2: #cbd5e1;
       --text-3: #94a3b8;
       --text-4: #64748b;
-      --text-5: #475569;
       --emerald-400: #34d399;
       --emerald-500: #10b981;
       --red-400: #f87171;
-      --radius: 16px;
       --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Content column: fluid on small screens, centered max 720px on large ones */
+      --col: 720px;
+      --gutter: max(
+        clamp(14px, 4vw, 28px),
+        calc((100% - var(--col)) / 2),
+        env(safe-area-inset-left)
+      );
+      --gutter-r: max(
+        clamp(14px, 4vw, 28px),
+        calc((100% - var(--col)) / 2),
+        env(safe-area-inset-right)
+      );
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -33,14 +44,12 @@
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
-      display: flex;
-      justify-content: center;
       -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
     }
 
     .app {
       width: 100%;
-      max-width: 480px;
       height: 100vh;
       height: 100dvh;
       display: flex;
@@ -48,8 +57,6 @@
       background: var(--bg);
       position: relative;
       overflow: hidden;
-      border-left: 1px solid rgba(51, 65, 85, 0.4);
-      border-right: 1px solid rgba(51, 65, 85, 0.4);
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.35s var(--ease), visibility 0s linear 0.35s;
@@ -59,8 +66,9 @@
     .topbar {
       flex-shrink: 0;
       min-height: 56px;
-      padding: 8px 16px;
+      padding-block: 8px;
       padding-top: max(8px, env(safe-area-inset-top));
+      padding-inline: var(--gutter) var(--gutter-r);
       display: flex; align-items: center; gap: 10px;
       background: rgba(6, 11, 26, 0.92);
       backdrop-filter: blur(12px);
@@ -75,20 +83,27 @@
       transition: background 0.25s var(--ease), transform 0.15s var(--ease);
     }
     .icon-btn:active { transform: scale(0.9); }
-    .topbar h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+    .topbar h1 {
+      font-size: clamp(0.98rem, 3.6vw, 1.15rem);
+      font-weight: 600; letter-spacing: -0.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
 
     main {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      padding: 18px 16px;
+      overscroll-behavior: contain;
+      padding-block: clamp(14px, 3vw, 28px);
+      padding-inline: var(--gutter) var(--gutter-r);
       padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 20px));
-      display: flex; flex-direction: column; gap: 20px;
+      display: flex; flex-direction: column; gap: clamp(16px, 3vw, 24px);
       scrollbar-width: thin;
       scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     }
 
     .block h2 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; }
-    .hint { font-size: 0.75rem; color: var(--text-4); margin-top: 8px; }
+    .hint { font-size: 0.75rem; color: var(--text-4); margin-top: 8px; line-height: 1.45; }
 
     .field {
       width: 100%; height: 46px;
@@ -100,9 +115,9 @@
     .field:focus { border-color: var(--emerald-400); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15); }
 
     .opt-grid { display: grid; gap: 10px; }
-    .opt-grid.three { grid-template-columns: repeat(3, 1fr); }
-    .opt-grid.two { grid-template-columns: repeat(2, 1fr); }
-    .opt-grid.days { grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .opt-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .opt-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .opt-grid.days { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: clamp(4px, 1.4vw, 10px); }
 
     .option {
       min-height: 46px;
@@ -112,6 +127,7 @@
       color: var(--text-2);
       font: inherit; font-size: 0.85rem; font-weight: 500;
       cursor: pointer;
+      padding: 0 6px;
       transition: background 0.25s var(--ease), border-color 0.25s var(--ease),
                   color 0.25s var(--ease), transform 0.15s var(--ease);
     }
@@ -123,14 +139,18 @@
       font-weight: 600;
     }
     .opt-grid.days .option {
-      min-height: 0; aspect-ratio: 1; max-height: 52px;
-      border-radius: 999px; font-size: 0.72rem; padding: 0;
+      min-height: 0; aspect-ratio: 1; max-height: 56px;
+      border-radius: 999px; font-size: clamp(0.62rem, 2.4vw, 0.78rem); padding: 0;
+    }
+
+    .option:focus-visible, .cta:focus-visible, .icon-btn:focus-visible {
+      outline: 2px solid var(--emerald-400); outline-offset: 2px;
     }
 
     .summary {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-      padding: 14px 16px; font-size: 0.82rem; color: var(--text-3); line-height: 1.5;
-      transition: border-color 0.25s var(--ease);
+      padding: 14px 16px; font-size: 0.85rem; color: var(--text-3); line-height: 1.55;
+      overflow-wrap: anywhere;
     }
     .summary b { color: var(--emerald-400); font-weight: 600; }
 
@@ -145,17 +165,18 @@
     .cta:disabled { opacity: 0.6; cursor: default; }
 
     .toast {
-      position: absolute; left: 16px; right: 16px;
+      position: fixed; left: 50%;
+      width: calc(100% - 32px); max-width: 420px;
       bottom: max(20px, env(safe-area-inset-bottom));
       z-index: 60; text-align: center;
       background: var(--surface); border: 1px solid var(--emerald-400);
       color: var(--text); font-size: 0.85rem; font-weight: 600;
       padding: 13px 16px; border-radius: 14px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-      opacity: 0; transform: translateY(14px); pointer-events: none;
+      opacity: 0; transform: translate(-50%, 14px); pointer-events: none;
       transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
     }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
     .toast.error { border-color: var(--red-400); }
 
     @media (hover: hover) {
@@ -164,24 +185,31 @@
       .cta:not(:disabled):hover { background: #0fa574; }
     }
 
+    /* Very small phones */
     @media (max-width: 360px) {
-      main { padding: 14px 12px; }
+      .opt-grid { gap: 8px; }
       .opt-grid.three .option { font-size: 0.8rem; }
+      .summary { padding: 12px; font-size: 0.8rem; }
     }
 
+    /* Tablets and up: roomier controls */
     @media (min-width: 600px) {
-      .app { max-width: 640px; }
-      main { padding: 28px; gap: 24px; }
-      .topbar { padding-left: 24px; padding-right: 24px; }
+      .opt-grid.two { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .option { min-height: 50px; font-size: 0.9rem; }
+      .field { height: 50px; }
     }
 
-    @media (min-width: 1024px) {
-      .app { max-width: 680px; }
+    /* Large screens: sit the form in a card */
+    @media (min-width: 900px) {
+      main { padding-block: 40px; }
+      .summary { font-size: 0.9rem; }
     }
 
+    /* Short landscape phones */
     @media (max-height: 480px) and (orientation: landscape) {
       .topbar { min-height: 48px; }
       main { padding-top: 12px; }
+      .opt-grid.days .option { max-height: 44px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -237,7 +265,7 @@
         </div>
       </section>
 
-      <div class="summary" id="summary"></div>
+      <div class="summary" id="summary" aria-live="polite"></div>
 
       <div>
         <button type="button" id="generateBtn" class="cta">Create My Study Plan</button>
@@ -272,6 +300,8 @@
 
       let user = null;
       let hasExistingPlan = false;
+      let pendingSessions = 0;   // live count of this student's unfinished plan sessions
+      let busy = false;          // true while saving, so live updates don't fight the button label
 
       let toastTimer = null;
       function toast(msg, isError) {
@@ -327,8 +357,15 @@
         html += n ? 'This adds <b>' + n + ' ' + (n === 1 ? 'session' : 'sessions') + '</b> to your plan for the next two weeks. ' :
                     'No sessions fall before your exam date. ';
         if (left >= 0) html += left + (left === 1 ? ' day' : ' days') + ' until your exam.';
-        if (hasExistingPlan) html += ' Unfinished sessions from your earlier plan will be replaced.';
+        if (pendingSessions > 0) {
+          html += ' It replaces your ' + pendingSessions + ' unfinished ' + (pendingSessions === 1 ? 'session' : 'sessions') + ' from your earlier plan.';
+        }
         sum.innerHTML = html;
+      }
+
+      function setButtonLabel() {
+        if (busy) return;
+        generateBtn.textContent = hasExistingPlan ? 'Update My Study Plan' : 'Create My Study Plan';
       }
 
       // ----- Option buttons -----
@@ -348,6 +385,49 @@
       }));
       examInput.addEventListener('input', renderSummary);
 
+      // ----- Live data: unfinished sessions from the student's current plan -----
+      async function refreshPending() {
+        if (!user) return;
+        const { count, error } = await supabaseClient
+          .from('study_tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('plan_generated', true)
+          .eq('is_done', false)
+          .gte('due_date', dateStr(new Date()));
+        if (error) return;
+        pendingSessions = count || 0;
+        renderSummary();
+      }
+
+      function startRealtime() {
+        supabaseClient
+          .channel('study-plan-' + user.id)
+          .on('postgres_changes',
+              { event: '*', schema: 'public', table: 'study_tasks', filter: 'user_id=eq.' + user.id },
+              () => refreshPending())
+          .subscribe();
+
+        // Plan saved from another tab or device
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_OUT') { window.location.replace('auth.html?mode=login'); return; }
+          if (event === 'USER_UPDATED' && session) {
+            user = session.user;
+            hasExistingPlan = !!(user.user_metadata && user.user_metadata.study_plan);
+            setButtonLabel();
+            renderSummary();
+          }
+        });
+
+        // Keep the date limit and "days until exam" correct if the page stays open past midnight
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState !== 'visible') return;
+          examInput.min = dateStr(new Date());
+          renderSummary();
+          refreshPending();
+        });
+      }
+
       // ----- Create the plan -----
       generateBtn.addEventListener('click', async () => {
         const examDate = examInput.value;
@@ -359,6 +439,7 @@
         if (examDate < dateStr(new Date())) { toast('Choose an exam date from today onwards', true); return; }
         if (!days.length) { toast('Please select at least one study day', true); return; }
 
+        busy = true;
         generateBtn.disabled = true;
         generateBtn.textContent = 'Creating your plan…';
 
@@ -406,8 +487,9 @@
         } catch (err) {
           console.error('create plan:', err && err.message);
           toast("Couldn't save your plan. Please try again.", true);
+          busy = false;
           generateBtn.disabled = false;
-          generateBtn.textContent = 'Create My Study Plan';
+          setButtonLabel();
         }
       });
 
@@ -443,11 +525,14 @@
               b.classList.toggle('selected', plan.days.indexOf(b.dataset.day) > -1);
             });
           }
-          generateBtn.textContent = 'Update My Study Plan';
         }
 
+        setButtonLabel();
         renderSummary();
         $('appRoot').classList.add('ready');
+
+        refreshPending();
+        startRealtime();
       }
 
       init();
