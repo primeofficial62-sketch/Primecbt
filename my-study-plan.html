@@ -4,32 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <title>My Study Plan — PRIME-CBT</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { navy: '#060b1a' },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-          animation: {
-            'fade-in': 'fadeIn 0.4s ease-out',
-            'slide-up': 'slideUp 0.45s ease-out',
-          },
-          keyframes: {
-            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-            slideUp: { '0%': { opacity: '0', transform: 'translateY(14px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060b1a;
-      --border: #334155;
-      --muted: #94a3b8;
-      --emerald-bright: #34d399;
+      /* Background */
+      --bg: #060b1a;            /* page, header */
+      --surface: #0f172a;       /* slate-900: cards */
+      --surface-2: #1e293b;     /* slate-800: tiles, hover */
+      --border: #334155;        /* slate-700 */
+      /* Text */
+      --text: #f1f5f9;          /* slate-100 */
+      --text-2: #cbd5e1;        /* slate-300 */
+      --text-3: #94a3b8;        /* slate-400 */
+      --text-4: #64748b;        /* slate-500 */
+      --text-5: #475569;        /* slate-600 */
+      /* Status */
+      --emerald-400: #34d399;
+      --emerald-500: #10b981;
+      --teal-400: #2dd4bf;
+      --red-400: #f87171;
+      --amber-400: #fbbf24;
+
+      --radius: 16px;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     * {
@@ -48,16 +47,17 @@
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
-      color: #f1f5f9;
+      color: var(--text);
       display: flex;
       justify-content: center;
-      align-items: center;
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ===== App shell (fades in once the login check passes) ===== */
     .app {
       width: 100%;
       max-width: 480px;
+      height: 100vh;
       height: 100dvh;
       display: flex;
       flex-direction: column;
@@ -66,193 +66,777 @@
       overflow: hidden;
       border-left: 1px solid rgba(51, 65, 85, 0.4);
       border-right: 1px solid rgba(51, 65, 85, 0.4);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s var(--ease), visibility 0s linear 0.35s;
+    }
+    .app.ready {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.35s var(--ease), visibility 0s linear 0s;
     }
 
-    header {
+    /* ===== Header ===== */
+    .topbar {
       flex-shrink: 0;
+      min-height: 56px;
+      padding: 8px 16px;
+      padding-top: max(8px, env(safe-area-inset-top));
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(6, 11, 26, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--surface-2);
+      z-index: 40;
     }
+    .icon-btn {
+      width: 40px; height: 40px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 999px; color: var(--text);
+      text-decoration: none; background: transparent; border: none; cursor: pointer;
+      transition: background 0.25s var(--ease), transform 0.15s var(--ease);
+    }
+    .icon-btn:active { transform: scale(0.9); }
+    .topbar h1 {
+      font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .spacer { flex: 1; }
+    .live-pill {
+      display: none; align-items: center; gap: 6px;
+      font-size: 0.68rem; font-weight: 600; color: var(--emerald-400);
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      padding: 3px 8px; border-radius: 999px;
+    }
+    .live-pill i {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--emerald-400);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+      70%  { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+    .reset-btn {
+      font-size: 0.75rem; font-weight: 500; color: var(--text-3);
+      background: none; border: none; cursor: pointer; padding: 8px 4px;
+      transition: color 0.25s var(--ease), opacity 0.25s var(--ease);
+    }
+    .reset-btn:disabled { opacity: 0.4; cursor: default; }
 
+    /* ===== Main (scrolls) ===== */
     main {
       flex: 1;
       overflow-y: auto;
-      padding: 20px 16px 40px;
+      padding: 18px 16px;
+      padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 20px));
       scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.15) transparent;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+    .layout { display: flex; flex-direction: column; gap: 20px; }
+    .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+    /* ===== Cards ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .eyebrow {
+      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-3);
     }
 
-    .card { 
-      transition: all 0.2s ease; 
+    /* ===== Countdown ===== */
+    .countdown { text-align: center; }
+    .fade { animation: fadeIn 0.3s var(--ease) both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .cd-days {
+      display: flex; align-items: baseline; justify-content: center; gap: 8px;
+      margin-top: 8px; color: var(--emerald-400);
     }
-    .card:active { 
-      transform: scale(0.98); 
+    #cdDays {
+      font-size: clamp(2.2rem, 10vw, 3rem); font-weight: 700;
+      letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
     }
-    
-    /* Remove slide-up, fade-in, and scale entrance animations globally */
-.animate-fade-up, 
-.animate-scale, 
-.animate-fade-in,
-.animate-slide-up,
-[class*="animate-"] {
-  animation: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
+    #cdUnit { font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .cd-sub { font-size: 0.8rem; color: var(--text-3); margin-top: 2px; }
+    .cd-clock {
+      margin-top: 10px; font-size: 0.95rem; font-weight: 600; color: var(--text-2);
+      font-variant-numeric: tabular-nums; letter-spacing: 0.04em;
+    }
+    .link-btn {
+      margin-top: 12px; background: none; border: none; cursor: pointer;
+      font-size: 0.8rem; font-weight: 600; color: var(--emerald-400);
+      padding: 6px 10px; border-radius: 8px;
+      transition: background 0.25s var(--ease), color 0.25s var(--ease);
+    }
+    .link-btn.muted { color: var(--text-3); }
+    .cd-edit-title { font-size: 0.95rem; font-weight: 600; margin-top: 8px; }
+    .cd-edit-sub { font-size: 0.78rem; color: var(--text-3); margin: 4px 0 12px; }
 
-Use this color and make sure u add the CSS . It should switch normally not sudden. 
-**Background**
-- `#060b1a` — deep navy-black (page background, header/footer bars)
-- `slate-900` / `slate-800` — card and stat-tile surfaces
-- `slate-700` — borders
+    .inline-row { display: flex; gap: 10px; }
+    .field {
+      width: 100%; min-width: 0; height: 46px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+      padding: 0 14px; color: var(--text); font: inherit; font-size: 16px;
+      color-scheme: dark; outline: none;
+      transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    }
+    .field::placeholder { color: var(--text-5); }
+    .field:focus { border-color: var(--emerald-400); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15); }
+    .btn {
+      height: 46px; padding: 0 20px; border: none; border-radius: 12px;
+      font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: background 0.25s var(--ease), transform 0.15s var(--ease), opacity 0.25s var(--ease);
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.6; cursor: default; }
+    .btn.primary { background: var(--emerald-500); color: #022c22; box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25); }
 
-**Text**
-- `slate-100` — primary text
-- `slate-300` / `slate-400` / `slate-500` / `slate-600` — secondary/muted text tiers
+    .divider { height: 1px; background: var(--surface-2); margin: 16px 0 14px; }
+    .bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+    .bar > div {
+      height: 100%; width: 0; border-radius: 999px;
+      background: linear-gradient(90deg, var(--emerald-500), var(--teal-400));
+      transition: width 0.6s var(--ease);
+    }
+    .progress-text { font-size: 0.72rem; color: var(--text-4); margin-top: 8px; }
 
-**Status colors (functional, not just decorative)**
-- `emerald-400` / `emerald-500` — correct answers, active filter, progress bar start
-- `teal-400` — progress bar gradient end
-- `red-400` / `red-500` — incorrect answers/picks
-- `amber-400` — flagged questions/badge
-- `slate-400`/`slate-700` — skipped questions
+    /* ===== Add task ===== */
+    .add-form { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .add-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .add-form .btn { width: 100%; }
 
- 
+    /* ===== Task lists ===== */
+    .group { display: flex; flex-direction: column; gap: 10px; }
+    .group-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+    .group-head h3 { font-size: 0.9rem; font-weight: 600; }
+    .group-head h3.warn { color: var(--amber-400); }
+    .group-count { font-size: 0.75rem; color: var(--text-4); }
+    .task-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+    .task {
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px;
+      transition: border-color 0.25s var(--ease), background 0.25s var(--ease),
+                  opacity 0.22s var(--ease), transform 0.22s var(--ease);
+    }
+    .task.enter { animation: fadeIn 0.3s var(--ease) both; }
+    .task.leaving { opacity: 0; transform: translateX(14px); pointer-events: none; }
+    .task.done { border-color: var(--surface-2); }
+
+    .task-main {
+      position: relative;
+      flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px;
+      padding: 13px 8px 13px 14px; cursor: pointer;
+    }
+    .task-cb { position: absolute; opacity: 0; pointer-events: none; }
+    .task-box {
+      width: 22px; height: 22px; flex-shrink: 0; border-radius: 999px;
+      border: 2px solid var(--text-5);
+      display: grid; place-items: center;
+      transition: background 0.25s var(--ease), border-color 0.25s var(--ease), transform 0.15s var(--ease);
+    }
+    .task-box svg { opacity: 0; transform: scale(0.5); transition: opacity 0.2s var(--ease), transform 0.25s var(--ease); }
+    .task-cb:checked + .task-box { background: var(--emerald-500); border-color: var(--emerald-500); }
+    .task-cb:checked + .task-box svg { opacity: 1; transform: scale(1); }
+    .task-cb:focus-visible + .task-box { outline: 2px solid var(--emerald-400); outline-offset: 2px; }
+    .task-main:active .task-box { transform: scale(0.9); }
+
+    .task-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .task-title {
+      font-size: 0.875rem; font-weight: 500; color: var(--text);
+      overflow-wrap: anywhere;
+      text-decoration: line-through; text-decoration-color: transparent;
+      transition: color 0.25s var(--ease), text-decoration-color 0.25s var(--ease);
+    }
+    .task.done .task-title { color: var(--text-3); text-decoration-color: var(--text-4); }
+    .task-meta { font-size: 0.72rem; color: var(--text-4); overflow-wrap: anywhere; }
+
+    .task-del {
+      width: 40px; height: 40px; flex-shrink: 0; margin-right: 4px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; border-radius: 999px; cursor: pointer;
+      color: var(--text-5);
+      transition: color 0.25s var(--ease), background 0.25s var(--ease);
+    }
+    .task-del svg { width: 16px; height: 16px; }
+
+    .empty {
+      text-align: center; padding: 26px 16px;
+      background: var(--surface); border: 1px dashed var(--border); border-radius: 14px;
+      color: var(--text-3); font-size: 0.82rem;
+    }
+    .empty strong { display: block; color: var(--text-2); font-size: 0.9rem; margin-bottom: 4px; }
+
+    /* ===== CTA ===== */
+    .cta {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 50px; margin-top: 20px; border-radius: 14px;
+      background: var(--emerald-500); color: #022c22;
+      font-weight: 600; font-size: 0.9rem; text-decoration: none;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+      transition: background 0.25s var(--ease), transform 0.15s var(--ease);
+    }
+    .cta:active { transform: scale(0.98); }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: absolute; left: 16px; right: 16px;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 60; text-align: center;
+      background: var(--surface); border: 1px solid var(--emerald-400);
+      color: var(--text); font-size: 0.85rem; font-weight: 600;
+      padding: 13px 16px; border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      opacity: 0; transform: translateY(14px); pointer-events: none;
+      transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ===== Hover only on devices that can hover ===== */
+    @media (hover: hover) {
+      .icon-btn:hover { background: var(--surface-2); }
+      .reset-btn:not(:disabled):hover { color: var(--emerald-400); }
+      .link-btn:hover { background: rgba(52, 211, 153, 0.1); }
+      .link-btn.muted:hover { background: var(--surface-2); color: var(--text-2); }
+      .btn.primary:hover, .cta:hover { background: #0fa574; }
+      .task:hover { border-color: #475569; }
+      .task-del:hover { color: var(--red-400); background: rgba(248, 113, 113, 0.1); }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 360px) {
+      main { padding: 14px 12px; }
+      .card { padding: 14px; }
+      .topbar { padding-left: 8px; padding-right: 10px; gap: 6px; }
+      .topbar h1 { font-size: 0.95rem; }
+      .inline-row { flex-direction: column; }
+      .inline-row .btn { width: 100%; }
+    }
+
+    @media (min-width: 600px) {
+      .app { max-width: 720px; }
+      main { padding: 24px 28px; }
+      .topbar { padding-left: 24px; padding-right: 24px; }
+      .card { padding: 22px; }
+    }
+
+    @media (min-width: 1024px) {
+      .app { max-width: 1120px; }
+      main { padding: 32px; }
+      .layout { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start; }
+      .col-left { position: sticky; top: 0; }
+      .cta { max-width: 380px; }
+    }
+
+    @media (max-height: 480px) and (orientation: landscape) {
+      .topbar { min-height: 48px; }
+      main { padding-top: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="app">
-    <!-- Top Bar -->
-    <header class="sticky top-0 z-40 h-14 bg-navy/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between animate-fade-in">
-      <div class="flex items-center gap-3">
-        <a href="home.html" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 transition active:scale-90">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-        </a>
-        <h1 class="text-lg font-semibold tracking-tight">My Study Plan</h1>
-      </div>
-      <button id="resetTasks" class="text-xs text-slate-400 hover:text-emerald-400 transition">Reset Tasks</button>
+  <div class="app" id="appRoot">
+
+    <header class="topbar">
+      <a href="home.html" class="icon-btn" aria-label="Back to Home">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </a>
+      <h1>My Study Plan</h1>
+      <span class="live-pill" id="livePill"><i></i>Live</span>
+      <span class="spacer"></span>
+      <button id="resetTasks" class="reset-btn" type="button" disabled>Reset tasks</button>
     </header>
 
-    <main class="space-y-6">
+    <main>
+      <div class="layout">
 
-      <!-- Exam Countdown -->
-      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-5 text-center animate-slide-up">
-        <p class="text-xs text-slate-400 mb-1">Exam Countdown</p>
-        <h2 class="text-3xl font-bold tracking-tight text-emerald-400">18 DAYS</h2>
-        <p class="text-xs text-slate-400 mt-0.5">to Final Examinations</p>
-        
-        <div class="mt-4 h-2 bg-slate-800 rounded-full overflow-hidden">
-          <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300" style="width: 60%"></div>
+        <!-- LEFT: countdown + add task -->
+        <div class="col col-left">
+
+          <section class="card countdown">
+            <p class="eyebrow">Exam countdown</p>
+
+            <!-- View: date is set -->
+            <div id="cdView" style="display:none">
+              <div class="cd-days"><span id="cdDays">0</span><span id="cdUnit">days</span></div>
+              <p class="cd-sub" id="cdSub"></p>
+              <p class="cd-clock" id="cdClock"></p>
+              <button class="link-btn" id="cdReset" type="button">Reset date</button>
+            </div>
+
+            <!-- Edit: set or reset the date -->
+            <div id="cdEdit" style="display:none">
+              <p class="cd-edit-title" id="cdEditTitle">When is your exam?</p>
+              <p class="cd-edit-sub">Pick the date and we'll count down to it live.</p>
+              <div class="inline-row">
+                <input type="date" class="field" id="cdInput" aria-label="Exam date">
+                <button type="button" class="btn primary" id="cdSave">Save</button>
+              </div>
+              <button class="link-btn muted" id="cdCancel" type="button" style="display:none">Cancel</button>
+            </div>
+
+            <div class="divider"></div>
+            <p class="eyebrow" style="text-align:left;margin-bottom:10px">Today's progress</p>
+            <div class="bar"><div id="progressBar"></div></div>
+            <p class="progress-text" id="progressText" style="text-align:left"></p>
+          </section>
+
+          <section class="card">
+            <p class="eyebrow">Add a task</p>
+            <form class="add-form" id="addForm" novalidate>
+              <input type="text" class="field" id="taskTitle" placeholder="What will you study?" maxlength="120" autocomplete="off" aria-label="Task">
+              <div class="add-row">
+                <input type="text" class="field" id="taskNote" placeholder="Course or note (optional)" maxlength="80" autocomplete="off" aria-label="Course or note">
+                <input type="date" class="field" id="taskDate" aria-label="Task date">
+              </div>
+              <button type="submit" class="btn primary" id="addBtn">Add task</button>
+            </form>
+          </section>
+
         </div>
-        <p id="progressText" class="text-[11px] text-slate-500 mt-2">3 of 5 tasks completed (60%)</p>
-      </section>
 
-      <!-- Today's Tasks -->
-      <section class="animate-slide-up" style="animation-delay: 0.08s">
-        <div class="flex items-center justify-between mb-3 px-1">
-          <h3 class="text-sm font-semibold">Today’s Tasks</h3>
-          <span id="taskCounter" class="text-xs text-slate-500">3 of 5 done</span>
+        <!-- RIGHT: tasks -->
+        <div class="col col-right">
+
+          <section class="group" id="secOverdue" style="display:none">
+            <div class="group-head"><h3 class="warn">Unfinished from earlier</h3><span class="group-count" id="countOverdue"></span></div>
+            <ul class="task-list" id="listOverdue"></ul>
+          </section>
+
+          <section class="group" id="secToday">
+            <div class="group-head"><h3>Today's tasks</h3><span class="group-count" id="taskCounter"></span></div>
+            <ul class="task-list" id="listToday"></ul>
+            <div class="empty" id="todayEmpty" style="display:none">
+              <strong>Nothing planned for today</strong>
+              Add a task to start your plan.
+            </div>
+          </section>
+
+          <section class="group" id="secUpcoming" style="display:none">
+            <div class="group-head"><h3>Upcoming</h3><span class="group-count" id="countUpcoming"></span></div>
+            <ul class="task-list" id="listUpcoming"></ul>
+          </section>
+
         </div>
-
-        <div class="space-y-2.5" id="taskList">
-          <!-- Task 1 -->
-          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
-            <input type="checkbox" checked class="task-checkbox hidden peer">
-            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
-              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Practice 20 Genetics questions</p>
-              <p class="text-[11px] text-slate-500 mt-0.5">BIO 101</p>
-            </div>
-          </label>
-
-          <!-- Task 2 -->
-          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
-            <input type="checkbox" checked class="task-checkbox hidden peer">
-            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
-              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Read Cell Biology Chapter 4</p>
-              <p class="text-[11px] text-slate-500 mt-0.5">Materials</p>
-            </div>
-          </label>
-
-          <!-- Task 3 -->
-          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
-            <input type="checkbox" checked class="task-checkbox hidden peer">
-            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
-              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Complete Timed Practice (30 Qs)</p>
-              <p class="text-[11px] text-slate-500 mt-0.5">BIO 101 · 45 mins</p>
-            </div>
-          </label>
-
-          <!-- Task 4 -->
-          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
-            <input type="checkbox" class="task-checkbox hidden peer">
-            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
-              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Review Incorrect Answers</p>
-              <p class="text-[11px] text-slate-500 mt-0.5">From last mock exam</p>
-            </div>
-          </label>
-
-          <!-- Task 5 -->
-          <label class="card bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5 cursor-pointer">
-            <input type="checkbox" class="task-checkbox hidden peer">
-            <div class="w-5 h-5 rounded-full border-2 border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center shrink-0 transition">
-              <svg class="opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#060b1a" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium peer-checked:line-through peer-checked:text-slate-400 truncate transition">Study Organic Chemistry Notes</p>
-              <p class="text-[11px] text-slate-500 mt-0.5">CHM 101 · 30 mins</p>
-            </div>
-          </label>
-        </div>
-      </section>
-
-      <!-- CTA -->
-      <div class="pt-1 animate-slide-up" style="animation-delay: 0.15s">
-        <button type="button" class="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold rounded-xl text-sm transition active:scale-[0.98] shadow-lg shadow-emerald-500/25">
-          Continue Today’s Plan
-        </button>
       </div>
 
+      <a href="practice.html" class="cta">Continue Practice</a>
     </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="profile-gate.js"></script>
   <script>
-    const checkboxes = document.querySelectorAll('.task-checkbox');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    const taskCounter = document.getElementById('taskCounter');
-    const resetBtn = document.getElementById('resetTasks');
+    // ========== SUPABASE CLIENT ==========
+    const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    function updateProgress() {
-      const total = checkboxes.length;
-      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-      const percentage = Math.round((checkedCount / total) * 100);
+    document.addEventListener('DOMContentLoaded', () => {
+      const $ = (id) => document.getElementById(id);
+      const pad = (n) => String(n).padStart(2, '0');
+      const dateStr = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      const todayStr = () => dateStr(new Date());
+      const parseDate = (s) => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
 
-      progressBar.style.width = `${percentage}%`;
-      progressText.textContent = `${checkedCount} of ${total} tasks completed (${percentage}%)`;
-      taskCounter.textContent = `${checkedCount} of ${total} done`;
-    }
+      let user = null;
+      let tasks = [];
+      let loaded = false;
+      let loadFailed = false;
+      let lastDay = todayStr();
 
-    checkboxes.forEach(cb => {
-      cb.addEventListener('change', updateProgress);
+      // ----- Toast -----
+      let toastTimer = null;
+      function toast(msg) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+      }
+
+      // ----- Smooth show (fade in) -----
+      function show(el) {
+        el.style.display = '';
+        el.classList.remove('fade');
+        void el.offsetWidth;
+        el.classList.add('fade');
+      }
+      function hide(el) { el.style.display = 'none'; }
+
+      // =====================================================
+      //  EXAM COUNTDOWN (date lives on the user's account)
+      // =====================================================
+      let examDate = null;
+      let ticker = null;
+      let editing = false;
+
+      function tick() {
+        if (!examDate) return;
+        const diff = parseDate(examDate).getTime() - Date.now();
+        if (diff <= 0) {
+          clearInterval(ticker);
+          if (examDate === todayStr()) {
+            $('cdDays').textContent = '0';
+            $('cdUnit').textContent = 'days';
+            $('cdSub').textContent = "Today is exam day. You've got this! 💪";
+            $('cdClock').textContent = '';
+          } else {
+            openEdit('Your exam date has passed. Set a new one?');
+          }
+          return;
+        }
+        const s = Math.floor(diff / 1000);
+        const days = Math.floor(s / 86400);
+        $('cdDays').textContent = days;
+        $('cdUnit').textContent = days === 1 ? 'day' : 'days';
+        $('cdClock').textContent = pad(Math.floor((s % 86400) / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60);
+      }
+
+      function renderExam() {
+        clearInterval(ticker);
+        if (editing) return;
+        if (!examDate) { openEdit('When is your exam?'); return; }
+        hide($('cdEdit'));
+        show($('cdView'));
+        $('cdSub').textContent = 'until ' + parseDate(examDate).toLocaleDateString(undefined, {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+        tick();
+        ticker = setInterval(tick, 1000);
+      }
+
+      function openEdit(title) {
+        clearInterval(ticker);
+        editing = true;
+        $('cdEditTitle').textContent = title || (examDate ? 'Reset your exam date' : 'When is your exam?');
+        $('cdInput').min = todayStr();
+        $('cdInput').value = examDate && examDate >= todayStr() ? examDate : '';
+        $('cdCancel').style.display = examDate && examDate >= todayStr() ? '' : 'none';
+        hide($('cdView'));
+        show($('cdEdit'));
+      }
+
+      function closeEdit() {
+        editing = false;
+        renderExam();
+      }
+
+      $('cdReset').addEventListener('click', () => openEdit('Reset your exam date'));
+      $('cdCancel').addEventListener('click', closeEdit);
+
+      $('cdSave').addEventListener('click', async () => {
+        const val = $('cdInput').value;
+        if (!val) { toast('Pick your exam date first'); return; }
+        if (val < todayStr()) { toast('Choose a date from today onwards'); return; }
+        const btn = $('cdSave');
+        btn.disabled = true;
+        const { error } = await supabaseClient.auth.updateUser({ data: { exam_date: val } });
+        btn.disabled = false;
+        if (error) { toast(error.message); return; }
+        examDate = val;
+        editing = false;
+        renderExam();
+        toast('Exam date saved ✅');
+      });
+
+      // =====================================================
+      //  TASKS (Supabase table "study_tasks", realtime)
+      // =====================================================
+      const CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#022c22" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+      const TRASH_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+
+      const groups = {
+        overdue:  { sec: $('secOverdue'),  list: $('listOverdue'),  count: $('countOverdue') },
+        today:    { sec: $('secToday'),    list: $('listToday'),    count: $('taskCounter') },
+        upcoming: { sec: $('secUpcoming'), list: $('listUpcoming'), count: $('countUpcoming') }
+      };
+      const rowEls = new Map();
+
+      const fmtDay = (s) => parseDate(s).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+
+      function buildRow(t) {
+        const li = document.createElement('li');
+        li.className = 'task enter';
+        li.dataset.id = t.id;
+
+        const label = document.createElement('label');
+        label.className = 'task-main';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'task-cb';
+
+        const box = document.createElement('span');
+        box.className = 'task-box';
+        box.innerHTML = CHECK_SVG;
+
+        const text = document.createElement('span');
+        text.className = 'task-text';
+        const title = document.createElement('span');
+        title.className = 'task-title';
+        const meta = document.createElement('span');
+        meta.className = 'task-meta';
+        text.appendChild(title);
+        text.appendChild(meta);
+
+        label.appendChild(cb);
+        label.appendChild(box);
+        label.appendChild(text);
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'task-del';
+        del.setAttribute('aria-label', 'Delete task');
+        del.innerHTML = TRASH_SVG;
+
+        li.appendChild(label);
+        li.appendChild(del);
+
+        cb.addEventListener('change', () => toggleTask(t.id, cb.checked));
+        del.addEventListener('click', () => deleteTask(t.id));
+        li.addEventListener('animationend', () => li.classList.remove('enter'), { once: true });
+        return li;
+      }
+
+      function updateRow(li, t, groupName) {
+        li.querySelector('.task-cb').checked = !!t.is_done;
+        li.classList.toggle('done', !!t.is_done);
+        li.querySelector('.task-title').textContent = t.title;
+        const parts = [];
+        if (t.note) parts.push(t.note);
+        if (groupName !== 'today') parts.push(fmtDay(t.due_date));
+        const meta = li.querySelector('.task-meta');
+        meta.textContent = parts.join(' · ');
+        meta.style.display = parts.length ? '' : 'none';
+      }
+
+      function render() {
+        const today = todayStr();
+        const by = { overdue: [], today: [], upcoming: [] };
+        const byCreated = (a, b) => String(a.created_at).localeCompare(String(b.created_at));
+
+        tasks.slice().sort(byCreated).forEach((t) => {
+          if (t.due_date === today) by.today.push(t);
+          else if (t.due_date > today) by.upcoming.push(t);
+          else if (!t.is_done) by.overdue.push(t);
+        });
+        by.overdue.sort((a, b) => a.due_date.localeCompare(b.due_date));
+        by.upcoming.sort((a, b) => a.due_date.localeCompare(b.due_date) || byCreated(a, b));
+
+        const keep = new Set();
+        Object.keys(by).forEach((g) => {
+          const grp = groups[g];
+          grp.sec.style.display = (g === 'today' || by[g].length) ? '' : 'none';
+          grp.count.textContent = by[g].length && g !== 'today' ? by[g].length : '';
+
+          by[g].forEach((t, i) => {
+            keep.add(t.id);
+            let li = rowEls.get(t.id);
+            if (!li) { li = buildRow(t); rowEls.set(t.id, li); }
+            updateRow(li, t, g);
+            const live = grp.list.querySelectorAll(':scope > li:not(.leaving)');
+            if (live[i] !== li) grp.list.insertBefore(li, live[i] || null);
+          });
+        });
+
+        // fade out rows that no longer exist
+        rowEls.forEach((li, id) => {
+          if (!keep.has(id)) {
+            rowEls.delete(id);
+            li.classList.add('leaving');
+            setTimeout(() => li.remove(), 240);
+          }
+        });
+
+        // today's progress
+        const total = by.today.length;
+        const done = by.today.filter((t) => t.is_done).length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        $('progressBar').style.width = pct + '%';
+        $('taskCounter').textContent = loaded && total ? done + ' of ' + total + ' done' : '';
+        $('progressText').textContent = !loaded ? '' :
+          total ? done + ' of ' + total + ' tasks completed (' + pct + '%)' : 'No tasks for today yet';
+        $('resetTasks').disabled = done === 0;
+
+        // empty / error message
+        const empty = $('todayEmpty');
+        if (loaded && loadFailed) {
+          empty.innerHTML = "<strong>Couldn't load your tasks</strong>Check your connection and refresh the page.";
+          empty.style.display = '';
+        } else if (loaded && total === 0) {
+          empty.innerHTML = '<strong>Nothing planned for today</strong>Add a task to start your plan.';
+          empty.style.display = '';
+        } else {
+          empty.style.display = 'none';
+        }
+      }
+
+      async function toggleTask(id, checked) {
+        const t = tasks.find((x) => x.id === id);
+        if (!t) return;
+        const prev = t.is_done;
+        t.is_done = checked;
+        render();
+        const { error } = await supabaseClient.from('study_tasks').update({ is_done: checked }).eq('id', id);
+        if (error) { t.is_done = prev; render(); toast("Couldn't update that task"); }
+      }
+
+      async function deleteTask(id) {
+        const idx = tasks.findIndex((x) => x.id === id);
+        if (idx < 0) return;
+        const removed = tasks[idx];
+        tasks.splice(idx, 1);
+        render();
+        const { error } = await supabaseClient.from('study_tasks').delete().eq('id', id);
+        if (error) { tasks.push(removed); render(); toast("Couldn't delete that task"); }
+      }
+
+      $('resetTasks').addEventListener('click', async () => {
+        const today = todayStr();
+        const affected = tasks.filter((t) => t.due_date === today && t.is_done);
+        if (!affected.length) return;
+        affected.forEach((t) => { t.is_done = false; });
+        render();
+        const { error } = await supabaseClient
+          .from('study_tasks')
+          .update({ is_done: false })
+          .eq('user_id', user.id)
+          .eq('due_date', today)
+          .eq('is_done', true);
+        if (error) { affected.forEach((t) => { t.is_done = true; }); render(); toast("Couldn't reset tasks"); }
+      });
+
+      // ----- Add task -----
+      const titleInput = $('taskTitle');
+      const noteInput = $('taskNote');
+      const dateInput = $('taskDate');
+
+      function resetDateInput() {
+        dateInput.min = todayStr();
+        dateInput.value = todayStr();
+      }
+
+      $('addForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = titleInput.value.trim();
+        if (!title) { toast('Enter a task first'); titleInput.focus(); return; }
+        let due = dateInput.value || todayStr();
+        if (due < todayStr()) due = todayStr();
+
+        const btn = $('addBtn');
+        btn.disabled = true;
+        const { data, error } = await supabaseClient
+          .from('study_tasks')
+          .insert({ user_id: user.id, title: title, note: noteInput.value.trim() || null, due_date: due })
+          .select()
+          .single();
+        btn.disabled = false;
+
+        if (error) { toast("Couldn't add that task"); return; }
+        if (!tasks.some((t) => t.id === data.id)) tasks.push(data);
+        titleInput.value = '';
+        noteInput.value = '';
+        render();
+        if (due !== todayStr()) toast('Added for ' + fmtDay(due));
+      });
+
+      // ----- Load + realtime -----
+      async function loadTasks() {
+        const { data, error } = await supabaseClient
+          .from('study_tasks')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        if (error) { console.error('study_tasks:', error.message); loadFailed = true; tasks = []; }
+        else { loadFailed = false; tasks = data || []; }
+        loaded = true;
+        render();
+      }
+
+      function subscribeTasks() {
+        supabaseClient
+          .channel('study-tasks-' + user.id)
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'study_tasks', filter: 'user_id=eq.' + user.id },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                if (!tasks.some((t) => t.id === payload.new.id)) tasks.push(payload.new);
+              } else if (payload.eventType === 'UPDATE') {
+                const i = tasks.findIndex((t) => t.id === payload.new.id);
+                if (i > -1) tasks[i] = payload.new; else tasks.push(payload.new);
+              } else if (payload.eventType === 'DELETE') {
+                tasks = tasks.filter((t) => t.id !== payload.old.id);
+              }
+              render();
+            })
+          .subscribe((status) => {
+            $('livePill').style.display = status === 'SUBSCRIBED' ? 'inline-flex' : 'none';
+          });
+      }
+
+      // ----- New day rolls over while the page is open -----
+      function checkNewDay() {
+        const now = todayStr();
+        if (now === lastDay) return;
+        lastDay = now;
+        resetDateInput();
+        render();
+      }
+      setInterval(checkNewDay, 30000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) checkNewDay(); });
+
+      // =====================================================
+      //  START
+      // =====================================================
+      async function init() {
+        let session = null;
+        try {
+          const res = await supabaseClient.auth.getSession();
+          session = res.data && res.data.session;
+        } catch (e) { session = null; }
+
+        if (!session) { window.location.replace('auth.html?mode=login'); return; }
+        if (needsProfileSetup(session.user)) { window.location.replace('profile-setup.html'); return; }
+
+        user = session.user;
+        examDate = (user.user_metadata && user.user_metadata.exam_date) || null;
+
+        resetDateInput();
+        renderExam();
+        $('appRoot').classList.add('ready');
+
+        // keep the countdown in sync if the date changes in another tab
+        supabaseClient.auth.onAuthStateChange((event, sess) => {
+          if (event === 'SIGNED_OUT') { window.location.replace('auth.html?mode=login'); return; }
+          if (event === 'USER_UPDATED' && sess) {
+            const d = (sess.user.user_metadata && sess.user.user_metadata.exam_date) || null;
+            if (d !== examDate) { examDate = d; if (!editing) renderExam(); }
+          }
+        });
+
+        await loadTasks();
+        subscribeTasks();
+      }
+
+      init();
     });
-
-    resetBtn.addEventListener('click', () => {
-      checkboxes.forEach(cb => cb.checked = false);
-      updateProgress();
-    });
-
-    updateProgress();
   </script>
 </body>
 </html>
