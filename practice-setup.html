@@ -25,7 +25,6 @@
       --font-display: 'Lora', Georgia, serif;
       --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-      /* Fluid spacing + type */
       --pad: clamp(14px, 4.5vw, 28px);
       --fs-title: clamp(16px, 4.2vw, 21px);
       --fs-sub: clamp(11.5px, 3.2vw, 13px);
@@ -34,7 +33,6 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
     body {
@@ -52,8 +50,8 @@
     }
 
     button { font-family: inherit; color: inherit; }
-
     :focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+    [hidden] { display: none !important; }
 
     /* ---------- App shell ---------- */
     .app {
@@ -68,7 +66,6 @@
       border-right: 1px solid rgba(51, 65, 85, 0.6);
     }
 
-    /* Tablet / desktop: floating card, never taller than the viewport */
     @media (min-width: 720px) and (min-height: 640px) {
       body { align-items: center; padding-block: 24px; }
       .app {
@@ -83,8 +80,7 @@
 
     /* ---------- Top bar ---------- */
     .topbar {
-      display: flex;
-      align-items: center;
+      display: flex; align-items: center;
       gap: clamp(10px, 3vw, 16px);
       padding: 14px var(--pad) 12px;
       padding-top: max(14px, env(safe-area-inset-top));
@@ -97,7 +93,7 @@
     }
 
     .back-btn {
-      width: 40px; height: 40px;
+      width: 40px; height: 40px; flex-shrink: 0;
       border-radius: 11px;
       background: rgba(30, 41, 59, 0.6);
       border: 1px solid var(--border);
@@ -105,7 +101,6 @@
       color: var(--muted-light);
       cursor: pointer;
       transition: background .2s, color .2s, transform .2s;
-      flex-shrink: 0;
     }
     .back-btn:active { transform: scale(0.94); }
     .back-btn svg { width: 18px; height: 18px; }
@@ -113,31 +108,27 @@
     .topbar-title { min-width: 0; flex: 1; }
     .topbar-title h1 {
       font-family: var(--font-display);
-      font-size: var(--fs-title);
-      font-weight: 700;
-      line-height: 1.2;
+      font-size: var(--fs-title); font-weight: 700; line-height: 1.2;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .topbar-title p {
-      font-size: var(--fs-sub);
-      color: var(--muted);
-      margin-top: 2px;
+      font-size: var(--fs-sub); color: var(--muted); margin-top: 2px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
     .live-pill {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 10px;
+      padding: 5px 10px; flex-shrink: 0;
       border-radius: 999px;
       border: 1px solid var(--border);
       background: rgba(15, 23, 42, 0.8);
-      font-size: 11.5px; font-weight: 600;
-      color: var(--muted);
-      flex-shrink: 0;
+      font-size: 11.5px; font-weight: 600; color: var(--muted);
     }
     .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
     .live-pill.on { color: var(--emerald-bright); border-color: rgba(16, 185, 129, 0.35); }
     .live-pill.on .live-dot { background: var(--emerald); animation: pulse 2s ease-in-out infinite; }
+    .live-pill.sync { color: var(--teal); border-color: rgba(45, 212, 191, 0.3); }
+    .live-pill.sync .live-dot { background: var(--teal); }
     .live-pill.off { color: var(--amber); border-color: rgba(251, 191, 36, 0.35); }
     .live-pill.off .live-dot { background: var(--amber); }
     @keyframes pulse {
@@ -147,8 +138,7 @@
 
     /* ---------- Content ---------- */
     .content {
-      flex: 1;
-      min-height: 0;
+      flex: 1; min-height: 0;
       overflow-y: auto;
       overscroll-behavior: contain;
       padding: clamp(14px, 3.5vw, 24px) var(--pad);
@@ -163,11 +153,8 @@
       gap: 10px; margin-bottom: 10px;
     }
     .section-label {
-      font-size: var(--fs-small);
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-size: var(--fs-small); font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
     }
     .section-meta { font-size: var(--fs-small); color: var(--muted); text-align: right; }
     .section-meta b { color: var(--emerald-bright); font-weight: 600; }
@@ -186,13 +173,10 @@
       background: var(--surface);
       border: 1.5px solid var(--border);
       color: var(--muted-light);
-      font-size: var(--fs-body);
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
+      font-size: var(--fs-body); font-weight: 600;
+      cursor: pointer; user-select: none;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 1px;
-      line-height: 1.2;
+      gap: 1px; line-height: 1.2;
       transition: border-color .2s, background .2s, color .2s, opacity .2s;
     }
     .option-chip .chip-n { font-size: 11px; font-weight: 500; color: var(--muted); }
@@ -218,10 +202,8 @@
       border: 1.5px solid var(--border);
       border-radius: 16px;
       padding: clamp(12px, 3.5vw, 18px) 12px;
-      text-align: center;
-      cursor: pointer;
+      text-align: center; cursor: pointer; min-width: 0;
       transition: border-color .25s, background .25s, box-shadow .25s;
-      min-width: 0;
     }
     .mode-card.active {
       background: linear-gradient(145deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.8));
@@ -250,19 +232,14 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 14px clamp(14px, 4vw, 20px);
-      text-align: left;
-      cursor: pointer;
+      text-align: left; cursor: pointer;
     }
     .toggle-info { min-width: 0; }
     .toggle-info h3 { font-size: var(--fs-body); font-weight: 600; margin-bottom: 2px; }
     .toggle-info p { font-size: var(--fs-small); color: var(--muted); }
     .toggle {
-      position: relative;
-      width: 48px; height: 26px;
-      background: var(--border);
-      border-radius: 999px;
-      transition: background .25s;
-      flex-shrink: 0;
+      position: relative; width: 48px; height: 26px; flex-shrink: 0;
+      background: var(--border); border-radius: 999px; transition: background .25s;
     }
     .toggle-row[aria-checked="true"] .toggle { background: var(--emerald); }
     .toggle-thumb {
@@ -274,24 +251,21 @@
     }
     .toggle-row[aria-checked="true"] .toggle-thumb { transform: translateX(22px); }
 
-    /* ---------- Status panels (loading / error / empty) ---------- */
+    /* ---------- Status panels ---------- */
     .state-panel {
       min-height: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; gap: 10px;
-      padding: 32px 12px;
+      text-align: center; gap: 10px; padding: 32px 12px;
     }
     .state-panel h2 { font-family: var(--font-display); font-size: var(--fs-title); }
     .state-panel p { color: var(--muted); font-size: var(--fs-body); max-width: 36ch; line-height: 1.5; }
     .state-btn {
-      margin-top: 8px;
-      padding: 11px 20px; min-height: 44px;
+      margin-top: 8px; padding: 11px 20px; min-height: 44px;
       border-radius: 12px;
       border: 1.5px solid var(--emerald);
       background: rgba(16, 185, 129, 0.12);
       color: var(--emerald-bright);
-      font-weight: 600; font-size: var(--fs-body);
-      cursor: pointer;
+      font-weight: 600; font-size: var(--fs-body); cursor: pointer;
     }
     .spinner {
       width: 28px; height: 28px; border-radius: 50%;
@@ -310,15 +284,11 @@
       z-index: 40;
     }
     .start-btn {
-      width: 100%;
-      min-height: 50px;
-      padding: 0 16px;
-      border: none;
-      border-radius: 14px;
+      width: 100%; min-height: 50px; padding: 0 16px;
+      border: none; border-radius: 14px;
       background: linear-gradient(135deg, #10b981, #059669);
       color: #022c22;
-      font-size: clamp(14px, 3.8vw, 16px);
-      font-weight: 700;
+      font-size: clamp(14px, 3.8vw, 16px); font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 8px;
       cursor: pointer;
       box-shadow: 0 6px 24px rgba(16, 185, 129, 0.3);
@@ -328,7 +298,6 @@
     .start-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
     .start-btn svg { width: 17px; height: 17px; flex-shrink: 0; transition: transform .25s; }
 
-    /* Hover effects only where hover exists (avoids sticky hover on touch) */
     @media (hover: hover) {
       .back-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); transform: translateX(-2px); }
       .option-chip:not(:disabled):hover { border-color: rgba(16, 185, 129, 0.4); color: var(--text); }
@@ -348,7 +317,6 @@
       .start-btn { min-height: 44px; }
     }
 
-    /* Very wide / large text */
     @media (min-width: 720px) {
       .mode-icon { width: 48px; height: 48px; }
       .mode-icon svg { width: 24px; height: 24px; }
@@ -357,8 +325,6 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
     }
-
-    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
@@ -379,20 +345,17 @@
     </header>
 
     <main class="content" id="content">
-      <!-- Loading -->
       <div class="state-panel" id="loadingPanel">
         <div class="spinner" aria-hidden="true"></div>
         <p>Loading available questions…</p>
       </div>
 
-      <!-- Error / empty -->
       <div class="state-panel" id="messagePanel" hidden>
         <h2 id="msgTitle"></h2>
         <p id="msgBody"></p>
         <button type="button" class="state-btn" id="msgBtn"></button>
       </div>
 
-      <!-- Setup form -->
       <div id="setupForm" hidden>
         <section class="setup-section">
           <div class="section-head">
@@ -402,15 +365,15 @@
           <div class="options-row" id="questionCount" role="radiogroup" aria-labelledby="qLabel"></div>
         </section>
 
-        <section class="setup-section">
+        <section class="setup-section" id="difficultySection">
           <div class="section-head">
             <div class="section-label" id="dLabel">Difficulty</div>
           </div>
           <div class="options-row" id="difficulty" role="radiogroup" aria-labelledby="dLabel">
-            <button type="button" class="option-chip" data-value="easy"  role="radio">Easy<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="easy"   role="radio">Easy<span class="chip-n"></span></button>
             <button type="button" class="option-chip" data-value="medium" role="radio">Medium<span class="chip-n"></span></button>
-            <button type="button" class="option-chip" data-value="hard"  role="radio">Hard<span class="chip-n"></span></button>
-            <button type="button" class="option-chip" data-value="mixed" role="radio">Mixed<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="hard"   role="radio">Hard<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="mixed"  role="radio">Mixed<span class="chip-n"></span></button>
           </div>
         </section>
 
@@ -468,13 +431,13 @@
     'use strict';
 
     /* ============================================================
-       CONFIG — set once. Everything shown on this page is read live
-       from your database; nothing is hardcoded.
-       Adjust the table / column names if yours differ.
+       CONFIG — everything shown is read live from your database.
+       Column names below are the preferred ones; the page also tries
+       common alternatives automatically if a column doesn't exist.
        ============================================================ */
     const CONFIG = {
       SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
-      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh', // publishable key (safe for client-side use)
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
       tables: { courses: 'courses', questions: 'questions' },
       cols: {
         courseId: 'id',
@@ -483,12 +446,15 @@
         questionCourse: 'course_id',
         questionDifficulty: 'difficulty'
       },
-      countSteps: [10, 20, 30, 50, 100], // selectable sizes; only those the course can actually fill are shown
-      nextPage: 'cbt.html'
+      countSteps: [10, 20, 30, 50, 100], // selectable sizes; only sizes the course can fill are shown
+      nextPage: 'cbt.html',
+      fallbackPage: 'practice.html',
+      pollMs: 20000                      // refresh interval used only when realtime isn't connected
     };
 
     const DIFFICULTIES = ['easy', 'medium', 'hard'];
     const PREF_KEY = 'primecbt:practice-setup';
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     const $ = (id) => document.getElementById(id);
     const el = {
@@ -497,7 +463,7 @@
       loading: $('loadingPanel'), msg: $('messagePanel'),
       msgTitle: $('msgTitle'), msgBody: $('msgBody'), msgBtn: $('msgBtn'),
       form: $('setupForm'),
-      qRow: $('questionCount'), dRow: $('difficulty'),
+      qRow: $('questionCount'), dRow: $('difficulty'), dSection: $('difficultySection'),
       modeGrid: $('modeSelect'), toggle: $('randomizeToggle'),
       avail: $('availableText'),
       start: $('startBtn'), startLabel: $('startLabel')
@@ -505,21 +471,27 @@
 
     const state = {
       course: null,
+      qCourseCol: null,
+      qDiffCol: null,
       counts: { easy: 0, medium: 0, hard: 0, total: 0 },
       count: null,
       difficulty: 'medium',
       mode: 'practice',
-      randomize: true
+      randomize: true,
+      wantMax: false
     };
 
-    /* ---------- Saved choices (user's own selections only) ---------- */
+    let realtimeOn = false;
+    let lastRefreshOk = false;
+
+    /* ---------- Saved choices (the user's own selections) ---------- */
     try {
       const saved = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
       if (['easy', 'medium', 'hard', 'mixed'].includes(saved.difficulty)) state.difficulty = saved.difficulty;
       if (['practice', 'timed'].includes(saved.mode)) state.mode = saved.mode;
       if (typeof saved.randomize === 'boolean') state.randomize = saved.randomize;
       if (Number.isInteger(saved.count)) state.count = saved.count;
-    } catch (_) { /* storage unavailable */ }
+    } catch (_) {}
     const savePrefs = () => {
       try {
         localStorage.setItem(PREF_KEY, JSON.stringify({
@@ -528,6 +500,21 @@
         }));
       } catch (_) {}
     };
+
+    /* ---------- URL params (from practice.html) ---------- */
+    const params = new URLSearchParams(location.search);
+    const courseIdParam = (params.get('courseId') || '').trim();
+    const topicParam = (params.get('course') || params.get('topic') || '').trim();
+    const sourceMode = (params.get('mode') || '').trim();   // e.g. "Quick Practice", "Mock Exam"
+
+    // The entry mode chosen on the previous page pre-configures this one
+    (function applyIncomingMode() {
+      const m = sourceMode.toLowerCase();
+      if (!m) return;
+      if (m.includes('timed')) { state.mode = 'timed'; }
+      else if (m.includes('mock')) { state.mode = 'timed'; state.difficulty = 'mixed'; state.wantMax = true; }
+      else if (m.includes('quick')) { state.mode = 'practice'; state.difficulty = 'mixed'; state.count = 10; }
+    })();
 
     /* ---------- UI helpers ---------- */
     function show(panel) {
@@ -546,62 +533,87 @@
     }
 
     function setLive(status) {
-      el.pill.classList.remove('on', 'off');
+      el.pill.classList.remove('on', 'off', 'sync');
       if (status === 'live') { el.pill.classList.add('on'); el.pillText.textContent = 'Live'; }
+      else if (status === 'sync') { el.pill.classList.add('sync'); el.pillText.textContent = 'Synced'; }
       else if (status === 'offline') { el.pill.classList.add('off'); el.pillText.textContent = 'Offline'; }
       else { el.pillText.textContent = 'Connecting'; }
     }
+    const settledStatus = () => !navigator.onLine ? 'offline' : realtimeOn ? 'live' : (lastRefreshOk ? 'sync' : 'offline');
 
     const goBack = () => {
       if (history.length > 1) history.back();
-      else location.href = document.referrer || './';
+      else location.href = CONFIG.fallbackPage;
     };
     $('backBtn').addEventListener('click', goBack);
 
-    /* ---------- Config / topic checks ---------- */
-    const params = new URLSearchParams(location.search);
-    const topicParam = (params.get('course') || params.get('topic') || '').trim();
-
-    if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY || !window.supabase) {
+    /* ---------- Pre-flight checks ---------- */
+    if (!window.supabase) {
       el.sub.textContent = 'Not connected';
       setLive('offline');
-      showMessage(
-        'Database not connected',
-        'Add your Supabase URL and anon key in the CONFIG block at the top of this page’s script.',
-        'Go back', goBack
-      );
+      showMessage('Database not connected', 'The database library failed to load. Check your internet connection and reload.', 'Reload', () => location.reload());
       return;
     }
-    if (!topicParam) {
+    if (!courseIdParam && !topicParam) {
       el.sub.textContent = 'No course selected';
       setLive('offline');
-      showMessage('No course selected', 'Choose a course first, then set up your practice session.', 'Choose a course', goBack);
+      showMessage('No course selected', 'Choose a course first, then set up your practice session.', 'Choose a course', () => { location.href = CONFIG.fallbackPage; });
       return;
     }
 
     const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
     const { tables: T, cols: C } = CONFIG;
 
-    /* ---------- Data ---------- */
+    /* ---------- Data helpers ---------- */
+    const pick = (row, keys) => {
+      for (const k of keys) if (row && row[k] != null && String(row[k]).trim() !== '') return row[k];
+      return '';
+    };
+    const courseTitleOf = (c) => pick(c, [C.courseTitle, 'title', 'name', 'course_name', 'course_title', 'subject']);
+    const courseCodeOf = (c) => pick(c, [C.courseCode, 'code', 'course_code']);
+    const uniq = (arr) => [...new Set(arr)];
+
     async function resolveCourse() {
-      let q = db.from(T.courses).select('*').limit(1);
-      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(topicParam) || /^\d+$/.test(topicParam);
-      if (isId) {
-        q = q.eq(C.courseId, topicParam);
-      } else {
-        const safe = topicParam.replace(/[%,()*]/g, ' ').trim();
-        q = q.or(`${C.courseTitle}.ilike.${safe},${C.courseCode}.ilike.${safe}`);
+      // 1) By id (what practice.html sends)
+      const idCandidate = courseIdParam || (UUID_RE.test(topicParam) || /^\d+$/.test(topicParam) ? topicParam : '');
+      if (idCandidate) {
+        const { data, error } = await db.from(T.courses).select('*').eq(C.courseId, idCandidate).limit(1);
+        if (error) throw error;
+        if (data && data[0]) return data[0];
       }
-      const { data, error } = await q;
-      if (error) throw error;
-      return data && data[0] ? data[0] : null;
+      // 2) By title / code (older links), matched client-side so it works with any column names
+      if (topicParam) {
+        const { data, error } = await db.from(T.courses).select('*');
+        if (error) throw error;
+        const t = topicParam.toLowerCase();
+        return (data || []).find((c) =>
+          String(courseTitleOf(c)).toLowerCase() === t || String(courseCodeOf(c)).toLowerCase() === t) || null;
+      }
+      return null;
+    }
+
+    // Find which column actually exists (works with enum/text; errors mean "no such column")
+    async function detectColumn(table, candidates) {
+      for (const col of uniq(candidates)) {
+        const { error } = await db.from(table).select(col).limit(1);
+        if (!error) return col;
+      }
+      return null;
+    }
+
+    async function detectQuestionColumns() {
+      state.qCourseCol = await detectColumn(T.questions, [C.questionCourse, 'course_id', 'courseId', 'course']);
+      if (!state.qCourseCol) throw new Error('The questions table has no column linking it to a course.');
+      state.qDiffCol = await detectColumn(T.questions, [C.questionDifficulty, 'difficulty', 'level']);
+      el.dSection.hidden = !state.qDiffCol;
+      if (!state.qDiffCol) state.difficulty = 'mixed';
     }
 
     async function countQuestions(difficulty) {
       let q = db.from(T.questions)
         .select('*', { count: 'exact', head: true })
-        .eq(C.questionCourse, state.course[C.courseId]);
-      if (difficulty) q = q.ilike(C.questionDifficulty, difficulty);
+        .eq(state.qCourseCol, state.course[C.courseId]);
+      if (difficulty && state.qDiffCol) q = q.ilike(state.qDiffCol, difficulty);
       const { count, error } = await q;
       if (error) throw error;
       return count || 0;
@@ -612,43 +624,43 @@
       const token = ++loadToken;
       const [total, ...byDiff] = await Promise.all([
         countQuestions(null),
-        ...DIFFICULTIES.map(countQuestions)
+        ...(state.qDiffCol ? DIFFICULTIES.map(countQuestions) : [0, 0, 0])
       ]);
-      if (token !== loadToken) return false; // a newer request superseded this one
-      state.counts = { total, easy: byDiff[0], medium: byDiff[1], hard: byDiff[2] };
+      if (token !== loadToken) return false;
+      state.counts = { total, easy: byDiff[0] || 0, medium: byDiff[1] || 0, hard: byDiff[2] || 0 };
       return true;
     }
 
     const availableFor = (diff) => diff === 'mixed' ? state.counts.total : state.counts[diff] || 0;
 
     /* ---------- Render ---------- */
-    function reconcile() {
-      // Keep the selected difficulty valid
-      if (availableFor(state.difficulty) === 0) {
-        const next = ['medium', 'easy', 'hard'].find((d) => availableFor(d) > 0);
-        state.difficulty = next || 'mixed';
-      }
-      // Keep the question count valid
-      const sizes = countOptions();
-      if (!sizes.includes(state.count)) {
-        state.count = sizes.includes(10) ? 10 : sizes[0] ?? null;
-      }
-    }
-
     function countOptions() {
       const avail = availableFor(state.difficulty);
       if (avail <= 0) return [];
       const sizes = CONFIG.countSteps.filter((n) => n <= avail);
-      if (!sizes.includes(avail) && (sizes.length === 0 || avail <= CONFIG.countSteps[CONFIG.countSteps.length - 1])) {
-        sizes.push(avail);
-      }
+      const top = CONFIG.countSteps[CONFIG.countSteps.length - 1];
+      if (!sizes.includes(avail) && avail <= top) sizes.push(avail);
       return sizes;
+    }
+
+    function reconcile() {
+      if (availableFor(state.difficulty) === 0) {
+        const next = ['medium', 'easy', 'hard'].find((d) => availableFor(d) > 0);
+        state.difficulty = next || 'mixed';
+      }
+      const sizes = countOptions();
+      if (state.wantMax && sizes.length) {
+        state.count = sizes[sizes.length - 1];
+        state.wantMax = false;
+      }
+      if (!sizes.includes(state.count)) {
+        state.count = sizes.includes(10) ? 10 : (sizes[0] ?? null);
+      }
     }
 
     function render() {
       reconcile();
 
-      // Difficulty chips with live counts
       el.dRow.querySelectorAll('.option-chip').forEach((chip) => {
         const d = chip.dataset.value;
         const n = availableFor(d);
@@ -659,7 +671,6 @@
         chip.setAttribute('aria-checked', String(on));
       });
 
-      // Question-count chips built from what actually exists
       const avail = availableFor(state.difficulty);
       const sizes = countOptions();
       el.qRow.replaceChildren(...sizes.map((n) => {
@@ -669,49 +680,45 @@
         b.dataset.value = String(n);
         b.setAttribute('role', 'radio');
         b.setAttribute('aria-checked', String(n === state.count));
-        b.textContent = String(n);
-        if (!CONFIG.countSteps.includes(n)) {
-          b.textContent = 'All ' + n;
-        }
+        b.textContent = CONFIG.countSteps.includes(n) ? String(n) : 'All ' + n;
         return b;
       }));
+
       el.avail.replaceChildren();
       const strong = document.createElement('b');
       strong.textContent = avail.toLocaleString();
       el.avail.append(strong, ' available');
 
-      // Mode cards
       el.modeGrid.querySelectorAll('.mode-card').forEach((c) => {
         const on = c.dataset.value === state.mode;
         c.classList.toggle('active', on);
         c.setAttribute('aria-checked', String(on));
       });
 
-      // Toggle
       el.toggle.setAttribute('aria-checked', String(state.randomize));
-
-      // CTA
       el.startLabel.textContent = state.mode === 'timed' ? 'Start Timed Test' : 'Start Practice';
       el.start.disabled = !(state.count > 0);
     }
 
     function renderCourseHeader() {
-      const title = state.course[C.courseTitle] || 'Practice';
-      const code = state.course[C.courseCode];
+      const title = courseTitleOf(state.course) || 'Practice';
+      const code = courseCodeOf(state.course);
       document.title = `${title} — PRIME-CBT Practice`;
       el.title.textContent = title;
-      el.sub.textContent = code ? String(code) : 'Customize your session';
+      el.sub.textContent = [code, sourceMode].filter(Boolean).join(' · ') || 'Customize your session';
     }
 
     async function refresh() {
       try {
         const ok = await loadCounts();
         if (!ok) return;
+        lastRefreshOk = true;
+        setLive(settledStatus());
         if (state.counts.total === 0) {
           showMessage(
             'No questions yet',
-            `${state.course[C.courseTitle] || 'This course'} doesn’t have any questions yet. This page updates automatically when they are added.`,
-            'Choose another course', goBack
+            `${courseTitleOf(state.course) || 'This course'} doesn’t have any questions yet. This page updates automatically when they are added.`,
+            'Choose another course', () => { location.href = CONFIG.fallbackPage; }
           );
           return;
         }
@@ -719,33 +726,45 @@
         render();
       } catch (err) {
         console.error('[practice-setup] refresh failed:', err);
+        lastRefreshOk = false;
+        setLive(settledStatus());
         if (el.form.hidden) {
-          showMessage('Couldn’t load questions', 'Check your connection and try again.', 'Retry', init);
+          showMessage('Couldn’t load questions', (err && err.message ? err.message + ' ' : '') + 'Check your connection and try again.', 'Retry', init);
         }
       }
     }
 
-    /* ---------- Realtime ---------- */
+    /* ---------- Realtime (+ polling fallback) ---------- */
     let channel = null;
     let debounce = null;
     const scheduleRefresh = () => { clearTimeout(debounce); debounce = setTimeout(refresh, 400); };
 
     function subscribe() {
       if (channel) db.removeChannel(channel);
-      channel = db.channel('practice-setup-' + state.course[C.courseId])
+      const id = state.course[C.courseId];
+      channel = db.channel('practice-setup-' + id)
         .on('postgres_changes',
-          { event: '*', schema: 'public', table: T.questions, filter: `${C.questionCourse}=eq.${state.course[C.courseId]}` },
+          { event: '*', schema: 'public', table: T.questions, filter: `${state.qCourseCol}=eq.${id}` },
           scheduleRefresh)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: T.courses, filter: `${C.courseId}=eq.${id}` },
+          (payload) => { state.course = { ...state.course, ...payload.new }; renderCourseHeader(); })
+        .on('postgres_changes',
+          { event: 'DELETE', schema: 'public', table: T.courses, filter: `${C.courseId}=eq.${id}` },
+          () => showMessage('Course removed', 'This course is no longer available.', 'Choose a course', () => { location.href = CONFIG.fallbackPage; }))
         .subscribe((status) => {
-          if (status === 'SUBSCRIBED') setLive(navigator.onLine ? 'live' : 'offline');
-          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setLive('offline');
+          if (status === 'SUBSCRIBED') { realtimeOn = true; }
+          else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) { realtimeOn = false; }
+          setLive(settledStatus());
         });
     }
 
-    window.addEventListener('online', () => { setLive('live'); scheduleRefresh(); });
+    setInterval(() => { if (state.course && !realtimeOn && !document.hidden) refresh(); }, CONFIG.pollMs);
+
+    window.addEventListener('online', () => { setLive(settledStatus()); scheduleRefresh(); });
     window.addEventListener('offline', () => setLive('offline'));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleRefresh(); });
-    window.addEventListener('pageshow', (e) => { if (e.persisted) scheduleRefresh(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && state.course) scheduleRefresh(); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted && state.course) scheduleRefresh(); });
 
     /* ---------- Interactions ---------- */
     el.qRow.addEventListener('click', (e) => {
@@ -780,15 +799,18 @@
 
     el.start.addEventListener('click', () => {
       if (!state.course || !(state.count > 0)) return;
+      const id = String(state.course[C.courseId]);
       const out = new URLSearchParams({
-        course: String(state.course[C.courseId]),
-        topic: String(state.course[C.courseTitle] || topicParam),
+        course: id,
+        courseId: id,
+        topic: String(courseTitleOf(state.course) || topicParam),
         count: String(state.count),
-        difficulty: state.difficulty,
+        difficulty: state.qDiffCol ? state.difficulty : 'mixed',
         mode: state.mode,
         randomize: String(state.randomize),
         s: Date.now().toString(36)
       });
+      if (sourceMode) out.set('source', sourceMode);
       location.href = `${CONFIG.nextPage}?${out.toString()}`;
     });
 
@@ -800,17 +822,21 @@
         state.course = await resolveCourse();
         if (!state.course) {
           el.sub.textContent = 'Course not found';
-          showMessage('Course not found', 'We couldn’t find that course. Go back and pick one from the list.', 'Choose a course', goBack);
+          lastRefreshOk = true;
+          setLive(settledStatus());
+          showMessage('Course not found', 'We couldn’t find that course. Go back and pick one from the list.', 'Choose a course', () => { location.href = CONFIG.fallbackPage; });
           return;
         }
         renderCourseHeader();
+        await detectQuestionColumns();
         await refresh();
         subscribe();
       } catch (err) {
         console.error('[practice-setup] init failed:', err);
         el.sub.textContent = 'Connection problem';
+        lastRefreshOk = false;
         setLive('offline');
-        showMessage('Couldn’t load course', 'Check your connection and try again.', 'Retry', init);
+        showMessage('Couldn’t load course', (err && err.message ? err.message + ' ' : '') + 'Check your connection and try again.', 'Retry', init);
       }
     }
 
