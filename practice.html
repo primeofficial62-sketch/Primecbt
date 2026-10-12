@@ -288,13 +288,20 @@
 
       const pick = (row, keys) => { for (const k of keys) if (row[k] != null && row[k] !== '') return row[k]; return ''; };
 
+      const anyText = row => {
+        for (const [k, v] of Object.entries(row)) {
+          if (typeof v === 'string' && v.trim() && !/(^id$|_id$|created|updated|url|image|icon|color)/i.test(k)) return v;
+        }
+        return 'Untitled course';
+      };
+
       courses = (res.data || []).map(c => ({
         ...c,
-        title: pick(c, ['title', 'name', 'course_name', 'course_title']),
+        title: pick(c, ['title', 'name', 'course_name', 'course_title', 'courseName', 'subject']) || anyText(c),
         code: pick(c, ['code', 'course_code']),
         description: pick(c, ['description', 'desc', 'details', 'summary']),
         count: Array.isArray(c.questions) && c.questions[0] ? Number(c.questions[0].count) : (c.questions ? 0 : null)
-      })).filter(c => c.title);
+      }));
 
       courses.sort((a, b) =>
         (Number(a.sort_order ?? a.position ?? 0) - Number(b.sort_order ?? b.position ?? 0)) ||
