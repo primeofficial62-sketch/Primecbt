@@ -2,577 +2,633 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
   <title>PRIME-CBT — Answer Review</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            navy: '#060b1a',
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            serif: ['Lora', 'serif']
-          }
-        }
-      }
-    }
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #060b1a;
-      --card-bg: #0f172a; /* slate-900 */
-      --card-hover: #1e293b; /* slate-800 */
-      --border: #334155; /* slate-700 */
-      --text-main: #f1f5f9; /* slate-100 */
-      --text-muted: #94a3b8; /* slate-400 */
-      --emerald-bright: #34d399; /* emerald-400 */
-      --teal-bright: #2dd4bf; /* teal-400 */
-      --red-bright: #f87171; /* red-400 */
-      --amber-bright: #fbbf24; /* amber-400 */
+      --card-bg: #0f172a;
+      --card-hover: #1e293b;
+      --border: #334155;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --emerald: #10b981;
+      --emerald-bright: #34d399;
+      --red-bright: #f87171;
+      --amber-bright: #fbbf24;
+
+      --pad: clamp(14px, 4.5vw, 28px);
+      --fs-title: clamp(16px, 4.2vw, 19px);
+      --fs-sub: clamp(11.5px, 3.2vw, 13px);
+      --fs-q: clamp(15px, 4.2vw, 18px);
+      --fs-body: clamp(13px, 3.6vw, 15px);
+      --fs-small: clamp(11px, 3vw, 12.5px);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
     body {
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text-main);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       justify-content: center;
-      align-items: center;
-      font-family: 'Inter', sans-serif;
-      -webkit-font-smoothing: antialiased;
+      align-items: stretch;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
+    button { font-family: inherit; color: inherit; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
 
+    /* ---------- Shell ---------- */
     .app {
       width: 100%;
-      max-width: 480px;
-      background: var(--bg);
+      max-width: 720px;
+      height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
-      height: 100dvh;
-      position: relative;
+      background: var(--bg);
       border-left: 1px solid rgba(51, 65, 85, 0.4);
       border-right: 1px solid rgba(51, 65, 85, 0.4);
+      overflow: hidden;
+    }
+    @media (min-width: 740px) and (min-height: 640px) {
+      body { align-items: center; padding-block: 24px; }
+      .app {
+        height: min(100dvh - 48px, 880px);
+        border: 1px solid rgba(51, 65, 85, 0.8);
+        border-radius: 24px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+      }
     }
 
+    /* ---------- Top bar ---------- */
     .topbar {
       display: flex;
       align-items: center;
-      padding: 16px 20px;
+      gap: clamp(10px, 3vw, 14px);
+      padding: 12px var(--pad);
+      padding-top: max(12px, env(safe-area-inset-top));
       border-bottom: 1px solid var(--border);
       background: rgba(6, 11, 26, 0.95);
       backdrop-filter: blur(12px);
-      z-index: 10;
+      -webkit-backdrop-filter: blur(12px);
       flex-shrink: 0;
+      z-index: 10;
     }
-
     .back-btn {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 40px; height: 40px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
       border-radius: 50%;
       background: var(--card-bg);
       border: 1px solid var(--border);
       color: #cbd5e1;
       text-decoration: none;
-      margin-right: 12px;
-      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+      cursor: pointer;
+      transition: background-color .2s, border-color .2s, transform .2s;
     }
-
-    .back-btn:hover {
-      background: var(--card-hover);
-      border-color: #475569;
-      transform: scale(0.95);
-    }
-
-    .back-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .topbar-title h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
+    .back-btn:active { transform: scale(0.92); }
+    .back-btn svg { width: 20px; height: 20px; }
+    .topbar-title { min-width: 0; flex: 1; }
+    .topbar-title h1 { font-size: var(--fs-title); font-weight: 700; line-height: 1.2; }
     .topbar-title p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      font-size: var(--fs-sub); color: var(--text-muted); margin-top: 1px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    .live-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px;
+      border: 1px solid var(--border); background: rgba(15, 23, 42, 0.8);
+      font-size: 11.5px; font-weight: 600; color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    @media (max-width: 359px) { .live-pill { display: none; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+    .live-pill.on { color: var(--emerald-bright); border-color: rgba(16, 185, 129, 0.35); }
+    .live-pill.on .live-dot { background: var(--emerald); animation: pulse 2s ease-in-out infinite; }
+    .live-pill.off { color: var(--amber-bright); border-color: rgba(251, 191, 36, 0.35); }
+    .live-pill.off .live-dot { background: var(--amber-bright); }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); } 50% { box-shadow: 0 0 0 5px rgba(16,185,129,0); } }
 
+    /* ---------- Filters ---------- */
     .filters {
-      display: flex;
-      gap: 8px;
-      padding: 12px 20px;
+      display: flex; gap: 8px;
+      padding: 10px var(--pad);
       border-bottom: 1px solid var(--border);
       background: rgba(6, 11, 26, 0.95);
       overflow-x: auto;
-      white-space: nowrap;
       flex-shrink: 0;
       scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
     }
-
-    .filters::-webkit-scrollbar {
-      display: none;
-    }
-
+    .filters::-webkit-scrollbar { display: none; }
     .filter-chip {
+      flex-shrink: 0;
+      min-height: 36px;
       background: var(--card-bg);
       border: 1px solid var(--border);
       padding: 6px 14px;
       border-radius: 20px;
-      font-size: 0.85rem;
+      font-size: clamp(12.5px, 3.4vw, 14px);
       font-weight: 500;
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.3s ease;
+      white-space: nowrap;
+      transition: background-color .2s, color .2s, border-color .2s;
     }
-
-    .filter-chip:hover {
-      background: var(--card-hover);
-      color: var(--text-main);
-    }
-
+    .filter-chip .n { opacity: .75; font-weight: 600; margin-left: 4px; }
     .filter-chip.active {
-      background: var(--emerald-bright);
-      color: #060b1a;
-      border-color: var(--emerald-bright);
-      font-weight: 600;
+      background: var(--emerald-bright); color: #060b1a;
+      border-color: var(--emerald-bright); font-weight: 600;
     }
 
+    /* ---------- Content ---------- */
     .content {
-      flex: 1;
+      flex: 1; min-height: 0;
       overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      overscroll-behavior: contain;
+      padding: clamp(14px, 4vw, 24px) var(--pad);
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,0.15) transparent;
-      position: relative;
     }
 
     .review-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+      padding: clamp(14px, 4vw, 24px);
+      display: flex; flex-direction: column; gap: clamp(12px, 3vw, 16px);
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      display: none; /* Managed by JS transitions */
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
+      animation: cardIn .35s ease both;
     }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-    .review-card.active-card {
-      display: flex;
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .review-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .q-number {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
+    .review-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .q-number { font-weight: 600; font-size: var(--fs-body); color: var(--text-muted); }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; }
     .status-badge {
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.025em;
+      padding: 4px 10px; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .025em;
     }
-
-    .status-badge.correct {
-      background: rgba(52, 211, 153, 0.15);
-      color: var(--emerald-bright);
-      border: 1px solid rgba(52, 211, 153, 0.3);
-    }
-
-    .status-badge.wrong {
-      background: rgba(248, 113, 113, 0.15);
-      color: var(--red-bright);
-      border: 1px solid rgba(248, 113, 113, 0.3);
-    }
-
-    .status-badge.flagged {
-      background: rgba(251, 191, 36, 0.15);
-      color: var(--amber-bright);
-      border: 1px solid rgba(251, 191, 36, 0.3);
-    }
+    .status-badge.correct { background: rgba(52,211,153,.15); color: var(--emerald-bright); border: 1px solid rgba(52,211,153,.3); }
+    .status-badge.wrong   { background: rgba(248,113,113,.15); color: var(--red-bright); border: 1px solid rgba(248,113,113,.3); }
+    .status-badge.flagged { background: rgba(251,191,36,.15); color: var(--amber-bright); border: 1px solid rgba(251,191,36,.3); }
+    .status-badge.skipped { background: rgba(148,163,184,.12); color: var(--text-muted); border: 1px solid rgba(148,163,184,.3); }
 
     .question-text {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--text-main);
-      line-height: 1.4;
+      font-size: var(--fs-q); font-weight: 600; line-height: 1.45;
+      overflow-wrap: anywhere; white-space: pre-line;
     }
 
     .answer-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
       background: rgba(6, 11, 26, 0.5);
       border: 1px solid var(--border);
-      padding: 12px;
+      padding: clamp(10px, 3vw, 14px);
       border-radius: 12px;
     }
-
-    .answer-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .answer-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .answer-value {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
-    .answer-value.correct {
-      color: var(--emerald-bright);
-    }
-
-    .answer-value.wrong {
-      color: var(--red-bright);
-    }
+    @media (max-width: 379px) { .answer-row { grid-template-columns: 1fr; } }
+    .answer-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .answer-label { font-size: var(--fs-small); color: var(--text-muted); font-weight: 500; }
+    .answer-value { font-size: var(--fs-body); font-weight: 600; overflow-wrap: anywhere; }
+    .answer-value.correct { color: var(--emerald-bright); }
+    .answer-value.wrong { color: var(--red-bright); }
+    .answer-value.muted { color: var(--text-muted); font-weight: 500; }
 
     .explanation {
-      font-size: 0.9rem;
-      color: #cbd5e1;
+      font-size: var(--fs-body); color: #cbd5e1;
       background: rgba(6, 11, 26, 0.5);
-      padding: 12px 14px;
-      border-radius: 10px;
-      border-left: 3px solid var(--emerald-bright);
-      line-height: 1.5;
-      border-top: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      padding: 12px 14px; border-radius: 10px;
+      border: 1px solid var(--border); border-left: 3px solid var(--emerald-bright);
+      line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line;
     }
 
+    /* ---------- States ---------- */
+    .state-panel {
+      min-height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 10px; padding: 32px 12px;
+    }
+    .state-panel h2 { font-size: var(--fs-title); }
+    .state-panel p { color: var(--text-muted); font-size: var(--fs-body); max-width: 38ch; line-height: 1.5; }
+    .state-btn {
+      margin-top: 8px; padding: 11px 20px; min-height: 44px;
+      border-radius: 12px; border: 1.5px solid var(--emerald);
+      background: rgba(16,185,129,.12); color: var(--emerald-bright);
+      font-weight: 600; font-size: var(--fs-body); cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center;
+    }
+    .spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--emerald);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Bottom bar ---------- */
     .bottom-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      padding: 12px var(--pad);
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
       border-top: 1px solid var(--border);
       background: rgba(6, 11, 26, 0.95);
       backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       flex-shrink: 0;
     }
-
     .nav-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 44px; min-width: 88px;
       background: var(--card-bg);
       border: 1px solid var(--border);
       padding: 8px 16px;
       border-radius: 10px;
-      font-size: 0.9rem;
-      font-weight: 600;
+      font-size: var(--fs-body); font-weight: 600;
       color: var(--text-main);
       cursor: pointer;
-      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+      transition: background-color .2s, border-color .2s, color .2s, transform .2s;
+    }
+    .nav-btn:active:not(:disabled) { transform: scale(0.96); }
+    .nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .nav-btn svg { width: 16px; height: 16px; }
+    .page-indicator { font-size: var(--fs-body); font-weight: 600; color: var(--text-muted); text-align: center; }
+
+    @media (hover: hover) {
+      .back-btn:hover { background: var(--card-hover); border-color: #475569; }
+      .filter-chip:not(.active):hover { background: var(--card-hover); color: var(--text-main); }
+      .nav-btn:hover:not(:disabled) { background: var(--card-hover); border-color: var(--emerald-bright); color: var(--emerald-bright); }
     }
 
-    .nav-btn:hover:not(:disabled) {
-      background: var(--card-hover);
-      border-color: var(--emerald-bright);
-      color: var(--emerald-bright);
-      transform: translateY(-1px);
+    /* Short screens (landscape phones) */
+    @media (max-height: 480px) {
+      .topbar { padding-block: 6px; }
+      .filters { padding-block: 6px; }
+      .bottom-bar { padding-block: 6px; }
+      .nav-btn { min-height: 38px; }
     }
 
-    .nav-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
     }
-
-    .nav-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .page-indicator {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
-
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
-
-
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- Top Bar -->
-    <div class="topbar">
-      <a href="results.html" class="back-btn" aria-label="Back to Results">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <header class="topbar">
+      <a href="results.html" class="back-btn" id="backLink" aria-label="Back to Results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
       <div class="topbar-title">
         <h1>Answer Review</h1>
-        <p>BIO 101 • 30 Questions</p>
+        <p id="subtitle">Loading…</p>
       </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="filters">
-      <button type="button" class="filter-chip active" data-filter="all">All</button>
-      <button type="button" class="filter-chip" data-filter="wrong">Incorrect</button>
-      <button type="button" class="filter-chip" data-filter="flagged">Flagged</button>
-      <button type="button" class="filter-chip" data-filter="correct">Correct</button>
-    </div>
-
-    <!-- Content -->
-    <div class="content" id="reviewList">
-      <!-- Question 1 - Correct -->
-      <div class="review-card" data-status="correct">
-        <div class="review-header">
-          <span class="q-number">Question 1</span>
-          <span class="status-badge correct">Correct</span>
-        </div>
-        <div class="question-text">
-          Which of the following organelles is known as the powerhouse of the cell?
-        </div>
-        <div class="answer-row">
-          <div class="answer-item">
-            <span class="answer-label">Your Answer</span>
-            <span class="answer-value correct">B. Mitochondria</span>
-          </div>
-          <div class="answer-item">
-            <span class="answer-label">Correct</span>
-            <span class="answer-value correct">B. Mitochondria</span>
-          </div>
-        </div>
-        <div class="explanation">
-          Mitochondria produce ATP through cellular respiration, making them the powerhouse of the cell.
-        </div>
+      <div class="live-pill" id="livePill" role="status" aria-live="polite">
+        <span class="live-dot"></span><span id="liveText">Connecting</span>
       </div>
+    </header>
 
-      <!-- Question 2 - Wrong -->
-      <div class="review-card" data-status="wrong">
-        <div class="review-header">
-          <span class="q-number">Question 2</span>
-          <span class="status-badge wrong">Incorrect</span>
-        </div>
-        <div class="question-text">
-          What is the basic unit of heredity?
-        </div>
-        <div class="answer-row">
-          <div class="answer-item">
-            <span class="answer-label">Your Answer</span>
-            <span class="answer-value wrong">A. Chromosome</span>
-          </div>
-          <div class="answer-item">
-            <span class="answer-label">Correct</span>
-            <span class="answer-value correct">C. Gene</span>
-          </div>
-        </div>
-        <div class="explanation">
-          A gene is the basic physical and functional unit of heredity. Chromosomes carry many genes.
-        </div>
+    <nav class="filters" id="filters" aria-label="Filter questions" hidden></nav>
+
+    <main class="content" id="reviewList" aria-live="polite">
+      <div class="state-panel" id="loadingPanel">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading your answers…</p>
       </div>
+    </main>
 
-      <!-- Question 3 - Flagged + Wrong -->
-      <div class="review-card" data-status="wrong flagged">
-        <div class="review-header">
-          <span class="q-number">Question 3</span>
-          <div style="display:flex;gap:6px">
-            <span class="status-badge flagged">Flagged</span>
-            <span class="status-badge wrong">Incorrect</span>
-          </div>
-        </div>
-        <div class="question-text">
-          Which process converts glucose into pyruvate?
-        </div>
-        <div class="answer-row">
-          <div class="answer-item">
-            <span class="answer-label">Your Answer</span>
-            <span class="answer-value wrong">D. Krebs cycle</span>
-          </div>
-          <div class="answer-item">
-            <span class="answer-label">Correct</span>
-            <span class="answer-value correct">B. Glycolysis</span>
-          </div>
-        </div>
-        <div class="explanation">
-          Glycolysis is the first step of cellular respiration where glucose is broken down into pyruvate.
-        </div>
-      </div>
-
-      <!-- Question 4 - Correct -->
-      <div class="review-card" data-status="correct">
-        <div class="review-header">
-          <span class="q-number">Question 4</span>
-          <span class="status-badge correct">Correct</span>
-        </div>
-        <div class="question-text">
-          DNA replication is described as:
-        </div>
-        <div class="answer-row">
-          <div class="answer-item">
-            <span class="answer-label">Your Answer</span>
-            <span class="answer-value correct">A. Semi-conservative</span>
-          </div>
-          <div class="answer-item">
-            <span class="answer-label">Correct</span>
-            <span class="answer-value correct">A. Semi-conservative</span>
-          </div>
-        </div>
-        <div class="explanation">
-          Each new DNA molecule contains one original strand and one newly synthesized strand.
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Navigation -->
-    <div class="bottom-bar">
+    <footer class="bottom-bar" id="bottomBar" hidden>
       <button type="button" class="nav-btn" id="prevBtn" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg> Prev
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg> Prev
       </button>
-      <span class="page-indicator" id="pageIndicator">1 of 4</span>
-      <button type="button" class="nav-btn" id="nextBtn">
-        Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
+      <span class="page-indicator" id="pageIndicator">—</span>
+      <button type="button" class="nav-btn" id="nextBtn" disabled>
+        Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
       </button>
-    </div>
+    </footer>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const cards = Array.from(document.querySelectorAll('.review-card'));
-      const filterChips = document.querySelectorAll('.filter-chip');
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      const pageIndicator = document.getElementById('pageIndicator');
-      const reviewList = document.getElementById('reviewList');
+  (() => {
+    'use strict';
 
-      let currentFilter = 'all';
-      let currentIndex = 0;
+    /* ============================================================
+       CONFIG — everything shown is read live from Supabase.
+       Open this page as review.html?result=<practice_results.id>
+       (without ?result it shows your most recent session).
+       ============================================================ */
+    const CONFIG = {
+      SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+      loginPage: 'login.html',
+      resultsPage: 'results.html',
+      tables: { results: 'practice_results', answers: 'practice_answers', questions: 'questions' }
+    };
 
-      function getFilteredCards() {
-        if (currentFilter === 'all') return cards;
-        return cards.filter(card => card.getAttribute('data-status').includes(currentFilter));
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      back: $('backLink'), sub: $('subtitle'),
+      pill: $('livePill'), liveText: $('liveText'),
+      filters: $('filters'), list: $('reviewList'), bar: $('bottomBar'),
+      prev: $('prevBtn'), next: $('nextBtn'), page: $('pageIndicator')
+    };
+    const T = CONFIG.tables;
+
+    if (!window.supabase) {
+      el.sub.textContent = 'Not connected';
+      showMessage('Couldn’t load the app', 'Check your connection and refresh the page.', 'Refresh', () => location.reload());
+      return;
+    }
+    const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+    const state = {
+      user: null, result: null, items: [],
+      filter: 'all', currentId: null
+    };
+
+    /* ---------- helpers ---------- */
+    function setLive(s) {
+      el.pill.classList.remove('on', 'off');
+      if (s === 'live') { el.pill.classList.add('on'); el.liveText.textContent = 'Live'; }
+      else if (s === 'offline') { el.pill.classList.add('off'); el.liveText.textContent = 'Offline'; }
+      else el.liveText.textContent = 'Connecting';
+    }
+    function redirectToLogin() {
+      const next = location.pathname.split('/').pop() + location.search;
+      location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(next)}`);
+    }
+    function showMessage(title, body, btnText, action, href) {
+      const wrap = document.createElement('div');
+      wrap.className = 'state-panel';
+      const h = document.createElement('h2'); h.textContent = title;
+      const p = document.createElement('p'); p.textContent = body;
+      wrap.append(h, p);
+      if (btnText) {
+        const b = href ? document.createElement('a') : document.createElement('button');
+        b.className = 'state-btn'; b.textContent = btnText;
+        if (href) b.href = href; else { b.type = 'button'; b.addEventListener('click', action); }
+        wrap.append(b);
       }
+      el.list.replaceChildren(wrap);
+      el.bar.hidden = true; el.filters.hidden = true;
+    }
+    const letter = (i) => String.fromCharCode(65 + i);
+    const optText = (o) => (o && typeof o === 'object') ? (o.text ?? o.label ?? '') : String(o ?? '');
+    function answerLabel(options, idx) {
+      if (idx === null || idx === undefined || !Array.isArray(options) || idx < 0 || idx >= options.length) return null;
+      return `${letter(idx)}. ${optText(options[idx])}`;
+    }
 
-      function updateView() {
-        const filtered = getFilteredCards();
+    /* ---------- normalise rows ---------- */
+    function normalise(rows) {
+      return rows.map((r, i) => {
+        const q = r.questions || null;
+        const skipped = r.selected_index === null || r.selected_index === undefined;
+        const status = skipped ? 'skipped' : (r.is_correct ? 'correct' : 'wrong');
+        return {
+          id: r.id, n: i + 1, status, flagged: !!r.flagged,
+          question: q ? q.question : null,
+          mine: answerLabel(q && q.options, r.selected_index),
+          right: q ? answerLabel(q.options, q.correct_index) : null,
+          explanation: q ? q.explanation : null,
+          removed: !q
+        };
+      });
+    }
 
-        // Fade out current active cards smoothly
-        cards.forEach(card => card.classList.remove('active-card'));
+    /* ---------- filters ---------- */
+    function counts() {
+      const c = { all: state.items.length, wrong: 0, flagged: 0, correct: 0, skipped: 0 };
+      state.items.forEach((x) => { c[x.status]++; if (x.flagged) c.flagged++; });
+      return c;
+    }
+    const matches = (x, f) => f === 'all' || (f === 'flagged' ? x.flagged : x.status === f);
+    const filtered = () => state.items.filter((x) => matches(x, state.filter));
 
-        if (filtered.length === 0) {
-          pageIndicator.textContent = '0 of 0';
-          prevBtn.disabled = true;
-          nextBtn.disabled = true;
+    function renderFilters() {
+      const c = counts();
+      const defs = [['all', 'All'], ['wrong', 'Incorrect'], ['flagged', 'Flagged'], ['correct', 'Correct']];
+      if (c.skipped > 0) defs.push(['skipped', 'Skipped']);
+      if (!defs.some(([k]) => k === state.filter)) state.filter = 'all';
+      el.filters.replaceChildren(...defs.map(([key, label]) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'filter-chip' + (key === state.filter ? ' active' : '');
+        b.dataset.filter = key;
+        b.setAttribute('aria-pressed', String(key === state.filter));
+        b.append(label);
+        const n = document.createElement('span'); n.className = 'n'; n.textContent = String(c[key]);
+        b.append(n);
+        return b;
+      }));
+      el.filters.hidden = false;
+    }
+
+    /* ---------- card ---------- */
+    function badge(cls, text) {
+      const s = document.createElement('span');
+      s.className = 'status-badge ' + cls; s.textContent = text; return s;
+    }
+    function answerItem(label, value, cls) {
+      const d = document.createElement('div'); d.className = 'answer-item';
+      const l = document.createElement('span'); l.className = 'answer-label'; l.textContent = label;
+      const v = document.createElement('span'); v.className = 'answer-value ' + cls; v.textContent = value;
+      d.append(l, v); return d;
+    }
+    function buildCard(x) {
+      const card = document.createElement('article');
+      card.className = 'review-card';
+
+      const head = document.createElement('div'); head.className = 'review-header';
+      const num = document.createElement('span'); num.className = 'q-number'; num.textContent = `Question ${x.n}`;
+      const badges = document.createElement('div'); badges.className = 'badges';
+      if (x.flagged) badges.append(badge('flagged', 'Flagged'));
+      badges.append(x.status === 'correct' ? badge('correct', 'Correct')
+        : x.status === 'wrong' ? badge('wrong', 'Incorrect') : badge('skipped', 'Skipped'));
+      head.append(num, badges);
+
+      const q = document.createElement('div'); q.className = 'question-text';
+      q.textContent = x.removed ? 'This question is no longer available.' : x.question;
+
+      card.append(head, q);
+
+      if (!x.removed) {
+        const row = document.createElement('div'); row.className = 'answer-row';
+        row.append(
+          x.mine ? answerItem('Your Answer', x.mine, x.status === 'correct' ? 'correct' : 'wrong')
+                 : answerItem('Your Answer', 'Not answered', 'muted'),
+          answerItem('Correct', x.right || '—', 'correct')
+        );
+        card.append(row);
+        if (x.explanation && x.explanation.trim()) {
+          const e = document.createElement('div'); e.className = 'explanation'; e.textContent = x.explanation;
+          card.append(e);
+        }
+      }
+      return card;
+    }
+
+    /* ---------- view ---------- */
+    function renderView(resetScroll) {
+      renderFilters();
+      const list = filtered();
+      el.bar.hidden = false;
+
+      if (!list.length) {
+        const wrap = document.createElement('div'); wrap.className = 'state-panel';
+        const p = document.createElement('p'); p.textContent = 'No questions match this filter.';
+        wrap.append(p); el.list.replaceChildren(wrap);
+        el.page.textContent = '0 of 0'; el.prev.disabled = true; el.next.disabled = true;
+        return;
+      }
+      let idx = list.findIndex((x) => x.id === state.currentId);
+      if (idx < 0) idx = 0;
+      state.currentId = list[idx].id;
+
+      el.list.replaceChildren(buildCard(list[idx]));
+      el.page.textContent = `${idx + 1} of ${list.length}`;
+      el.prev.disabled = idx === 0;
+      el.next.disabled = idx === list.length - 1;
+      if (resetScroll) el.list.scrollTop = 0;
+    }
+
+    function step(dir) {
+      const list = filtered();
+      const idx = list.findIndex((x) => x.id === state.currentId);
+      const to = idx + dir;
+      if (to < 0 || to >= list.length) return;
+      state.currentId = list[to].id;
+      renderView(true);
+    }
+
+    el.filters.addEventListener('click', (e) => {
+      const chip = e.target.closest('.filter-chip');
+      if (!chip) return;
+      state.filter = chip.dataset.filter;
+      const first = filtered()[0];
+      state.currentId = first ? first.id : null;
+      renderView(true);
+    });
+    el.prev.addEventListener('click', () => step(-1));
+    el.next.addEventListener('click', () => step(1));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight') step(1);
+    });
+    // swipe between questions on touch screens
+    let sx = 0, sy = 0;
+    el.list.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    el.list.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+    }, { passive: true });
+
+    /* ---------- data ---------- */
+    async function resolveResult() {
+      const wanted = new URLSearchParams(location.search).get('result');
+      let q = db.from(T.results)
+        .select('id,course_id,total_questions,correct_answers,mode,created_at,courses(title,code)')
+        .eq('user_id', state.user.id);
+      q = wanted ? q.eq('id', wanted) : q.order('created_at', { ascending: false }).limit(1);
+      const { data, error } = await q.maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+
+    async function loadAnswers() {
+      const { data, error } = await db.from(T.answers)
+        .select('id,position,selected_index,is_correct,flagged,questions(question,options,correct_index,explanation)')
+        .eq('result_id', state.result.id)
+        .order('position', { ascending: true });
+      if (error) throw error;
+      state.items = normalise(data || []);
+    }
+
+    function renderHeader() {
+      const c = state.result.courses || {};
+      const label = c.code || c.title || 'Practice session';
+      const n = state.items.length;
+      el.sub.textContent = `${label} • ${n} ${n === 1 ? 'Question' : 'Questions'}`;
+      el.back.href = `${CONFIG.resultsPage}?result=${encodeURIComponent(state.result.id)}`;
+      document.title = `${c.title || 'Answer Review'} — PRIME-CBT Review`;
+    }
+
+    async function refresh(initial) {
+      try {
+        await loadAnswers();
+        renderHeader();
+        if (!state.items.length) {
+          showMessage('No answers recorded', 'This session doesn’t have any saved answers to review yet.', 'Back to results', null, el.back.href);
           return;
         }
-
-        // Clamp index bounds
-        if (currentIndex >= filtered.length) currentIndex = filtered.length - 1;
-        if (currentIndex < 0) currentIndex = 0;
-
-        // Brief timeout to ensure clean DOM re-trigger of transition animation
-        setTimeout(() => {
-          filtered[currentIndex].classList.add('active-card');
-        }, 50);
-        
-        // Update pagination UI
-        pageIndicator.textContent = `${currentIndex + 1} of ${filtered.length}`;
-        prevBtn.disabled = currentIndex === 0;
-        nextBtn.disabled = currentIndex === filtered.length - 1;
-
-        reviewList.scrollTop = 0;
+        if (initial) state.currentId = state.items[0].id;
+        renderView(initial);
+      } catch (err) {
+        console.error('[review] refresh failed:', err);
+        if (initial || !state.items.length) showMessage('Couldn’t load your answers', 'Check your connection and try again.', 'Retry', () => init());
       }
+    }
 
-      filterChips.forEach(chip => {
-        chip.addEventListener('click', () => {
-          filterChips.forEach(c => c.classList.remove('active'));
-          chip.classList.add('active');
-          currentFilter = chip.getAttribute('data-filter');
-          currentIndex = 0;
-          updateView();
+    /* ---------- realtime ---------- */
+    let channel = null, debounce = null;
+    const schedule = () => { clearTimeout(debounce); debounce = setTimeout(() => refresh(false), 400); };
+    function subscribe() {
+      if (channel) db.removeChannel(channel);
+      channel = db.channel('review-' + state.result.id)
+        .on('postgres_changes', { event: '*', schema: 'public', table: T.answers, filter: `result_id=eq.${state.result.id}` }, schedule)
+        .on('postgres_changes', { event: '*', schema: 'public', table: T.questions, filter: `course_id=eq.${state.result.course_id}` }, schedule)
+        .subscribe((s) => {
+          if (s === 'SUBSCRIBED') setLive(navigator.onLine ? 'live' : 'offline');
+          else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(s)) setLive('offline');
         });
-      });
+    }
+    window.addEventListener('online', () => { setLive('live'); schedule(); });
+    window.addEventListener('offline', () => setLive('offline'));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && state.result) schedule(); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted && state.result) schedule(); });
 
-      prevBtn.addEventListener('click', () => {
-        if (currentIndex > 0) {
-          currentIndex--;
-          updateView();
+    db.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') redirectToLogin(); });
+
+    /* ---------- boot ---------- */
+    async function init() {
+      setLive('connecting');
+      try {
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) return redirectToLogin();
+        const { data: { user }, error } = await db.auth.getUser();
+        if (error || !user) return redirectToLogin();
+        state.user = user;
+
+        state.result = await resolveResult();
+        if (!state.result) {
+          el.sub.textContent = 'No session found';
+          showMessage('Nothing to review yet', 'Finish a practice session and your answers will show up here.', 'Back to results', null, CONFIG.resultsPage);
+          return;
         }
-      });
-
-      nextBtn.addEventListener('click', () => {
-        const filtered = getFilteredCards();
-        if (currentIndex < filtered.length - 1) {
-          currentIndex++;
-          updateView();
-        }
-      });
-
-      // Initial render call
-      updateView();
-    });
+        await refresh(true);
+        subscribe();
+      } catch (err) {
+        console.error('[review] init failed:', err);
+        setLive('offline');
+        el.sub.textContent = 'Connection problem';
+        showMessage('Couldn’t connect', 'Check your connection and try again.', 'Retry', () => init());
+      }
+    }
+    init();
+  })();
   </script>
 </body>
 </html>
