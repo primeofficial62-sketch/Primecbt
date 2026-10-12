@@ -1,0 +1,23 @@
+{
+  "name": "prime-cbt",
+  "version": "1.0.0",
+  "description": "PRIME-CBT — Smarter CBT Exam Preparation platform with Vercel Web Analytics",
+  "main": "ai-assistant-chat.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/primeofficial62-sketch/Primecbt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/primeofficial62-sketch/Primecbt/issues"
+  },
+  "homepage": "https://github.com/primeofficial62-sketch/Primecbt#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
