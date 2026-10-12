@@ -2,275 +2,566 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
   <title>My Account — PRIME-CBT</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { navy: '#060b1a' },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-        }
-      }
-    }
-  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #060b1a;
-      --card-bg: #0f172a; /* slate-900 */
-      --card-bg-hover: #1e293b; /* slate-800 */
-      --border: #334155; /* slate-700 */
-      --muted: #94a3b8; /* slate-400 */
-      --text-main: #f1f5f9; /* slate-100 */
-      --emerald-bright: #34d399;
-      --amber: #fbbf24;
-      --red: #f87171;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      width: 100%;
-      min-height: 100vh;
-      background-color: var(--bg);
-      color: var(--text-main);
-      overflow-y: auto;
-    }
-
+*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Inter,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.bottom-0{bottom:0}.bottom-\[max\(1\.25rem\2c env\(safe-area-inset-bottom\)\)\]{bottom:max(1.25rem,env(safe-area-inset-bottom))}.left-1\/2{left:50%}.right-0{right:0}.top-0{top:0}.z-40{z-index:40}.z-50{z-index:50}.mb-1{margin-bottom:.25rem}.mb-3{margin-bottom:.75rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-3{margin-top:.75rem}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-1\.5{height:.375rem}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-14{height:3.5rem}.h-20{height:5rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-full{height:100%}.min-h-\[44px\]{min-height:44px}.min-h-screen{min-height:100vh}.w-1\.5{width:.375rem}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-20{width:5rem}.w-8{width:2rem}.w-9{width:2.25rem}.w-full{width:100%}.min-w-0{min-width:0}.max-w-2xl{max-width:42rem}.max-w-\[90vw\]{max-width:90vw}.max-w-full{max-width:100%}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-1\/2{--tw-translate-x:-50%}.-translate-x-1\/2,.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-3\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.875rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.875rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.space-y-5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem*var(--tw-space-y-reverse))}.overflow-hidden,.truncate{overflow:hidden}.truncate{text-overflow:ellipsis;white-space:nowrap}.break-words{overflow-wrap:break-word}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-amber-500\/30{border-color:rgba(245,158,11,.3)}.border-emerald-500\/20{border-color:rgba(16,185,129,.2)}.border-emerald-500\/30{border-color:rgba(16,185,129,.3)}.border-emerald-500\/40{border-color:rgba(16,185,129,.4)}.border-red-500\/30{border-color:rgba(239,68,68,.3)}.border-slate-600{--tw-border-opacity:1;border-color:rgb(71 85 105/var(--tw-border-opacity,1))}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85/var(--tw-border-opacity,1))}.border-slate-800{--tw-border-opacity:1;border-color:rgb(30 41 59/var(--tw-border-opacity,1))}.border-slate-800\/60{border-color:rgba(30,41,59,.6)}.border-slate-900{--tw-border-opacity:1;border-color:rgb(15 23 42/var(--tw-border-opacity,1))}.bg-\[\#060b1a\]\/90{background-color:rgba(6,11,26,.9)}.bg-amber-500\/15{background-color:rgba(245,158,11,.15)}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153/var(--tw-bg-opacity,1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-emerald-500\/10{background-color:rgba(16,185,129,.1)}.bg-emerald-500\/15{background-color:rgba(16,185,129,.15)}.bg-red-500\/10{background-color:rgba(239,68,68,.1)}.bg-red-500\/15{background-color:rgba(239,68,68,.15)}.bg-slate-500{--tw-bg-opacity:1;background-color:rgb(100 116 139/var(--tw-bg-opacity,1))}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-800\/80{background-color:rgba(30,41,59,.8)}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/80{background-color:rgba(15,23,42,.8)}.object-cover{-o-object-fit:cover;object-fit:cover}.p-3{padding:.75rem}.p-3\.5{padding:.875rem}.p-4{padding:1rem}.px-1{padding-left:.25rem;padding-right:.25rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-3\.5{padding-left:.875rem;padding-right:.875rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.pb-4{padding-bottom:1rem}.pb-\[max\(3rem\2c env\(safe-area-inset-bottom\)\)\]{padding-bottom:max(3rem,env(safe-area-inset-bottom))}.pt-2{padding-top:.5rem}.pt-4{padding-top:1rem}.pt-5{padding-top:1.25rem}.pt-\[env\(safe-area-inset-top\)\]{padding-top:env(safe-area-inset-top)}.text-left{text-align:left}.text-center{text-align:center}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.tracking-tight{letter-spacing:-.025em}.tracking-wider{letter-spacing:.05em}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153/var(--tw-text-opacity,1))}.text-red-200{--tw-text-opacity:1;color:rgb(254 202 202/var(--tw-text-opacity,1))}.text-red-300{--tw-text-opacity:1;color:rgb(252 165 165/var(--tw-text-opacity,1))}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113/var(--tw-text-opacity,1))}.text-slate-100{--tw-text-opacity:1;color:rgb(241 245 249/var(--tw-text-opacity,1))}.text-slate-200{--tw-text-opacity:1;color:rgb(226 232 240/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-950{--tw-text-opacity:1;color:rgb(2 6 23/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.underline-offset-2{text-underline-offset:2px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.shadow{--tw-shadow:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color),0 1px 2px -1px var(--tw-shadow-color)}.shadow,.shadow-inner{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-inner{--tw-shadow:inset 0 2px 4px 0 rgba(0,0,0,.05);--tw-shadow-colored:inset 0 2px 4px 0 var(--tw-shadow-color)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color),0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.outline{outline-style:solid}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.ease-in-out{transition-timing-function:cubic-bezier(.4,0,.2,1)}.hover\:bg-emerald-400:hover{--tw-bg-opacity:1;background-color:rgb(52 211 153/var(--tw-bg-opacity,1))}.hover\:bg-slate-700:hover{--tw-bg-opacity:1;background-color:rgb(51 65 85/var(--tw-bg-opacity,1))}.hover\:bg-slate-800\/80:hover{background-color:rgba(30,41,59,.8)}.hover\:text-emerald-300:hover{--tw-text-opacity:1;color:rgb(110 231 183/var(--tw-text-opacity,1))}.focus\:border-emerald-500:focus{--tw-border-opacity:1;border-color:rgb(16 185 129/var(--tw-border-opacity,1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.active\:scale-90:active{--tw-scale-x:.9;--tw-scale-y:.9}.active\:scale-90:active,.active\:scale-95:active{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-95:active{--tw-scale-x:.95;--tw-scale-y:.95}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}.disabled\:opacity-40:disabled{opacity:.4}.disabled\:opacity-50:disabled{opacity:.5}.disabled\:opacity-60:disabled{opacity:.6}.disabled\:opacity-70:disabled{opacity:.7}@media (min-width:380px){.min-\[380px\]\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (min-width:400px){.min-\[400px\]\:inline-flex{display:inline-flex}}@media (min-width:640px){.sm\:h-24{height:6rem}.sm\:w-24{width:6rem}.sm\:gap-3{gap:.75rem}.sm\:space-y-6>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem*var(--tw-space-y-reverse))}.sm\:border-x{border-left-width:1px;border-right-width:1px}.sm\:p-4{padding:1rem}.sm\:p-6{padding:1.5rem}.sm\:px-5{padding-left:1.25rem;padding-right:1.25rem}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}.sm\:pt-6{padding-top:1.5rem}.sm\:text-2xl{font-size:1.5rem;line-height:2rem}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}.sm\:text-sm{font-size:.875rem;line-height:1.25rem}.sm\:text-xl{font-size:1.25rem;line-height:1.75rem}.sm\:text-xs{font-size:.75rem;line-height:1rem}}
+  </style>
+  <style>
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    * { -webkit-tap-highlight-color: transparent; }
     body {
       font-family: 'Inter', system-ui, sans-serif;
+      background: #060b1a;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
-
-    .card {
-      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: #475569;
-    }
-
-    input, button {
-      transition: all 0.3s ease;
-    }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
-
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
-
-
+    :focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }
+    .card { transition: border-color .25s ease; }
+    @media (hover: hover) { .card:hover { border-color: #475569; } }
+    /* 16px inputs on touch screens stop iOS from zooming on focus */
+    input { font-size: 16px; }
+    @media (min-width: 640px) { input { font-size: 14px; } }
+    .live-dot.on { background: #10b981; animation: pulse 2s ease-in-out infinite; }
+    .live-dot.off { background: #fbbf24; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); } 50% { box-shadow: 0 0 0 5px rgba(16,185,129,0); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    [hidden] { display: none !important; }
   </style>
 </head>
-<body class="bg-[#060b1a] text-slate-100 antialiased flex justify-center">
+<body class="text-slate-100 antialiased flex justify-center">
 
-  <div class="w-full max-w-2xl relative border-x border-slate-800/60 flex flex-col min-h-screen">
+  <div class="w-full max-w-2xl relative sm:border-x border-slate-800/60 flex flex-col min-h-screen">
 
     <!-- Header -->
-    <header class="sticky top-0 z-40 h-14 bg-[#060b1a]/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <button onclick="window.history.back()" type="button" aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800/80 transition active:scale-90 text-slate-300">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-        </button>
-        <h1 class="text-lg font-semibold tracking-tight text-slate-100">My Account</h1>
-      </div>
-      <button id="editToggleBtn" type="button" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 transition active:scale-95">
-        Edit Profile
-      </button>
-    </header>
-
-    <main class="px-4 pt-6 pb-12 space-y-6 flex-1">
-      
-      <!-- Profile Header Card -->
-      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col items-center text-center relative card">
-        <div class="relative mb-3">
-          <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-emerald-500/40 flex items-center justify-center text-xl font-bold text-slate-200 overflow-hidden shadow-inner">
-            <span>AS</span>
-          </div>
-          <button type="button" aria-label="Change photo" class="absolute bottom-0 right-0 w-7 h-7 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center border-2 border-slate-900 shadow hover:bg-emerald-400 transition active:scale-90">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <header class="sticky top-0 z-40 bg-[#060b1a]/90 backdrop-blur-md border-b border-slate-800 px-3 sm:px-5 pt-[env(safe-area-inset-top)]">
+      <div class="h-14 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button id="backBtn" type="button" aria-label="Go back" class="w-10 h-10 shrink-0 flex items-center justify-center rounded-full hover:bg-slate-800/80 transition active:scale-90 text-slate-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          </button>
+          <h1 class="text-base sm:text-lg font-semibold tracking-tight text-slate-100 truncate">My Account</h1>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span id="livePill" role="status" aria-live="polite" class="hidden min-[400px]:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-700 bg-slate-900/80 text-[11px] font-medium text-slate-400">
+            <span id="liveDot" class="live-dot w-1.5 h-1.5 rounded-full bg-slate-500"></span><span id="liveText">Connecting</span>
+          </span>
+          <button id="editToggleBtn" type="button" disabled class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+            Edit Profile
           </button>
         </div>
-        <h2 class="text-lg font-bold text-slate-100">Aisha Suleiman</h2>
-        <p class="text-xs text-slate-400 mt-0.5">Computer Science · 400 Level</p>
-        <div class="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-medium">
+      </div>
+    </header>
+
+    <main class="px-3 sm:px-6 pt-5 sm:pt-6 pb-[max(3rem,env(safe-area-inset-bottom))] space-y-5 sm:space-y-6 flex-1 min-w-0">
+
+      <!-- Error banner -->
+      <div id="errorBanner" hidden class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300 flex items-center justify-between gap-3">
+        <span id="errorText">Couldn’t load your account.</span>
+        <button id="retryBtn" type="button" class="shrink-0 font-semibold text-red-200 underline underline-offset-2">Retry</button>
+      </div>
+
+      <!-- Profile header -->
+      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-4 sm:p-6 flex flex-col items-center text-center card">
+        <div class="relative mb-3">
+          <div id="avatar" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-800 border-2 border-emerald-500/40 flex items-center justify-center text-xl sm:text-2xl font-bold text-slate-200 overflow-hidden shadow-inner">
+            <span id="avatarInitials">&nbsp;</span>
+            <img id="avatarImg" alt="" hidden class="w-full h-full object-cover" />
+          </div>
+          <button id="avatarBtn" type="button" aria-label="Change photo" disabled class="absolute bottom-0 right-0 w-8 h-8 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center border-2 border-slate-900 shadow hover:bg-emerald-400 transition active:scale-90 disabled:opacity-50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+        </div>
+        <h2 id="displayName" class="text-lg sm:text-xl font-bold text-slate-100 max-w-full break-words">&nbsp;</h2>
+        <p id="displaySub" class="text-xs sm:text-sm text-slate-400 mt-0.5 max-w-full break-words">&nbsp;</p>
+        <div id="planBadge" hidden class="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-medium">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          Active Student Plan
+          <span id="planText"></span>
         </div>
       </section>
 
-      <!-- Quick Metrics Grid -->
-      <section class="grid grid-cols-3 gap-3">
-        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-center card">
-          <p class="text-[11px] text-slate-400 font-medium">Total XP</p>
-          <p class="text-base font-bold text-emerald-400 mt-1">2,450</p>
+      <!-- Quick metrics -->
+      <section class="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Your stats">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 sm:p-4 text-center card min-w-0">
+          <p class="text-[11px] sm:text-xs text-slate-400 font-medium">Total XP</p>
+          <p id="statXp" class="text-sm sm:text-lg font-bold text-emerald-400 mt-1 truncate">—</p>
         </div>
-        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-center card">
-          <p class="text-[11px] text-slate-400 font-medium">Streak</p>
-          <p class="text-base font-bold text-amber-400 mt-1">14 Days</p>
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 sm:p-4 text-center card min-w-0">
+          <p class="text-[11px] sm:text-xs text-slate-400 font-medium">Streak</p>
+          <p id="statStreak" class="text-sm sm:text-lg font-bold text-amber-400 mt-1 truncate">—</p>
         </div>
-        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-center card">
-          <p class="text-[11px] text-slate-400 font-medium">Accuracy</p>
-          <p class="text-base font-bold text-slate-100 mt-1">76%</p>
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 sm:p-4 text-center card min-w-0">
+          <p class="text-[11px] sm:text-xs text-slate-400 font-medium">Accuracy</p>
+          <p id="statAcc" class="text-sm sm:text-lg font-bold text-slate-100 mt-1 truncate">—</p>
         </div>
       </section>
 
-      <!-- Personal & Academic Details -->
-      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 card">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Personal & Academic Details</h3>
-        
-        <form id="accountForm" class="space-y-3.5">
+      <!-- Personal & academic details -->
+      <section class="bg-slate-900 border border-slate-700 rounded-2xl p-4 sm:p-6 space-y-4 card">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Personal &amp; Academic Details</h3>
+
+        <form id="accountForm" class="space-y-3.5" novalidate>
           <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
-            <input type="text" id="fullName" value="Aisha Suleiman" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+            <label for="fullName" class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
+            <input type="text" id="fullName" autocomplete="name" maxlength="120" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
-            <input type="email" id="email" value="aisha.suleiman@student.edu" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+            <label for="email" class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
+            <input type="email" id="email" autocomplete="email" disabled readonly class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 disabled:opacity-70 disabled:cursor-not-allowed">
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Department</label>
-              <input type="text" id="department" value="Computer Science" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+              <label for="department" class="block text-xs font-medium text-slate-400 mb-1">Department</label>
+              <input type="text" id="department" maxlength="120" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Level</label>
-              <input type="text" id="level" value="400 Level" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
+              <label for="level" class="block text-xs font-medium text-slate-400 mb-1">Level</label>
+              <input type="text" id="level" maxlength="40" disabled class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed transition">
             </div>
           </div>
-          <div id="formActions" class="hidden pt-2 flex gap-2">
-            <button type="submit" class="flex-1 bg-emerald-500 text-slate-950 font-semibold text-xs py-2.5 rounded-xl hover:bg-emerald-400 transition active:scale-95">Save Changes</button>
-            <button type="button" id="cancelEditBtn" class="bg-slate-800 border border-slate-700 text-slate-300 text-xs px-4 py-2.5 rounded-xl hover:bg-slate-700 transition active:scale-95">Cancel</button>
+          <p id="formMsg" class="text-xs text-red-400" role="alert" hidden></p>
+          <div id="formActions" hidden class="pt-2 flex gap-2">
+            <button type="submit" id="saveBtn" class="flex-1 min-h-[44px] bg-emerald-500 text-slate-950 font-semibold text-sm py-2.5 rounded-xl hover:bg-emerald-400 transition active:scale-95 disabled:opacity-60">Save Changes</button>
+            <button type="button" id="cancelEditBtn" class="min-h-[44px] bg-slate-800 border border-slate-700 text-slate-300 text-sm px-4 py-2.5 rounded-xl hover:bg-slate-700 transition active:scale-95">Cancel</button>
           </div>
         </form>
       </section>
 
-      <!-- Recent Mock Exam Milestones -->
-      <section class="space-y-3">
+      <!-- Recent practice -->
+      <section class="space-y-3" aria-live="polite">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">Recent Practice Milestones</h3>
-        
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
-              92%
-            </div>
-            <div>
-              <p class="text-xs font-semibold text-slate-100">Data Structures & Algorithms</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Mock Exam #4 · 45 mins ago</p>
-            </div>
-          </div>
-          <span class="text-xs font-medium text-emerald-400">+120 XP</span>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
-              85%
-            </div>
-            <div>
-              <p class="text-xs font-semibold text-slate-100">Operating Systems Concepts</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Practice Session · Yesterday</p>
-            </div>
-          </div>
-          <span class="text-xs font-medium text-emerald-400">+95 XP</span>
+        <div id="recentList" class="space-y-3">
+          <p class="text-xs text-slate-500 px-1">Loading your sessions…</p>
         </div>
       </section>
 
-      <!-- Account Security & Danger Zone -->
+      <!-- Security -->
       <section class="space-y-3 pb-4">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">Security & Session</h3>
-        
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card cursor-pointer">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">Security &amp; Session</h3>
+
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl card overflow-hidden">
+          <button id="pwToggle" type="button" aria-expanded="false" aria-controls="pwForm" class="w-full p-4 flex items-center justify-between gap-3 text-left">
+            <span class="flex items-center gap-3 min-w-0">
+              <span class="w-9 h-9 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <span class="min-w-0">
+                <span class="block text-xs sm:text-sm font-semibold text-slate-100">Change Password</span>
+                <span class="block text-[11px] sm:text-xs text-slate-400 mt-0.5">Update your account password</span>
+              </span>
+            </span>
+            <svg id="pwChevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 shrink-0 transition-transform" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <form id="pwForm" hidden class="px-4 pb-4 space-y-3 border-t border-slate-800 pt-4" novalidate>
+            <input type="email" autocomplete="username" hidden tabindex="-1" aria-hidden="true" id="pwUsername" />
+            <div>
+              <label for="newPw" class="block text-xs font-medium text-slate-400 mb-1">New password</label>
+              <input type="password" id="newPw" autocomplete="new-password" minlength="8" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 transition">
             </div>
             <div>
-              <p class="text-xs font-semibold text-slate-100">Change Password</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Update your account password</p>
+              <label for="confirmPw" class="block text-xs font-medium text-slate-400 mb-1">Confirm new password</label>
+              <input type="password" id="confirmPw" autocomplete="new-password" minlength="8" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 transition">
             </div>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500"><path d="m9 18 6-6-6-6"/></svg>
+            <p id="pwMsg" class="text-xs" role="alert" hidden></p>
+            <button type="submit" id="pwSave" class="w-full min-h-[44px] bg-emerald-500 text-slate-950 font-semibold text-sm rounded-xl hover:bg-emerald-400 transition active:scale-95 disabled:opacity-60">Update Password</button>
+          </form>
         </div>
 
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center justify-between card cursor-pointer">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-red-500/15 flex items-center justify-center text-red-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </div>
-            <div>
-              <p class="text-xs font-semibold text-red-400">Log Out</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Sign out from this device</p>
-            </div>
-          </div>
-        </div>
+        <button id="logoutBtn" type="button" class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 flex items-center gap-3 text-left card disabled:opacity-60">
+          <span class="w-9 h-9 shrink-0 rounded-lg bg-red-500/15 flex items-center justify-center text-red-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </span>
+          <span>
+            <span class="block text-xs sm:text-sm font-semibold text-red-400">Log Out</span>
+            <span class="block text-[11px] sm:text-xs text-slate-400 mt-0.5">Sign out from this device</span>
+          </span>
+        </button>
       </section>
-
     </main>
 
+    <!-- Toast -->
+    <div id="toast" role="status" aria-live="polite" hidden class="fixed left-1/2 -translate-x-1/2 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-50 max-w-[90vw] px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-xs sm:text-sm text-slate-100 shadow-xl"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const editToggleBtn = document.getElementById('editToggleBtn');
-      const accountForm = document.getElementById('accountForm');
-      const cancelEditBtn = document.getElementById('cancelEditBtn');
-      const formActions = document.getElementById('formActions');
-      const inputs = accountForm.querySelectorAll('input');
+  (() => {
+    'use strict';
 
-      let isEditing = false;
+    /* ============================================================
+       CONFIG — everything on this page is read live from Supabase.
+       ============================================================ */
+    const CONFIG = {
+      SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+      loginPage: 'login.html',          // where signed-out users are sent
+      tables: { profiles: 'profiles', results: 'practice_results' },
+      avatarBucket: 'avatars',
+      maxAvatarBytes: 2 * 1024 * 1024,
+      recentLimit: 5,
+      statsRowLimit: 5000
+    };
 
-      editToggleBtn.addEventListener('click', () => {
-        isEditing = !isEditing;
-        toggleEditMode(isEditing);
-      });
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      back: $('backBtn'), edit: $('editToggleBtn'),
+      pill: $('livePill'), dot: $('liveDot'), liveText: $('liveText'),
+      err: $('errorBanner'), errText: $('errorText'), retry: $('retryBtn'),
+      avatarInitials: $('avatarInitials'), avatarImg: $('avatarImg'), avatarBtn: $('avatarBtn'), avatarFile: $('avatarFile'),
+      name: $('displayName'), sub: $('displaySub'), plan: $('planBadge'), planText: $('planText'),
+      xp: $('statXp'), streak: $('statStreak'), acc: $('statAcc'),
+      form: $('accountForm'), fullName: $('fullName'), email: $('email'), dept: $('department'), level: $('level'),
+      formMsg: $('formMsg'), actions: $('formActions'), save: $('saveBtn'), cancel: $('cancelEditBtn'),
+      recent: $('recentList'),
+      pwToggle: $('pwToggle'), pwForm: $('pwForm'), pwChevron: $('pwChevron'), pwUser: $('pwUsername'),
+      newPw: $('newPw'), confirmPw: $('confirmPw'), pwMsg: $('pwMsg'), pwSave: $('pwSave'),
+      logout: $('logoutBtn'), toast: $('toast')
+    };
 
-      cancelEditBtn.addEventListener('click', () => {
-        isEditing = false;
-        toggleEditMode(false);
-      });
+    const goBack = () => {
+      if (history.length > 1) history.back();
+      else location.href = document.referrer || './';
+    };
+    el.back.addEventListener('click', goBack);
 
-      accountForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        isEditing = false;
-        toggleEditMode(false);
-      });
+    if (!window.supabase) {
+      el.errText.textContent = 'Couldn’t load the app. Check your connection and refresh.';
+      el.retry.hidden = true; el.err.hidden = false;
+      return;
+    }
 
-      function toggleEditMode(editing) {
-        inputs.forEach(input => {
-          input.disabled = !editing;
-        });
+    const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    const T = CONFIG.tables;
 
-        if (editing) {
-          formActions.classList.remove('hidden');
-          editToggleBtn.textContent = 'Cancel';
-          inputs[0].focus();
-        } else {
-          formActions.classList.add('hidden');
-          editToggleBtn.textContent = 'Edit Profile';
-        }
+    const state = { user: null, profile: null, results: [], editing: false, recent: [] };
+
+    /* ---------- helpers ---------- */
+    let toastTimer;
+    function toast(msg) {
+      el.toast.textContent = msg; el.toast.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.toast.hidden = true; }, 3200);
+    }
+    function setLive(status) {
+      el.dot.classList.remove('on', 'off');
+      if (status === 'live') { el.dot.classList.add('on'); el.liveText.textContent = 'Live'; }
+      else if (status === 'offline') { el.dot.classList.add('off'); el.liveText.textContent = 'Offline'; }
+      else el.liveText.textContent = 'Connecting';
+    }
+    function showError(msg) { el.errText.textContent = msg; el.err.hidden = false; }
+    function clearError() { el.err.hidden = true; }
+    function redirectToLogin() {
+      const next = location.pathname.split('/').pop() + location.search;
+      location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(next)}`);
+    }
+    const initials = (name) => {
+      const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return '';
+      return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+    };
+
+    /* ---------- render ---------- */
+    function currentName() {
+      const p = state.profile, u = state.user;
+      return (p && p.full_name) || (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || (u.email ? u.email.split('@')[0] : '');
+    }
+
+    function renderProfile() {
+      const p = state.profile || {}, u = state.user;
+      const name = currentName();
+      el.name.textContent = name || 'Add your name';
+      const sub = [p.department, p.level].filter(Boolean).join(' · ');
+      el.sub.textContent = sub || 'Add your department and level';
+
+      if (p.avatar_url) { el.avatarImg.src = p.avatar_url; el.avatarImg.hidden = false; el.avatarInitials.hidden = true; }
+      else { el.avatarImg.hidden = true; el.avatarInitials.hidden = false; el.avatarInitials.textContent = initials(name) || '?'; }
+
+      if (p.plan) { el.planText.textContent = p.plan; el.plan.hidden = false; } else { el.plan.hidden = true; }
+
+      el.email.value = u.email || '';
+      el.pwUser.value = u.email || '';
+      if (!state.editing) fillForm();
+    }
+
+    function fillForm() {
+      const p = state.profile || {};
+      el.fullName.value = p.full_name || (state.user.user_metadata && (state.user.user_metadata.full_name || state.user.user_metadata.name)) || '';
+      el.dept.value = p.department || '';
+      el.level.value = p.level || '';
+    }
+
+    function localDay(d) { return new Date(d).toLocaleDateString('en-CA'); } // YYYY-MM-DD in the user's timezone
+
+    function renderStats() {
+      const rows = state.results;
+      let xp = 0, correct = 0, total = 0;
+      const days = new Set();
+      for (const r of rows) {
+        xp += r.xp_earned || 0;
+        correct += r.correct_answers || 0;
+        total += r.total_questions || 0;
+        days.add(localDay(r.created_at));
       }
+      el.xp.textContent = xp.toLocaleString();
+      el.acc.textContent = total > 0 ? Math.round((correct / total) * 100) + '%' : '—';
+
+      // Streak: consecutive days with activity, counting back from today (or yesterday if nothing today yet)
+      let streak = 0;
+      const cursor = new Date();
+      if (!days.has(localDay(cursor))) cursor.setDate(cursor.getDate() - 1);
+      while (days.has(localDay(cursor))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+      el.streak.textContent = streak + (streak === 1 ? ' Day' : ' Days');
+    }
+
+    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+    function timeAgo(iso) {
+      const diff = (new Date(iso).getTime() - Date.now()) / 1000;
+      const abs = Math.abs(diff);
+      if (abs < 60) return 'Just now';
+      if (abs < 3600) return rtf.format(Math.round(diff / 60), 'minute');
+      if (abs < 86400) return rtf.format(Math.round(diff / 3600), 'hour');
+      if (abs < 7 * 86400) return rtf.format(Math.round(diff / 86400), 'day');
+      return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function renderRecent() {
+      const list = state.recent;
+      if (!list.length) {
+        const p = document.createElement('p');
+        p.className = 'text-xs sm:text-sm text-slate-500 px-1';
+        p.textContent = 'No practice sessions yet. Finish one and it will show up here.';
+        el.recent.replaceChildren(p);
+        return;
+      }
+      el.recent.replaceChildren(...list.map((r) => {
+        const pct = r.total_questions > 0 ? Math.round((r.correct_answers / r.total_questions) * 100) : null;
+        const good = pct !== null && pct >= 50;
+        const row = document.createElement('div');
+        row.className = 'bg-slate-900 border border-slate-700 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3 card';
+
+        const left = document.createElement('div');
+        left.className = 'flex items-center gap-3 min-w-0';
+        const badge = document.createElement('div');
+        badge.className = 'w-11 h-11 rounded-xl border flex items-center justify-center text-xs font-bold shrink-0 ' +
+          (good ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/15 border-amber-500/30 text-amber-400');
+        badge.textContent = pct === null ? '—' : pct + '%';
+        const text = document.createElement('div');
+        text.className = 'min-w-0';
+        const title = document.createElement('p');
+        title.className = 'text-xs sm:text-sm font-semibold text-slate-100 truncate';
+        title.textContent = (r.courses && r.courses.title) || 'Practice session';
+        const meta = document.createElement('p');
+        meta.className = 'text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate';
+        meta.dataset.time = r.created_at;
+        meta.dataset.prefix = (r.mode === 'timed' ? 'Timed test' : 'Practice session');
+        meta.textContent = `${meta.dataset.prefix} · ${timeAgo(r.created_at)}`;
+        text.append(title, meta);
+        left.append(badge, text);
+
+        row.append(left);
+        if (r.xp_earned) {
+          const xp = document.createElement('span');
+          xp.className = 'text-xs sm:text-sm font-medium text-emerald-400 shrink-0';
+          xp.textContent = `+${r.xp_earned.toLocaleString()} XP`;
+          row.append(xp);
+        }
+        return row;
+      }));
+    }
+    // keep "x minutes ago" fresh
+    setInterval(() => {
+      el.recent.querySelectorAll('[data-time]').forEach((m) => {
+        m.textContent = `${m.dataset.prefix} · ${timeAgo(m.dataset.time)}`;
+      });
+    }, 30000);
+
+    /* ---------- data ---------- */
+    async function loadProfile() {
+      const { data, error } = await db.from(T.profiles).select('*').eq('id', state.user.id).maybeSingle();
+      if (error) throw error;
+      state.profile = data;
+      renderProfile();
+    }
+    async function loadStats() {
+      const { data, error } = await db.from(T.results)
+        .select('xp_earned,total_questions,correct_answers,created_at')
+        .eq('user_id', state.user.id)
+        .order('created_at', { ascending: false })
+        .limit(CONFIG.statsRowLimit);
+      if (error) throw error;
+      state.results = data || [];
+      renderStats();
+    }
+    async function loadRecent() {
+      const { data, error } = await db.from(T.results)
+        .select('id,mode,total_questions,correct_answers,xp_earned,created_at,courses(title)')
+        .eq('user_id', state.user.id)
+        .order('created_at', { ascending: false })
+        .limit(CONFIG.recentLimit);
+      if (error) throw error;
+      state.recent = data || [];
+      renderRecent();
+    }
+
+    async function refresh() {
+      const settled = await Promise.allSettled([loadProfile(), loadStats(), loadRecent()]);
+      const failed = settled.filter((s) => s.status === 'rejected');
+      if (failed.length) {
+        console.error('[account] load errors:', failed.map((f) => f.reason));
+        showError('Some of your data couldn’t be loaded. Check your connection and try again.');
+        if (state.recent.length === 0 && el.recent.textContent.startsWith('Loading')) {
+          el.recent.replaceChildren(Object.assign(document.createElement('p'), { className: 'text-xs text-slate-500 px-1', textContent: 'Couldn’t load your sessions.' }));
+        }
+      } else clearError();
+    }
+    el.retry.addEventListener('click', refresh);
+
+    /* ---------- realtime ---------- */
+    let channel = null, debounce = null;
+    const scheduleRefresh = () => { clearTimeout(debounce); debounce = setTimeout(refresh, 400); };
+    function subscribe() {
+      if (channel) db.removeChannel(channel);
+      const uid = state.user.id;
+      channel = db.channel('account-' + uid)
+        .on('postgres_changes', { event: '*', schema: 'public', table: T.profiles, filter: `id=eq.${uid}` }, scheduleRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: T.results, filter: `user_id=eq.${uid}` }, scheduleRefresh)
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') setLive(navigator.onLine ? 'live' : 'offline');
+          else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) setLive('offline');
+        });
+    }
+    window.addEventListener('online', () => { setLive('live'); scheduleRefresh(); });
+    window.addEventListener('offline', () => setLive('offline'));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user) scheduleRefresh(); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted && state.user) scheduleRefresh(); });
+
+    /* ---------- edit profile ---------- */
+    function setEditing(on) {
+      state.editing = on;
+      [el.fullName, el.dept, el.level].forEach((i) => { i.disabled = !on; });
+      el.actions.hidden = !on;
+      el.formMsg.hidden = true;
+      el.edit.textContent = on ? 'Cancel' : 'Edit Profile';
+      if (on) el.fullName.focus(); else fillForm();
+    }
+    el.edit.addEventListener('click', () => setEditing(!state.editing));
+    el.cancel.addEventListener('click', () => setEditing(false));
+
+    el.form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const full_name = el.fullName.value.trim();
+      if (!full_name) { el.formMsg.textContent = 'Enter your full name.'; el.formMsg.hidden = false; el.fullName.focus(); return; }
+      el.save.disabled = true; el.save.textContent = 'Saving…';
+      const { data, error } = await db.from(T.profiles).upsert({
+        id: state.user.id,
+        full_name,
+        department: el.dept.value.trim() || null,
+        level: el.level.value.trim() || null,
+        updated_at: new Date().toISOString()
+      }).select().single();
+      el.save.disabled = false; el.save.textContent = 'Save Changes';
+      if (error) {
+        console.error('[account] save failed:', error);
+        el.formMsg.textContent = 'Couldn’t save your changes. Try again.'; el.formMsg.hidden = false;
+        return;
+      }
+      state.profile = data;
+      setEditing(false);
+      renderProfile();
+      toast('Profile updated');
     });
+
+    /* ---------- avatar ---------- */
+    el.avatarBtn.addEventListener('click', () => el.avatarFile.click());
+    el.avatarFile.addEventListener('change', async () => {
+      const file = el.avatarFile.files[0];
+      el.avatarFile.value = '';
+      if (!file) return;
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { toast('Choose a PNG, JPG or WebP image.'); return; }
+      if (file.size > CONFIG.maxAvatarBytes) { toast('Image must be under 2 MB.'); return; }
+      el.avatarBtn.disabled = true;
+      try {
+        const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+        const path = `${state.user.id}/avatar-${Date.now()}.${ext}`;
+        const up = await db.storage.from(CONFIG.avatarBucket).upload(path, file, { upsert: true, contentType: file.type });
+        if (up.error) throw up.error;
+        const { data: pub } = db.storage.from(CONFIG.avatarBucket).getPublicUrl(path);
+        const { data, error } = await db.from(T.profiles).upsert({ id: state.user.id, avatar_url: pub.publicUrl, updated_at: new Date().toISOString() }).select().single();
+        if (error) throw error;
+        state.profile = data;
+        renderProfile();
+        toast('Photo updated');
+      } catch (err) {
+        console.error('[account] avatar failed:', err);
+        toast('Couldn’t upload your photo. Try again.');
+      } finally { el.avatarBtn.disabled = false; }
+    });
+
+    /* ---------- password ---------- */
+    el.pwToggle.addEventListener('click', () => {
+      const open = el.pwForm.hidden;
+      el.pwForm.hidden = !open;
+      el.pwToggle.setAttribute('aria-expanded', String(open));
+      el.pwChevron.style.transform = open ? 'rotate(90deg)' : '';
+      if (open) el.newPw.focus();
+    });
+    function pwMessage(text, ok) {
+      el.pwMsg.textContent = text;
+      el.pwMsg.className = 'text-xs ' + (ok ? 'text-emerald-400' : 'text-red-400');
+      el.pwMsg.hidden = !text;
+    }
+    el.pwForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const a = el.newPw.value, b = el.confirmPw.value;
+      if (a.length < 8) return pwMessage('Use at least 8 characters.', false);
+      if (a !== b) return pwMessage('Passwords don’t match.', false);
+      el.pwSave.disabled = true; el.pwSave.textContent = 'Updating…';
+      const { error } = await db.auth.updateUser({ password: a });
+      el.pwSave.disabled = false; el.pwSave.textContent = 'Update Password';
+      if (error) { console.error('[account] password failed:', error); return pwMessage(error.message || 'Couldn’t update your password.', false); }
+      el.newPw.value = ''; el.confirmPw.value = '';
+      pwMessage('', true);
+      el.pwForm.hidden = true; el.pwToggle.setAttribute('aria-expanded', 'false'); el.pwChevron.style.transform = '';
+      toast('Password updated');
+    });
+
+    /* ---------- logout ---------- */
+    el.logout.addEventListener('click', async () => {
+      el.logout.disabled = true;
+      const { error } = await db.auth.signOut();
+      if (error) { el.logout.disabled = false; toast('Couldn’t sign out. Try again.'); return; }
+      location.replace(CONFIG.loginPage);
+    });
+
+    db.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') redirectToLogin(); });
+
+    /* ---------- boot ---------- */
+    (async function init() {
+      setLive('connecting');
+      try {
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) return redirectToLogin();
+        const { data: { user }, error } = await db.auth.getUser();
+        if (error || !user) return redirectToLogin();
+        state.user = user;
+        el.edit.disabled = false; el.avatarBtn.disabled = false;
+        renderProfile(); // email + name fallback appear immediately
+        await refresh();
+        subscribe();
+      } catch (err) {
+        console.error('[account] init failed:', err);
+        setLive('offline');
+        showError('Couldn’t connect. Check your connection and try again.');
+      }
+    })();
+  })();
   </script>
 </body>
 </html>
