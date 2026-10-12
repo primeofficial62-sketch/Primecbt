@@ -4,52 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <title>Create Study Plan — PRIME-CBT</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { navy: '#060b1a' },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-        }
-      }
-    }
-  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #060b1a;
+      --surface: #0f172a;
+      --surface-2: #1e293b;
       --border: #334155;
-      --muted: #94a3b8;
-      --emerald-bright: #34d399;
+      --text: #f1f5f9;
+      --text-2: #cbd5e1;
+      --text-3: #94a3b8;
+      --text-4: #64748b;
+      --text-5: #475569;
+      --emerald-400: #34d399;
+      --emerald-500: #10b981;
+      --red-400: #f87171;
+      --radius: 16px;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
-      color: #f1f5f9;
+      color: var(--text);
       display: flex;
       justify-content: center;
-      align-items: center;
       -webkit-font-smoothing: antialiased;
     }
 
     .app {
       width: 100%;
       max-width: 480px;
+      height: 100vh;
       height: 100dvh;
       display: flex;
       flex-direction: column;
@@ -58,211 +50,407 @@
       overflow: hidden;
       border-left: 1px solid rgba(51, 65, 85, 0.4);
       border-right: 1px solid rgba(51, 65, 85, 0.4);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s var(--ease), visibility 0s linear 0.35s;
     }
+    .app.ready { opacity: 1; visibility: visible; transition: opacity 0.35s var(--ease), visibility 0s linear 0s; }
 
-    header { flex-shrink: 0; }
+    .topbar {
+      flex-shrink: 0;
+      min-height: 56px;
+      padding: 8px 16px;
+      padding-top: max(8px, env(safe-area-inset-top));
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(6, 11, 26, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--surface-2);
+      z-index: 40;
+    }
+    .icon-btn {
+      width: 40px; height: 40px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 999px; color: var(--text-2); text-decoration: none;
+      transition: background 0.25s var(--ease), transform 0.15s var(--ease);
+    }
+    .icon-btn:active { transform: scale(0.9); }
+    .topbar h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
 
     main {
       flex: 1;
       overflow-y: auto;
-      padding: 24px 16px 40px;
+      padding: 18px 16px;
+      padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 20px));
+      display: flex; flex-direction: column; gap: 20px;
       scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.15) transparent;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .block h2 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; }
+    .hint { font-size: 0.75rem; color: var(--text-4); margin-top: 8px; }
+
+    .field {
+      width: 100%; height: 46px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 0 14px; color: var(--text); font: inherit; font-size: 16px;
+      color-scheme: dark; outline: none;
+      transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
     }
+    .field:focus { border-color: var(--emerald-400); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15); }
 
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(14px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .opt-grid { display: grid; gap: 10px; }
+    .opt-grid.three { grid-template-columns: repeat(3, 1fr); }
+    .opt-grid.two { grid-template-columns: repeat(2, 1fr); }
+    .opt-grid.days { grid-template-columns: repeat(7, 1fr); gap: 6px; }
 
-    .animate-fade-in { animation: fadeIn 0.4s ease-out both; }
-    .animate-slide-up { animation: slideUp 0.45s ease-out both; }
-
-    .option { 
-      transition: all 0.2s ease; 
+    .option {
+      min-height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      font: inherit; font-size: 0.85rem; font-weight: 500;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      transition: background 0.25s var(--ease), border-color 0.25s var(--ease),
+                  color 0.25s var(--ease), transform 0.15s var(--ease);
+    }
+    .option:active { transform: scale(0.96); }
+    .option.selected {
+      background: rgba(52, 211, 153, 0.12);
+      border-color: var(--emerald-400);
+      color: var(--emerald-400);
+      font-weight: 600;
+    }
+    .opt-grid.days .option {
+      min-height: 0; aspect-ratio: 1; max-height: 52px;
+      border-radius: 999px; font-size: 0.72rem; padding: 0;
     }
 
-    .option.selected { 
-      border-color: #34d399; 
-      background-color: rgba(52, 211, 153, 0.12); 
-      color: #34d399; 
+    .summary {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 16px; font-size: 0.82rem; color: var(--text-3); line-height: 1.5;
+      transition: border-color 0.25s var(--ease);
     }
-    
-    /* Remove slide-up, fade-in, and scale entrance animations globally */
-    .animate-fade-up, 
-    .animate-scale, 
-    .animate-fade-in,
-    .animate-slide-up,
-    [class*="animate-"] {
-      animation: none !important;
-      opacity: 1 !important;
-      transform: none !important;
+    .summary b { color: var(--emerald-400); font-weight: 600; }
+
+    .cta {
+      width: 100%; height: 50px; border: none; border-radius: 14px;
+      background: var(--emerald-500); color: #022c22;
+      font: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+      transition: background 0.25s var(--ease), transform 0.15s var(--ease), opacity 0.25s var(--ease);
     }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
+    .cta:active { transform: scale(0.98); }
+    .cta:disabled { opacity: 0.6; cursor: default; }
 
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
+    .toast {
+      position: absolute; left: 16px; right: 16px;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 60; text-align: center;
+      background: var(--surface); border: 1px solid var(--emerald-400);
+      color: var(--text); font-size: 0.85rem; font-weight: 600;
+      padding: 13px 16px; border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      opacity: 0; transform: translateY(14px); pointer-events: none;
+      transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { border-color: var(--red-400); }
 
+    @media (hover: hover) {
+      .icon-btn:hover { background: var(--surface-2); }
+      .option:not(.selected):hover { background: var(--surface-2); color: var(--text); }
+      .cta:not(:disabled):hover { background: #0fa574; }
+    }
 
+    @media (max-width: 360px) {
+      main { padding: 14px 12px; }
+      .opt-grid.three .option { font-size: 0.8rem; }
+    }
+
+    @media (min-width: 600px) {
+      .app { max-width: 640px; }
+      main { padding: 28px; gap: 24px; }
+      .topbar { padding-left: 24px; padding-right: 24px; }
+    }
+
+    @media (min-width: 1024px) {
+      .app { max-width: 680px; }
+    }
+
+    @media (max-height: 480px) and (orientation: landscape) {
+      .topbar { min-height: 48px; }
+      main { padding-top: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="app">
-    <!-- Top Bar -->
-    <header class="sticky top-0 z-40 h-14 bg-navy/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center gap-3 animate-fade-in">
-      <a href="home.html" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 transition active:scale-90 text-slate-300">
+  <div class="app" id="appRoot">
+    <header class="topbar">
+      <a href="home.html" class="icon-btn" aria-label="Back to Home">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </a>
-      <h1 class="text-lg font-semibold tracking-tight">Create Study Plan</h1>
+      <h1>Create Study Plan</h1>
     </header>
 
-    <main class="space-y-6">
-      <!-- When is your exam? -->
-      <section class="animate-slide-up">
-        <h2 class="text-sm font-semibold mb-2.5">When is your exam?</h2>
-        <input type="date" id="examDate"
-          class="w-full h-11 bg-slate-900 border border-slate-700 rounded-xl px-4 text-sm text-slate-100 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition">
+    <main>
+      <section class="block">
+        <h2>When is your exam?</h2>
+        <input type="date" id="examDate" class="field" aria-label="Exam date">
       </section>
 
-      <!-- Target Score -->
-      <section class="animate-slide-up" style="animation-delay: 0.05s">
-        <h2 class="text-sm font-semibold mb-2.5">Target Score</h2>
-        <div class="grid grid-cols-3 gap-2.5" id="scoreGroup">
-          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium selected" data-value="70%+">70%+</button>
-          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="80%+">80%+</button>
-          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="90%+">90%+</button>
+      <section class="block">
+        <h2>Target Score</h2>
+        <div class="opt-grid three" id="scoreGroup">
+          <button type="button" class="option selected" data-value="70%+">70%+</button>
+          <button type="button" class="option" data-value="80%+">80%+</button>
+          <button type="button" class="option" data-value="90%+">90%+</button>
         </div>
       </section>
 
-      <!-- Daily Study Time -->
-      <section class="animate-slide-up" style="animation-delay: 0.1s">
-        <h2 class="text-sm font-semibold mb-2.5">Daily Study Time</h2>
-        <div class="grid grid-cols-2 gap-2.5" id="timeGroup">
-          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="30 mins">30 mins</button>
-          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium selected" data-value="1 hour">1 hour</button>
-          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="1.5 hours">1.5 hours</button>
-          <button type="button" class="option h-11 rounded-xl border border-slate-700 bg-slate-900 text-sm font-medium" data-value="2+ hours">2+ hours</button>
+      <section class="block">
+        <h2>Daily Study Time</h2>
+        <div class="opt-grid two" id="timeGroup">
+          <button type="button" class="option" data-value="30 mins">30 mins</button>
+          <button type="button" class="option selected" data-value="1 hour">1 hour</button>
+          <button type="button" class="option" data-value="1.5 hours">1.5 hours</button>
+          <button type="button" class="option" data-value="2+ hours">2+ hours</button>
         </div>
       </section>
 
-      <!-- Days of the week -->
-      <section class="animate-slide-up" style="animation-delay: 0.15s">
-        <h2 class="text-sm font-semibold mb-2.5">Study Days</h2>
-        <div class="flex flex-wrap gap-2" id="daysGroup">
-          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Mon">Mon</button>
-          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Tue">Tue</button>
-          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Wed">Wed</button>
-          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Thu">Thu</button>
-          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium selected" data-day="Fri">Fri</button>
-          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium" data-day="Sat">Sat</button>
-          <button type="button" class="option w-11 h-11 rounded-full border border-slate-700 bg-slate-900 text-xs font-medium" data-day="Sun">Sun</button>
+      <section class="block">
+        <h2>Study Days</h2>
+        <div class="opt-grid days" id="daysGroup">
+          <button type="button" class="option selected" data-day="Mon">Mon</button>
+          <button type="button" class="option selected" data-day="Tue">Tue</button>
+          <button type="button" class="option selected" data-day="Wed">Wed</button>
+          <button type="button" class="option selected" data-day="Thu">Thu</button>
+          <button type="button" class="option selected" data-day="Fri">Fri</button>
+          <button type="button" class="option" data-day="Sat">Sat</button>
+          <button type="button" class="option" data-day="Sun">Sun</button>
         </div>
       </section>
 
-      <!-- Generate Button -->
-      <div class="pt-2 animate-slide-up" style="animation-delay: 0.2s">
-        <button type="button" id="generateBtn" class="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold rounded-xl text-sm transition active:scale-[0.98] shadow-lg shadow-emerald-500/20">
-          Generate My Study Plan
-        </button>
-        <p class="text-center text-xs text-slate-500 mt-3 mb-2">We’ll create a personalized plan based on your goals</p>
+      <div class="summary" id="summary"></div>
+
+      <div>
+        <button type="button" id="generateBtn" class="cta">Create My Study Plan</button>
+        <p class="hint" style="text-align:center">Your exam date is saved to your account, and study sessions for the next two weeks are added to My Study Plan.</p>
       </div>
     </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="profile-gate.js"></script>
   <script>
+    // ========== SUPABASE CLIENT ==========
+    const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     document.addEventListener('DOMContentLoaded', () => {
-      const examDateInput = document.getElementById('examDate');
-      const scoreGroup = document.getElementById('scoreGroup');
-      const timeGroup = document.getElementById('timeGroup');
-      const daysGroup = document.getElementById('daysGroup');
-      const generateBtn = document.getElementById('generateBtn');
+      const $ = (id) => document.getElementById(id);
+      const pad = (n) => String(n).padStart(2, '0');
+      const dateStr = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      const parseDate = (s) => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+      const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const WINDOW_DAYS = 14;
 
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() + 30);
-      examDateInput.value = defaultDate.toISOString().split('T')[0];
+      const examInput = $('examDate');
+      const scoreGroup = $('scoreGroup');
+      const timeGroup = $('timeGroup');
+      const daysGroup = $('daysGroup');
+      const generateBtn = $('generateBtn');
 
-      function setupSingleSelect(container) {
-        if (!container) return;
-        const buttons = container.querySelectorAll('.option');
-        buttons.forEach(btn => {
-          btn.addEventListener('click', () => {
-            buttons.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-          });
-        });
+      let user = null;
+      let hasExistingPlan = false;
+
+      let toastTimer = null;
+      function toast(msg, isError) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.toggle('error', !!isError);
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 3400);
       }
 
-      setupSingleSelect(scoreGroup);
-      setupSingleSelect(timeGroup);
-
-      if (daysGroup) {
-        const dayButtons = daysGroup.querySelectorAll('.option');
-        dayButtons.forEach(btn => {
-          btn.addEventListener('click', () => {
-            btn.classList.toggle('selected');
-          });
-        });
+      // ----- Selections -----
+      function selectedValue(group) {
+        const el = group.querySelector('.option.selected');
+        return el ? el.dataset.value : null;
+      }
+      function selectedDays() {
+        return Array.from(daysGroup.querySelectorAll('.option.selected')).map((el) => el.dataset.day);
       }
 
-      if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-          const examDate = examDateInput.value;
-          const targetScore = scoreGroup.querySelector('.option.selected')?.getAttribute('data-value') || '70%+';
-          const studyTime = timeGroup.querySelector('.option.selected')?.getAttribute('data-value') || '1 hour';
-          
-          const selectedDays = Array.from(daysGroup.querySelectorAll('.option.selected'))
-            .map(el => el.getAttribute('data-day'));
+      // The sessions this plan will add (today up to 14 days, stopping before the exam)
+      function buildSessions() {
+        const exam = examInput.value;
+        const days = selectedDays();
+        if (!exam || !days.length) return [];
+        const timeLabel = selectedValue(timeGroup) || '1 hour';
+        const score = selectedValue(scoreGroup) || '70%+';
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const examD = parseDate(exam);
+        const out = [];
+        for (let i = 0; i < WINDOW_DAYS; i++) {
+          const d = new Date(start);
+          d.setDate(start.getDate() + i);
+          if (d >= examD) break;
+          if (days.indexOf(DAY_NAMES[d.getDay()]) > -1) {
+            out.push({ due_date: dateStr(d), title: 'Study session · ' + timeLabel, note: 'Target ' + score });
+          }
+        }
+        return out;
+      }
 
-          if (!examDate) {
-            alert('Please select your exam date.');
-            return;
+      function renderSummary() {
+        const sum = $('summary');
+        const exam = examInput.value;
+        const days = selectedDays();
+        if (!exam) { sum.textContent = 'Pick your exam date to see your plan.'; return; }
+        if (!days.length) { sum.textContent = 'Select at least one study day.'; return; }
+        const n = buildSessions().length;
+        const left = Math.ceil((parseDate(exam) - new Date().setHours(0, 0, 0, 0)) / 86400000);
+        let html = '<b>' + days.length + ' study ' + (days.length === 1 ? 'day' : 'days') + ' a week</b>, ' +
+          (selectedValue(timeGroup) || '') + ' each. ';
+        html += n ? 'This adds <b>' + n + ' ' + (n === 1 ? 'session' : 'sessions') + '</b> to your plan for the next two weeks. ' :
+                    'No sessions fall before your exam date. ';
+        if (left >= 0) html += left + (left === 1 ? ' day' : ' days') + ' until your exam.';
+        if (hasExistingPlan) html += ' Unfinished sessions from your earlier plan will be replaced.';
+        sum.innerHTML = html;
+      }
+
+      // ----- Option buttons -----
+      function singleSelect(group) {
+        const buttons = group.querySelectorAll('.option');
+        buttons.forEach((btn) => btn.addEventListener('click', () => {
+          buttons.forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          renderSummary();
+        }));
+      }
+      singleSelect(scoreGroup);
+      singleSelect(timeGroup);
+      daysGroup.querySelectorAll('.option').forEach((btn) => btn.addEventListener('click', () => {
+        btn.classList.toggle('selected');
+        renderSummary();
+      }));
+      examInput.addEventListener('input', renderSummary);
+
+      // ----- Create the plan -----
+      generateBtn.addEventListener('click', async () => {
+        const examDate = examInput.value;
+        const targetScore = selectedValue(scoreGroup) || '70%+';
+        const studyTime = selectedValue(timeGroup) || '1 hour';
+        const days = selectedDays();
+
+        if (!examDate) { toast('Please select your exam date', true); return; }
+        if (examDate < dateStr(new Date())) { toast('Choose an exam date from today onwards', true); return; }
+        if (!days.length) { toast('Please select at least one study day', true); return; }
+
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Creating your plan…';
+
+        try {
+          // 1. save exam date + plan settings on the account (home and My Study Plan read the date)
+          const { error: metaErr } = await supabaseClient.auth.updateUser({
+            data: {
+              exam_date: examDate,
+              study_plan: { target_score: targetScore, daily_time: studyTime, days: days, updated_at: new Date().toISOString() }
+            }
+          });
+          if (metaErr) throw metaErr;
+
+          // 2. replace unfinished sessions from an earlier plan
+          const { error: delErr } = await supabaseClient
+            .from('study_tasks')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('plan_generated', true)
+            .eq('is_done', false)
+            .gte('due_date', dateStr(new Date()));
+          if (delErr) throw delErr;
+
+          // 3. add the new sessions
+          const sessions = buildSessions();
+          if (sessions.length) {
+            const rows = sessions.map((s) => ({
+              user_id: user.id, title: s.title, note: s.note, due_date: s.due_date, plan_generated: true
+            }));
+            const { error: insErr } = await supabaseClient.from('study_tasks').insert(rows);
+            if (insErr) throw insErr;
           }
 
-          if (selectedDays.length === 0) {
-            alert('Please select at least one study day.');
-            return;
-          }
+          // 4. tell the student (shows as a popup on home and in Notifications)
+          const pretty = parseDate(examDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+          await supabaseClient.from('notifications').insert({
+            user_id: user.id,
+            title: 'Your study plan is ready 📅',
+            body: (sessions.length ? sessions.length + ' study sessions added. ' : '') + 'Exam date: ' + pretty + '.',
+            type: 'study'
+          });
 
-          const studyPlanConfig = {
-            examDate,
-            targetScore,
-            studyTime,
-            selectedDays
+          toast('Study plan created ✅');
+          setTimeout(() => { window.location.href = 'my-study-plan.html'; }, 900);
+        } catch (err) {
+          console.error('create plan:', err && err.message);
+          toast("Couldn't save your plan. Please try again.", true);
+          generateBtn.disabled = false;
+          generateBtn.textContent = 'Create My Study Plan';
+        }
+      });
+
+      // ----- Start: check login, pre-fill from an existing plan -----
+      async function init() {
+        let session = null;
+        try {
+          const res = await supabaseClient.auth.getSession();
+          session = res.data && res.data.session;
+        } catch (e) { session = null; }
+
+        if (!session) { window.location.replace('auth.html?mode=login'); return; }
+        if (needsProfileSetup(session.user)) { window.location.replace('profile-setup.html'); return; }
+
+        user = session.user;
+        const meta = user.user_metadata || {};
+        const plan = meta.study_plan || null;
+        hasExistingPlan = !!plan;
+
+        examInput.min = dateStr(new Date());
+        if (meta.exam_date && meta.exam_date >= dateStr(new Date())) examInput.value = meta.exam_date;
+
+        if (plan) {
+          const pick = (group, value) => {
+            const btns = Array.from(group.querySelectorAll('.option'));
+            if (!btns.some((b) => b.dataset.value === value)) return;
+            btns.forEach((b) => b.classList.toggle('selected', b.dataset.value === value));
           };
+          pick(scoreGroup, plan.target_score);
+          pick(timeGroup, plan.daily_time);
+          if (Array.isArray(plan.days) && plan.days.length) {
+            daysGroup.querySelectorAll('.option').forEach((b) => {
+              b.classList.toggle('selected', plan.days.indexOf(b.dataset.day) > -1);
+            });
+          }
+          generateBtn.textContent = 'Update My Study Plan';
+        }
 
-          console.log('Study Plan Config Created:', studyPlanConfig);
-          
-          // Flag that a new study plan has been created so the notification dot triggers
-          localStorage.setItem('hasNewStudyPlan', 'true');
-
-          alert('Study plan generated successfully!');
-          window.location.href = 'home.html';
-        });
+        renderSummary();
+        $('appRoot').classList.add('ready');
       }
+
+      init();
     });
   </script>
 </body>
