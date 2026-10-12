@@ -451,7 +451,7 @@
               study_plan: { target_score: targetScore, daily_time: studyTime, days: days, updated_at: new Date().toISOString() }
             }
           });
-          if (metaErr) throw metaErr;
+          if (metaErr) throw Object.assign(metaErr, { step: 'update account (auth.updateUser)' });
 
           // 2. replace unfinished sessions from an earlier plan
           const { error: delErr } = await supabaseClient
@@ -461,7 +461,7 @@
             .eq('plan_generated', true)
             .eq('is_done', false)
             .gte('due_date', dateStr(new Date()));
-          if (delErr) throw delErr;
+          if (delErr) throw Object.assign(delErr, { step: 'delete old sessions (study_tasks)' });
 
           // 3. add the new sessions
           const sessions = buildSessions();
@@ -470,7 +470,7 @@
               user_id: user.id, title: s.title, note: s.note, due_date: s.due_date, plan_generated: true
             }));
             const { error: insErr } = await supabaseClient.from('study_tasks').insert(rows);
-            if (insErr) throw insErr;
+            if (insErr) throw Object.assign(insErr, { step: 'insert new sessions (study_tasks)' });
           }
 
           // 4. tell the student (shows as a popup on home and in Notifications)
@@ -485,7 +485,9 @@
           toast('Study plan created ✅');
           setTimeout(() => { window.location.href = 'my-study-plan.html'; }, 900);
         } catch (err) {
-          console.error('create plan:', err && err.message);
+          console.error('create plan failed at step:', err && err.step);
+          console.error('message:', err && err.message, '| code:', err && err.code, '| details:', err && err.details, '| hint:', err && err.hint);
+          console.error(err);
           toast("Couldn't save your plan. Please try again.", true);
           busy = false;
           generateBtn.disabled = false;
