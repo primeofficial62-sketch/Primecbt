@@ -813,7 +813,7 @@
         <section class="panel" id="examPanel">
           <div class="panel-head">
             <span class="panel-title">⏳ Exam countdown</span>
-            <button class="link-btn" id="examEdit" type="button" style="display:none">Change date</button>
+            <button class="link-btn" id="examEdit" type="button" style="display:none">Reset date</button>
           </div>
 
           <div id="examSet" style="display:none">
@@ -833,6 +833,7 @@
               <input type="date" class="date-input" id="examDate">
               <button type="button" class="btn-solid" id="examSave">Save</button>
             </div>
+            <button type="button" class="link-btn" id="examCancel" style="display:none;margin-top:10px">Cancel</button>
           </div>
         </section>
 
@@ -1224,9 +1225,11 @@
         function showForm(title) {
           examSet.style.display = 'none';
           examForm.style.display = '';
-          examEdit.style.display = examDate ? '' : 'none';
+          examEdit.style.display = 'none';
+          const canCancel = examDate && examDate >= dateStr(new Date());
+          $('examCancel').style.display = canCancel ? '' : 'none';
           $('examFormTitle').textContent = title || 'When is your exam?';
-          if (examDate) input.value = examDate;
+          input.value = canCancel ? examDate : '';
         }
 
         function tick() {
@@ -1278,7 +1281,16 @@
           showToast('Exam date saved ✅');
         });
 
-        examEdit.addEventListener('click', () => { clearInterval(ticker); showForm('Change your exam date'); });
+        examEdit.addEventListener('click', () => { clearInterval(ticker); showForm('Reset your exam date'); });
+        $('examCancel').addEventListener('click', render);
+
+        // keep the countdown in sync if the date changes on another page or tab
+        supabaseClient.auth.onAuthStateChange((event, sess) => {
+          if (event === 'USER_UPDATED' && sess) {
+            const d = (sess.user.user_metadata && sess.user.user_metadata.exam_date) || null;
+            if (d !== examDate) { examDate = d; render(); }
+          }
+        });
 
         render();
       }
