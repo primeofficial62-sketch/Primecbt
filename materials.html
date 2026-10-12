@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>PRIME-CBT — Materials</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #060b1a;
@@ -19,62 +19,54 @@
       --emerald: #10b981;
       --emerald-bright: #34d399;
       --teal: #2dd4bf;
-      --amber: #fbbf24;
       --red: #f87171;
-      --font-display: 'Lora', serif;
-      --font-body: 'Inter', sans-serif;
+      --blue: #60a5fa;
+      --pad: clamp(14px, 4vw, 32px);
+      --font-body: 'Inter', system-ui, sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    html, body {
-      width: 100%;
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
       min-height: 100vh;
       min-height: 100dvh;
       background: var(--bg);
       color: var(--text);
       font-family: var(--font-body);
       -webkit-font-smoothing: antialiased;
-      display: flex;
-      justify-content: center;
+      overflow-x: hidden;
     }
 
     .app {
       width: 100%;
-      max-width: 768px;
-      min-height: 100vh;
+      max-width: 1200px;
+      margin: 0 auto;
       min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg);
-      position: relative;
-      border-left: 1px solid rgba(51, 65, 85, 0.4);
-      border-right: 1px solid rgba(51, 65, 85, 0.4);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
 
+    /* ---------- Top bar ---------- */
     .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px 12px;
-      padding-top: max(16px, env(safe-area-inset-top));
-      flex-shrink: 0;
-      background: rgba(6, 11, 26, 0.9);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
       position: sticky;
       top: 0;
       z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px var(--pad);
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: rgba(6, 11, 26, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .back-btn, .icon-btn {
       width: 42px;
       height: 42px;
+      flex-shrink: 0;
       border-radius: 12px;
       background: rgba(30, 41, 59, 0.6);
       border: 1px solid var(--border);
@@ -82,90 +74,70 @@
       align-items: center;
       justify-content: center;
       color: var(--muted-light);
-      cursor: pointer;
-      transition: all 0.25s ease;
       text-decoration: none;
+      transition: background .2s, color .2s, transform .15s;
     }
-
-    .back-btn:hover, .icon-btn:hover {
-      background: rgba(30, 41, 59, 0.95);
-      color: var(--text);
-    }
-
+    .back-btn:hover, .icon-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); }
     .back-btn:active, .icon-btn:active { transform: scale(0.94); }
     .back-btn svg, .icon-btn svg { width: 20px; height: 20px; }
 
-    .topbar-text h1 {
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
+    .topbar-text { flex: 1; min-width: 0; text-align: center; }
+    .topbar-text h1 { font-size: clamp(16px, 2.2vw, 20px); font-weight: 700; line-height: 1.2; }
     .topbar-text p {
-      font-size: 12px;
-      color: var(--muted);
+      font-size: 12px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-    .search-wrap {
-      padding: 12px 20px;
-    }
+    /* ---------- Search + categories ---------- */
+    .search-wrap { padding: 8px var(--pad); }
 
     .search-box {
       display: flex;
       align-items: center;
+      gap: 10px;
+      height: 46px;
+      padding: 0 14px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 0 14px;
-      height: 46px;
-      gap: 10px;
-      transition: border-color 0.2s ease;
+      transition: border-color .2s;
     }
-
-    .search-box:focus-within {
-      border-color: var(--emerald);
-    }
-
-    .search-box svg {
-      width: 18px;
-      height: 18px;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-
+    .search-box:focus-within { border-color: var(--emerald); }
+    .search-box svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
     .search-box input {
-      background: none;
-      border: none;
-      outline: none;
+      flex: 1; min-width: 0;
+      background: none; border: none; outline: none;
       color: var(--text);
-      font-size: 14px;
-      width: 100%;
-      font-family: var(--font-body);
+      font: inherit;
+      font-size: 16px; /* prevents iOS zoom on focus */
     }
+    .search-box input::placeholder { color: var(--muted); }
 
     .categories {
       display: flex;
       gap: 8px;
-      padding: 4px 20px 12px;
+      padding: 4px var(--pad) 12px;
       overflow-x: auto;
       scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
     }
-
     .categories::-webkit-scrollbar { display: none; }
 
     .cat-chip {
+      flex-shrink: 0;
+      min-height: 38px;
+      padding: 8px 16px;
       background: var(--surface);
       border: 1px solid var(--border);
-      color: var(--muted-light);
-      padding: 8px 16px;
       border-radius: 999px;
+      color: var(--muted-light);
+      font: inherit;
       font-size: 13px;
       font-weight: 500;
-      cursor: pointer;
       white-space: nowrap;
-      transition: all 0.2s ease;
+      cursor: pointer;
+      transition: all .2s;
     }
-
     .cat-chip.active {
       background: var(--emerald);
       border-color: var(--emerald);
@@ -173,323 +145,359 @@
       font-weight: 600;
     }
 
+    /* ---------- Content ---------- */
     .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 20px 40px;
-      scrollbar-width: none;
+      padding: 8px var(--pad) calc(40px + env(safe-area-inset-bottom));
     }
 
-    .content::-webkit-scrollbar { display: none; }
-
-    .section { margin-bottom: 24px; }
+    .section { margin-bottom: 28px; }
+    .section[hidden] { display: none; }
 
     .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px; gap: 12px;
     }
-
     .section-header h2 {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .count { font-size: 12px; color: var(--muted); }
+    .clear-btn {
+      background: none; border: none; color: var(--emerald-bright);
+      font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0;
     }
 
-    .see-all-btn {
-      font-size: 13px;
-      color: var(--emerald-bright);
-      text-decoration: none;
-      font-weight: 600;
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
     }
+    @media (min-width: 640px)  { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+    @media (min-width: 1000px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
 
     .material-card {
       display: flex;
       align-items: center;
       gap: 14px;
+      min-width: 0;
+      padding: 14px 16px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
-      text-decoration: none;
       color: var(--text);
-      transition: all 0.25s ease;
+      text-decoration: none;
+      transition: transform .25s, border-color .25s;
     }
-
-    .material-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(16, 185, 129, 0.4);
-    }
+    .material-card:hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, .4); }
+    .material-card:active { transform: scale(0.99); }
 
     .file-icon {
-      width: 44px;
-      height: 44px;
+      width: 44px; height: 44px; flex-shrink: 0;
       border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
-
     .file-icon svg { width: 22px; height: 22px; }
-    .file-icon.pdf { background: rgba(248, 113, 113, 0.12); color: var(--red); }
-    .file-icon.note { background: rgba(16, 185, 129, 0.12); color: var(--emerald-bright); }
-    .file-icon.guide { background: rgba(45, 212, 191, 0.12); color: var(--teal); }
-    .file-icon.doc { background: rgba(96, 165, 250, 0.12); color: #60a5fa; }
+    .file-icon.pdf  { background: rgba(248, 113, 113, .12); color: var(--red); }
+    .file-icon.note { background: rgba(16, 185, 129, .12);  color: var(--emerald-bright); }
+    .file-icon.guide{ background: rgba(45, 212, 191, .12);  color: var(--teal); }
+    .file-icon.doc  { background: rgba(96, 165, 250, .12);  color: var(--blue); }
 
     .material-body { flex: 1; min-width: 0; }
-    .material-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .material-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-
-    .offline-badge {
-      background: rgba(16, 185, 129, 0.12);
-      color: var(--emerald-bright);
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-weight: 600;
+    .material-title {
+      font-size: 14px; font-weight: 600; line-height: 1.35; margin-bottom: 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      word-break: break-word;
     }
-
-    .material-arrow { color: var(--muted); display: flex; align-items: center; }
+    .material-meta {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+      font-size: 12px; color: var(--muted);
+    }
+    .material-arrow { color: var(--muted); display: flex; flex-shrink: 0; }
     .material-arrow svg { width: 18px; height: 18px; }
 
-    .empty-state {
-      text-align: center;
-      color: var(--muted);
-      font-size: 14px;
-      padding: 32px 0;
-      display: none;
+    /* ---------- States ---------- */
+    .state {
+      text-align: center; color: var(--muted); font-size: 14px;
+      padding: 40px 16px;
     }
-    
-    [class*="animate-"] {
-      animation: none !important;
-      opacity: 1 !important;
-      transform: none !important;
+    .state button {
+      margin-top: 12px; padding: 10px 18px;
+      background: var(--emerald); color: #022c22; border: none; border-radius: 10px;
+      font: inherit; font-weight: 600; cursor: pointer;
     }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
 
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
+    .skeleton {
+      height: 74px; border-radius: 16px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
 
+    .live-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted); margin-right: 6px; vertical-align: middle;
+    }
+    .live-dot.on { background: var(--emerald-bright); box-shadow: 0 0 0 3px rgba(52, 211, 153, .2); }
 
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- Top Bar -->
-    <div class="topbar">
+    <header class="topbar">
       <a href="home.html" class="back-btn" aria-label="Back to Home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
-
       <div class="topbar-text">
         <h1>Materials</h1>
-        <p>Study notes, past questions & more</p>
+        <p><span class="live-dot" id="liveDot"></span><span id="liveText">Connecting…</span></p>
       </div>
-
       <a href="downloads.html" class="icon-btn" aria-label="Downloads">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
       </a>
+    </header>
+
+    <div class="search-wrap">
+      <label class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="search" id="searchInput" placeholder="Search materials..." autocomplete="off" aria-label="Search materials">
+      </label>
     </div>
 
-    <!-- Search -->
-    <div class="search-wrap" id="materialsSearchWrap">
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-        </svg>
-        <input type="text" id="materialsSearchInput" placeholder="Search materials..." autocomplete="off">
-      </div>
-    </div>
+    <nav class="categories" id="categories" aria-label="Categories"></nav>
 
-    <!-- Categories -->
-    <div class="categories">
-      <button class="cat-chip active" type="button" data-category="all">All</button>
-      <button class="cat-chip" type="button" data-category="Course Notes">Course Notes</button>
-      <button class="cat-chip" type="button" data-category="Past Questions">Past Questions</button>
-      <button class="cat-chip" type="button" data-category="Textbooks">Textbooks</button>
-      <button class="cat-chip" type="button" data-category="Handouts">Handouts</button>
-      <button class="cat-chip" type="button" data-category="Study Guides">Study Guides</button>
-    </div>
-
-    <!-- Content -->
-    <div class="content">
-      <!-- Recently Opened -->
-      <section class="section" id="recentSection">
+    <main class="content">
+      <section class="section" id="recentSection" hidden>
         <div class="section-header">
           <h2>Recently Opened</h2>
+          <button class="clear-btn" id="clearRecent" type="button">Clear</button>
         </div>
-
-        <!-- BIO 101 Link -->
-        <a href="pdf-reader.html?file=bio101.pdf" class="material-card" data-category="Course Notes">
-          <div class="file-icon pdf">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <path d="M14 2v6h6"/>
-              <path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>
-            </svg>
-          </div>
-          <div class="material-body">
-            <div class="material-title">BIO 101 — Cell Biology Notes</div>
-            <div class="material-meta">
-              <span>82 pages</span>
-              <span class="offline-badge">Offline</span>
-            </div>
-          </div>
-          <div class="material-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </a>
-
-        <!-- CHM 102 Link -->
-        <a href="pdf-reader.html?file=chm102.pdf" class="material-card" data-category="Course Notes">
-          <div class="file-icon note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
-            </svg>
-          </div>
-          <div class="material-body">
-            <div class="material-title">CHM 102 — Organic Chemistry Reaction Mechanisms</div>
-            <div class="material-meta">
-              <span>12 pages</span>
-              <span class="offline-badge">Offline</span>
-            </div>
-          </div>
-          <div class="material-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </a>
+        <div class="grid" id="recentGrid"></div>
       </section>
 
-      <!-- All Materials -->
       <section class="section">
         <div class="section-header">
-          <h2>All Materials</h2>
+          <h2 id="allTitle">All Materials</h2>
+          <span class="count" id="countText"></span>
         </div>
-
-        <!-- ECO 101 Link -->
-        <a href="pdf-reader.html?file=eco101.pdf" class="material-card" data-category="Past Questions">
-          <div class="file-icon pdf">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <path d="M14 2v6h6"/>
-            </svg>
-          </div>
-          <div class="material-body">
-            <div class="material-title">ECO 101 Macroeconomics Past Questions & Answers</div>
-            <div class="material-meta">
-              <span>156 questions</span>
-              <span>PDF</span>
-            </div>
-          </div>
-          <div class="material-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </a>
-
-<!-- Complete Study Guide Link Fixed -->
-<a href="pdf-reader.html?file=ecology-guide.pdf" class="material-card" data-category="Study Guides">
-  <div class="file-icon guide">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
-    </svg>
-  </div>
-  <div class="material-body">
-    <div class="material-title">Complete Study Guide — Ecology</div>
-    <div class="material-meta">
-      <span>48 pages</span>
-      <span>PDF</span>
-    </div>
-  </div>
-  <div class="material-arrow">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M9 18l6-6-6-6" />
-    </svg>
-  </div>
-</a>
-        </a>
+        <div class="grid" id="allGrid">
+          <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+        </div>
+        <div class="state" id="stateBox" hidden></div>
       </section>
-
-      <div class="empty-state" id="materialsEmptyState">
-        No materials match your search.
-      </div>
-    </div>
+    </main>
   </div>
+
+  <!-- Supabase client library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+    window.SUPABASE_ANON_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+  </script>
 
   <script>
-    const searchInput = document.getElementById('materialsSearchInput');
-    const materialCards = document.querySelectorAll('.material-card');
-    const emptyState = document.getElementById('materialsEmptyState');
-    const catChips = document.querySelectorAll('.cat-chip');
+    /* ================= Supabase client ================= */
+    function getClient() {
+      // Use whichever your shared config already exposes
+      const existing = window.supabaseClient || window.sb || window.db;
+      if (existing && typeof existing.from === 'function') return existing;
+      if (window.supabase && typeof window.supabase.from === 'function') return window.supabase;
 
-    let currentCategory = 'all';
-    let searchQuery = '';
+      const url = window.SUPABASE_URL;
+      const key = window.SUPABASE_ANON_KEY;
+      if (url && key && window.supabase && window.supabase.createClient) {
+        return window.supabase.createClient(url, key);
+      }
+      return null;
+    }
+    const client = getClient();
 
-    function filterMaterials() {
-      let visibleCount = 0;
-      materialCards.forEach(card => {
-        const title = card.querySelector('.material-title').textContent.toLowerCase();
-        const category = card.getAttribute('data-category');
-        
-        const matchesCategory = currentCategory === 'all' || category === currentCategory;
-        const matchesSearch = title.includes(searchQuery);
+    /* ================= State ================= */
+    const RECENT_KEY = 'primecbt_recent_materials';
+    let materials = [];
+    let category = 'all';
+    let query = '';
 
-        if (matchesCategory && matchesSearch) {
-          card.style.display = 'flex';
-          visibleCount++;
-        } else {
-          card.style.display = 'none';
-        }
-      });
+    const $ = id => document.getElementById(id);
+    const els = {
+      cats: $('categories'), search: $('searchInput'),
+      recentSection: $('recentSection'), recentGrid: $('recentGrid'),
+      allGrid: $('allGrid'), count: $('countText'), state: $('stateBox'),
+      dot: $('liveDot'), live: $('liveText')
+    };
 
-      emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+    /* ================= Helpers ================= */
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const ICONS = {
+      pdf:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+      note: '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
+      guide:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',
+      doc:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>'
+    };
+
+    function iconClass(m) {
+      if (m.category === 'Study Guides') return 'guide';
+      if (m.category === 'Course Notes') return 'note';
+      if (m.category === 'Handouts') return 'doc';
+      return 'pdf';
     }
 
-    searchInput.addEventListener('input', (e) => {
-      searchQuery = e.target.value.toLowerCase().trim();
-      filterMaterials();
+    function formatSize(bytes) {
+      if (!bytes) return '';
+      const mb = bytes / 1048576;
+      return mb >= 1 ? mb.toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    }
+
+    function metaParts(m) {
+      const parts = [];
+      if (m.pages) parts.push(m.pages + (m.pages === 1 ? ' page' : ' pages'));
+      if (m.file_type) parts.push(String(m.file_type).toUpperCase());
+      const size = formatSize(m.size_bytes);
+      if (size) parts.push(size);
+      if (!parts.length && m.category) parts.push(m.category);
+      return parts;
+    }
+
+    function cardHTML(m) {
+      const href = 'pdf-reader.html?id=' + encodeURIComponent(m.id) + '&file=' + encodeURIComponent(m.file_url || '');
+      const meta = metaParts(m).map(p => '<span>' + esc(p) + '</span>').join('');
+      return (
+        '<a href="' + href + '" class="material-card" data-id="' + esc(m.id) + '">' +
+          '<div class="file-icon ' + iconClass(m) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + ICONS[iconClass(m)] + '</svg></div>' +
+          '<div class="material-body"><div class="material-title">' + esc(m.title) + '</div><div class="material-meta">' + meta + '</div></div>' +
+          '<div class="material-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>' +
+        '</a>'
+      );
+    }
+
+    /* ================= Recently opened (real, per-device) ================= */
+    function getRecent() {
+      try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+    }
+    function pushRecent(id) {
+      const list = [id, ...getRecent().filter(x => x !== id)].slice(0, 6);
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch {}
+    }
+
+    /* ================= Render ================= */
+    function renderCategories() {
+      const cats = [...new Set(materials.map(m => m.category).filter(Boolean))].sort();
+      if (category !== 'all' && !cats.includes(category)) category = 'all';
+      els.cats.innerHTML =
+        ['all', ...cats].map(c =>
+          '<button type="button" class="cat-chip' + (c === category ? ' active' : '') + '" data-category="' + esc(c) + '">' +
+          (c === 'all' ? 'All' : esc(c)) + '</button>'
+        ).join('');
+    }
+
+    function render() {
+      // Recent
+      const recentItems = getRecent().map(id => materials.find(m => String(m.id) === String(id))).filter(Boolean);
+      els.recentSection.hidden = recentItems.length === 0;
+      els.recentGrid.innerHTML = recentItems.map(cardHTML).join('');
+
+      // Filtered list
+      const list = materials.filter(m =>
+        (category === 'all' || m.category === category) &&
+        (!query || (m.title || '').toLowerCase().includes(query))
+      );
+
+      els.allGrid.innerHTML = list.map(cardHTML).join('');
+      els.count.textContent = list.length ? list.length + (list.length === 1 ? ' item' : ' items') : '';
+
+      if (!list.length) {
+        els.state.hidden = false;
+        els.state.textContent = materials.length
+          ? 'No materials match your search.'
+          : 'No materials have been uploaded yet.';
+      } else {
+        els.state.hidden = true;
+      }
+    }
+
+    function setLive(on, text) {
+      els.dot.classList.toggle('on', on);
+      els.live.textContent = text;
+    }
+
+    function showError(msg) {
+      els.allGrid.innerHTML = '';
+      els.count.textContent = '';
+      els.state.hidden = false;
+      els.state.innerHTML = esc(msg) + '<br><button type="button" id="retryBtn">Try again</button>';
+      $('retryBtn').addEventListener('click', loadMaterials);
+    }
+
+    /* ================= Data ================= */
+    async function loadMaterials() {
+      if (!client) {
+        setLive(false, 'Not connected');
+        showError('Could not connect to the database. Check your internet connection and try again.');
+        return;
+      }
+      const { data, error } = await client
+        .from('materials')
+        .select('id,title,category,file_url,file_type,pages,size_bytes,created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        setLive(false, 'Offline');
+        showError('Could not load materials. ' + (error.message || ''));
+        return;
+      }
+      materials = data || [];
+      renderCategories();
+      render();
+    }
+
+    function subscribeRealtime() {
+      if (!client || !client.channel) return;
+      client
+        .channel('materials-live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'materials' }, loadMaterials)
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') setLive(true, 'Live');
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setLive(false, 'Reconnecting…');
+        });
+    }
+
+    /* ================= Events ================= */
+    els.search.addEventListener('input', e => {
+      query = e.target.value.toLowerCase().trim();
+      render();
     });
 
-    catChips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        catChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        currentCategory = chip.getAttribute('data-category');
-        filterMaterials();
-      });
+    els.cats.addEventListener('click', e => {
+      const chip = e.target.closest('.cat-chip');
+      if (!chip) return;
+      category = chip.dataset.category;
+      renderCategories();
+      render();
     });
+
+    document.addEventListener('click', e => {
+      const card = e.target.closest('.material-card');
+      if (card) pushRecent(card.dataset.id);
+    });
+
+    $('clearRecent').addEventListener('click', () => {
+      try { localStorage.removeItem(RECENT_KEY); } catch {}
+      render();
+    });
+
+    // Refresh when the tab/app comes back to the foreground or the network returns
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { loadMaterials(); } });
+    window.addEventListener('online', loadMaterials);
+    window.addEventListener('pageshow', e => { if (e.persisted) { loadMaterials(); } });
+
+    loadMaterials();
+    subscribeRealtime();
   </script>
 </body>
 </html>
