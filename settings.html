@@ -2,655 +2,1019 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#060b1a">
   <title>Settings — PRIME-CBT</title>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
   <style>
     :root {
-      /* Backgrounds & Surfaces */
-      --bg-dark: #060b1a;         /* deep navy-black */
-      --card-bg: #0f172a;         /* slate-900 */
-      --card-bg-alt: #1e293b;     /* slate-800 */
-      --input-bg: #1e293b;        /* slate-800 */
-      --border-color: #334155;    /* slate-700 */
+      --bg-dark: #060b1a;
+      --card-bg: #0f172a;
+      --card-bg-alt: #1e293b;
+      --input-bg: #1e293b;
+      --border-color: #334155;
 
-      /* Text Tiers */
-      --text-primary: #f8fafc;    /* slate-100 */
-      --text-secondary: #cbd5e1;  /* slate-300 */
-      --text-muted: #94a3b8;      /* slate-400 */
-      --text-subtle: #64748b;     /* slate-500 */
-      --text-disabled: #475569;   /* slate-600 */
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --text-disabled: #475569;
 
-      /* Functional Status Colors */
       --emerald-400: #34d399;
       --emerald-500: #10b981;
       --teal-400: #2dd4bf;
       --red-400: #f87171;
       --red-500: #ef4444;
       --amber-400: #fbbf24;
+
+      --pad: clamp(1rem, 4vw, 2rem);
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Everything is in rem, so the page scales fluidly with the screen */
+    html {
+      font-size: clamp(14px, 13px + 0.35vw, 18px);
+      -webkit-text-size-adjust: 100%;
+      background: var(--bg-dark);
     }
 
     body {
-      background-color: var(--bg-dark);
+      background: var(--bg-dark);
       color: var(--text-primary);
-      overflow-x: hidden;
-      max-width: 480px;
-      margin: 0 auto;
       min-height: 100vh;
-      position: relative;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Top Bar Header */
-    .header {
+    [hidden] { display: none !important; }
+
+    .app {
+      width: 100%;
+      max-width: 64rem;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 18px 20px;
-      background-color: var(--bg-dark);
+      flex-direction: column;
+    }
+
+    @media (min-width: 64rem) {
+      .app { border-left: 1px solid rgba(51, 65, 85, 0.5); border-right: 1px solid rgba(51, 65, 85, 0.5); }
+    }
+
+    /* ---------- Header ---------- */
+    .header {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: max(1rem, env(safe-area-inset-top)) var(--pad) 1rem;
+      padding-left: max(var(--pad), env(safe-area-inset-left));
+      padding-right: max(var(--pad), env(safe-area-inset-right));
+      background: rgba(6, 11, 26, 0.92);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
     }
 
-    .header h2 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
+    .header h1 { font-size: 1.25rem; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 
     .icon-btn {
+      width: 2.75rem;
+      height: 2.75rem;
+      min-width: 44px;
+      min-height: 44px;
+      flex-shrink: 0;
       background: transparent;
       border: none;
       color: var(--text-primary);
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 0.7rem;
       text-decoration: none;
     }
+    .icon-btn:hover { background: var(--card-bg-alt); }
 
-    /* Settings Content Layout */
-    .settings-content {
-      padding: 0 16px 32px 16px;
+    /* ---------- Main ---------- */
+    .main {
+      flex: 1;
+      padding: 0 var(--pad) calc(var(--pad) + env(safe-area-inset-bottom));
+      padding-left: max(var(--pad), env(safe-area-inset-left));
+      padding-right: max(var(--pad), env(safe-area-inset-right));
     }
+
+    .banner {
+      margin-top: 1rem;
+      background: rgba(248, 113, 113, 0.12);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: var(--text-secondary);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .banner strong { color: var(--red-400); }
+
+    /* Main list: sections flow into columns on wide screens */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: 0 clamp(1rem, 3vw, 1.75rem);
+      align-items: start;
+    }
+    .settings-grid > * { min-width: 0; }
 
     .section-title {
       color: var(--text-subtle);
       font-size: 0.75rem;
       font-weight: 700;
-      letter-spacing: 0.05em;
-      margin: 20px 0 8px 8px;
+      letter-spacing: 0.06em;
+      margin: 1.25rem 0 0.5rem 0.5rem;
     }
 
     .settings-card {
-      background-color: var(--card-bg);
+      background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 14px;
+      border-radius: 0.9rem;
       overflow: hidden;
     }
 
     .settings-item {
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px;
+      gap: 0.75rem;
+      min-height: 3.5rem;
+      padding: 0.9rem 1rem;
+      background: none;
+      border: none;
       border-bottom: 1px solid var(--border-color);
+      color: inherit;
+      text-align: left;
+      text-decoration: none;
+      font: inherit;
       cursor: pointer;
       user-select: none;
       transition: background 0.15s ease;
     }
+    .settings-item:last-child { border-bottom: none; }
+    .settings-item:hover { background: rgba(30, 41, 59, 0.5); }
+    .settings-item:active { background: var(--card-bg-alt); }
+    .settings-item.static { cursor: default; }
+    .settings-item.static:hover { background: none; }
 
-    .settings-item:last-child {
-      border-bottom: none;
-    }
+    .item-text { min-width: 0; }
+    .item-title { font-size: 0.98rem; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
+    .item-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
 
-    .settings-item:active {
-      background-color: var(--card-bg-alt);
-    }
-
-    .item-title {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .item-desc {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-top: 3px;
-    }
-
-    .chevron {
-      color: var(--text-subtle);
-      font-size: 0.85rem;
-    }
+    .chevron { color: var(--text-subtle); font-size: 0.85rem; flex-shrink: 0; }
 
     .value-label {
       color: var(--text-muted);
       font-size: 0.9rem;
       display: flex;
       align-items: center;
-      gap: 6px;
-    }
-
-    .app-version {
-      text-align: center;
-      color: var(--text-disabled);
-      font-size: 0.8rem;
-      margin-top: 28px;
-    }
-
-    /* Functional Toggles */
-    .toggle-switch {
-      position: relative;
-      width: 46px;
-      height: 24px;
-      display: inline-block;
+      gap: 0.4rem;
       flex-shrink: 0;
     }
 
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+    .app-version { text-align: center; color: var(--text-disabled); font-size: 0.8rem; margin-top: 1.75rem; }
+
+    :focus-visible { outline: 2px solid var(--emerald-400); outline-offset: 2px; }
+
+    /* ---------- Toggles ---------- */
+    .toggle-switch { position: relative; width: 2.9rem; height: 1.5rem; display: inline-block; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 100%; height: 100%; position: absolute; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+    .toggle-switch input:disabled { cursor: not-allowed; }
 
     .slider {
       position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--border-color);
-      transition: .3s;
-      border-radius: 24px;
+      inset: 0;
+      background: var(--border-color);
+      transition: 0.25s;
+      border-radius: 1.5rem;
     }
-
-    .slider:before {
-      position: absolute;
+    .slider::before {
       content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: var(--text-primary);
-      transition: .3s;
+      position: absolute;
+      height: 1.125rem;
+      width: 1.125rem;
+      left: 0.1875rem;
+      bottom: 0.1875rem;
+      background: var(--text-primary);
+      transition: 0.25s;
       border-radius: 50%;
     }
+    input:checked + .slider { background: var(--emerald-500); }
+    input:checked + .slider::before { transform: translateX(1.4rem); }
+    input:disabled + .slider { opacity: 0.6; }
+    input:focus-visible + .slider { outline: 2px solid var(--emerald-400); outline-offset: 2px; }
 
-    input:checked + .slider {
-      background-color: var(--emerald-500);
-    }
+    /* ---------- Sub-views ---------- */
+    .view-body { width: 100%; max-width: 36rem; margin: 0 auto; padding-top: 1.25rem; }
 
-    input:checked + .slider:before {
-      transform: translateX(22px);
-    }
-
-    /* Functional Status Indicators */
-    .status-badge {
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .status-correct {
-      background-color: rgba(16, 185, 129, 0.15);
-      color: var(--emerald-400);
-      border: 1px solid var(--emerald-500);
-    }
-
-    .status-incorrect {
-      background-color: rgba(239, 68, 68, 0.15);
-      color: var(--red-400);
-      border: 1px solid var(--red-500);
-    }
-
-    .status-flagged {
-      background-color: rgba(251, 191, 36, 0.15);
-      color: var(--amber-400);
-      border: 1px solid var(--amber-400);
-    }
-
-    /* Sub-Views Switch Panel (Standard Web Visibility Switch) */
-    .sub-view {
-      display: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      min-height: 100vh;
-      background-color: var(--bg-dark);
-      z-index: 100;
-    }
-
-    .sub-view.active {
-      display: block;
-    }
-
-    .view-body {
-      padding: 16px;
-    }
-
-    /* Form Components */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.4rem; }
 
     .form-input {
       width: 100%;
-      padding: 12px 14px;
-      background-color: var(--input-bg);
+      padding: 0.8rem 0.9rem;
+      background: var(--input-bg);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
+      border-radius: 0.6rem;
       color: var(--text-primary);
-      font-size: 0.95rem;
+      font-size: 16px; /* prevents iOS zoom on focus */
     }
+    .form-input.textarea { resize: vertical; min-height: 8rem; }
+    .form-input:focus { outline: none; border-color: var(--emerald-400); }
+    .form-input:disabled { opacity: 0.6; }
 
-    .form-input.textarea {
-      resize: vertical;
+    .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4; }
+
+    .note {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.7rem;
+      padding: 0.8rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      overflow-wrap: anywhere;
     }
+    .note.error { border-color: rgba(248, 113, 113, 0.4); color: var(--red-400); }
 
-    .form-input:focus {
-      outline: none;
-      border-color: var(--emerald-400);
-    }
-
-    .btn-primary {
+    .btn-primary, .btn-secondary, .btn-danger {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, var(--emerald-500), var(--teal-400));
-      color: #060b1a;
+      min-height: 3rem;
+      padding: 0.8rem;
+      font: inherit;
+      font-size: 0.98rem;
       font-weight: 700;
       border: none;
-      border-radius: 8px;
+      border-radius: 0.6rem;
       cursor: pointer;
-      margin-top: 12px;
+      margin-top: 0.75rem;
     }
+    .btn-primary { background: linear-gradient(135deg, var(--emerald-500), var(--teal-400)); color: #060b1a; }
+    .btn-secondary { background: var(--card-bg-alt); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--red-400); border: 1px solid rgba(239, 68, 68, 0.4); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-    /* Selection Lists */
-    .selectable-list {
-      background-color: var(--card-bg);
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      overflow: hidden;
-    }
+    .selectable-list { background: var(--card-bg); border-radius: 0.9rem; border: 1px solid var(--border-color); overflow: hidden; }
 
     .select-item {
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 14px 16px;
+      gap: 0.75rem;
+      min-height: 3.25rem;
+      padding: 0.85rem 1rem;
+      background: none;
+      border: none;
       border-bottom: 1px solid var(--border-color);
       cursor: pointer;
       color: var(--text-secondary);
+      font: inherit;
+      text-align: left;
     }
+    .select-item:last-child { border-bottom: none; }
+    .check-icon { visibility: hidden; color: var(--emerald-400); }
+    .select-item.active { color: var(--text-primary); background: var(--card-bg-alt); }
+    .select-item.active .check-icon { visibility: visible; }
 
-    .select-item:last-child {
-      border-bottom: none;
-    }
+    .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .qr-wrap img { width: min(14rem, 70vw); height: auto; background: #fff; padding: 0.5rem; border-radius: 0.6rem; }
+    .secret { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; word-break: break-all; text-align: center; color: var(--text-secondary); }
 
-    .check-icon {
-      display: none;
-      color: var(--emerald-400);
-    }
-
-    .select-item.active {
-      color: var(--text-primary);
-      background-color: var(--card-bg-alt);
-    }
-
-    .select-item.active .check-icon {
-      display: inline-block;
-    }
-
-    /* Toast Overlay */
+    /* ---------- Toast ---------- */
     .toast {
       visibility: hidden;
-      min-width: 220px;
+      width: max-content;
+      max-width: calc(100vw - 2rem);
       background: linear-gradient(135deg, var(--emerald-500), var(--teal-400));
       color: #060b1a;
       text-align: center;
-      border-radius: 20px;
-      padding: 10px 16px;
+      border-radius: 1.5rem;
+      padding: 0.65rem 1.1rem;
       position: fixed;
       z-index: 200;
-      bottom: 30px;
+      bottom: max(1.5rem, env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       opacity: 0;
       transition: opacity 0.3s, visibility 0.3s;
+      overflow-wrap: anywhere;
     }
+    .toast.error { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+    .toast.show { visibility: visible; opacity: 1; }
 
-    .toast.show {
-      visibility: visible;
-      opacity: 1;
-    }
+    @media (min-width: 1800px) { html { font-size: 20px; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
 </head>
 <body>
+  <div class="app">
+    <header class="header">
+      <button type="button" class="icon-btn" id="backBtn" aria-label="Back"><i class="fas fa-arrow-left"></i></button>
+      <h1 id="viewTitle">Settings</h1>
+    </header>
 
-  <!-- ==================== MAIN SETTINGS VIEW ==================== -->
-  <div id="profile.html" class="sub-view active">
-    <div class="header">
-      <a href="profile.html" class="icon-btn"><i class="fas fa-arrow-left"></i></a>
-      <h2>Settings</h2>
-    </div>
+    <main class="main">
+      <div class="banner" id="banner" role="alert" hidden></div>
 
-    <div class="settings-content">
-      <!-- ACCOUNT -->
-      <div class="section-title">ACCOUNT</div>
-      <div class="settings-card">
-        <div class="settings-item" onclick="openSubView('view-edit-profile')">
-          <span class="item-title">Edit Profile</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-        <div class="settings-item" onclick="openSubView('view-change-password')">
-          <span class="item-title">Change Password</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-        <div class="settings-item" onclick="openSubView('view-email-phone')">
-          <span class="item-title">Email & Phone</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-      </div>
-
-      <!-- STUDY -->
-      <div class="section-title">STUDY</div>
-      <div class="settings-card">
-        <div class="settings-item">
+      <!-- ==================== MAIN ==================== -->
+      <section id="view-main" data-title="Settings">
+        <div class="settings-grid">
           <div>
-            <div class="item-title">Daily Goal Reminder</div>
-            <div class="item-desc">Get notified about your daily target</div>
+            <div class="section-title">ACCOUNT</div>
+            <div class="settings-card">
+              <button type="button" class="settings-item" data-go="edit-profile">
+                <span class="item-title">Edit Profile</span><i class="fas fa-chevron-right chevron"></i>
+              </button>
+              <button type="button" class="settings-item" data-go="change-password">
+                <span class="item-title">Change Password</span><i class="fas fa-chevron-right chevron"></i>
+              </button>
+              <button type="button" class="settings-item" data-go="email-phone">
+                <span class="item-title">Email &amp; Phone</span><i class="fas fa-chevron-right chevron"></i>
+              </button>
+            </div>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="toggle-daily-goal" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
 
-        <div class="settings-item">
           <div>
-            <div class="item-title">Sound Effects</div>
-            <div class="item-desc">Play sounds on correct/incorrect</div>
+            <div class="section-title">STUDY</div>
+            <div class="settings-card">
+              <div class="settings-item static">
+                <div class="item-text">
+                  <div class="item-title">Daily Goal Reminder</div>
+                  <div class="item-desc">Get notified about your daily target</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-daily-goal" role="switch" aria-label="Daily goal reminder" disabled>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="settings-item static">
+                <div class="item-text">
+                  <div class="item-title">Sound Effects</div>
+                  <div class="item-desc">Play sounds on correct/incorrect</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-sound-effects" role="switch" aria-label="Sound effects" disabled>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <button type="button" class="settings-item" data-go="practice-mode">
+                <span class="item-title">Default Practice Mode</span>
+                <span class="value-label"><span id="current-practice-label">–</span> <i class="fas fa-chevron-right chevron"></i></span>
+              </button>
+            </div>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="toggle-sound-effects" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
 
-        <div class="settings-item" onclick="openSubView('view-practice-mode')">
-          <span class="item-title">Default Practice Mode</span>
-          <span class="value-label" id="current-practice-label">Practice <i class="fas fa-chevron-right chevron"></i></span>
-        </div>
-      </div>
-
-      <!-- PREFERENCES -->
-      <div class="section-title">PREFERENCES</div>
-      <div class="settings-card">
-        <div class="settings-item">
           <div>
-            <div class="item-title">Dark Mode</div>
-            <div class="item-desc">Always on</div>
+            <div class="section-title">PREFERENCES</div>
+            <div class="settings-card">
+              <div class="settings-item static">
+                <div class="item-text">
+                  <div class="item-title">Dark Mode</div>
+                  <div class="item-desc">Always on</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked disabled aria-label="Dark mode is always on">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" checked disabled>
-            <span class="slider"></span>
-          </label>
+
+          <div id="securitySection" hidden>
+            <div class="section-title">PRIVACY &amp; SECURITY</div>
+            <div class="settings-card" id="securityCard"></div>
+          </div>
+
+          <div>
+            <div class="section-title">SUPPORT</div>
+            <div class="settings-card" id="supportCard">
+              <button type="button" class="settings-item" data-go="contact-support">
+                <span class="item-title">Contact Support</span><i class="fas fa-chevron-right chevron"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="settings-item" onclick="openSubView('view-language')">
-          <span class="item-title">Language</span>
-          <span class="value-label">English <i class="fas fa-chevron-right chevron"></i></span>
-        </div>
+        <div class="app-version" id="appVersion"></div>
+      </section>
 
-        <div class="settings-item" onclick="openSubView('view-app-theme')">
-          <span class="item-title">App Theme</span>
-          <span class="value-label">Emerald <i class="fas fa-chevron-right chevron"></i></span>
+      <!-- ==================== EDIT PROFILE ==================== -->
+      <section id="view-edit-profile" data-title="Edit Profile" hidden>
+        <div class="view-body">
+          <form id="formProfile" novalidate>
+            <div class="form-group">
+              <label for="epName">Full Name</label>
+              <input type="text" id="epName" class="form-input" autocomplete="name" required>
+            </div>
+            <div class="form-group">
+              <label for="epInstitution">Institution</label>
+              <input type="text" id="epInstitution" class="form-input" autocomplete="organization">
+            </div>
+            <div class="form-group">
+              <label for="epDepartment">Department</label>
+              <input type="text" id="epDepartment" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="epLevel">Level</label>
+              <select id="epLevel" class="form-input"></select>
+            </div>
+            <button type="submit" class="btn-primary">Save Changes</button>
+          </form>
         </div>
-      </div>
+      </section>
 
-      <!-- PRIVACY & SECURITY -->
-      <div class="section-title">PRIVACY & SECURITY</div>
-      <div class="settings-card">
-        <div class="settings-item" onclick="openSubView('view-privacy-policy')">
-          <span class="item-title">Privacy Policy</span>
-          <i class="fas fa-chevron-right chevron"></i>
+      <!-- ==================== CHANGE PASSWORD ==================== -->
+      <section id="view-change-password" data-title="Change Password" hidden>
+        <div class="view-body">
+          <div class="note" id="pwNote" hidden></div>
+          <form id="formPassword" novalidate>
+            <div class="form-group" id="pwCurrentGroup">
+              <label for="pwCurrent">Current Password</label>
+              <input type="password" id="pwCurrent" class="form-input" autocomplete="current-password">
+            </div>
+            <div class="form-group">
+              <label for="pwNew">New Password</label>
+              <input type="password" id="pwNew" class="form-input" autocomplete="new-password" minlength="8" required>
+              <div class="hint">At least 8 characters.</div>
+            </div>
+            <div class="form-group">
+              <label for="pwConfirm">Confirm New Password</label>
+              <input type="password" id="pwConfirm" class="form-input" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn-primary">Update Password</button>
+          </form>
         </div>
-        <div class="settings-item" onclick="openSubView('view-terms')">
-          <span class="item-title">Terms of Service</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-        <div class="settings-item" onclick="openSubView('view-2fa')">
-          <span class="item-title">Two-Factor Authentication</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-      </div>
+      </section>
 
-      <!-- SUPPORT -->
-      <div class="section-title">SUPPORT</div>
-      <div class="settings-card">
-        <div class="settings-item" onclick="openSubView('view-help-center')">
-          <span class="item-title">Help Center</span>
-          <i class="fas fa-chevron-right chevron"></i>
+      <!-- ==================== EMAIL & PHONE ==================== -->
+      <section id="view-email-phone" data-title="Email &amp; Phone" hidden>
+        <div class="view-body">
+          <form id="formContact" novalidate>
+            <div class="form-group">
+              <label for="ecEmail">Email Address</label>
+              <input type="email" id="ecEmail" class="form-input" autocomplete="email" required>
+              <div class="hint">Changing your email sends a confirmation link.</div>
+            </div>
+            <div class="form-group">
+              <label for="ecPhone">Phone Number</label>
+              <input type="tel" id="ecPhone" class="form-input" autocomplete="tel">
+            </div>
+            <button type="submit" class="btn-primary">Save Info</button>
+          </form>
         </div>
-        <div class="settings-item" onclick="openSubView('view-contact-support')">
-          <span class="item-title">Contact Support</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-        <div class="settings-item" onclick="openSubView('view-rate-app')">
-          <span class="item-title">Rate the App</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-      </div>
+      </section>
 
-      <div class="app-version">PRIME-CBT v1.0.0</div>
-    </div>
+      <!-- ==================== PRACTICE MODE ==================== -->
+      <section id="view-practice-mode" data-title="Default Practice Mode" hidden>
+        <div class="view-body">
+          <div class="selectable-list" role="radiogroup" aria-label="Default practice mode">
+            <button type="button" class="select-item" role="radio" data-mode="practice">
+              <span>Practice Mode (Untimed)</span><i class="fas fa-check check-icon"></i>
+            </button>
+            <button type="button" class="select-item" role="radio" data-mode="exam">
+              <span>Exam Simulation (Timed)</span><i class="fas fa-check check-icon"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== CONTACT SUPPORT ==================== -->
+      <section id="view-contact-support" data-title="Contact Support" hidden>
+        <div class="view-body">
+          <form id="formSupport" novalidate>
+            <div class="form-group">
+              <label for="csSubject">Subject</label>
+              <input type="text" id="csSubject" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="csMessage">Message</label>
+              <textarea id="csMessage" class="form-input textarea" rows="5" required></textarea>
+            </div>
+            <button type="submit" class="btn-primary">Submit Ticket</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ==================== TWO-FACTOR ==================== -->
+      <section id="view-two-factor" data-title="Two-Factor Authentication" hidden>
+        <div class="view-body" id="mfaBody"></div>
+      </section>
+    </main>
   </div>
 
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ==================== LINKED SUB-VIEWS ==================== -->
-
-  <!-- 1. EDIT PROFILE VIEW -->
-  <div id="view-edit-profile" class="sub-view">
-    <div class="header">
-      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
-      <h2>Edit Profile</h2>
-    </div>
-    <div class="view-body">
-      <form onsubmit="handleFormSubmit(event, 'Profile updated successfully!')">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" class="form-input" value="Aliu Micheal Imodu" required>
-        </div>
-        <div class="form-group">
-          <label>Institution</label>
-          <input type="text" class="form-input" value="FUNAAB" required>
-        </div>
-        <button type="submit" class="btn-primary">Save Changes</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 2. CHANGE PASSWORD VIEW -->
-  <div id="view-change-password" class="sub-view">
-    <div class="header">
-      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
-      <h2>Change Password</h2>
-    </div>
-    <div class="view-body">
-      <form onsubmit="handleFormSubmit(event, 'Password changed successfully!')">
-        <div class="form-group">
-          <label>Current Password</label>
-          <input type="password" class="form-input" placeholder="••••••••" required>
-        </div>
-        <div class="form-group">
-          <label>New Password</label>
-          <input type="password" class="form-input" placeholder="••••••••" required>
-        </div>
-        <div class="form-group">
-          <label>Confirm New Password</label>
-          <input type="password" class="form-input" placeholder="••••••••" required>
-        </div>
-        <button type="submit" class="btn-primary">Update Password</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 3. EMAIL & PHONE VIEW -->
-  <div id="view-email-phone" class="sub-view">
-    <div class="header">
-      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
-      <h2>Email & Phone</h2>
-    </div>
-    <div class="view-body">
-      <form onsubmit="handleFormSubmit(event, 'Contact details saved!')">
-        <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" class="form-input" value="user@prime-cbt.com" required>
-        </div>
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="tel" class="form-input" placeholder="+234 800 000 0000">
-        </div>
-        <button type="submit" class="btn-primary">Save Info</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 4. DEFAULT PRACTICE MODE VIEW -->
-  <div id="view-practice-mode" class="sub-view">
-    <div class="header">
-      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
-      <h2>Default Practice Mode</h2>
-    </div>
-    <div class="view-body">
-      <div class="selectable-list">
-        <div class="select-item active" onclick="selectOption(this, 'Practice')">
-          <span>Practice Mode (Untimed)</span>
-          <i class="fas fa-check check-icon"></i>
-        </div>
-        <div class="select-item" onclick="selectOption(this, 'Exam')">
-          <span>Exam Simulation (Timed)</span>
-          <i class="fas fa-check check-icon"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5. CONTACT SUPPORT VIEW -->
-  <div id="view-contact-support" class="sub-view">
-    <div class="header">
-      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
-      <h2>Contact Support</h2>
-    </div>
-    <div class="view-body">
-      <form onsubmit="handleFormSubmit(event, 'Support ticket submitted!')">
-        <div class="form-group">
-          <label>Subject</label>
-          <input type="text" class="form-input" placeholder="How can we help?" required>
-        </div>
-        <div class="form-group">
-          <label>Message</label>
-          <textarea class="form-input textarea" rows="5" placeholder="Describe your issue..." required></textarea>
-        </div>
-        <button type="submit" class="btn-primary">Submit Ticket</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 6. PRIVACY POLICY VIEW -->
-  <div id="view-privacy-policy" class="sub-view">
-    <div class="header">
-      <button class="icon-btn" onclick="openSubView('profile.html')"><i class="fas fa-arrow-left"></i></button>
-      <h2>Privacy Policy</h2>
-    </div>
-    <div class="view-body">
-      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
-        Your privacy is paramount. PRIME-CBT stores test metrics and practice history locally and securely. No personal academic data is shared with third parties.
-      </p>
-    </div>
-  </div>
-
-  <!-- TOAST OVERLAY -->
-  <div id="toast" class="toast">Action completed!</div>
-
-  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    function openSubView(viewId) {
-      const allViews = document.querySelectorAll('.sub-view');
-      allViews.forEach(view => view.classList.remove('active'));
+    /* ====== CONFIG ====== */
+    const SUPABASE_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
 
-      const targetView = document.getElementById(viewId);
-      if (targetView) {
-        targetView.classList.add('active');
-        history.pushState({ subView: viewId }, '', `#${viewId}`);
-        window.scrollTo(0, 0);
+    const APP_VERSION = 'v1.0.0';
+
+    // Rows only appear when you give them a real destination. Leave '' to hide a row.
+    const LINKS = {
+      privacy: '',   // e.g. 'privacy.html'
+      terms: '',     // e.g. 'terms.html'
+      help: '',      // e.g. 'help.html'
+      rate: ''       // e.g. a feedback form link
+    };
+
+    // Turn on only after auth.html asks for the 6-digit code at login, otherwise 2FA does nothing.
+    const ENABLE_2FA = false;
+
+    const LEVELS = ['100', '200', '300', '400', '500', '600'];
+    const DEFAULT_SETTINGS = { daily_goal_reminder: true, sound_effects: true, default_practice_mode: 'practice' };
+    /* ==================== */
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    let sb = null, uid = null, user = null, channel = null;
+    let profile = {};
+    let settings = { ...DEFAULT_SETTINGS };
+    let internalNav = false;
+
+    /* ---------- UI helpers ---------- */
+    let toastTimer = null;
+    function toast(message, isError) {
+      const el = $('toast');
+      el.textContent = message;
+      el.classList.toggle('error', !!isError);
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), isError ? 4000 : 2500);
+    }
+
+    function showBanner(message) {
+      $('banner').innerHTML = '<strong>Problem:</strong> ' + esc(message);
+      $('banner').hidden = false;
+    }
+
+    function setBusy(form, busy, idleText) {
+      const btn = form.querySelector('button[type="submit"]');
+      form.querySelectorAll('input,select,textarea').forEach((el) => { el.disabled = busy; });
+      if (btn) { btn.disabled = busy; if (busy) btn.dataset.idle = btn.textContent; btn.textContent = busy ? 'Saving…' : (idleText || btn.dataset.idle || btn.textContent); }
+    }
+
+    /* ---------- Routing (hash based, real browser history) ---------- */
+    const VIEWS = ['main', 'edit-profile', 'change-password', 'email-phone', 'practice-mode', 'contact-support', 'two-factor'];
+
+    function currentView() {
+      const h = location.hash.replace('#', '');
+      if (h === 'two-factor' && !ENABLE_2FA) return 'main';
+      return VIEWS.includes(h) ? h : 'main';
+    }
+
+    function show() {
+      const id = currentView();
+      VIEWS.forEach((v) => { $('view-' + v).hidden = v !== id; });
+      $('viewTitle').innerHTML = $('view-' + id).dataset.title;
+      window.scrollTo(0, 0);
+      if (id === 'edit-profile') fillProfileForm(true);
+      if (id === 'email-phone') fillContactForm(true);
+      if (id === 'change-password') preparePasswordView();
+      if (id === 'two-factor') renderMfa();
+    }
+
+    function go(id) { internalNav = true; location.hash = id; }
+
+    function goBack() {
+      if (currentView() === 'main') { window.location.href = 'profile.html'; return; }
+      if (internalNav) { history.back(); return; }
+      history.replaceState(null, '', location.pathname + location.search);
+      show();
+    }
+
+    /* ---------- Data ---------- */
+    async function loadProfile() {
+      const { data, error } = await sb.from('profiles').select('*').eq('id', uid).maybeSingle();
+      if (error) { showBanner('profiles: ' + error.message); return; }
+      applyProfile(data || {});
+    }
+
+    function applyProfile(p) {
+      profile = p || {};
+      settings = { ...DEFAULT_SETTINGS, ...(profile.settings || {}) };
+      renderMain();
+      const v = currentView();
+      if (v === 'edit-profile') fillProfileForm(false);
+      if (v === 'email-phone') fillContactForm(false);
+    }
+
+    async function saveProfile(patch) {
+      const { error } = await sb.from('profiles').upsert({ id: uid, ...patch }, { onConflict: 'id' });
+      if (error) throw error;
+      profile = { ...profile, ...patch };
+    }
+
+    async function saveSettings(patch) {
+      const next = { ...settings, ...patch };
+      await saveProfile({ settings: next });
+      settings = next;
+    }
+
+    /* ---------- Main view ---------- */
+    function practiceLabel(m) { return m === 'exam' ? 'Exam' : 'Practice'; }
+
+    function renderMain() {
+      $('toggle-daily-goal').checked = !!settings.daily_goal_reminder;
+      $('toggle-sound-effects').checked = !!settings.sound_effects;
+      $('toggle-daily-goal').disabled = false;
+      $('toggle-sound-effects').disabled = false;
+      $('current-practice-label').textContent = practiceLabel(settings.default_practice_mode);
+
+      document.querySelectorAll('#view-practice-mode .select-item').forEach((b) => {
+        const on = b.dataset.mode === settings.default_practice_mode;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-checked', String(on));
+      });
+    }
+
+    function buildLinkRows() {
+      const row = (href, label) =>
+        `<a class="settings-item" href="${esc(href)}" target="_blank" rel="noopener"><span class="item-title">${esc(label)}</span><i class="fas fa-chevron-right chevron"></i></a>`;
+
+      let sec = '';
+      if (LINKS.privacy) sec += row(LINKS.privacy, 'Privacy Policy');
+      if (LINKS.terms) sec += row(LINKS.terms, 'Terms of Service');
+      if (ENABLE_2FA) {
+        sec += `<button type="button" class="settings-item" data-go="two-factor"><span class="item-title">Two-Factor Authentication</span><i class="fas fa-chevron-right chevron"></i></button>`;
+      }
+      $('securityCard').innerHTML = sec;
+      $('securitySection').hidden = !sec;
+
+      if (LINKS.help) $('supportCard').insertAdjacentHTML('beforeend', row(LINKS.help, 'Help Center'));
+      if (LINKS.rate) $('supportCard').insertAdjacentHTML('beforeend', row(LINKS.rate, 'Rate the App'));
+
+      $('appVersion').textContent = APP_VERSION ? 'PRIME-CBT ' + APP_VERSION : '';
+    }
+
+    async function onToggle(key, input) {
+      const value = input.checked;
+      input.disabled = true;
+      try {
+        await saveSettings({ [key]: value });
+      } catch (e) {
+        input.checked = !value;
+        toast('Could not save: ' + e.message, true);
+      } finally {
+        input.disabled = false;
       }
     }
 
-    window.addEventListener('popstate', function (event) {
-      if (event.state && event.state.subView) {
-        openSubView(event.state.subView);
+    async function onPracticeMode(mode) {
+      const previous = settings.default_practice_mode;
+      settings.default_practice_mode = mode;
+      renderMain();
+      try {
+        await saveSettings({ default_practice_mode: mode });
+        toast('Default mode updated to ' + practiceLabel(mode));
+      } catch (e) {
+        settings.default_practice_mode = previous;
+        renderMain();
+        toast('Could not save: ' + e.message, true);
+      }
+    }
+
+    /* ---------- Edit profile ---------- */
+    const dirty = { profile: false, contact: false };
+
+    function buildLevelOptions(current) {
+      const sel = $('epLevel');
+      const list = [...LEVELS];
+      if (current && !list.includes(String(current))) list.push(String(current));
+      sel.innerHTML = '<option value="">Not set</option>' +
+        list.map((l) => `<option value="${esc(l)}">${esc(l)} Level</option>`).join('');
+      sel.value = current ? String(current) : '';
+    }
+
+    function fillProfileForm(force) {
+      if (!force && dirty.profile) return;
+      const meta = (user && user.user_metadata) || {};
+      $('epName').value = profile.full_name || meta.full_name || meta.name || '';
+      $('epInstitution').value = profile.institution || '';
+      $('epDepartment').value = profile.department || '';
+      buildLevelOptions(profile.study_level);
+      dirty.profile = false;
+    }
+
+    async function submitProfile(e) {
+      e.preventDefault();
+      const form = e.target;
+      const name = $('epName').value.trim();
+      if (!name) { toast('Please enter your full name.', true); return; }
+
+      const patch = {
+        full_name: name,
+        institution: $('epInstitution').value.trim() || null,
+        department: $('epDepartment').value.trim() || null,
+        study_level: $('epLevel').value || null
+      };
+
+      setBusy(form, true);
+      try {
+        await saveProfile(patch);
+        // Keep the sign-in metadata in step so other pages show the same name
+        const { error } = await sb.auth.updateUser({ data: { full_name: name } });
+        if (error) console.error('[settings] metadata update:', error);
+        dirty.profile = false;
+        toast('Profile updated successfully!');
+        setBusy(form, false);
+        setTimeout(goBack, 500);
+      } catch (err) {
+        setBusy(form, false);
+        toast('Could not save: ' + err.message, true);
+      }
+    }
+
+    /* ---------- Change password ---------- */
+    function hasPasswordLogin() {
+      const ids = (user && user.identities) || [];
+      return ids.length === 0 || ids.some((i) => i.provider === 'email');
+    }
+
+    function preparePasswordView() {
+      const hasPw = hasPasswordLogin();
+      $('pwCurrentGroup').hidden = !hasPw;
+      $('pwCurrent').required = hasPw;
+      const note = $('pwNote');
+      if (!hasPw) {
+        note.hidden = false;
+        note.textContent = 'You signed in with Google. You can set a password here to also log in with your email.';
       } else {
-        openSubView('profile.html');
+        note.hidden = true;
       }
+      $('formPassword').reset();
+    }
+
+    async function submitPassword(e) {
+      e.preventDefault();
+      const form = e.target;
+      const hasPw = hasPasswordLogin();
+      const current = $('pwCurrent').value;
+      const next = $('pwNew').value;
+      const confirm = $('pwConfirm').value;
+
+      if (hasPw && !current) { toast('Enter your current password.', true); return; }
+      if (next.length < 8) { toast('New password must be at least 8 characters.', true); return; }
+      if (next !== confirm) { toast('New passwords do not match.', true); return; }
+      if (hasPw && next === current) { toast('Choose a password different from the current one.', true); return; }
+
+      setBusy(form, true);
+      try {
+        if (hasPw) {
+          const { error: reauth } = await sb.auth.signInWithPassword({ email: user.email, password: current });
+          if (reauth) throw new Error('Current password is incorrect.');
+        }
+        const { error } = await sb.auth.updateUser({ password: next });
+        if (error) throw error;
+        form.reset();
+        setBusy(form, false);
+        toast('Password changed successfully!');
+        setTimeout(goBack, 500);
+      } catch (err) {
+        setBusy(form, false);
+        toast(err.message || 'Could not change password.', true);
+      }
+    }
+
+    /* ---------- Email & phone ---------- */
+    function fillContactForm(force) {
+      if (!force && dirty.contact) return;
+      $('ecEmail').value = (user && user.email) || '';
+      $('ecPhone').value = profile.phone || '';
+      dirty.contact = false;
+    }
+
+    async function submitContact(e) {
+      e.preventDefault();
+      const form = e.target;
+      const email = $('ecEmail').value.trim();
+      const phone = $('ecPhone').value.trim();
+
+      if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Enter a valid email address.', true); return; }
+      if (phone && !/^[+\d][\d\s()-]{5,}$/.test(phone)) { toast('Enter a valid phone number.', true); return; }
+
+      const emailChanged = email.toLowerCase() !== String(user.email || '').toLowerCase();
+      const phoneChanged = phone !== (profile.phone || '');
+      if (!emailChanged && !phoneChanged) { toast('Nothing to update.'); return; }
+
+      setBusy(form, true);
+      try {
+        if (phoneChanged) await saveProfile({ phone: phone || null });
+        let message = 'Contact details saved!';
+        if (emailChanged) {
+          const { error } = await sb.auth.updateUser({ email });
+          if (error) throw error;
+          message = 'Check your inbox to confirm the new email address.';
+        }
+        dirty.contact = false;
+        setBusy(form, false);
+        toast(message);
+        setTimeout(goBack, 700);
+      } catch (err) {
+        setBusy(form, false);
+        toast('Could not save: ' + err.message, true);
+      }
+    }
+
+    /* ---------- Support ticket ---------- */
+    async function submitSupport(e) {
+      e.preventDefault();
+      const form = e.target;
+      const subject = $('csSubject').value.trim();
+      const message = $('csMessage').value.trim();
+      if (!subject || !message) { toast('Please add a subject and a message.', true); return; }
+
+      setBusy(form, true);
+      try {
+        const { error } = await sb.from('support_tickets').insert({
+          user_id: uid, email: user.email || null, subject, message
+        });
+        if (error) throw error;
+        form.reset();
+        setBusy(form, false);
+        toast('Support ticket submitted!');
+        setTimeout(goBack, 600);
+      } catch (err) {
+        setBusy(form, false);
+        toast('Could not submit: ' + err.message, true);
+      }
+    }
+
+    /* ---------- Two-factor (TOTP) ---------- */
+    async function renderMfa() {
+      const body = $('mfaBody');
+      body.innerHTML = '<div class="note">Loading…</div>';
+
+      const { data, error } = await sb.auth.mfa.listFactors();
+      if (error) { body.innerHTML = '<div class="note error">' + esc(error.message) + '</div>'; return; }
+
+      const verified = (data.totp || []).find((f) => f.status === 'verified');
+      if (verified) {
+        body.innerHTML = `
+          <div class="note">Two-factor authentication is <strong>on</strong>. You will be asked for a 6-digit code from your authenticator app when you log in.</div>
+          <button type="button" class="btn-danger" id="mfaDisable">Turn off two-factor</button>`;
+        $('mfaDisable').addEventListener('click', async (ev) => {
+          ev.target.disabled = true;
+          const { error: err } = await sb.auth.mfa.unenroll({ factorId: verified.id });
+          if (err) { toast(err.message, true); ev.target.disabled = false; return; }
+          toast('Two-factor turned off');
+          renderMfa();
+        });
+        return;
+      }
+
+      body.innerHTML = `
+        <div class="note">Add a second step to your login using an authenticator app such as Google Authenticator or Authy.</div>
+        <button type="button" class="btn-primary" id="mfaStart">Set up two-factor</button>`;
+      $('mfaStart').addEventListener('click', () => startMfaEnroll(data.all || []));
+    }
+
+    async function startMfaEnroll(allFactors) {
+      const body = $('mfaBody');
+      try {
+        for (const f of allFactors.filter((x) => x.factor_type === 'totp' && x.status === 'unverified')) {
+          await sb.auth.mfa.unenroll({ factorId: f.id });
+        }
+        const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'PRIME-CBT' });
+        if (error) throw error;
+
+        body.innerHTML = `
+          <div class="note">Scan this QR code with your authenticator app, then enter the 6-digit code it shows.</div>
+          <div class="qr-wrap">
+            <img src="${esc(data.totp.qr_code)}" alt="QR code for your authenticator app">
+            <div class="secret">${esc(data.totp.secret)}</div>
+          </div>
+          <form id="mfaVerifyForm" novalidate>
+            <div class="form-group">
+              <label for="mfaCode">6-digit code</label>
+              <input type="text" id="mfaCode" class="form-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+            </div>
+            <button type="submit" class="btn-primary">Verify and turn on</button>
+          </form>`;
+
+        $('mfaVerifyForm').addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+          const code = $('mfaCode').value.trim();
+          if (!/^\d{6}$/.test(code)) { toast('Enter the 6-digit code.', true); return; }
+          try {
+            const ch = await sb.auth.mfa.challenge({ factorId: data.id });
+            if (ch.error) throw ch.error;
+            const v = await sb.auth.mfa.verify({ factorId: data.id, challengeId: ch.data.id, code });
+            if (v.error) throw v.error;
+            toast('Two-factor turned on');
+            renderMfa();
+          } catch (err) {
+            toast(err.message || 'Invalid code.', true);
+          }
+        });
+      } catch (err) {
+        body.innerHTML = '<div class="note error">' + esc(err.message) + '</div>';
+      }
+    }
+
+    /* ---------- Realtime ---------- */
+    function subscribeRealtime() {
+      try {
+        channel = sb.channel('settings-' + uid)
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${uid}` },
+            (payload) => { if (payload.new && payload.new.id) applyProfile(payload.new); })
+          .subscribe((status, err) => { if (status === 'CHANNEL_ERROR') console.error('[settings] realtime error:', err); });
+      } catch (e) {
+        console.error('[settings] realtime failed to start:', e);
+      }
+    }
+
+    /* ---------- Init ---------- */
+    async function init() {
+      buildLinkRows();
+      show();
+
+      if (!window.supabase || !window.supabase.createClient) {
+        showBanner('The Supabase library did not load. Check your internet connection and reload.');
+        return;
+      }
+
+      try {
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { data, error } = await sb.auth.getSession();
+        if (error) throw error;
+        if (!data.session) { window.location.href = 'auth.html'; return; }
+
+        user = data.session.user;
+        uid = user.id;
+
+        await loadProfile();
+        show();
+        subscribeRealtime();
+
+        sb.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_OUT') { window.location.href = 'auth.html'; return; }
+          if (session && session.user) {
+            user = session.user;
+            if (currentView() === 'email-phone') fillContactForm(false);
+          }
+        });
+      } catch (e) {
+        console.error('[settings] init error:', e);
+        showBanner((e && e.message) || 'Something went wrong while loading your settings.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      $('backBtn').addEventListener('click', goBack);
+      window.addEventListener('hashchange', show);
+
+      document.addEventListener('click', (e) => {
+        const nav = e.target.closest('[data-go]');
+        if (nav) go(nav.dataset.go);
+      });
+
+      $('toggle-daily-goal').addEventListener('change', (e) => onToggle('daily_goal_reminder', e.target));
+      $('toggle-sound-effects').addEventListener('change', (e) => onToggle('sound_effects', e.target));
+      document.querySelectorAll('#view-practice-mode .select-item')
+        .forEach((b) => b.addEventListener('click', () => onPracticeMode(b.dataset.mode)));
+
+      $('formProfile').addEventListener('submit', submitProfile);
+      $('formProfile').addEventListener('input', () => { dirty.profile = true; });
+      $('formPassword').addEventListener('submit', submitPassword);
+      $('formContact').addEventListener('submit', submitContact);
+      $('formContact').addEventListener('input', () => { dirty.contact = true; });
+      $('formSupport').addEventListener('submit', submitSupport);
+
+      init();
     });
-
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.innerText = message;
-      toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2500);
-    }
-
-    function handleFormSubmit(event, successMessage) {
-      event.preventDefault();
-      showToast(successMessage);
-      
-      setTimeout(() => {
-        openSubView('profile.html');
-      }, 600);
-    }
-
-    function selectOption(element, valueName) {
-      const parent = element.parentElement;
-      const items = parent.querySelectorAll('.select-item');
-      items.forEach(item => item.classList.remove('active'));
-      
-      element.classList.add('active');
-      
-      const mainLabel = document.getElementById('current-practice-label');
-      if (mainLabel) {
-        mainLabel.innerHTML = `${valueName} <i class="fas fa-chevron-right chevron"></i>`;
-      }
-      
-      showToast(`Default mode updated to ${valueName}`);
-    }
   </script>
 </body>
 </html>
