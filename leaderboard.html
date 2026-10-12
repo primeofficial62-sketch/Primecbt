@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Leaderboard — PRIME-CBT</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -17,165 +17,298 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #060b1a;
-      --border: #334155;
-      --muted: #94a3b8;
-      --emerald-bright: #34d399;
-    }
+    :root { --bg: #060b1a; }
+
+    html, body { min-height: 100%; }
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background-color: var(--bg);
       -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+      overflow-x: hidden;
     }
 
-    .card { transition: border-color 0.2s ease; }
+    .scrollbar-none { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+
+    .card { transition: border-color 0.2s ease, background-color 0.2s ease; }
     .card:hover { border-color: #475569; }
-    
-    /* Instant View Switcher */
-    .sub-view {
-      position: fixed;
-      top: 0;
-      left: 0;
+
+    .wrap {
       width: 100%;
-      height: 100vh;
-      background-color: var(--bg-dark);
-      z-index: 100;
-      display: none;
-      overflow-y: auto;
-      max-width: 480px;
+      max-width: 48rem;
+      margin-inline: auto;
+      padding-inline: max(0.875rem, env(safe-area-inset-left)) max(0.875rem, env(safe-area-inset-right));
+    }
+    @media (min-width: 640px) {
+      .wrap { padding-inline: 1.5rem; }
     }
 
-    .sub-view.active {
-      display: block;
+    button:focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }
+
+    .fade-in { animation: fadeIn .3s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
     }
   </style>
 </head>
-<body class="bg-navy text-slate-100 min-h-screen pb-10 antialiased flex justify-center">
+<body class="bg-navy text-slate-100 min-h-screen antialiased">
 
-  <div class="w-full max-w-2xl relative min-h-screen border-x border-slate-800/60">
-
-    <!-- Header -->
-    <header class="sticky top-0 z-40 h-14 bg-navy/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center gap-3">
-      <button onclick="window.history.back()" type="button" aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800/80 text-slate-300">
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-navy/90 backdrop-blur-md border-b border-slate-800 pt-[env(safe-area-inset-top)]">
+    <div class="wrap h-14 flex items-center gap-3">
+      <button id="backBtn" type="button" aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800/80 text-slate-300 shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </button>
-      <h1 class="text-lg font-semibold tracking-tight text-slate-100">Leaderboard</h1>
-    </header>
+      <h1 class="text-base sm:text-lg font-semibold tracking-tight text-slate-100 flex-1 truncate">Leaderboard</h1>
+      <span id="liveDot" class="hidden items-center gap-1.5 text-[11px] text-slate-400 shrink-0" aria-live="polite">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>Live
+      </span>
+    </div>
+  </header>
 
-    <main class="px-4 pt-6 space-y-6">
-      <!-- Timeframe Tabs -->
-      <div id="timeframeTabs" class="flex gap-2">
-        <button type="button" class="tab-time px-4 h-9 rounded-full text-xs font-semibold bg-emerald-500 text-slate-950">Weekly</button>
-        <button type="button" class="tab-time px-4 h-9 rounded-full text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800">Monthly</button>
-        <button type="button" class="tab-time px-4 h-9 rounded-full text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800">All-Time</button>
-      </div>
+  <main class="wrap pt-5 sm:pt-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] space-y-5 sm:space-y-6">
 
-      <!-- Your Rank -->
-      <section class="bg-slate-900/80 border border-emerald-500/40 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 shrink-0">#18</div>
-            <div>
-              <p class="font-semibold text-sm text-slate-100">You</p>
-              <p class="text-xs text-slate-400 mt-0.5">76% Accuracy</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <p class="text-base font-bold text-emerald-400">2,450 XP</p>
-            <p class="text-[11px] text-slate-500">This week</p>
-          </div>
-        </div>
-      </section>
+    <div id="errorBanner" class="hidden rounded-xl border border-red-400/40 bg-red-400/10 text-red-400 text-sm px-4 py-2.5" role="alert"></div>
 
-      <!-- Category Filters -->
-      <div id="categoryFilters" class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button type="button" class="tab-cat px-3.5 h-8 rounded-full text-xs font-medium bg-emerald-500 text-slate-950 whitespace-nowrap">Global</button>
-        <button type="button" class="tab-cat px-3.5 h-8 rounded-full text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 whitespace-nowrap hover:bg-slate-800">My Level</button>
-        <button type="button" class="tab-cat px-3.5 h-8 rounded-full text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 whitespace-nowrap hover:bg-slate-800">Department</button>
-        <button type="button" class="tab-cat px-3.5 h-8 rounded-full text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 whitespace-nowrap hover:bg-slate-800">Course</button>
-      </div>
+    <!-- Timeframe Tabs -->
+    <div id="timeframeTabs" class="flex gap-2 overflow-x-auto scrollbar-none -mx-0.5 px-0.5" role="tablist" aria-label="Timeframe">
+      <button type="button" data-tf="weekly" class="tab-time shrink-0 px-4 h-10 sm:h-9 rounded-full text-xs font-semibold border">Weekly</button>
+      <button type="button" data-tf="monthly" class="tab-time shrink-0 px-4 h-10 sm:h-9 rounded-full text-xs font-semibold border">Monthly</button>
+      <button type="button" data-tf="all" class="tab-time shrink-0 px-4 h-10 sm:h-9 rounded-full text-xs font-semibold border">All-Time</button>
+    </div>
 
-      <!-- Leaderboard List -->
-      <section class="space-y-3 pb-4">
-        <div class="card bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
-          <div class="w-8 h-8 rounded-full bg-amber-400/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">1</div>
-          <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 shrink-0">AS</div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm text-slate-100 truncate">Aisha Suleiman</p>
-            <p class="text-xs text-slate-400 truncate mt-0.5">400 Level · Computer Science</p>
-          </div>
-          <div class="text-right shrink-0">
-            <p class="font-bold text-sm text-emerald-400">94%</p>
-            <p class="text-xs text-slate-500">3,820 XP</p>
-          </div>
-        </div>
+    <!-- Your Rank -->
+    <section id="myRank" class="bg-slate-900/80 border border-emerald-500/40 rounded-2xl p-4 sm:p-5 shadow-sm" aria-live="polite">
+      <div class="h-12 flex items-center text-sm text-slate-400">Loading your rank...</div>
+    </section>
 
-        <div class="card bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
-          <div class="w-8 h-8 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">2</div>
-          <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 shrink-0">TO</div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm text-slate-100 truncate">Tunde Okonkwo</p>
-            <p class="text-xs text-slate-400 truncate mt-0.5">300 Level · Biochemistry</p>
-          </div>
-          <div class="text-right shrink-0">
-            <p class="font-bold text-sm text-emerald-400">91%</p>
-            <p class="text-xs text-slate-500">3,540 XP</p>
-          </div>
-        </div>
+    <!-- Category Filters -->
+    <div id="categoryFilters" class="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-0.5 px-0.5" role="tablist" aria-label="Leaderboard group">
+      <button type="button" data-scope="global" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">Global</button>
+      <button type="button" data-scope="level" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">My Level</button>
+      <button type="button" data-scope="department" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">Department</button>
+      <button type="button" data-scope="course" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">Course</button>
+    </div>
 
-        <div class="card bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
-          <div class="w-8 h-8 rounded-full bg-amber-700/30 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">3</div>
-          <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 shrink-0">CM</div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm text-slate-100 truncate">Chioma Mwangi</p>
-            <p class="text-xs text-slate-400 truncate mt-0.5">200 Level · Medicine</p>
-          </div>
-          <div class="text-right shrink-0">
-            <p class="font-bold text-sm text-emerald-400">89%</p>
-            <p class="text-xs text-slate-500">3,210 XP</p>
-          </div>
-        </div>
+    <!-- Leaderboard List -->
+    <section id="list" class="space-y-2.5 sm:space-y-3 pb-4" aria-live="polite"></section>
+    <p id="listNote" class="hidden text-center text-xs text-slate-500 pb-2"></p>
+  </main>
 
-        <div class="card bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
-          <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">4</div>
-          <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 shrink-0">EK</div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm text-slate-100 truncate">Emeka Kalu</p>
-            <p class="text-xs text-slate-400 truncate mt-0.5">300 Level · Engineering</p>
-          </div>
-          <div class="text-right shrink-0">
-            <p class="font-bold text-sm text-slate-200">85%</p>
-            <p class="text-xs text-slate-500">2,980 XP</p>
-          </div>
-        </div>
-      </section>
-    </main>
-
-  </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="profile-gate.js"></script>
   <script>
-    // Tab switching interactivity
-    const timeButtons = document.querySelectorAll('.tab-time');
-    timeButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        timeButtons.forEach(b => {
-          b.className = 'tab-time px-4 h-9 rounded-full text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800';
-        });
-        btn.className = 'tab-time px-4 h-9 rounded-full text-xs font-semibold bg-emerald-500 text-slate-950';
+  (() => {
+    const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const LOGIN_URL = 'auth.html?mode=login';
+    const LIMIT = 50;
+
+    const $ = (id) => document.getElementById(id);
+    const listEl = $('list'), myRankEl = $('myRank'), noteEl = $('listNote');
+
+    const TF_LABEL = { weekly: 'This week', monthly: 'This month', all: 'All time' };
+    const SCOPE_EMPTY = {
+      global: 'No one has completed a practice test in this period yet.',
+      level: 'No one at your level has completed a practice test in this period yet.',
+      department: 'No one in your department has completed a practice test in this period yet.',
+      course: 'No one has practiced your latest course in this period yet.'
+    };
+
+    const state = { tf: 'weekly', scope: 'global' };
+    let me = null, rows = [], reqId = 0, refreshTimer = null;
+
+    /* ───── Helpers ───── */
+    function el(tag, cls, text) {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    }
+    function initials(name) {
+      const p = String(name || '').trim().split(/\s+/).filter(Boolean);
+      return ((p[0] ? p[0][0] : '?') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+    }
+    function levelText(l) { return l && /^\d+$/.test(String(l).trim()) ? l + ' Level' : (l || ''); }
+    function subtitle(r) { return [levelText(r.lvl), r.dept].filter(Boolean).join(' · '); }
+    const fmtXp = (n) => Number(n || 0).toLocaleString() + ' XP';
+    function showError(msg) {
+      const b = $('errorBanner');
+      b.textContent = msg || '';
+      b.classList.toggle('hidden', !msg);
+    }
+
+    /* ───── Tabs ───── */
+    const ON  = ['bg-emerald-500', 'text-slate-950', 'border-emerald-500'];
+    const OFF = ['bg-slate-900', 'text-slate-300', 'border-slate-800', 'hover:bg-slate-800'];
+    function paintTabs(sel, attr, value) {
+      document.querySelectorAll(sel).forEach((b) => {
+        const active = b.dataset[attr] === value;
+        b.classList.remove(...(active ? OFF : ON));
+        b.classList.add(...(active ? ON : OFF));
+        b.setAttribute('aria-selected', String(active));
+        b.setAttribute('role', 'tab');
       });
+    }
+    function paintAll() {
+      paintTabs('.tab-time', 'tf', state.tf);
+      paintTabs('.tab-cat', 'scope', state.scope);
+    }
+    document.querySelectorAll('.tab-time').forEach((b) => b.addEventListener('click', () => {
+      if (state.tf === b.dataset.tf) return;
+      state.tf = b.dataset.tf; paintAll(); load();
+    }));
+    document.querySelectorAll('.tab-cat').forEach((b) => b.addEventListener('click', () => {
+      if (state.scope === b.dataset.scope) return;
+      state.scope = b.dataset.scope; paintAll(); load();
+    }));
+
+    $('backBtn').addEventListener('click', () => {
+      if (history.length > 1) history.back(); else location.href = 'home.html';
     });
 
-    const catButtons = document.querySelectorAll('.tab-cat');
-    catButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        catButtons.forEach(b => {
-          b.className = 'tab-cat px-3.5 h-8 rounded-full text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 whitespace-nowrap hover:bg-slate-800';
-        });
-        btn.className = 'tab-cat px-3.5 h-8 rounded-full text-xs font-medium bg-emerald-500 text-slate-950 whitespace-nowrap';
+    /* ───── Rendering ───── */
+    function rankBadge(pos) {
+      const base = 'w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ';
+      if (pos === 1) return base + 'bg-amber-400/20 text-amber-400';
+      if (pos === 2) return base + 'bg-slate-700 text-slate-300';
+      if (pos === 3) return base + 'bg-amber-700/30 text-amber-500';
+      return base + 'bg-slate-800 text-slate-400';
+    }
+
+    function renderMyRank() {
+      myRankEl.replaceChildren();
+      const mine = rows.find((r) => r.is_me);
+      const row = el('div', 'flex items-center justify-between gap-3');
+      const left = el('div', 'flex items-center gap-3 sm:gap-4 min-w-0');
+
+      if (!mine) {
+        left.append(el('div', 'w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 shrink-0', '—'));
+        const t = el('div', 'min-w-0');
+        t.append(el('p', 'font-semibold text-sm text-slate-100', 'You are not ranked yet'));
+        t.append(el('p', 'text-xs text-slate-400 mt-0.5', 'Complete a practice test to earn XP and appear here.'));
+        left.append(t);
+        row.append(left);
+        myRankEl.append(row);
+        return;
+      }
+
+      left.append(el('div', 'min-w-12 h-12 px-2 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 shrink-0', '#' + mine.rank_pos));
+      const t = el('div', 'min-w-0');
+      t.append(el('p', 'font-semibold text-sm text-slate-100', 'You'));
+      t.append(el('p', 'text-xs text-slate-400 mt-0.5', (mine.acc_pct == null ? '—' : mine.acc_pct + '%') + ' Accuracy'));
+      left.append(t);
+
+      const right = el('div', 'text-right shrink-0');
+      right.append(el('p', 'text-base font-bold text-emerald-400', fmtXp(mine.total_xp)));
+      right.append(el('p', 'text-[11px] text-slate-500', TF_LABEL[state.tf]));
+      row.append(left, right);
+      myRankEl.append(row);
+    }
+
+    function renderList() {
+      listEl.replaceChildren();
+      if (!rows.length) {
+        listEl.append(el('div', 'text-center text-sm text-slate-500 py-10 px-4', SCOPE_EMPTY[state.scope]));
+        noteEl.classList.add('hidden');
+        return;
+      }
+      for (const r of rows) {
+        const mine = r.is_me;
+        const card = el('div', 'card rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 border ' +
+          (mine ? 'bg-emerald-500/5 border-emerald-500/40' : 'bg-slate-900/80 border-slate-800'));
+        card.append(el('div', rankBadge(Number(r.rank_pos)), String(r.rank_pos)));
+        card.append(el('div', 'w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 shrink-0', initials(r.name)));
+
+        const info = el('div', 'flex-1 min-w-0');
+        const nameLine = el('p', 'font-semibold text-sm text-slate-100 truncate', r.name || 'Student');
+        if (mine) nameLine.append(el('span', 'ml-2 align-middle text-[10px] font-semibold uppercase text-emerald-400', 'You'));
+        info.append(nameLine);
+        const sub = subtitle(r);
+        if (sub) info.append(el('p', 'text-xs text-slate-400 truncate mt-0.5', sub));
+        card.append(info);
+
+        const right = el('div', 'text-right shrink-0');
+        right.append(el('p', 'font-bold text-sm ' + (Number(r.rank_pos) <= 3 ? 'text-emerald-400' : 'text-slate-200'), r.acc_pct == null ? '—' : r.acc_pct + '%'));
+        right.append(el('p', 'text-xs text-slate-500', fmtXp(r.total_xp)));
+        card.append(right);
+        listEl.append(card);
+      }
+      noteEl.textContent = 'Showing the top ' + LIMIT + (rows.some((r) => r.is_me && r.rank_pos > LIMIT) ? ' and your position.' : '.');
+      noteEl.classList.remove('hidden');
+    }
+
+    function showLoading() {
+      if (rows.length) return;   // keep old rows on screen while refreshing
+      listEl.replaceChildren(el('div', 'text-center text-sm text-slate-500 py-10', 'Loading leaderboard...'));
+    }
+
+    /* ───── Data ───── */
+    async function load() {
+      const id = ++reqId;
+      showLoading();
+      const { data, error } = await supabaseClient.rpc('get_leaderboard', {
+        p_timeframe: state.tf, p_scope: state.scope, p_limit: LIMIT
       });
-    });
+      if (id !== reqId) return;           // a newer request is in flight
+      if (error) {
+        console.error('leaderboard:', error.message);
+        showError("Couldn't load the leaderboard. Check your connection and try again.");
+        if (!rows.length) listEl.replaceChildren();
+        return;
+      }
+      showError('');
+      rows = data || [];
+      renderMyRank();
+      renderList();
+    }
+
+    function scheduleRefresh() {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(load, 1200);   // batch bursts of activity into one refresh
+    }
+
+    /* ───── Realtime ───── */
+    function startRealtime() {
+      supabaseClient.channel('leaderboard')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'exam_attempts' }, scheduleRefresh)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, scheduleRefresh)
+        .subscribe((status) => {
+          const dot = $('liveDot');
+          if (status === 'SUBSCRIBED') { dot.classList.remove('hidden'); dot.classList.add('flex'); showError(''); }
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            dot.classList.add('hidden'); dot.classList.remove('flex');
+            showError('Live updates paused. Reconnecting...');
+          }
+        });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') load();
+      });
+      setInterval(() => { if (document.visibilityState === 'visible') load(); }, 5 * 60 * 1000); // covers week/month rollover
+    }
+
+    /* ───── Boot ───── */
+    (async function init() {
+      paintAll();
+      let session = null;
+      try { session = (await supabaseClient.auth.getSession()).data.session; } catch (_) {}
+      if (!session) { location.replace(LOGIN_URL); return; }
+      if (typeof needsProfileSetup === 'function' && needsProfileSetup(session.user)) {
+        location.replace('profile-setup.html'); return;
+      }
+      me = session.user;
+      supabaseClient.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') location.replace(LOGIN_URL); });
+
+      await load();
+      startRealtime();
+    })();
+  })();
   </script>
 </body>
 </html>
