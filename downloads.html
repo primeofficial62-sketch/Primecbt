@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>PRIME-CBT — Downloads</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,17 +11,27 @@
   <style>
     :root {
       --bg-deep: #060b1a;
-      --card-bg: #0f172a; /* slate-900 */
-      --card-bg-alt: #1e293b; /* slate-800 */
-      --border-color: #334155; /* slate-700 */
-      --text-main: #f1f5f9; /* slate-100 */
-      --text-muted-1: #cbd5e1; /* slate-300 */
-      --text-muted-2: #94a3b8; /* slate-400 */
-      --text-muted-3: #64748b; /* slate-500 */
-      --emerald-prime: #34d399; /* emerald-400 */
-      --emerald-dark: #10b981; /* emerald-500 */
-      --red-prime: #f87171; /* red-400 */
+      --card-bg: #0f172a;
+      --card-bg-alt: #1e293b;
+      --border-color: #334155;
+      --text-main: #f1f5f9;
+      --text-muted-1: #cbd5e1;
+      --text-muted-2: #94a3b8;
+      --text-muted-3: #64748b;
+      --emerald-prime: #34d399;
+      --emerald-dark: #10b981;
+      --red-prime: #f87171;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Fluid on phones, centered column on large screens */
+      --col: 960px;
+      --gutter: max(clamp(14px, 4vw, 28px), calc((100% - var(--col)) / 2), env(safe-area-inset-left));
+      --gutter-r: max(clamp(14px, 4vw, 28px), calc((100% - var(--col)) / 2), env(safe-area-inset-right));
     }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
 
     body {
       background-color: var(--bg-deep);
@@ -30,234 +40,212 @@
       margin: 0;
       padding: 0;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .app {
-      background-color: var(--bg-deep);
-      color: var(--text-main);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
-      box-sizing: border-box;
-      max-width: 100vw;
+      width: 100%;
     }
 
-    /* Topbar */
     .topbar {
-      background-color: var(--bg-deep);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(6, 11, 26, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      flex-shrink: 0;
+      gap: 12px;
+      padding-block: 12px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-inline: var(--gutter) var(--gutter-r);
     }
-    .topbar-text h1 { color: var(--text-main); font-size: 1.25rem; font-weight: 700; margin: 0; }
-    .topbar-text p { color: var(--text-muted-2); font-size: 0.8rem; margin: 2px 0 0 0; }
+    .topbar-text { flex: 1; min-width: 0; }
+    .topbar-text h1 {
+      font-size: clamp(1.05rem, 4vw, 1.3rem);
+      font-weight: 700; margin: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .topbar-text p {
+      color: var(--text-muted-2); font-size: 0.8rem; margin: 2px 0 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
 
     .back-btn, .icon-btn {
       background: var(--card-bg);
       color: var(--text-main);
       border: 1px solid var(--border-color);
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; padding: 0;
+      text-decoration: none;
+      transition: background .2s var(--ease), border-color .2s var(--ease), opacity .2s;
     }
+    .back-btn:hover, .icon-btn:hover:not(:disabled) { background: var(--card-bg-alt); border-color: var(--text-muted-3); }
+    .icon-btn:disabled { opacity: .4; cursor: default; }
     .back-btn svg, .icon-btn svg { width: 20px; height: 20px; }
 
-    /* Content Area with strict width containment */
     .content {
-      padding: 20px;
-      max-width: 600px;
+      flex: 1;
       width: 100%;
-      margin: 0 auto;
-      box-sizing: border-box;
+      padding-block: clamp(14px, 3vw, 24px);
+      padding-inline: var(--gutter) var(--gutter-r);
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
     }
 
-    /* Download Banner / Stats Header */
+    .banner {
+      margin-bottom: 14px; padding: 10px 14px; border-radius: 12px;
+      font-size: .85rem; line-height: 1.4;
+      background: rgba(248, 113, 113, .1);
+      border: 1px solid rgba(248, 113, 113, .4);
+      color: var(--red-prime);
+    }
+    .banner[hidden] { display: none; }
+
     .downloads-overview {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 16px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-sizing: border-box;
-      width: 100%;
+      padding: 14px clamp(14px, 3vw, 20px);
+      margin-bottom: 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
     }
-    .downloads-overview-info h2 { font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin: 0; }
-    .downloads-overview-info p { font-size: 0.8rem; color: var(--text-muted-2); margin: 2px 0 0 0; }
+    .downloads-overview-info h2 { font-size: 0.95rem; font-weight: 600; margin: 0; }
+    .downloads-overview-info p { font-size: 0.8rem; color: var(--text-muted-2); margin: 2px 0 0; }
     .storage-badge {
       background: var(--card-bg-alt);
       border: 1px solid var(--border-color);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      color: var(--emerald-prime);
-      font-weight: 600;
+      padding: 6px 12px; border-radius: 20px;
+      font-size: 0.75rem; color: var(--emerald-prime); font-weight: 600;
       white-space: nowrap;
     }
 
-    /* PDF Download List Container & Cards with explicit max-width and wrapping */
+    /* One column on phones, 2+ columns when there is room */
     .download-list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
       gap: 12px;
-      width: 100%;
-      box-sizing: border-box;
     }
 
     .download-card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 14px;
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      transition: all 0.2s ease;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      overflow: hidden;
+      padding: 14px clamp(12px, 3vw, 16px);
+      display: flex; align-items: center; gap: 12px;
+      min-width: 0;
+      transition: background .2s var(--ease), border-color .2s var(--ease);
     }
-    .download-card:hover {
-      background: var(--card-bg-alt);
-      border-color: var(--text-muted-3);
-    }
+    .download-card:hover { background: var(--card-bg-alt); border-color: var(--text-muted-3); }
 
     .pdf-icon-box {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
+      width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
       background: rgba(248, 113, 113, 0.1);
       border: 1px solid rgba(248, 113, 113, 0.2);
       color: var(--red-prime);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-weight: 700;
-      font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.75rem;
     }
 
-    .download-info {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-    }
+    .download-info { flex: 1; min-width: 0; }
     .download-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--text-main);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      width: 100%;
+      font-size: 0.95rem; font-weight: 600; line-height: 1.3;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; overflow-wrap: anywhere;
     }
     .download-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted-2);
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 0.75rem; color: var(--text-muted-2);
+      margin-top: 4px; line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
-    .download-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
+    .download-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .action-icon-btn {
       background: var(--card-bg-alt);
       border: 1px solid var(--border-color);
       color: var(--text-muted-1);
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.2s;
-      text-decoration: none;
-      flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+      transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
     }
-    .action-icon-btn:hover {
-      background: var(--border-color);
-      color: var(--text-main);
-    }
+    .action-icon-btn:hover { background: var(--border-color); color: var(--text-main); }
     .action-icon-btn.delete:hover {
-      background: rgba(248, 113, 113, 0.15);
-      border-color: var(--red-prime);
-      color: var(--red-prime);
+      background: rgba(248, 113, 113, 0.15); border-color: var(--red-prime); color: var(--red-prime);
     }
-    .action-icon-btn svg { width: 16px; height: 16px; }
+    .action-icon-btn svg { width: 17px; height: 17px; }
 
-    /* Empty State */
+    .back-btn:focus-visible, .icon-btn:focus-visible, .action-icon-btn:focus-visible,
+    .empty-downloads a:focus-visible {
+      outline: 2px solid var(--emerald-prime); outline-offset: 2px;
+    }
+
     .empty-downloads {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted-3);
-      display: none;
+      text-align: center; padding: 48px 20px; color: var(--text-muted-3);
     }
-    .empty-downloads svg {
-      width: 48px;
-      height: 48px;
-      stroke: var(--text-muted-3);
-      margin-bottom: 12px;
+    .empty-downloads[hidden] { display: none; }
+    .empty-downloads svg { width: 48px; height: 48px; stroke: var(--text-muted-3); margin-bottom: 12px; }
+    .empty-downloads p { font-size: 0.9rem; color: var(--text-muted-2); margin: 0 0 14px; line-height: 1.5; }
+    .empty-downloads a {
+      display: inline-block; padding: 10px 18px; border-radius: 12px;
+      background: var(--emerald-dark); color: #022c22; font-weight: 600; font-size: .9rem;
+      text-decoration: none;
     }
-    .empty-downloads p { font-size: 0.9rem; color: var(--text-muted-2); margin: 0; }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
 
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
+    .toast {
+      position: fixed; left: 50%;
+      width: calc(100% - 32px); max-width: 380px;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      transform: translate(-50%, 12px);
+      background: var(--card-bg); border: 1px solid var(--red-prime);
+      color: var(--text-main); font-size: .85rem; font-weight: 600; text-align: center;
+      padding: 12px 16px; border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s var(--ease), transform .3s var(--ease);
+      z-index: 50;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+    /* Very small phones: keep both action buttons without squeezing the title */
+    @media (max-width: 360px) {
+      .pdf-icon-box { width: 38px; height: 38px; font-size: .7rem; }
+      .download-card { gap: 10px; }
+      .action-icon-btn { width: 36px; height: 36px; }
+    }
 
+    @media (max-height: 480px) and (orientation: landscape) {
+      .topbar { padding-block: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; }
+    }
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- Top Bar -->
     <div class="topbar">
       <a href="materials.html" class="back-btn" aria-label="Back to Materials">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
 
-      <div class="topbar-text" style="text-align: center;">
+      <div class="topbar-text">
         <h1>Downloaded PDFs</h1>
-        <p>Offline study materials & past questions</p>
+        <p>Offline study materials &amp; past questions</p>
       </div>
 
-      <button class="icon-btn" id="clearAllDownloads" type="button" aria-label="Clear All" title="Clear All Downloads">
+      <button class="icon-btn" id="clearAllDownloads" type="button" aria-label="Remove all downloads" title="Remove all downloads" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"></polyline>
           <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
@@ -265,165 +253,304 @@
       </button>
     </div>
 
-    <!-- Content Area -->
     <div class="content">
-      
-      <!-- Overview Storage Bar -->
+      <div class="banner" id="errorBanner" hidden></div>
+
       <div class="downloads-overview">
         <div class="downloads-overview-info">
           <h2>Device Storage</h2>
-          <p id="downloadCountText">3 files stored offline</p>
+          <p id="downloadCountText">Checking your downloads...</p>
         </div>
-        <div class="storage-badge" id="storageSizeBadge">45.2 MB used</div>
+        <div class="storage-badge" id="storageSizeBadge">—</div>
       </div>
 
-      <!-- Downloads List -->
-      <div class="download-list" id="downloadListContainer">
-        
-        <!-- BIO 101 Item -->
-        <div class="download-card" data-id="bio101">
-          <div class="pdf-icon-box">PDF</div>
-          <div class="download-info">
-            <div class="download-title">BIO 101 Comprehensive Cell Biology Lecture Notes</div>
-            <div class="download-meta">
-              <span>15.4 MB</span> • 
-              <span>Downloaded Oct 12</span>
-            </div>
-          </div>
-          <div class="download-actions">
-            <a href="pdf-reader.html?file=bio101.pdf" class="action-icon-btn open-pdf" title="Open PDF">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
-            <button class="action-icon-btn delete delete-pdf" title="Remove Download" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
+      <div class="download-list" id="downloadListContainer"></div>
 
-        <!-- CHM 102 Item -->
-        <div class="download-card" data-id="chm102">
-          <div class="pdf-icon-box">PDF</div>
-          <div class="download-info">
-            <div class="download-title">CHM 102 Organic Chemistry Reaction Mechanisms</div>
-            <div class="download-meta">
-              <span>18.1 MB</span> • 
-              <span>Downloaded Oct 10</span>
-            </div>
-          </div>
-          <div class="download-actions">
-            <a href="pdf-reader.html?file=chm102.pdf" class="action-icon-btn open-pdf" title="Open PDF">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
-            <button class="action-icon-btn delete delete-pdf" title="Remove Download" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- ECO 101 Item -->
-        <div class="download-card" data-id="eco101">
-          <div class="pdf-icon-box">PDF</div>
-          <div class="download-info">
-            <div class="download-title">ECO 101 Macroeconomics Past Questions & Answers</div>
-            <div class="download-meta">
-              <span>11.7 MB</span> • 
-              <span>Downloaded Sep 28</span>
-            </div>
-          </div>
-          <div class="download-actions">
-            <a href="pdf-reader.html?file=eco101.pdf" class="action-icon-btn open-pdf" title="Open PDF">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
-            <button class="action-icon-btn delete delete-pdf" title="Remove Download" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Empty State -->
-      <div class="empty-downloads" id="emptyDownloadsState">
+      <div class="empty-downloads" id="emptyDownloadsState" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
-        <p>No offline downloads available right now.</p>
+        <p>No downloads yet. Download a PDF from Materials to read it offline.</p>
+        <a href="materials.html">Browse materials</a>
       </div>
-
     </div>
   </div>
 
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const downloadListContainer = document.getElementById('downloadListContainer');
-      const emptyDownloadsState = document.getElementById('emptyDownloadsState');
-      const downloadCountText = document.getElementById('downloadCountText');
-      const storageSizeBadge = document.getElementById('storageSizeBadge');
-      const clearAllBtn = document.getElementById('clearAllDownloads');
+/* PRIME-CBT offline downloads store
+ * Real PDFs saved on the device in IndexedDB. Shared by materials.html (saves)
+ * and downloads.html (lists, opens, removes). Changes sync across open tabs.
+ *
+ *   await PrimeDownloads.save({ id, title, course, url }, { onProgress })
+ *   await PrimeDownloads.list()      -> [{ id, title, course, size, downloadedAt }]
+ *   await PrimeDownloads.get(id)     -> { ...meta, blob } | null
+ *   await PrimeDownloads.has(id)     -> boolean
+ *   await PrimeDownloads.remove(id)
+ *   await PrimeDownloads.clear()
+ *   PrimeDownloads.onChange(fn)      -> call fn whenever anything changes (any tab)
+ */
+(function () {
+  var DB_NAME = 'prime-cbt-offline';
+  var STORE = 'pdfs';
+  var channel = ('BroadcastChannel' in window) ? new BroadcastChannel('prime-downloads') : null;
+  var listeners = [];
+  var dbPromise = null;
 
-      function updateStats() {
-        const cards = downloadListContainer.querySelectorAll('.download-card');
-        const count = cards.length;
-        
-        if (count === 0) {
-          downloadListContainer.style.display = 'none';
-          emptyDownloadsState.style.display = 'block';
-          downloadCountText.textContent = '0 files stored offline';
-          storageSizeBadge.textContent = '0 MB used';
-        } else {
-          downloadListContainer.style.display = 'flex';
-          emptyDownloadsState.style.display = 'none';
-          downloadCountText.textContent = `${count} file${count > 1 ? 's' : ''} stored offline`;
-          const simulatedSize = (count * 15.1).toFixed(1);
-          storageSizeBadge.textContent = `${simulatedSize} MB used`;
-        }
-      }
-
-      downloadListContainer.addEventListener('click', (e) => {
-        const deleteBtn = e.target.closest('.delete-pdf');
-        if (deleteBtn) {
-          const card = deleteBtn.closest('.download-card');
-          if (card) {
-            card.remove();
-            updateStats();
-          }
-        }
-      });
-
-      if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', () => {
-          if (confirm('Are you sure you want to remove all downloaded materials?')) {
-            downloadListContainer.innerHTML = '';
-            updateStats();
-          }
-        });
-      }
-
-      updateStats();
+  function openDb() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function (resolve, reject) {
+      if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+      var req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = function () {
+        req.result.createObjectStore(STORE, { keyPath: 'id' });
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { dbPromise = null; reject(req.error); };
     });
+    return dbPromise;
+  }
+
+  function run(mode, fn) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(STORE, mode);
+        var out;
+        try { out = fn(tx.objectStore(STORE)); } catch (e) { reject(e); return; }
+        tx.oncomplete = function () { resolve(out && 'result' in out ? out.result : undefined); };
+        tx.onerror = function () { reject(tx.error); };
+        tx.onabort = function () { reject(tx.error || new Error('Transaction aborted')); };
+      });
+    });
+  }
+
+  function notify() {
+    listeners.forEach(function (fn) { try { fn(); } catch (_) {} });
+    if (channel) channel.postMessage({ type: 'changed' });
+  }
+  if (channel) channel.onmessage = function () {
+    listeners.forEach(function (fn) { try { fn(); } catch (_) {} });
+  };
+
+  function list() {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var out = [];
+        var req = db.transaction(STORE, 'readonly').objectStore(STORE).openCursor();
+        req.onsuccess = function () {
+          var c = req.result;
+          if (!c) { resolve(out); return; }
+          var v = c.value;
+          out.push({ id: v.id, title: v.title, course: v.course || '', size: v.size, downloadedAt: v.downloadedAt });
+          c.continue();
+        };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function get(id) { return run('readonly', function (s) { return s.get(id); }).then(function (r) { return r || null; }); }
+  function has(id) { return get(id).then(function (r) { return !!r; }); }
+
+  function remove(id) {
+    return run('readwrite', function (s) { s.delete(id); }).then(notify);
+  }
+  function clear() {
+    return run('readwrite', function (s) { s.clear(); }).then(notify);
+  }
+
+  function fetchBlob(url, onProgress) {
+    return fetch(url).then(function (res) {
+      if (!res.ok) throw new Error('Download failed (' + res.status + ')');
+      var total = Number(res.headers.get('content-length')) || 0;
+      if (!res.body || !onProgress || !total) return res.blob();
+      var reader = res.body.getReader(), chunks = [], got = 0;
+      return (function pump() {
+        return reader.read().then(function (r) {
+          if (r.done) return new Blob(chunks, { type: 'application/pdf' });
+          chunks.push(r.value); got += r.value.length;
+          onProgress(Math.min(1, got / total));
+          return pump();
+        });
+      })();
+    });
+  }
+
+  function save(item, opts) {
+    opts = opts || {};
+    if (!item || !item.id || !item.url) return Promise.reject(new Error('id and url are required'));
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+    return fetchBlob(item.url, opts.onProgress).then(function (blob) {
+      var record = {
+        id: String(item.id),
+        title: item.title || 'Untitled PDF',
+        course: item.course || '',
+        size: blob.size,
+        downloadedAt: Date.now(),
+        blob: blob
+      };
+      return run('readwrite', function (s) { s.put(record); }).then(function () { notify(); return record; });
+    });
+  }
+
+  window.PrimeDownloads = {
+    save: save, list: list, get: get, has: has, remove: remove, clear: clear,
+    onChange: function (fn) { listeners.push(fn); }
+  };
+})();
+
+  </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const $ = (id) => document.getElementById(id);
+    const listEl = $('downloadListContainer'), emptyEl = $('emptyDownloadsState');
+    const countText = $('downloadCountText'), sizeBadge = $('storageSizeBadge');
+    const clearBtn = $('clearAllDownloads'), banner = $('errorBanner');
+
+    if (!window.PrimeDownloads) {
+      banner.textContent = 'Offline downloads could not start in this browser.';
+      banner.hidden = false;
+      return;
+    }
+
+    /* ───── Helpers ───── */
+    function el(tag, cls, text) {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    }
+    function fmtBytes(b) {
+      if (!b) return '0 MB';
+      const u = ['B', 'KB', 'MB', 'GB'];
+      let i = 0, v = b;
+      while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+      return (i === 0 ? v : v.toFixed(v >= 100 ? 0 : 1)) + ' ' + u[i];
+    }
+    function fmtDate(ts) {
+      const d = new Date(ts), now = new Date();
+      const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+      const diff = Math.round((day(now) - day(d)) / 86400000);
+      if (diff <= 0) return 'Downloaded today';
+      if (diff === 1) return 'Downloaded yesterday';
+      const opts = d.getFullYear() === now.getFullYear()
+        ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' };
+      return 'Downloaded ' + d.toLocaleDateString([], opts);
+    }
+    let toastTimer;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    const ICON_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>';
+    const ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>';
+
+    /* ───── Rendering ───── */
+    let items = [];
+
+    function render() {
+      listEl.replaceChildren();
+      const n = items.length;
+      const total = items.reduce((s, x) => s + (x.size || 0), 0);
+
+      listEl.hidden = n === 0;
+      emptyEl.hidden = n !== 0;
+      clearBtn.disabled = n === 0;
+      countText.textContent = n + (n === 1 ? ' file' : ' files') + ' stored offline';
+      sizeBadge.textContent = fmtBytes(total) + ' used';
+
+      for (const it of items) {
+        const card = el('div', 'download-card');
+        card.dataset.id = it.id;
+        card.append(el('div', 'pdf-icon-box', 'PDF'));
+
+        const info = el('div', 'download-info');
+        info.append(el('div', 'download-title', it.title));
+        const meta = [it.course, fmtBytes(it.size), fmtDate(it.downloadedAt)].filter(Boolean).join(' • ');
+        info.append(el('div', 'download-meta', meta));
+        card.append(info);
+
+        const actions = el('div', 'download-actions');
+        const open = el('button', 'action-icon-btn');
+        open.type = 'button'; open.title = 'Open PDF'; open.setAttribute('aria-label', 'Open ' + it.title);
+        open.innerHTML = ICON_OPEN;
+        open.addEventListener('click', () => openPdf(it.id));
+        const del = el('button', 'action-icon-btn delete');
+        del.type = 'button'; del.title = 'Remove download'; del.setAttribute('aria-label', 'Remove ' + it.title);
+        del.innerHTML = ICON_TRASH;
+        del.addEventListener('click', () => removeOne(it.id));
+        actions.append(open, del);
+        card.append(actions);
+        listEl.append(card);
+      }
+      showQuota();
+    }
+
+    async function showQuota() {
+      if (!navigator.storage || !navigator.storage.estimate) return;
+      try {
+        const { usage, quota } = await navigator.storage.estimate();
+        if (quota) sizeBadge.title = fmtBytes(usage) + ' used by this app of about ' + fmtBytes(quota) + ' available on this device';
+      } catch (_) {}
+    }
+
+    async function refresh() {
+      try {
+        items = (await PrimeDownloads.list()).sort((a, b) => b.downloadedAt - a.downloadedAt);
+        banner.hidden = true;
+      } catch (e) {
+        console.error('downloads:', e && e.message);
+        items = [];
+        banner.textContent = "Offline storage isn't available in this browser mode (for example private browsing).";
+        banner.hidden = false;
+      }
+      render();
+    }
+
+    /* ───── Actions ───── */
+    async function openPdf(id) {
+      // Open the tab first so the browser doesn't block it as a popup
+      const w = window.open('', '_blank');
+      try {
+        const rec = await PrimeDownloads.get(id);
+        if (!rec) { if (w) w.close(); toast('That file is no longer on this device.'); refresh(); return; }
+        const url = URL.createObjectURL(new Blob([rec.blob], { type: 'application/pdf' }));
+        if (w) w.location.href = url; else location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
+      } catch (e) {
+        if (w) w.close();
+        toast("Couldn't open this PDF.");
+      }
+    }
+
+    async function removeOne(id) {
+      try { await PrimeDownloads.remove(id); } catch (_) { toast("Couldn't remove this file."); }
+      refresh();
+    }
+
+    clearBtn.addEventListener('click', async () => {
+      if (!items.length) return;
+      if (!confirm('Remove all ' + items.length + ' downloaded PDFs from this device?')) return;
+      try { await PrimeDownloads.clear(); } catch (_) { toast("Couldn't remove downloads."); }
+      refresh();
+    });
+
+    /* ───── Live updates ───── */
+    PrimeDownloads.onChange(refresh);                       // saved or removed in another tab
+    document.addEventListener('visibilitychange', () => {   // back to this tab
+      if (document.visibilityState === 'visible') refresh();
+    });
+    setInterval(() => { if (document.visibilityState === 'visible') render(); }, 60000); // keep "today / yesterday" accurate
+
+    refresh();
+  });
   </script>
 </body>
 </html>
