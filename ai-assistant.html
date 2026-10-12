@@ -2,133 +2,158 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#060b1a">
   <title>PRIME-CBT — AI Study Assistant</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { navy: '#060b1a' },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-        }
-      }
-    }
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #060b1a;
-      --card-bg: #0f172a; /* slate-900 */
-      --card-bg-hover: #1e293b; /* slate-800 */
-      --border: #334155; /* slate-700 */
-      --muted: #94a3b8; /* slate-400 */
-      --text-main: #f1f5f9; /* slate-100 */
+      --card-bg: #0f172a;
+      --card-bg-hover: #1e293b;
+      --border: #334155;
+      --muted: #94a3b8;
+      --text-main: #f1f5f9;
       --emerald-bright: #34d399;
       --teal-bright: #2dd4bf;
       --amber: #fbbf24;
       --red: #f87171;
+      --app-max: 880px;
+      --pad-x: clamp(14px, 3.5vw, 28px);
     }
 
-    * {
+    *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
-      width: 100%;
+    [hidden] { display: none !important; }
+
+    html {
       height: 100%;
-      overflow: hidden;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
 
+    @media (min-width: 1280px) { html { font-size: 17px; } }
+
     body {
+      height: 100%;
+      overflow: hidden;
       background-color: var(--bg);
       color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
+    button, input, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+
+    /* ---------- App shell ---------- */
     .app {
       width: 100%;
-      max-width: 480px;
-      background: var(--bg);
+      max-width: var(--app-max);
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      height: 100dvh;
+      background: var(--bg);
       position: relative;
-      border-left: 1px solid rgba(51, 65, 85, 0.4);
-      border-right: 1px solid rgba(51, 65, 85, 0.4);
     }
 
+    @media (min-width: 900px) {
+      .app {
+        border-left: 1px solid rgba(51, 65, 85, 0.4);
+        border-right: 1px solid rgba(51, 65, 85, 0.4);
+      }
+    }
+
+    /* ---------- Top bar ---------- */
     .topbar {
       display: flex;
       align-items: center;
-      padding: 16px 20px;
+      gap: 12px;
+      padding: max(12px, env(safe-area-inset-top)) max(var(--pad-x), env(safe-area-inset-right)) 12px max(var(--pad-x), env(safe-area-inset-left));
       border-bottom: 1px solid var(--border);
       background: rgba(6, 11, 26, 0.95);
+      -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
       z-index: 10;
       flex-shrink: 0;
     }
 
-    .back-btn {
+    .icon-btn {
       width: 40px;
       height: 40px;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background: #0f172a;
+      background: var(--card-bg);
       border: 1px solid var(--border);
       color: #cbd5e1;
       text-decoration: none;
-      margin-right: 12px;
       transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
     }
 
-    .back-btn:hover {
-      background: #1e293b;
-      border-color: #475569;
-      transform: scale(0.95);
+    .icon-btn:hover { background: var(--card-bg-hover); border-color: #475569; transform: scale(0.95); }
+    .icon-btn:focus-visible, .prompt-card:focus-visible, .send-btn:focus-visible, .retry-btn:focus-visible {
+      outline: 2px solid var(--emerald-bright);
+      outline-offset: 2px;
     }
+    .icon-btn svg { width: 20px; height: 20px; }
 
-    .back-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-
+    .topbar-text { flex: 1; min-width: 0; }
     .topbar-text h1 {
-      font-size: 1.1rem;
+      font-size: clamp(1rem, 2.6vw, 1.15rem);
       font-weight: 700;
       color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-
     .topbar-text p {
       font-size: 0.8rem;
-      color: #94a3b8;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
+    .offline-banner {
+      flex-shrink: 0;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      background: rgba(251, 191, 36, 0.12);
+      color: var(--amber);
+      border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    /* ---------- Chat area ---------- */
     .ai-content {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      padding: 20px;
+      overscroll-behavior: contain;
+      padding: clamp(14px, 3vw, 24px) max(var(--pad-x), env(safe-area-inset-right)) clamp(14px, 3vw, 24px) max(var(--pad-x), env(safe-area-inset-left));
       display: flex;
       flex-direction: column;
       gap: 20px;
       scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.15) transparent;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     }
 
     .ai-welcome {
       text-align: center;
-      margin-top: 40px;
+      margin-top: clamp(8px, 6vh, 56px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -141,28 +166,24 @@
       border-radius: 50%;
       background: rgba(52, 211, 153, 0.15);
       border: 1px solid rgba(52, 211, 153, 0.3);
-      color: #34d399;
+      color: var(--emerald-bright);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 4px;
     }
-
-    .ai-avatar svg {
-      width: 28px;
-      height: 28px;
-    }
+    .ai-avatar svg { width: 28px; height: 28px; }
 
     .ai-welcome h2 {
       font-family: 'Lora', serif;
-      font-size: 1.5rem;
+      font-weight: 600;
+      font-size: clamp(1.3rem, 4vw, 1.75rem);
       color: #f1f5f9;
     }
-
     .ai-welcome p {
-      font-size: 0.9rem;
-      color: #94a3b8;
-      max-width: 300px;
+      font-size: 0.92rem;
+      color: var(--muted);
+      max-width: 340px;
     }
 
     .chat-stream {
@@ -172,223 +193,261 @@
     }
 
     .message {
-      max-width: 85%;
+      max-width: min(88%, 720px);
       padding: 12px 16px;
       border-radius: 16px;
       font-size: 0.95rem;
-      line-height: 1.5;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
       animation: fadeIn 0.3s ease forwards;
     }
 
     .message.user {
-      background: #34d399;
+      background: var(--emerald-bright);
       color: #060b1a;
       font-weight: 500;
       align-self: flex-end;
       border-bottom-right-radius: 4px;
+      white-space: pre-wrap;
     }
 
     .message.assistant {
-      background: #0f172a;
-      color: #f1f5f9;
+      background: var(--card-bg);
+      color: var(--text-main);
       align-self: flex-start;
       border-bottom-left-radius: 4px;
       border: 1px solid var(--border);
     }
 
+    .message.error {
+      background: rgba(248, 113, 113, 0.1);
+      color: #fecaca;
+      align-self: flex-start;
+      border: 1px solid rgba(248, 113, 113, 0.4);
+      border-bottom-left-radius: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .retry-btn {
+      background: transparent;
+      border: 1px solid rgba(248, 113, 113, 0.6);
+      color: #fecaca;
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .retry-btn:hover { background: rgba(248, 113, 113, 0.15); }
+
+    /* Markdown inside assistant replies */
+    .message.assistant > *:first-child { margin-top: 0; }
+    .message.assistant > *:last-child { margin-bottom: 0; }
+    .message.assistant p { margin: 0 0 0.7em; }
+    .message.assistant h4 { margin: 0.9em 0 0.4em; font-size: 1rem; font-weight: 700; color: #fff; }
+    .message.assistant ul, .message.assistant ol { margin: 0 0 0.7em; padding-left: 1.4em; }
+    .message.assistant li { margin: 0.2em 0; }
+    .message.assistant strong { font-weight: 700; color: #fff; }
+    .message.assistant code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.88em;
+      background: rgba(148, 163, 184, 0.16);
+      padding: 0.1em 0.35em;
+      border-radius: 5px;
+    }
+    .message.assistant pre {
+      margin: 0 0 0.7em;
+      padding: 12px;
+      background: #060b1a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+    .message.assistant pre code { background: none; padding: 0; font-size: 0.85em; white-space: pre; }
+
+
+    .msg-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .act-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 3px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    .act-btn:hover { background: var(--card-bg-hover); color: var(--text-main); border-color: #475569; }
+    .act-btn:focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+
+    .typing { display: inline-flex; gap: 5px; padding: 4px 0; }
+    .typing span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted);
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.3s; }
+
+    /* ---------- Prompt suggestions ---------- */
     .prompt-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
       gap: 10px;
       margin-top: auto;
     }
 
     .prompt-card {
-      background: #0f172a;
+      min-width: 0;
+      background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px;
       text-align: left;
-      cursor: pointer;
       display: flex;
       flex-direction: column;
       gap: 8px;
       transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
     }
-
-    .prompt-card:hover {
-      background: #1e293b;
-      border-color: #475569;
-      transform: translateY(-2px);
-    }
+    .prompt-card:hover { background: var(--card-bg-hover); border-color: #475569; transform: translateY(-2px); }
 
     .prompt-icon {
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
+    .prompt-icon.purple { background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); color: var(--emerald-bright); }
+    .prompt-icon.green { background: rgba(45, 212, 191, 0.15); border: 1px solid rgba(45, 212, 191, 0.3); color: var(--teal-bright); }
+    .prompt-icon svg { width: 18px; height: 18px; }
 
-    .prompt-icon.purple {
-      background: rgba(52, 211, 153, 0.15);
-      border: 1px solid rgba(52, 211, 153, 0.3);
-      color: #34d399;
-    }
+    .prompt-title { font-size: 0.85rem; font-weight: 600; color: #f1f5f9; }
+    .prompt-desc { font-size: 0.75rem; color: var(--muted); }
 
-    .prompt-icon.green {
-      background: rgba(45, 212, 191, 0.15);
-      border: 1px solid rgba(45, 212, 191, 0.3);
-      color: #2dd4bf;
-    }
-
-    .prompt-icon svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .prompt-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #f1f5f9;
-    }
-
-    .prompt-desc {
-      font-size: 0.75rem;
-      color: #94a3b8;
-    }
-
+    /* ---------- Input dock ---------- */
     .ai-input-dock {
-      padding: 16px 20px;
+      padding: 12px max(var(--pad-x), env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(var(--pad-x), env(safe-area-inset-left));
       border-top: 1px solid var(--border);
       background: rgba(6, 11, 26, 0.95);
+      -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
       flex-shrink: 0;
     }
 
     .ai-input-form {
       display: flex;
-      align-items: center;
-      background: #0f172a;
+      align-items: flex-end;
+      gap: 8px;
+      background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 30px;
-      padding: 6px 6px 6px 16px;
+      border-radius: 26px;
+      padding: 5px 5px 5px 16px;
       transition: border-color 0.3s ease, background-color 0.3s ease;
     }
+    .ai-input-form:focus-within { border-color: var(--emerald-bright); background: var(--card-bg-hover); }
 
-    .ai-input-form:focus-within {
-      border-color: #34d399;
-      background: #1e293b;
-    }
-
-    .ai-input-form input {
+    .ai-input-form textarea {
       flex: 1;
+      min-width: 0;
       border: none;
       background: transparent;
       outline: none;
-      font-size: 0.95rem;
-      color: #f1f5f9;
+      resize: none;
+      font-size: 16px; /* 16px stops iOS from zooming on focus */
+      line-height: 1.4;
+      padding: 9px 0;
+      max-height: 140px;
     }
+    .ai-input-form textarea::placeholder { color: #64748b; }
 
-    .ai-input-form input::placeholder {
-      color: #64748b;
-    }
-
-    .ai-input-form button {
-      width: 38px;
-      height: 38px;
+    .send-btn {
+      width: 40px; height: 40px;
+      flex-shrink: 0;
       border-radius: 50%;
-      background: #34d399;
+      background: var(--emerald-bright);
       color: #060b1a;
       border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
       transition: background-color 0.3s ease, transform 0.3s ease;
     }
+    .send-btn:hover { background: var(--teal-bright); transform: scale(0.95); }
+    .send-btn svg { width: 16px; height: 16px; }
+    .send-btn .ico-stop { display: none; }
+    .send-btn.is-stop .ico-send { display: none; }
+    .send-btn.is-stop .ico-stop { display: block; }
 
-    .ai-input-form button:hover {
-      background: #2dd4bf;
-      transform: scale(0.95);
+    /* ---------- Animations ---------- */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
 
-    .ai-input-form button svg {
-      width: 16px;
-      height: 16px;
+    /* ---------- Responsive tweaks ---------- */
+    @media (min-width: 768px) {
+      .message { max-width: min(80%, 720px); font-size: 1rem; }
+      .prompt-card { padding: 16px; }
+      .prompt-title { font-size: 0.92rem; }
+      .prompt-desc { font-size: 0.8rem; }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    @media (max-width: 340px) {
+      .topbar { gap: 8px; }
+      .icon-btn { width: 36px; height: 36px; }
+      .message { max-width: 94%; padding: 10px 12px; }
     }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
 
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
-
+    /* Short screens: phones in landscape, or with the keyboard open */
+    @media (max-height: 520px) {
+      .ai-welcome { margin-top: 4px; gap: 6px; }
+      .ai-avatar, .ai-welcome p { display: none; }
+      .topbar { padding-top: max(6px, env(safe-area-inset-top)); padding-bottom: 6px; }
+      .ai-input-dock { padding-top: 8px; }
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="app ai-app">
     <!-- Top Bar -->
-    <div class="topbar">
-      <a href="home.html" class="back-btn" aria-label="Back to Home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+    <header class="topbar">
+      <a href="/home.html" class="icon-btn" aria-label="Back to Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
 
       <div class="topbar-text">
         <h1>AI Study Assistant</h1>
         <p>Powered by Groq Llama 3.3</p>
       </div>
-    </div>
+
+      <button type="button" class="icon-btn" id="newChatBtn" aria-label="Clear chat and start a new one" title="New chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </header>
+
+    <div class="offline-banner" id="offlineBanner" role="status" hidden>You're offline. Reconnect to chat.</div>
 
     <!-- Chat Area -->
-    <div class="ai-content" id="chatArea">
-      <!-- Welcome -->
+    <main class="ai-content" id="chatArea">
       <div class="ai-welcome" id="welcomeBlock">
         <div class="ai-avatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 8V4H8"/>
-            <rect width="16" height="12" x="4" y="8" rx="2"/>
-            <path d="M2 14h2"/><path d="M20 14h2"/>
-            <path d="M15 13v2"/><path d="M9 13v2"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/>
+            <path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
           </svg>
         </div>
         <h2>How can I help you today?</h2>
         <p>Ask me course questions, request topic explanations, or get study advice.</p>
       </div>
 
-      <!-- Chat Messages -->
-      <div class="chat-stream" id="chatStream"></div>
+      <div class="chat-stream" id="chatStream" role="log" aria-live="polite"></div>
 
-      <!-- Prompt Suggestions -->
       <div class="prompt-grid" id="promptSuggestions">
-        <button class="prompt-card" type="button" data-prompt="Explain a topic simply to me">
+        <button class="prompt-card" type="button" data-mode="fill" data-prompt="Explain this topic simply: ">
           <div class="prompt-icon purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-              <path d="M12 17h.01"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
           </div>
           <div>
             <div class="prompt-title">Explain a Topic</div>
@@ -396,36 +455,29 @@
           </div>
         </button>
 
-        <button class="prompt-card" type="button" data-prompt="Quiz me on Cell Biology">
+        <button class="prompt-card" type="button" data-mode="fill" data-prompt="Quiz me on ">
           <div class="prompt-icon purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
           </div>
           <div>
             <div class="prompt-title">Quiz Me</div>
-            <div class="prompt-desc">Generate practice questions on weak topics</div>
+            <div class="prompt-desc">Practice questions on a topic you choose</div>
           </div>
         </button>
 
-        <button class="prompt-card" type="button" data-prompt="What should I study next based on my performance?">
+        <button class="prompt-card" type="button" data-mode="send" data-prompt="What should I study next? Use my study plan and exam date.">
           <div class="prompt-icon green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 20v-6M6 20V10M18 20V4"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
           </div>
           <div>
             <div class="prompt-title">What Should I Study Next?</div>
-            <div class="prompt-desc">Personalized recommendation</div>
+            <div class="prompt-desc">Based on your study plan and exam date</div>
           </div>
         </button>
 
-        <button class="prompt-card" type="button" data-prompt="Generate 5 practice questions for me on Organic Chemistry">
+        <button class="prompt-card" type="button" data-mode="fill" data-prompt="Generate 5 practice questions on ">
           <div class="prompt-icon purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 20h9"/>
-              <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-1.873.632a.5.5 0 0 1-.638-.638l.632-1.873a2 2 0 0 1 .506-.855z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-1.873.632a.5.5 0 0 1-.638-.638l.632-1.873a2 2 0 0 1 .506-.855z"/></svg>
           </div>
           <div>
             <div class="prompt-title">Generate Questions</div>
@@ -433,73 +485,20 @@
           </div>
         </button>
       </div>
-    </div>
+    </main>
 
     <!-- Input Dock -->
     <div class="ai-input-dock">
-      <form id="chatForm" class="ai-input-form">
-        <input type="text" id="chatInput" placeholder="Ask me anything..." autocomplete="off">
-        <button type="submit" id="sendBtn" aria-label="Send">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m22 2-7 20-4-9-9-4Z"/>
-            <path d="M22 2 11 13"/>
-          </svg>
+      <form id="chatForm" class="ai-input-form" autocomplete="off">
+        <textarea id="chatInput" rows="1" placeholder="Ask me anything..." aria-label="Message"></textarea>
+        <button type="button" class="send-btn" id="sendBtn" aria-label="Send">
+          <svg class="ico-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          <svg class="ico-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
         </button>
       </form>
     </div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const chatForm = document.getElementById('chatForm');
-      const chatInput = document.getElementById('chatInput');
-      const chatStream = document.getElementById('chatStream');
-      const welcomeBlock = document.getElementById('welcomeBlock');
-      const promptSuggestions = document.getElementById('promptSuggestions');
-      const promptCards = document.querySelectorAll('.prompt-card');
-      const chatArea = document.getElementById('chatArea');
-
-      function addMessage(text, sender) {
-        if (welcomeBlock) welcomeBlock.style.display = 'none';
-        if (promptSuggestions) promptSuggestions.style.display = 'none';
-
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', sender);
-        messageDiv.textContent = text;
-        chatStream.appendChild(messageDiv);
-        chatArea.scrollTop = chatArea.scrollHeight;
-      }
-
-      function handleUserSubmit(text) {
-        if (!text.trim()) return;
-        addMessage(text, 'user');
-        chatInput.value = '';
-
-        setTimeout(() => {
-          let reply = "I'm analyzing your request using Llama 3.3. Let's break this down step by step to ensure you master the concept!";
-          if (text.toLowerCase().includes('quiz')) {
-            reply = "Here is a quick practice quiz question:\n\nWhich organelle is primarily responsible for ATP production in eukaryotic cells?\nA) Endoplasmic Reticulum\nB) Mitochondrion\nC) Golgi Apparatus\nD) Ribosome\n\nType your answer below!";
-          } else if (text.toLowerCase().includes('study next')) {
-            reply = "Based on your recent performance metrics, your accuracy in Cell Biology is 68%, while Organic Chemistry sits at 82%. I recommend dedicating your next 30 minutes to reviewing Cellular Respiration pathways.";
-          }
-          addMessage(reply, 'assistant');
-        }, 600);
-      }
-
-      chatForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        handleUserSubmit(chatInput.value);
-      });
-
-      promptCards.forEach(card => {
-        card.addEventListener('click', () => {
-          const promptText = card.getAttribute('data-prompt');
-          if (promptText) {
-            handleUserSubmit(promptText);
-          }
-        });
-      });
-    });
-  </script>
+  <script src="ai-assistant-chat.js"></script>
 </body>
 </html>
