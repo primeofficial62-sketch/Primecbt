@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#060b1a">
   <title>PRIME-CBT — Results</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #060b1a;
@@ -20,8 +22,9 @@
       --teal: #2dd4bf;
       --amber: #fbbf24;
       --red: #f87171;
-      --font-display: 'Lora', serif;
-      --font-body: 'Inter', sans-serif;
+      --font-display: 'Lora', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --pad: clamp(1rem, 4vw, 2rem);
     }
 
     * {
@@ -31,414 +34,619 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
+    /* Everything is in rem, so the page scales fluidly with the screen */
+    html {
+      font-size: clamp(14px, 13px + 0.35vw, 18px);
+      -webkit-text-size-adjust: 100%;
+      background: var(--bg);
     }
 
     body {
       font-family: var(--font-body);
       background: var(--bg);
       color: var(--text);
+      min-height: 100vh;
       min-height: 100dvh;
       display: flex;
       justify-content: center;
-      align-items: center;
       -webkit-font-smoothing: antialiased;
     }
 
     .app {
       width: 100%;
-      max-width: 480px;
-      height: 100dvh;
+      max-width: 64rem;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       background: var(--bg);
-      position: relative;
-      overflow: hidden;
-      border-left: 1px solid rgba(51, 65, 85, 0.4);
-      border-right: 1px solid rgba(51, 65, 85, 0.4);
     }
 
-    /* Content */
+    @media (min-width: 64rem) {
+      .app { border-left: 1px solid rgba(51, 65, 85, 0.5); border-right: 1px solid rgba(51, 65, 85, 0.5); }
+    }
+
+    /* ---------- Content ---------- */
     .content {
       flex: 1;
-      overflow-y: auto;
-      padding: 24px 20px 160px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.15) transparent;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      align-content: start;
+      align-items: start;
+      gap: clamp(1rem, 3vw, 1.5rem);
+      padding: max(var(--pad), env(safe-area-inset-top)) var(--pad) var(--pad);
+      padding-left: max(var(--pad), env(safe-area-inset-left));
+      padding-right: max(var(--pad), env(safe-area-inset-right));
     }
 
-    /* Hero Score */
-    .hero {
+    .content > * { min-width: 0; }
+    .full { grid-column: 1 / -1; }
+
+    /* ---------- Status banner ---------- */
+    .status {
+      background: rgba(248, 113, 113, 0.12);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: var(--muted-light);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      overflow-wrap: anywhere;
+    }
+    .status.info { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.35); }
+    .status[hidden] { display: none; }
+    .status strong { color: var(--red); }
+    .status.info strong { color: var(--amber); }
+    .status button {
+      flex-shrink: 0;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.35rem 0.7rem;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .status button[hidden] { display: none; }
+
+    /* ---------- Empty state ---------- */
+    .empty-state {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px dashed var(--border);
+      border-radius: 1rem;
+      padding: 2.5rem 1.25rem;
       text-align: center;
-      margin-bottom: 24px;
-      position: relative;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
     }
+    .empty-state a { color: var(--emerald-bright); font-weight: 600; text-decoration: none; }
 
-    .hero-emoji {
-      font-size: 42px;
-      margin-bottom: 8px;
-      display: inline-block;
-    }
+    /* ---------- Hero ---------- */
+    .hero { text-align: center; padding: clamp(0.5rem, 3vw, 1.5rem) 0; }
+
+    .hero-emoji { font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 0.5rem; display: inline-block; }
 
     .hero-title {
       font-family: var(--font-display);
-      font-size: 24px;
+      font-size: clamp(1.5rem, 5vw, 2.2rem);
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 0.25rem;
     }
 
     .hero-score {
-      font-size: 48px;
+      font-size: clamp(3rem, 12vw, 5rem);
       font-weight: 800;
       background: linear-gradient(135deg, var(--emerald-bright), var(--teal));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       line-height: 1.1;
-      margin-bottom: 6px;
+      margin-bottom: 0.4rem;
     }
 
-    .hero-meta {
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .hero-meta strong {
-      color: var(--emerald-bright);
-      font-weight: 600;
-    }
+    .hero-meta { font-size: 1rem; color: var(--muted); overflow-wrap: anywhere; }
+    .hero-meta strong { color: var(--emerald-bright); font-weight: 600; }
+    .hero-sub { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; overflow-wrap: anywhere; }
 
     .improvement {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 0.3rem;
       background: rgba(16, 185, 129, 0.12);
       color: var(--emerald-bright);
-      font-size: 12px;
+      font-size: 0.8rem;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 0.3rem 0.75rem;
       border-radius: 999px;
-      margin-top: 10px;
+      margin-top: 0.75rem;
     }
 
-    /* Stats Grid */
+    /* ---------- Stats ---------- */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+      gap: 0.75rem;
     }
 
     .stat-card {
       background: rgba(15, 23, 42, 0.8);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px 12px;
+      border-radius: 1rem;
+      padding: 1rem 0.75rem;
       text-align: center;
-      transition: all 0.25s ease;
+      min-width: 0;
+      transition: border-color 0.2s ease, transform 0.2s ease;
     }
+    .stat-card:hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, 0.3); }
 
-    .stat-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(16, 185, 129, 0.3);
-    }
-
-    .stat-value {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 2px;
-    }
-
+    .stat-value { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.15rem; overflow-wrap: anywhere; }
     .stat-value.green { color: var(--emerald-bright); }
     .stat-value.red { color: var(--red); }
     .stat-value.amber { color: var(--amber); }
     .stat-value.blue { color: #60a5fa; }
+    .stat-label { font-size: 0.8rem; color: var(--muted); }
 
-    .stat-label {
-      font-size: 12px;
-      color: var(--muted);
-    }
+    /* ---------- Sections ---------- */
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--muted-light); }
 
-    /* Section */
-    .section {
-      margin-bottom: 24px;
-    }
-
-    .section-title {
-      font-size: 14.5px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      color: var(--muted-light);
-    }
-
-    /* Topic Performance */
     .topic-item {
       background: rgba(15, 23, 42, 0.8);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 8px;
+      border-radius: 0.9rem;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.5rem;
     }
 
-    .topic-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
+    .topic-header { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.45rem; }
+    .topic-name { font-size: 0.95rem; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+    .topic-score { font-size: 0.88rem; font-weight: 600; flex-shrink: 0; }
 
-    .topic-name {
-      font-size: 13.5px;
-      font-weight: 600;
-    }
+    .topic-bar { height: 0.4rem; background: rgba(51, 65, 85, 0.6); border-radius: 999px; overflow: hidden; }
+    .topic-fill { height: 100%; width: 0; border-radius: 999px; transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+    .topic-fill.emerald { background: linear-gradient(90deg, #10b981, #34d399); }
+    .topic-fill.amber { background: var(--amber); }
+    .topic-fill.red { background: var(--red); }
 
-    .topic-score {
-      font-size: 12.5px;
-      font-weight: 600;
-    }
+    .topic-score.emerald { color: var(--emerald-bright); }
+    .topic-score.amber { color: var(--amber); }
+    .topic-score.red { color: var(--red); }
 
-    .topic-bar {
-      height: 5px;
-      background: rgba(51, 65, 85, 0.6);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .topic-fill {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    /* Recommendation */
     .recommend-card {
       background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(15, 23, 42, 0.8));
       border: 1px solid rgba(16, 185, 129, 0.3);
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 1rem;
+      padding: 1rem;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0.85rem;
     }
 
     .recommend-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
+      width: 2.9rem;
+      height: 2.9rem;
+      border-radius: 0.8rem;
       background: rgba(16, 185, 129, 0.15);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 1.35rem;
       flex-shrink: 0;
     }
 
-    .recommend-body h3 {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
+    .recommend-body { min-width: 0; }
+    .recommend-body h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.15rem; overflow-wrap: anywhere; }
+    .recommend-body p { font-size: 0.85rem; color: var(--muted); line-height: 1.45; overflow-wrap: anywhere; }
 
-    .recommend-body p {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    /* Bottom Actions */
+    /* ---------- Bottom actions (sticky, never covers content) ---------- */
     .bottom-actions {
-      position: absolute;
+      position: sticky;
       bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 16px 20px;
-      padding-bottom: max(18px, env(safe-area-inset-bottom));
-      background: linear-gradient(to top, var(--bg) 75%, transparent);
+      z-index: 40;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      z-index: 40;
+      gap: 0.5rem;
+      padding: 1rem var(--pad);
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      padding-left: max(var(--pad), env(safe-area-inset-left));
+      padding-right: max(var(--pad), env(safe-area-inset-right));
+      background: linear-gradient(to top, var(--bg) 75%, rgba(6, 11, 26, 0));
     }
 
     .btn {
-      height: 48px;
-      border-radius: 14px;
-      font-size: 14.5px;
+      min-height: 3rem;
+      border-radius: 0.9rem;
+      font: inherit;
+      font-size: 0.95rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      text-align: center;
+      text-decoration: none;
+      gap: 0.5rem;
+      padding: 0.5rem 1.25rem;
       cursor: pointer;
-      transition: all 0.25s ease;
       border: none;
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+      overflow-wrap: anywhere;
     }
+    .btn:active { transform: scale(0.97); }
+    .btn:focus-visible, .status button:focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
 
     .btn-primary {
       background: linear-gradient(135deg, #10b981, #059669);
       color: #022c22;
       box-shadow: 0 6px 20px rgba(16, 185, 129, 0.28);
     }
+    .btn-primary:hover { box-shadow: 0 10px 24px rgba(16, 185, 129, 0.38); }
 
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(16, 185, 129, 0.38);
+    .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .btn-secondary:hover { background: var(--surface-2); }
+
+    @media (min-width: 40rem) {
+      .bottom-actions { flex-direction: row; justify-content: center; }
+      .bottom-actions .btn { flex: 0 1 18rem; }
     }
 
-    .btn-secondary {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
+    /* ---------- Edge cases ---------- */
+    @media (max-height: 480px) and (orientation: landscape) {
+      .bottom-actions { position: static; }
     }
 
-    .btn-secondary:hover {
-      background: var(--surface-2);
-    }
+    @media (min-width: 1800px) { html { font-size: 20px; } }
 
-    .btn-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn-row .btn {
-      flex: 1;
-    }
-
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    [class*="animate-"] {
-      animation: none !important;
-      opacity: 1 !important;
-      transform: none !important;
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="content">
-      <!-- Hero -->
-      <div class="hero">
-        <div class="hero-emoji">🎉</div>
-        <div class="hero-title">Great Job!</div>
-        <div class="hero-score">82%</div>
-        <div class="hero-meta">
-          <strong>24</strong> / 30 Correct
-        </div>
-        <div class="improvement">
-          Session Complete
-        </div>
+    <main class="content">
+      <!-- Status / save messages -->
+      <div class="status full" id="statusBanner" role="alert" hidden>
+        <span id="statusText"></span>
+        <button type="button" id="statusRetry" hidden>Retry</button>
       </div>
 
-      <!-- Stats -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value green">82%</div>
-          <div class="stat-label">Accuracy</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value blue">--:--</div>
-          <div class="stat-label">Time Taken</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value green">24</div>
-          <div class="stat-label">Correct</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value red">6</div>
-          <div class="stat-label">Incorrect</div>
-        </div>
-      </div>
+      <!-- Empty state -->
+      <div class="empty-state full" id="emptyState" hidden></div>
 
-      <!-- Topic Performance -->
-      <div class="section">
-        <h2 class="section-title">Topic Performance</h2>
-        <div class="topic-item">
-          <div class="topic-header">
-            <span class="topic-name" id="perfTopicName">General Study</span>
-            <span class="topic-score" style="color: var(--emerald-bright)" id="perfTopicScore">82%</span>
+      <!-- Everything below is only shown when there is a real result -->
+      <div class="full" id="resultWrap" hidden style="display:none">
+        <div class="content" style="padding:0">
+          <!-- Hero -->
+          <div class="hero full">
+            <div class="hero-emoji" id="heroEmoji"></div>
+            <div class="hero-title" id="heroTitle"></div>
+            <div class="hero-score" id="heroScore"></div>
+            <div class="hero-meta" id="heroMeta"></div>
+            <div class="hero-sub" id="heroSub"></div>
+            <div class="improvement" id="heroBadge"></div>
           </div>
-          <div class="topic-bar">
-            <div class="topic-fill" style="width: 0; background: linear-gradient(90deg, #10b981, #34d399)" data-width="82%"></div>
+
+          <!-- Stats -->
+          <div class="stats-grid full" id="statsGrid"></div>
+
+          <!-- Topic Performance -->
+          <div class="section">
+            <h2 class="section-title">Topic Performance</h2>
+            <div id="topicList"></div>
+          </div>
+
+          <!-- Recommendation -->
+          <div class="section">
+            <h2 class="section-title">Recommendation</h2>
+            <div class="recommend-card">
+              <div class="recommend-icon" id="recIcon"></div>
+              <div class="recommend-body">
+                <h3 id="recTitle"></h3>
+                <p id="recText"></p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Recommendation -->
-      <div class="section">
-        <h2 class="section-title">Recommendation</h2>
-        <div class="recommend-card">
-          <div class="recommend-icon">🎯</div>
-          <div class="recommend-body">
-            <h3>Keep building momentum</h3>
-            <p>Review the explanations for any missed items to master this subject.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </main>
 
     <!-- Bottom Actions -->
-    <div class="bottom-actions">
-      <button type="button" class="btn btn-primary" onclick="location.href='practice.html'">
-        Practice More
-      </button>
-      <div class="btn-row">
-        <button type="button" class="btn btn-secondary" onclick="location.href='practice.html'">
-          Back to Practice
-        </button>
-      </div>
+    <div class="bottom-actions" id="bottomActions" hidden>
+      <a class="btn btn-primary" id="practiceMoreBtn" href="practice.html">Practice More</a>
+      <a class="btn btn-secondary" href="home.html">Back to Home</a>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const topic = params.get('topic') || 'General Study';
-    const score = parseInt(params.get('score')) || 0;
-    const total = parseInt(params.get('total')) || 0;
-    const incorrect = parseInt(params.get('incorrect')) || (total - score);
-    const percentage = total > 0 ? Math.round((score / total) * 100) : 82;
+    /* ====== CONFIG ======
+       Where the result comes from (first match wins):
+       1. URL params:  results.html?score=24&total=30&topic=Genetics  (optional: incorrect, time, course, mode)
+       2. The submitted exam session saved by the exam page (key below). For scoring, each question needs
+          its correct answer:  questions: [ { id, topic, correct }, … ]  and  answers: { id: chosen }.
+    */
+    const SESSION_KEY = 'cbt_session';
+    const SUPABASE_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
+    const RESULTS_TABLE = 'test_results';
+    const SETUP_URL = 'practice-setup.html';
+    /* ==================== */
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelector('.hero-title').textContent = percentage >= 50 ? 'Great Job!' : 'Keep Practicing!';
-      document.querySelector('.hero-score').textContent = `${percentage}%`;
-      document.querySelector('.hero-meta').innerHTML = `<strong>${score}</strong> / ${total} Correct`;
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pct = (c, t) => (t > 0 ? Math.round((c / t) * 100) : 0);
+    const tier = (p) => (p >= 70 ? 'emerald' : p >= 50 ? 'amber' : 'red');
 
-      const statValues = document.querySelectorAll('.stat-value');
-      if(statValues.length >= 4) {
-        statValues[0].textContent = `${percentage}%`;
-        statValues[2].textContent = score;
-        statValues[3].textContent = incorrect;
+    let store = null;
+    let sessionObj = null;
+    let result = null;
+
+    /* ---------- Helpers ---------- */
+    function showStatus(message, type) {
+      const el = $('statusBanner');
+      el.classList.toggle('info', type === 'info');
+      $('statusText').innerHTML = '<strong>' + (type === 'info' ? 'Note:' : 'Problem:') + '</strong> ' + esc(message);
+      $('statusRetry').hidden = type === 'info';
+      el.hidden = false;
+    }
+    function clearStatus() { $('statusBanner').hidden = true; }
+
+    function formatDuration(sec) {
+      if (sec == null || !isFinite(sec) || sec <= 0) return '–';
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.floor(sec % 60);
+      if (h > 0) return h + 'h ' + String(m).padStart(2, '0') + 'm';
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function readSession() {
+      const stores = [];
+      try { stores.push(window.sessionStorage); } catch (e) {}
+      try { stores.push(window.localStorage); } catch (e) {}
+      for (const s of stores) {
+        try {
+          const raw = s.getItem(SESSION_KEY);
+          if (raw) { store = s; return JSON.parse(raw); }
+        } catch (e) { /* ignore unreadable value */ }
+      }
+      return null;
+    }
+
+    function writeSession() {
+      if (!store || !sessionObj) return;
+      try { store.setItem(SESSION_KEY, JSON.stringify(sessionObj)); } catch (e) {}
+    }
+
+    /* ---------- Build the result from real data ---------- */
+    function fromParams() {
+      const p = new URLSearchParams(window.location.search);
+      const total = parseInt(p.get('total'), 10);
+      const score = parseInt(p.get('score'), 10);
+      if (!(total > 0) || isNaN(score)) return null;
+
+      const incorrectParam = parseInt(p.get('incorrect'), 10);
+      const wrong = !isNaN(incorrectParam) ? incorrectParam : Math.max(total - score, 0);
+      const time = parseInt(p.get('time'), 10);
+
+      return {
+        source: 'params',
+        mode: p.get('mode') === 'exam' ? 'exam' : 'practice',
+        code: p.get('course') || '',
+        title: '',
+        topic: p.get('topic') || '',
+        total,
+        correct: score,
+        wrong,
+        unanswered: Math.max(total - score - wrong, 0),
+        duration: !isNaN(time) ? time : null,
+        topics: []
+      };
+    }
+
+    function fromSession(s) {
+      if (!s || s.status !== 'submitted' || !Array.isArray(s.questions) || !s.questions.length) return null;
+
+      const answers = s.answers || {};
+      const byTopic = new Map();
+      let correct = 0, wrong = 0, unanswered = 0, gradable = 0;
+
+      s.questions.forEach((q, i) => {
+        const id = q && typeof q === 'object' && q.id != null ? String(q.id) : String(i);
+        const key = q && typeof q === 'object'
+          ? (q.correct != null ? q.correct : (q.correct_answer != null ? q.correct_answer : q.answer))
+          : null;
+        if (key == null) return;
+        gradable++;
+
+        const given = Array.isArray(answers) ? answers[i] : (answers[id] !== undefined ? answers[id] : answers[i]);
+        const has = given !== undefined && given !== null && given !== '';
+        const isCorrect = has && String(given).trim().toLowerCase() === String(key).trim().toLowerCase();
+
+        if (isCorrect) correct++; else if (has) wrong++; else unanswered++;
+
+        const topic = (q && q.topic) || s.topic || '';
+        if (topic) {
+          if (!byTopic.has(topic)) byTopic.set(topic, { name: topic, c: 0, t: 0 });
+          const g = byTopic.get(topic);
+          g.t++;
+          if (isCorrect) g.c++;
+        }
+      });
+
+      if (gradable !== s.questions.length) return { ungradable: true };
+
+      let duration = s.duration_seconds != null ? Number(s.duration_seconds) : null;
+      if (duration == null && s.started_at && s.submitted_at) {
+        duration = Math.round((new Date(s.submitted_at) - new Date(s.started_at)) / 1000);
       }
 
-      const topicNameEl = document.getElementById('perfTopicName');
-      const topicScoreEl = document.getElementById('perfTopicScore');
-      if (topicNameEl) topicNameEl.textContent = topic;
-      if (topicScoreEl) topicScoreEl.textContent = `${percentage}%`;
+      const topics = [...byTopic.values()].map((g) => ({ name: g.name, c: g.c, t: g.t, p: pct(g.c, g.t) }))
+        .sort((a, b) => a.p - b.p);
 
-      const recommendTitle = document.querySelector('.recommend-body h3');
-      const recommendDesc = document.querySelector('.recommend-body p');
-      if (recommendTitle && recommendDesc) {
-        recommendTitle.textContent = `${topic} Performance`;
-        recommendDesc.textContent = percentage >= 70 
-          ? `You performed well in ${topic}. Keep up the solid progress!` 
-          : `Review your incorrect options in ${topic} to strengthen your core understanding.`;
+      return {
+        source: 'session',
+        mode: s.mode === 'practice' ? 'practice' : 'exam',
+        code: s.course_code || '',
+        title: s.course_title || '',
+        topic: topics.length === 1 ? topics[0].name : (s.topic || ''),
+        total: s.questions.length,
+        correct, wrong, unanswered,
+        duration,
+        topics
+      };
+    }
+
+    /* ---------- Render ---------- */
+    function render(r) {
+      const percentage = pct(r.correct, r.total);
+      const label = r.topic || r.title || r.code || '';
+
+      $('heroEmoji').textContent = percentage >= 70 ? '🎉' : percentage >= 50 ? '👍' : '📚';
+      $('heroTitle').textContent = percentage >= 70 ? 'Great Job!' : percentage >= 50 ? 'Good Effort!' : 'Keep Practicing!';
+      $('heroScore').textContent = percentage + '%';
+      $('heroMeta').innerHTML = `<strong>${r.correct}</strong> / ${r.total} Correct`;
+      $('heroSub').textContent = [r.code, r.title && r.title !== r.code ? r.title : ''].filter(Boolean).join(' • ');
+      $('heroSub').hidden = !$('heroSub').textContent;
+      $('heroBadge').textContent = r.mode === 'practice' ? 'Practice Complete' : 'Exam Complete';
+
+      const cards = [
+        { v: percentage + '%', c: tier(percentage) === 'emerald' ? 'green' : tier(percentage) === 'amber' ? 'amber' : 'red', l: 'Accuracy' },
+        { v: formatDuration(r.duration), c: 'blue', l: 'Time Taken' },
+        { v: r.correct, c: 'green', l: 'Correct' },
+        { v: r.wrong, c: 'red', l: 'Incorrect' }
+      ];
+      if (r.unanswered > 0) cards.push({ v: r.unanswered, c: 'amber', l: 'Unanswered' });
+      $('statsGrid').innerHTML = cards.map((x) =>
+        `<div class="stat-card"><div class="stat-value ${x.c}">${esc(x.v)}</div><div class="stat-label">${x.l}</div></div>`).join('');
+
+      // Topic performance: per-topic when known, otherwise one overall row
+      const rows = r.topics.length
+        ? r.topics
+        : [{ name: label || 'Overall', c: r.correct, t: r.total, p: percentage }];
+      $('topicList').innerHTML = rows.map((g) => {
+        const t = tier(g.p);
+        return `
+          <div class="topic-item">
+            <div class="topic-header">
+              <span class="topic-name">${esc(g.name)}</span>
+              <span class="topic-score ${t}">${g.p}%</span>
+            </div>
+            <div class="topic-bar"><div class="topic-fill ${t}" data-w="${g.p}"></div></div>
+          </div>`;
+      }).join('');
+      requestAnimationFrame(() => setTimeout(() => {
+        document.querySelectorAll('.topic-fill').forEach((b) => { b.style.width = b.dataset.w + '%'; });
+      }, 150));
+
+      // Recommendation from the actual numbers
+      const weakest = r.topics.length > 1 ? r.topics[0] : null;
+      if (weakest && weakest.p < 70) {
+        $('recIcon').textContent = '🎯';
+        $('recTitle').textContent = 'Focus on ' + weakest.name;
+        $('recText').textContent = `You scored ${weakest.p}% (${weakest.c}/${weakest.t}) here. Review the questions you missed in this topic first.`;
+      } else if (percentage >= 70) {
+        $('recIcon').textContent = '✅';
+        $('recTitle').textContent = label ? `Strong result in ${label}` : 'Strong result';
+        $('recText').textContent = `You got ${r.correct} of ${r.total} right. Keep practicing regularly to stay sharp.`;
+      } else {
+        $('recIcon').textContent = '📖';
+        $('recTitle').textContent = label ? `Review ${label}` : 'Review your mistakes';
+        $('recText').textContent = `You missed ${r.wrong + r.unanswered} of ${r.total} questions. Go through those answers to strengthen your understanding.`;
       }
 
-      const primaryBtn = document.querySelector('.btn-primary');
-      if(primaryBtn) {
-        primaryBtn.textContent = `Practice More ${topic}`;
-        primaryBtn.onclick = () => location.href = `practice.html`;
+      $('practiceMoreBtn').textContent = label ? `Practice More ${label}` : 'Practice More';
+
+      $('resultWrap').hidden = false;
+      $('resultWrap').style.display = '';
+      $('bottomActions').hidden = false;
+      $('emptyState').hidden = true;
+    }
+
+    function renderEmpty(message) {
+      $('resultWrap').hidden = true;
+      $('resultWrap').style.display = 'none';
+      $('bottomActions').hidden = true;
+      $('emptyState').hidden = false;
+      $('emptyState').innerHTML = esc(message) + '<br><a href="' + esc(SETUP_URL) + '">Start a practice session</a>';
+    }
+
+    /* ---------- Save to Supabase so Profile + Progress update live ---------- */
+    async function saveResult(force) {
+      if (!result) return;
+
+      // Don't save twice for the same attempt
+      if (result.source === 'session') {
+        if (sessionObj && sessionObj.result_saved) return;
+      } else if (!force) {
+        const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+        if (nav && nav.type !== 'navigate') return; // reload / back-forward: already saved
       }
 
-      setTimeout(() => {
-        document.querySelectorAll('.topic-fill').forEach(bar => {
-          const targetWidth = `${percentage}%`;
-          bar.style.width = targetWidth;
+      if (!window.supabase || !window.supabase.createClient) {
+        showStatus('The Supabase library did not load, so this result was not saved.');
+        return;
+      }
+
+      try {
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { data, error: authError } = await sb.auth.getSession();
+        if (authError) throw authError;
+        if (!data.session) {
+          showStatus('You are not signed in, so this result was not saved to your progress.', 'info');
+          return;
+        }
+
+        const { error } = await sb.from(RESULTS_TABLE).insert({
+          user_id: data.session.user.id,
+          course_code: result.code || null,
+          course_title: result.title || null,
+          topic: result.topic || null,
+          mode: result.mode,
+          score: result.correct,
+          total_questions: result.total,
+          duration_seconds: result.duration && result.duration > 0 ? Math.round(result.duration) : 0
         });
-      }, 400);
+        if (error) throw error;
+
+        if (result.source === 'session' && sessionObj) {
+          sessionObj.result_saved = true;
+          writeSession();
+        }
+        clearStatus();
+      } catch (e) {
+        console.error('[results] save failed:', e);
+        showStatus('Your result could not be saved: ' + ((e && e.message) || e));
+      }
+    }
+
+    /* ---------- Init ---------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      $('statusRetry').addEventListener('click', () => saveResult(true));
+
+      sessionObj = readSession();
+      result = fromParams();
+      if (!result) result = fromSession(sessionObj);
+
+      if (result && result.ungradable) {
+        result = null;
+        renderEmpty('This session has no answer key, so a score cannot be calculated.');
+        return;
+      }
+      if (!result) {
+        renderEmpty('No results to show yet.');
+        return;
+      }
+
+      render(result);
+      saveResult(false);
     });
   </script>
 </body>
