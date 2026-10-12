@@ -19,9 +19,9 @@
     html, body { height: 100%; }
     body { background: var(--bg); color: var(--text); -webkit-text-size-adjust: 100%; }
 
-    /* ---------- PIN lock screen ---------- */
-    .lock { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 8px; }
-    .lock h1 { font-size: 1.35rem; font-weight: 700; margin-top: 8px; text-align: center; }
+    /* ---------- PIN lock screen (fully fixed & responsive) ---------- */
+    .lock { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 12px; }
+    .lock h1 { font-size: 1.4rem; font-weight: 700; margin-top: 8px; text-align: center; }
     .lock .sub { color: var(--muted); font-size: .9rem; text-align: center; min-height: 1.3em; max-width: 280px; }
     .lock .sub.err { color: var(--danger); }
     .dots { display: flex; gap: 16px; margin: 22px 0 18px; }
@@ -29,13 +29,15 @@
     .dot.on { background: var(--primary); border-color: var(--primary); }
     .dots.shake { animation: shake .35s; }
     @keyframes shake { 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
-    .pad { display: grid; grid-template-columns: repeat(3, 74px); gap: 14px; }
-    .pad button { height: 74px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); font-size: 1.5rem; font-weight: 500; transition: background .12s, transform .08s; }
-    .pad button:active { background: var(--card-2); transform: scale(.94); }
-    .pad .ghost { background: none; border-color: transparent; font-size: 1.1rem; color: var(--muted); }
+
+    /* BIGGER & EASIER TOUCH TARGETS ON MOBILE */
+    .pad { display: grid; grid-template-columns: repeat(3, 92px); gap: 16px; margin: 24px 0 20px; }
+    .pad button { height: 92px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); font-size: 1.65rem; font-weight: 500; transition: background .12s, transform .08s; }
+    .pad button:active { background: var(--card-2); transform: scale(.92); }
+    .pad .ghost { background: none; border-color: transparent; font-size: 1.15rem; color: var(--muted); }
     .pad button:disabled { opacity: .4; }
 
-    /* ---------- shell (rearranged for live modern feel) ---------- */
+    /* ---------- shell ---------- */
     .app { max-width: 960px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
     .topbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: rgba(6,11,26,.96); backdrop-filter: blur(20px); border-bottom: 1px solid var(--line); }
     .topbar h2 { flex: 1; font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; }
@@ -57,7 +59,7 @@
     .nav:hover { background: var(--card-2); transform: translateX(6px); }
     .nav.active { background: rgba(52,211,153,.18); color: var(--primary); font-weight: 700; box-shadow: 0 2px 8px rgba(52,211,153,.1); }
 
-    /* ---------- common bits (upgraded) ---------- */
+    /* ---------- common bits ---------- */
     .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .toolbar input, .toolbar select { flex: 1 1 160px; min-width: 0; font-size: .96rem; }
     input, select, textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; font-size: .96rem; transition: all .2s; }
@@ -98,7 +100,7 @@
     .stat.hot b { color: var(--primary); }
     .h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; }
 
-    /* ---------- bottom sheet (live feel) ---------- */
+    /* ---------- bottom sheet ---------- */
     .sheet-back { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
     .sheet { width: 100%; max-width: 680px; max-height: 94dvh; background: var(--card); border: 1px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; animation: up .3s cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes up { from { transform: translateY(40px); opacity: .6; } }
@@ -140,7 +142,7 @@
     <header class="topbar">
       <button class="iconbtn" id="menuBtn" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <h2 id="pageTitle">Dashboard</h2>
-      <button class="iconbtn" id="refreshBtn" aria-label="Refresh data"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9z"/><path d="M3 12h4l-1 2M16 12h4M3 12l1-2M16 12l1 2"/></svg></button>
+      <button class="iconbtn" id="refreshBtn" aria-label="Refresh data"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9z"/><path d="M3 12h4l-1 2M16 12h4l-1 2"/></svg></button>
     </header>
     <main class="content" id="view"></main>
   </div>
@@ -214,10 +216,14 @@
     html += '<button type="button" data-k="0">0</button>';
     html += '<button type="button" class="ghost" data-k="back" aria-label="Delete">⌫</button>';
     $('pad').innerHTML = html;
+
+    // BIGGER & EASIER TOUCH TARGETS ON MOBILE
     $('pad').addEventListener('click', function (e) {
       var b = e.target.closest('button[data-k]');
       if (b) press(b.getAttribute('data-k'));
     });
+
+    // Keyboard support (works on all devices)
     document.addEventListener('keydown', function (e) {
       if ($('lock').hidden) return;
       if (/^\d$/.test(e.key)) press(e.key);
@@ -304,7 +310,7 @@
     $('sheetBack').addEventListener('mousedown', function (e) { if (e.target.id === 'sheetBack') closeSheet(); });
   }
 
-  /* ================= form builder (upgraded) ================= */
+  /* ================= form builder ================= */
   var LETTERS = 'ABCDEFGH';
   function mcqRow(i, val, checked) {
     return '<div class="mcq-row"><input type="radio" name="mcqc" value="' + i + '"' + (checked ? ' checked' : '') + ' aria-label="Correct answer"><span class="letter">' + LETTERS[i] + '</span>' +
@@ -546,7 +552,7 @@
     };
   }
 
-  /* ================= section definitions (live) ================= */
+  /* ================= section definitions ================= */
   var DIFFS = ['easy', 'medium', 'hard'];
   var courseName = function (id) { var m = (lookups.courses || []).filter(function (c) { return c[0] === id; })[0]; return m ? m[1] : ''; };
   var studentName = function (id) { var s = (studentCache || []).filter(function (x) { return x.id === id; })[0]; return s ? (s.name || s.email || 'Student') : 'Student'; };
@@ -643,7 +649,7 @@
     },
     {
       id: 'departments', label: 'Departments', group: 'Sign-up lists', kind: 'list', table: 'departments', noun: 'department', empty: 'No departments yet.',
-      filter: { key: 'school_id', label: 'All schools', lookup: 'schools', lookupLabel: 'name' },
+      filter: { key: 'school_id', label: 'All schools', lookup: 'courses', lookupLabel: 'title' },
       prepare: function () { return lookup('schools', 'name'); },
       fields: [
         { key: 'school_id', label: 'School', type: 'select', lookup: 'schools', lookupLabel: 'name', required: true },
@@ -660,7 +666,7 @@
     { id: 'security', label: 'Change PIN', group: 'Security', kind: 'security' }
   ];
 
-  /* ================= special views (live) ================= */
+  /* ================= special views ================= */
   async function renderDashboard() {
     $('view').innerHTML = '<div class="loading">Loading live stats…</div>';
     try {
@@ -906,7 +912,7 @@
 
   buildNav();
 
-  /* ================= start (live) ================= */
+  /* ================= start ================= */
   (async function init() {
     try {
       var s = await api('status');
