@@ -279,24 +279,26 @@
 
     /* ================= Data ================= */
     async function loadCourses() {
-      let res = await sb.from('courses')
-        .select('id,code,title,description,sort_order,questions(count)')
-        .order('sort_order', { ascending: true })
-        .order('title', { ascending: true });
+      // Select all columns so this works with whatever your courses table has
+      let res = await sb.from('courses').select('*, questions(count)');
 
       // If there is no questions relationship yet, load courses without counts
-      if (res.error) {
-        res = await sb.from('courses')
-          .select('id,code,title,description,sort_order')
-          .order('sort_order', { ascending: true })
-          .order('title', { ascending: true });
-      }
+      if (res.error) res = await sb.from('courses').select('*');
       if (res.error) { showError(res.error.message); return; }
+
+      const pick = (row, keys) => { for (const k of keys) if (row[k] != null && row[k] !== '') return row[k]; return ''; };
 
       courses = (res.data || []).map(c => ({
         ...c,
+        title: pick(c, ['title', 'name', 'course_name', 'course_title']),
+        code: pick(c, ['code', 'course_code']),
+        description: pick(c, ['description', 'desc', 'details', 'summary']),
         count: Array.isArray(c.questions) && c.questions[0] ? Number(c.questions[0].count) : (c.questions ? 0 : null)
-      }));
+      })).filter(c => c.title);
+
+      courses.sort((a, b) =>
+        (Number(a.sort_order ?? a.position ?? 0) - Number(b.sort_order ?? b.position ?? 0)) ||
+        a.title.localeCompare(b.title));
       loaded = true;
       render();
     }
