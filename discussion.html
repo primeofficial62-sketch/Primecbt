@@ -2,30 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <title>PRIME-CBT — Discussion</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060b1a;                 /* deep navy-black */
-      --surface: #0f172a;          /* slate-900 */
-      --surface-2: #1e293b;        /* slate-800 */
-      --border: #334155;           /* slate-700 */
-      
-      --text: #f1f5f9;             /* slate-100 */
-      --muted-1: #cbd5e1;          /* slate-300 */
-      --muted-2: #94a3b8;          /* slate-400 */
-      --muted-3: #64748b;          /* slate-500 */
-      --muted-4: #475569;          /* slate-600 */
-
-      --emerald: #10b981;          /* emerald-500 */
-      --emerald-bright: #34d399;   /* emerald-400 */
-      --teal: #2dd4bf;             /* teal-400 */
-      --red: #f87171;              /* red-400 */
-      --amber: #fbbf24;            /* amber-400 */
+      --bg: #060b1a;
+      --surface: #0f172a;
+      --surface-2: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted-1: #cbd5e1;
+      --muted-2: #94a3b8;
+      --muted-3: #64748b;
+      --muted-4: #475569;
+      --emerald: #10b981;
+      --emerald-bright: #34d399;
+      --red: #f87171;
+      --amber: #fbbf24;
       --radius: 16px;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Fluid on phones, centered 760px column on large screens */
+      --col: 760px;
+      --gutter: max(clamp(14px, 4vw, 28px), calc((100% - var(--col)) / 2), env(safe-area-inset-left));
+      --gutter-r: max(clamp(14px, 4vw, 28px), calc((100% - var(--col)) / 2), env(safe-area-inset-right));
     }
 
     * {
@@ -34,626 +37,703 @@
       padding: 0;
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
     }
+
+    html, body { height: 100%; }
 
     body {
       background-color: var(--bg);
       color: var(--text);
-      display: flex;
-      justify-content: center;
-      height: 100vh;
-      height: 100dvh;
       overflow: hidden;
+      -webkit-text-size-adjust: 100%;
     }
 
     .app {
       width: 100%;
-      max-width: 480px;
-      background: var(--bg);
+      height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
-      height: 100%;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-      position: relative;
+      background: var(--bg);
     }
 
+    /* ───────── Top bar ───────── */
     .topbar {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
-      padding: 16px 20px;
+      gap: 12px;
+      padding-block: 12px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-inline: var(--gutter) var(--gutter-r);
       border-bottom: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.92);
       backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       z-index: 10;
     }
-
     .back-btn {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 40px; height: 40px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
       border-radius: 12px;
       background: var(--surface-2);
       color: var(--text);
       border: 1px solid var(--border);
       text-decoration: none;
-      margin-right: 12px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: background .2s var(--ease), border-color .2s var(--ease);
     }
-
-    .back-btn:hover {
-      background: var(--muted-4);
-      border-color: var(--muted-3);
-    }
-
-    .back-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .topbar-text h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
+    .back-btn:hover { background: var(--muted-4); border-color: var(--muted-3); }
+    .back-btn svg { width: 20px; height: 20px; }
+    .topbar-text { min-width: 0; }
+    .topbar-text h1 { font-size: clamp(1rem, 3.8vw, 1.15rem); font-weight: 700; }
     .topbar-text p {
-      font-size: 0.8rem;
-      color: var(--muted-2);
+      font-size: 0.8rem; color: var(--muted-2);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    .topbar-text p[hidden] { display: none; }
 
+    /* ───────── Content ───────── */
     .content {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      padding: 20px;
+      overscroll-behavior: contain;
+      padding-block: clamp(14px, 3vw, 24px);
+      padding-inline: var(--gutter) var(--gutter-r);
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      gap: clamp(14px, 3vw, 20px);
     }
+
+    .banner {
+      padding: 10px 14px; border-radius: 12px; font-size: .85rem; line-height: 1.4;
+      background: rgba(248, 113, 113, .1);
+      border: 1px solid rgba(248, 113, 113, .4);
+      color: var(--red);
+    }
+    .banner[hidden] { display: none; }
+
+    .state-msg {
+      margin: auto;
+      text-align: center;
+      color: var(--muted-2);
+      font-size: .95rem;
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .state-msg a { color: var(--emerald-bright); }
 
     .post-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: clamp(14px, 3.5vw, 22px);
       display: flex;
       flex-direction: column;
       gap: 14px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .post-author {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .post-author, .reply-author { display: flex; align-items: center; gap: 12px; }
+    .reply-author { gap: 10px; }
 
     .author-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 0.85rem;
-      flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.85rem; flex-shrink: 0;
     }
+    .author-avatar.green  { background: rgba(16,185,129,.15); color: var(--emerald-bright); border: 1px solid rgba(16,185,129,.3); }
+    .author-avatar.blue   { background: rgba(59,130,246,.15); color: #60a5fa; border: 1px solid rgba(59,130,246,.3); }
+    .author-avatar.amber  { background: rgba(251,191,36,.15); color: var(--amber); border: 1px solid rgba(251,191,36,.3); }
+    .author-avatar.purple { background: rgba(124,58,237,.15); color: #a78bfa; border: 1px solid rgba(124,58,237,.3); }
 
-    /* Functional Status-based Avatar Palettes */
-    .author-avatar.green { background: rgba(16, 185, 129, 0.15); color: var(--emerald-bright); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .author-avatar.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .author-avatar.amber { background: rgba(251, 191, 36, 0.15); color: var(--amber); border: 1px solid rgba(251, 191, 36, 0.3); }
-    .author-avatar.purple { background: rgba(124, 58, 237, 0.15); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.3); }
-
-    .author-info {
-      flex: 1;
-    }
-
+    .author-info { flex: 1; min-width: 0; }
     .author-name {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-size: 0.95rem; font-weight: 600; color: var(--text);
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-
-    .author-meta {
-      font-size: 0.75rem;
-      color: var(--muted-2);
-    }
+    .author-meta { font-size: 0.75rem; color: var(--muted-2); }
 
     .pinned-badge {
-      font-size: 0.7rem;
-      font-weight: 600;
-      background: rgba(251, 191, 36, 0.15);
-      color: var(--amber);
-      border: 1px solid rgba(251, 191, 36, 0.3);
-      padding: 3px 8px;
-      border-radius: 8px;
-      text-transform: uppercase;
+      font-size: 0.7rem; font-weight: 600;
+      background: rgba(251,191,36,.15); color: var(--amber);
+      border: 1px solid rgba(251,191,36,.3);
+      padding: 3px 8px; border-radius: 8px; text-transform: uppercase; flex-shrink: 0;
     }
 
     .post-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.35;
+      font-size: clamp(1.05rem, 4.2vw, 1.3rem);
+      font-weight: 700; line-height: 1.35;
       font-family: 'Lora', serif;
+      overflow-wrap: anywhere;
     }
-
     .post-body {
-      font-size: 0.95rem;
-      color: var(--muted-1);
-      line-height: 1.5;
+      font-size: 0.95rem; color: var(--muted-1); line-height: 1.55;
+      white-space: pre-wrap; overflow-wrap: anywhere;
+      max-width: 75ch;
     }
 
     .post-actions {
-      display: flex;
-      gap: 16px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; gap: 8px 16px;
+      padding-top: 12px; border-top: 1px solid var(--border);
     }
-
     .action-btn {
-      background: transparent;
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--muted-2);
-      cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 10px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: transparent; border: none;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 500; color: var(--muted-2);
+      cursor: pointer; padding: 8px 10px; border-radius: 10px;
+      transition: background .2s var(--ease), color .2s var(--ease);
     }
+    .action-btn:hover { background: var(--surface-2); color: var(--text); }
+    .action-btn.active { color: var(--emerald-bright); background: rgba(16,185,129,.1); }
+    .action-btn.static { cursor: default; }
+    .action-btn.static:hover { background: transparent; color: var(--muted-2); }
+    .action-btn svg { width: 18px; height: 18px; }
 
-    .action-btn:hover {
-      background: var(--surface-2);
-      color: var(--text);
-      border-color: var(--muted-4);
-    }
-
-    .action-btn.active {
-      color: var(--emerald-bright);
-      background: rgba(16, 185, 129, 0.1);
-    }
-
-    .action-btn.static {
-      cursor: default;
-    }
-
-    .action-btn.static:hover {
-      background: transparent;
-      color: var(--muted-2);
-    }
-
-    .action-btn svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .replies-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 4px;
-    }
-
-    .replies-header h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
+    .replies-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 4px; }
+    .replies-header h3 { font-size: 1rem; font-weight: 700; }
     .sort-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--muted-2);
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 8px 12px; border-radius: 10px;
+      font-size: 0.8rem; font-weight: 500; color: var(--muted-2); cursor: pointer;
+      transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
     }
+    .sort-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--muted-4); }
 
-    .sort-btn:hover {
-      background: var(--surface-2);
-      color: var(--text);
-      border-color: var(--muted-4);
-    }
-
-    .reply-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
+    .reply-list { display: flex; flex-direction: column; gap: 12px; }
     .reply-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: clamp(12px, 3vw, 16px);
+      display: flex; flex-direction: column; gap: 10px;
+      transition: background .2s var(--ease), border-color .2s var(--ease);
     }
-
-    .reply-card:hover {
-      background: var(--surface-2);
-      border-color: var(--muted-4);
-    }
-
-    .reply-author {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .reply-card.enter { animation: fadeIn .35s var(--ease) both; }
+    .reply-card:hover { background: var(--surface-2); border-color: var(--muted-4); }
     .reply-body {
-      font-size: 0.9rem;
-      color: var(--muted-1);
-      line-height: 1.45;
-      padding-left: 50px;
+      font-size: 0.9rem; color: var(--muted-1); line-height: 1.5;
+      padding-left: 50px; white-space: pre-wrap; overflow-wrap: anywhere;
     }
-
-    .reply-actions {
-      display: flex;
-      gap: 16px;
-      padding-left: 50px;
-    }
-
+    .reply-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 44px; }
     .reply-actions button {
-      background: transparent;
-      border: none;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--muted-2);
-      cursor: pointer;
-      transition: color 0.2s ease;
-      padding: 2px 6px;
-      border-radius: 6px;
+      background: transparent; border: none;
+      font-size: 0.8rem; font-weight: 500; color: var(--muted-2);
+      cursor: pointer; padding: 6px 8px; border-radius: 8px;
+      transition: color .2s var(--ease), background .2s var(--ease);
     }
-
-    .reply-actions button:hover {
-      color: var(--emerald-bright);
-      background: var(--surface-2);
-    }
+    .reply-actions button:hover { color: var(--emerald-bright); background: var(--surface-2); }
+    .reply-actions button.active { color: var(--emerald-bright); }
 
     .you-tag {
-      background: rgba(124, 58, 237, 0.15);
-      color: #a78bfa;
-      border: 1px solid rgba(124, 58, 237, 0.3);
-      font-size: 0.65rem;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 6px;
-      text-transform: uppercase;
+      background: rgba(124,58,237,.15); color: #a78bfa;
+      border: 1px solid rgba(124,58,237,.3);
+      font-size: 0.65rem; font-weight: 600;
+      padding: 2px 6px; border-radius: 6px; text-transform: uppercase;
     }
+    .empty-replies { color: var(--muted-3); text-align: center; font-size: .9rem; padding: 20px 0; }
 
+    /* ───────── Reply dock ───────── */
     .reply-dock {
-      padding: 16px 20px;
+      flex-shrink: 0;
+      padding-block: 12px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      padding-inline: var(--gutter) var(--gutter-r);
       border-top: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.92);
       backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
-
-    .reply-form {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
+    .reply-form { display: flex; align-items: center; gap: 12px; }
     .reply-input-wrap {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 30px;
-      padding: 6px 6px 6px 16px;
-      transition: border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex: 1; min-width: 0;
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 30px; padding: 6px 6px 6px 16px;
+      transition: border-color .3s var(--ease);
     }
-
-    .reply-input-wrap:focus-within {
-      border-color: var(--emerald-bright);
-    }
-
+    .reply-input-wrap:focus-within { border-color: var(--emerald-bright); }
     .reply-input-wrap input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 0.9rem;
-      color: var(--text);
+      flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+      font-size: 16px; color: var(--text); padding: 6px 0;
     }
-
-    .reply-input-wrap input::placeholder {
-      color: var(--muted-3);
-    }
-
+    .reply-input-wrap input::placeholder { color: var(--muted-3); }
     .reply-input-wrap button {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--emerald);
-      color: white;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+      width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%;
+      background: var(--emerald); color: #fff; border: none;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      transition: background .2s var(--ease), transform .2s var(--ease), opacity .2s;
+      box-shadow: 0 2px 8px rgba(16,185,129,.3);
+    }
+    .reply-input-wrap button:hover { background: var(--emerald-bright); transform: scale(1.05); }
+    .reply-input-wrap button:disabled { opacity: .5; cursor: default; transform: none; }
+    .reply-input-wrap button svg { width: 16px; height: 16px; }
+
+    .toast {
+      position: fixed; left: 50%;
+      width: calc(100% - 32px); max-width: 380px;
+      bottom: calc(84px + env(safe-area-inset-bottom));
+      transform: translate(-50%, 12px);
+      background: var(--surface); border: 1px solid var(--emerald-bright);
+      color: var(--text); font-size: .85rem; font-weight: 600; text-align: center;
+      padding: 12px 16px; border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s var(--ease), transform .3s var(--ease);
+      z-index: 50;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast.error { border-color: var(--red); }
+
+    .back-btn:focus-visible, .action-btn:focus-visible, .sort-btn:focus-visible,
+    .reply-actions button:focus-visible, .reply-input-wrap button:focus-visible {
+      outline: 2px solid var(--emerald-bright); outline-offset: 2px;
     }
 
-    .reply-input-wrap button:hover {
-      background: var(--emerald-bright);
-      transform: scale(1.05);
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    /* Small phones: drop the reply indent so text gets full width */
+    @media (max-width: 380px) {
+      .reply-body, .reply-actions { padding-left: 0; }
+      .author-avatar { width: 36px; height: 36px; font-size: .8rem; }
     }
 
-    .reply-input-wrap button svg {
-      width: 16px;
-      height: 16px;
+    /* Short landscape phones */
+    @media (max-height: 480px) and (orientation: landscape) {
+      .topbar { padding-block: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
+      .reply-dock { padding-block: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
     }
-    
-    /* Instant View Switcher */
-.sub-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: var(--bg-dark);
-  z-index: 100;
-  display: none; /* Hidden by default */
-  overflow-y: auto;
-  max-width: 480px;
-}
-
-.sub-view.active {
-  display: block; /* Shows immediately when clicked */
-}
-
-
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- Top Bar -->
     <div class="topbar">
       <a href="community.html" class="back-btn" aria-label="Back to Community">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <div class="topbar-text">
         <h1>Discussion</h1>
-        <p>BIO 101</p>
+        <p id="topicLabel" hidden></p>
       </div>
     </div>
 
-    <!-- Content -->
     <div class="content" id="scrollContent">
-      <!-- Original Post -->
-      <article class="post-card">
+      <div class="banner" id="errorBanner" hidden></div>
+      <div class="state-msg" id="loadingMsg">Loading discussion...</div>
+
+      <article class="post-card" id="postCard" hidden>
         <div class="post-author">
-          <div class="author-avatar green">AS</div>
+          <div class="author-avatar" id="postAvatar"></div>
           <div class="author-info">
-            <div class="author-name">Aisha Suleiman</div>
-            <div class="author-meta">2 hours ago · 400 Level</div>
+            <div class="author-name" id="postAuthorName"></div>
+            <div class="author-meta" id="postAuthorMeta"></div>
           </div>
-          <span class="pinned-badge">Pinned</span>
+          <span class="pinned-badge" id="pinnedBadge" hidden>Pinned</span>
         </div>
 
-        <h2 class="post-title">How do you remember the stages of mitosis easily?</h2>
-        <p class="post-body">
-          I’ve been struggling to remember the correct order of prophase, metaphase, anaphase and telophase. 
-          Does anyone have a good mnemonic or simple way to memorize it? Would really appreciate any tips!
-        </p>
+        <h2 class="post-title" id="postTitle"></h2>
+        <p class="post-body" id="postBody"></p>
 
         <div class="post-actions">
-          <button type="button" class="action-btn" id="likePostBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M7 10v12"/>
-              <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
-            </svg>
-            <span id="likeCount">56</span>
+          <button type="button" class="action-btn" id="likePostBtn" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+            <span id="likeCount">0</span>
           </button>
-
           <div class="action-btn static">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span id="replyCount">24</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span id="replyCount">0</span>
           </div>
-
           <button type="button" class="action-btn" id="shareBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="18" cy="5" r="3"/>
-              <circle cx="6" cy="12" r="3"/>
-              <circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/>
-              <line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
             Share
           </button>
         </div>
       </article>
 
-      <!-- Replies Header -->
-      <div class="replies-header">
-        <h3 id="repliesHeaderTitle">Replies (24)</h3>
-        <button type="button" class="sort-btn">Most Relevant</button>
+      <div class="replies-header" id="repliesHeader" hidden>
+        <h3 id="repliesHeaderTitle">Replies (0)</h3>
+        <button type="button" class="sort-btn" id="sortBtn">Most liked</button>
       </div>
 
-      <!-- Replies -->
-      <div class="reply-list" id="replyList">
-        <div class="reply-card">
-          <div class="reply-author">
-            <div class="author-avatar blue">TO</div>
-            <div>
-              <div class="author-name">Tunde Okonkwo</div>
-              <div class="author-meta">1 hour ago</div>
-            </div>
-          </div>
-          <p class="reply-body">
-            I use “PMAT” — Prophase, Metaphase, Anaphase, Telophase. 
-            Just remember “Please Make Another Twirl” 😄
-          </p>
-          <div class="reply-actions">
-            <button type="button">Like · 18</button>
-            <button type="button">Reply</button>
-          </div>
-        </div>
-
-        <div class="reply-card">
-          <div class="reply-author">
-            <div class="author-avatar amber">CM</div>
-            <div>
-              <div class="author-name">Chioma Mwangi</div>
-              <div class="author-meta">45 min ago</div>
-            </div>
-          </div>
-          <p class="reply-body">
-            Drawing it out helped me a lot. Sketch the chromosomes at each stage a few times and it sticks.
-          </p>
-          <div class="reply-actions">
-            <button type="button">Like · 9</button>
-            <button type="button">Reply</button>
-          </div>
-        </div>
-
-        <div class="reply-card">
-          <div class="reply-author">
-            <div class="author-avatar purple">JD</div>
-            <div>
-              <div class="author-name">John Doe <span class="you-tag">You</span></div>
-              <div class="author-meta">20 min ago</div>
-            </div>
-          </div>
-          <p class="reply-body">
-            Thanks everyone! PMAT is actually very helpful. I’ll try the drawing method too.
-          </p>
-          <div class="reply-actions">
-            <button type="button">Like · 3</button>
-            <button type="button">Reply</button>
-          </div>
-        </div>
-      </div>
+      <div class="reply-list" id="replyList"></div>
     </div>
 
-    <!-- Reply Input Bar -->
-    <div class="reply-dock">
-      <form id="replyForm" class="reply-form">
-        <div class="author-avatar purple" style="width: 36px; height: 36px; font-size: 0.8rem;">JD</div>
+    <div class="reply-dock" id="replyDock" hidden>
+      <form id="replyForm" class="reply-form" autocomplete="off">
+        <div class="author-avatar purple" id="meAvatar" style="width:36px;height:36px;font-size:.8rem;"></div>
         <div class="reply-input-wrap">
-          <input type="text" id="replyInput" placeholder="Write a reply..." autocomplete="off">
-          <button type="submit" aria-label="Send reply">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="m22 2-7 20-4-9-9-4Z"/>
-              <path d="M22 2 11 13"/>
-            </svg>
+          <input type="text" id="replyInput" placeholder="Write a reply..." maxlength="2000" enterkeyhint="send">
+          <button type="submit" id="sendBtn" aria-label="Send reply">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           </button>
         </div>
       </form>
     </div>
   </div>
 
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="profile-gate.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const likePostBtn = document.getElementById('likePostBtn');
-      const likeCount = document.getElementById('likeCount');
-      const shareBtn = document.getElementById('shareBtn');
-      const replyForm = document.getElementById('replyForm');
-      const replyInput = document.getElementById('replyInput');
-      const replyList = document.getElementById('replyList');
-      const replyCount = document.getElementById('replyCount');
-      const repliesHeaderTitle = document.getElementById('repliesHeaderTitle');
-      const scrollContent = document.getElementById('scrollContent');
+  (() => {
+    const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const LOGIN_URL = 'auth.html?mode=login';
 
-      // Like interaction logic
-      let isLiked = false;
-      let count = 56;
-      likePostBtn.addEventListener('click', () => {
-        isLiked = !isLiked;
-        if (isLiked) {
-          count++;
-          likePostBtn.classList.add('active');
-        } else {
-          count--;
-          likePostBtn.classList.remove('active');
-        }
-        likeCount.textContent = count;
+    const $ = (id) => document.getElementById(id);
+    const content = $('scrollContent'), replyList = $('replyList');
+    const replyInput = $('replyInput'), sendBtn = $('sendBtn');
+
+    /* ───── State ───── */
+    const postId = new URLSearchParams(location.search).get('id');
+    let me = null;
+    let post = null;
+    const profiles = new Map();          // id -> { full_name, department }
+    let replies = [];                    // newest data from DB
+    const postLikes = new Set();         // user ids who liked the post
+    const replyLikes = new Map();        // reply id -> Set(user ids)
+    const seen = new Set();              // reply ids already rendered (for enter animation)
+    let sortMode = 'top';                // top | new | old
+    const SORTS = { top: 'Most liked', new: 'Newest', old: 'Oldest' };
+
+    /* ───── Helpers ───── */
+    function el(tag, cls, text) {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    }
+    let toastTimer;
+    function toast(msg, isError) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.toggle('error', !!isError);
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+    function showError(msg) { const b = $('errorBanner'); b.textContent = msg; b.hidden = !msg; }
+
+    const nameOf = (id) => (profiles.get(id) && profiles.get(id).full_name) || 'Student';
+    function initials(name) {
+      const p = String(name).trim().split(/\s+/).filter(Boolean);
+      return ((p[0] ? p[0][0] : '?') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+    }
+    const PALETTE = ['green', 'blue', 'amber'];
+    function colorOf(id) {
+      if (me && id === me.id) return 'purple';
+      let h = 0;
+      for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+      return PALETTE[h % PALETTE.length];
+    }
+    function ago(iso) {
+      const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+      if (s < 60) return 'Just now';
+      const m = Math.floor(s / 60);
+      if (m < 60) return m + ' min ago';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+      const d = Math.floor(h / 24);
+      if (d < 7) return d + (d === 1 ? ' day ago' : ' days ago');
+      return new Date(iso).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    async function ensureProfiles(ids) {
+      const need = [...new Set(ids)].filter((id) => id && !profiles.has(id));
+      if (!need.length) return;
+      const { data } = await supabaseClient.from('profiles')
+        .select('id, full_name, department').in('id', need);
+      (data || []).forEach((p) => profiles.set(p.id, p));
+      need.forEach((id) => { if (!profiles.has(id)) profiles.set(id, { id, full_name: null, department: null }); });
+    }
+
+    /* ───── Rendering ───── */
+    function renderPost() {
+      if (!post) return;
+      $('topicLabel').textContent = post.course || '';
+      $('topicLabel').hidden = !post.course;
+      const a = $('postAvatar');
+      a.className = 'author-avatar ' + colorOf(post.author_id);
+      a.textContent = initials(nameOf(post.author_id));
+      $('postAuthorName').textContent = nameOf(post.author_id);
+      const dept = profiles.get(post.author_id) && profiles.get(post.author_id).department;
+      const meta = $('postAuthorMeta');
+      meta.replaceChildren();
+      const t = el('span', null, ago(post.created_at));
+      t.dataset.ts = post.created_at;
+      meta.append(t);
+      if (dept) meta.append(document.createTextNode(' · ' + dept));
+      $('pinnedBadge').hidden = !post.is_pinned;
+      $('postTitle').textContent = post.title;
+      $('postBody').textContent = post.body;
+      document.title = post.title + ' — PRIME-CBT';
+      renderPostLikes();
+    }
+
+    function renderPostLikes() {
+      $('likeCount').textContent = postLikes.size;
+      const liked = postLikes.has(me.id);
+      $('likePostBtn').classList.toggle('active', liked);
+      $('likePostBtn').setAttribute('aria-pressed', String(liked));
+    }
+
+    function likeSet(rid) {
+      let s = replyLikes.get(rid);
+      if (!s) { s = new Set(); replyLikes.set(rid, s); }
+      return s;
+    }
+
+    function sortedReplies() {
+      const arr = replies.slice();
+      const byNew = (a, b) => new Date(b.created_at) - new Date(a.created_at);
+      if (sortMode === 'new') return arr.sort(byNew);
+      if (sortMode === 'old') return arr.sort((a, b) => -byNew(a, b));
+      return arr.sort((a, b) => (likeSet(b.id).size - likeSet(a.id).size) || byNew(a, b));
+    }
+
+    function replyNode(r) {
+      const mine = r.author_id === me.id;
+      const card = el('div', 'reply-card' + (seen.has(r.id) ? '' : ' enter'));
+      card.dataset.id = r.id;
+
+      const head = el('div', 'reply-author');
+      head.append(el('div', 'author-avatar ' + colorOf(r.author_id), initials(nameOf(r.author_id))));
+      const info = el('div');
+      const name = el('div', 'author-name', nameOf(r.author_id));
+      if (mine) name.append(el('span', 'you-tag', 'You'));
+      const meta = el('div', 'author-meta', ago(r.created_at));
+      meta.dataset.ts = r.created_at;
+      info.append(name, meta);
+      head.append(info);
+
+      const body = el('p', 'reply-body', r.body);
+
+      const actions = el('div', 'reply-actions');
+      const likes = likeSet(r.id);
+      const likeBtn = el('button', likes.has(me.id) ? 'active' : '', 'Like · ' + likes.size);
+      likeBtn.type = 'button';
+      likeBtn.addEventListener('click', () => toggleReplyLike(r.id));
+      const replyBtn = el('button', null, 'Reply');
+      replyBtn.type = 'button';
+      replyBtn.addEventListener('click', () => {
+        const first = nameOf(r.author_id).split(' ')[0];
+        replyInput.value = '@' + first + ' ';
+        replyInput.focus();
       });
+      actions.append(likeBtn, replyBtn);
 
-      // Share button feedback
-      shareBtn.addEventListener('click', () => {
-        if (navigator.share) {
-          navigator.share({
-            title: 'How do you remember the stages of mitosis easily?',
-            text: 'Check out this discussion on PRIME-CBT.',
-            url: window.location.href
-          }).catch(() => {});
-        } else {
-          alert('Discussion link copied to clipboard!');
-        }
-      });
+      card.append(head, body, actions);
+      return card;
+    }
 
-      // Add new reply dynamically
-      let currentReplyTotal = 24;
-      replyForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const text = replyInput.value.trim();
-        if (!text) return;
+    function renderReplies() {
+      const n = replies.length;
+      $('repliesHeaderTitle').textContent = 'Replies (' + n + ')';
+      $('replyCount').textContent = n;
+      $('sortBtn').textContent = SORTS[sortMode];
+      replyList.replaceChildren();
+      if (!n) { replyList.append(el('div', 'empty-replies', 'No replies yet. Be the first to answer.')); return; }
+      for (const r of sortedReplies()) { replyList.append(replyNode(r)); seen.add(r.id); }
+    }
 
-        const newReply = document.createElement('div');
-        newReply.classList.add('reply-card');
-        newReply.innerHTML = `
-          <div class="reply-author">
-            <div class="author-avatar purple">JD</div>
-            <div>
-              <div class="author-name">John Doe <span class="you-tag">You</span></div>
-              <div class="author-meta">Just now</div>
-            </div>
-          </div>
-          <p class="reply-body">${escapeHTML(text)}</p>
-          <div class="reply-actions">
-            <button type="button">Like · 0</button>
-            <button type="button">Reply</button>
-          </div>
-        `;
+    function refreshTimes() {
+      document.querySelectorAll('[data-ts]').forEach((n) => { n.textContent = ago(n.dataset.ts); });
+    }
 
-        replyList.appendChild(newReply);
-        replyInput.value = '';
-        currentReplyTotal++;
-        
-        replyCount.textContent = currentReplyTotal;
-        repliesHeaderTitle.textContent = `Replies (${currentReplyTotal})`;
+    /* ───── Data ───── */
+    async function loadAll() {
+      const { data: p, error: pe } = await supabaseClient.from('discussion_posts')
+        .select('id, author_id, course, title, body, is_pinned, created_at')
+        .eq('id', postId).maybeSingle();
+      if (pe) throw pe;
+      if (!p) return false;
+      post = p;
 
-        scrollContent.scrollTop = scrollContent.scrollHeight;
-      });
+      const [rep, pl, rl] = await Promise.all([
+        supabaseClient.from('discussion_replies').select('id, post_id, author_id, body, created_at')
+          .eq('post_id', postId).order('created_at', { ascending: true }).limit(500),
+        supabaseClient.from('discussion_post_likes').select('user_id').eq('post_id', postId),
+        supabaseClient.from('discussion_reply_likes').select('reply_id, user_id').eq('post_id', postId)
+      ]);
+      if (rep.error) throw rep.error;
+      if (pl.error) throw pl.error;
+      if (rl.error) throw rl.error;
 
-      function escapeHTML(str) {
-        return str.replace(/[&<>'"]/g, 
-          tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-        );
+      replies = rep.data;
+      postLikes.clear(); pl.data.forEach((x) => postLikes.add(x.user_id));
+      replyLikes.clear(); rl.data.forEach((x) => likeSet(x.reply_id).add(x.user_id));
+
+      await ensureProfiles([me.id, post.author_id, ...replies.map((r) => r.author_id)]);
+      return true;
+    }
+
+    /* ───── Actions ───── */
+    $('likePostBtn').addEventListener('click', async () => {
+      const liked = postLikes.has(me.id);
+      if (liked) postLikes.delete(me.id); else postLikes.add(me.id);
+      renderPostLikes();
+      const q = liked
+        ? supabaseClient.from('discussion_post_likes').delete().eq('post_id', postId).eq('user_id', me.id)
+        : supabaseClient.from('discussion_post_likes').insert({ post_id: postId, user_id: me.id });
+      const { error } = await q;
+      if (error) {
+        if (liked) postLikes.add(me.id); else postLikes.delete(me.id);
+        renderPostLikes();
+        toast("Couldn't update your like", true);
       }
     });
+
+    async function toggleReplyLike(rid) {
+      const set = likeSet(rid);
+      const liked = set.has(me.id);
+      if (liked) set.delete(me.id); else set.add(me.id);
+      renderReplies();
+      const q = liked
+        ? supabaseClient.from('discussion_reply_likes').delete().eq('reply_id', rid).eq('user_id', me.id)
+        : supabaseClient.from('discussion_reply_likes').insert({ reply_id: rid, post_id: postId, user_id: me.id });
+      const { error } = await q;
+      if (error) {
+        if (liked) set.add(me.id); else set.delete(me.id);
+        renderReplies();
+        toast("Couldn't update your like", true);
+      }
+    }
+
+    $('shareBtn').addEventListener('click', async () => {
+      const url = location.href;
+      if (navigator.share) {
+        try { await navigator.share({ title: post.title, text: 'Join this discussion on PRIME-CBT.', url }); } catch (_) {}
+        return;
+      }
+      try { await navigator.clipboard.writeText(url); toast('Link copied'); }
+      catch (_) { window.prompt('Copy this link:', url); }
+    });
+
+    $('sortBtn').addEventListener('click', () => {
+      sortMode = sortMode === 'top' ? 'new' : sortMode === 'new' ? 'old' : 'top';
+      renderReplies();
+    });
+
+    $('replyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = replyInput.value.trim();
+      if (!text || !post) return;
+      sendBtn.disabled = true;
+      const { data, error } = await supabaseClient.from('discussion_replies')
+        .insert({ post_id: postId, author_id: me.id, body: text })
+        .select().single();
+      sendBtn.disabled = false;
+      if (error) { toast("Reply not sent. Please try again.", true); return; }
+      replyInput.value = '';
+      addReply(data);
+      const node = replyList.querySelector('[data-id="' + data.id + '"]');
+      if (node) node.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+
+    /* ───── Realtime ───── */
+    async function addReply(r) {
+      if (replies.some((x) => x.id === r.id)) return;
+      await ensureProfiles([r.author_id]);
+      if (replies.some((x) => x.id === r.id)) return;
+      replies.push(r);
+      renderReplies();
+    }
+
+    function showGone() {
+      $('postCard').hidden = true;
+      $('repliesHeader').hidden = true;
+      $('replyDock').hidden = true;
+      replyList.replaceChildren();
+      const m = $('loadingMsg');
+      m.hidden = false;
+      m.replaceChildren(document.createTextNode('This discussion is no longer available. '));
+      const a = el('a', null, 'Back to Community');
+      a.href = 'community.html';
+      m.append(a);
+    }
+
+    function startRealtime() {
+      const f = 'post_id=eq.' + postId;
+      supabaseClient.channel('discussion-' + postId)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'discussion_replies', filter: f },
+            (p) => addReply(p.new))
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'discussion_replies' }, (p) => {
+          const id = p.old && p.old.id;
+          if (!id || !replies.some((r) => r.id === id)) return;
+          replies = replies.filter((r) => r.id !== id);
+          replyLikes.delete(id);
+          renderReplies();
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'discussion_post_likes', filter: f },
+            (p) => { postLikes.add(p.new.user_id); renderPostLikes(); })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'discussion_post_likes' }, (p) => {
+          if (p.old && p.old.post_id === postId) { postLikes.delete(p.old.user_id); renderPostLikes(); }
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'discussion_reply_likes', filter: f },
+            (p) => { likeSet(p.new.reply_id).add(p.new.user_id); renderReplies(); })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'discussion_reply_likes' }, (p) => {
+          if (p.old && p.old.post_id === postId) { likeSet(p.old.reply_id).delete(p.old.user_id); renderReplies(); }
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'discussion_posts', filter: 'id=eq.' + postId },
+            (p) => { post = Object.assign(post, p.new); renderPost(); })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'discussion_posts' }, (p) => {
+          if (p.old && p.old.id === postId) showGone();
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') showError('');
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') showError('Live connection lost. Reconnecting...');
+        });
+    }
+
+    setInterval(refreshTimes, 30000);
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState !== 'visible' || !post) return;
+      try { if (await loadAll()) { renderPost(); renderReplies(); } else showGone(); } catch (_) {}
+    });
+
+    /* ───── Boot ───── */
+    (async function init() {
+      let session = null;
+      try { session = (await supabaseClient.auth.getSession()).data.session; } catch (_) {}
+      if (!session) { location.replace(LOGIN_URL); return; }
+      if (typeof needsProfileSetup === 'function' && needsProfileSetup(session.user)) {
+        location.replace('profile-setup.html'); return;
+      }
+      me = session.user;
+      supabaseClient.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') location.replace(LOGIN_URL); });
+
+      const msg = $('loadingMsg');
+      if (!postId) {
+        msg.replaceChildren(document.createTextNode('No discussion selected. '));
+        const a = el('a', null, 'Back to Community'); a.href = 'community.html'; msg.append(a);
+        return;
+      }
+
+      try {
+        const found = await loadAll();
+        if (!found) { showGone(); return; }
+      } catch (err) {
+        console.error('discussion:', err && err.message);
+        msg.textContent = 'Could not load this discussion. Check your connection and refresh.';
+        return;
+      }
+
+      msg.hidden = true;
+      $('postCard').hidden = false;
+      $('repliesHeader').hidden = false;
+      $('replyDock').hidden = false;
+      const mine = $('meAvatar');
+      mine.textContent = initials(nameOf(me.id));
+      renderPost();
+      renderReplies();
+      startRealtime();
+    })();
+  })();
   </script>
 </body>
 </html>
