@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#060b1a">
   <title>PRIME-CBT — Session</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,6 +46,7 @@
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
     }
+    button, a { touch-action: manipulation; }
     button { font-family: inherit; color: inherit; }
     :focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
 
@@ -103,17 +105,20 @@
     }
     .timer.warn { color: var(--amber); border-color: rgba(251,191,36,.5); }
     .timer.danger { color: var(--red); border-color: rgba(248,113,113,.6); animation: pulse 1s ease-in-out infinite; }
-    .offline-pill {
-      padding: 5px 10px; border-radius: 999px; flex-shrink: 0;
-      border: 1px solid rgba(251,191,36,.4); color: var(--amber);
-      background: rgba(251,191,36,.08); font-size: 11.5px; font-weight: 600;
-    }
     .submit-top {
       min-height: 38px; padding: 0 14px; border-radius: 10px; flex-shrink: 0;
       border: 1px solid var(--emerald); background: rgba(16,185,129,.12);
       color: var(--emerald-bright); font-weight: 700; font-size: var(--fs-small); cursor: pointer;
     }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+    .offline-banner {
+      flex-shrink: 0; text-align: center;
+      padding: 7px var(--pad);
+      font-size: var(--fs-small); font-weight: 600; line-height: 1.4;
+      color: var(--amber); background: rgba(251,191,36,.1);
+      border-bottom: 1px solid rgba(251,191,36,.35);
+    }
 
     /* ---------- Content ---------- */
     .content {
@@ -264,6 +269,7 @@
     /* ---------- Dialog + toast ---------- */
     dialog {
       margin: auto; width: min(92vw, 420px);
+      max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto;
       background: var(--surface); color: var(--text);
       border: 1px solid var(--border); border-radius: 18px; padding: 22px;
     }
@@ -282,11 +288,41 @@
       font-size: var(--fs-small); font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,.4);
     }
 
-    @media (max-height: 480px) {
-      .topbar { padding-block: 6px; }
-      .bottom-bar { padding-block: 6px; }
-      .btn { min-height: 40px; }
+    /* ---------- Responsive: small phones ---------- */
+    @media (max-width: 420px) {
+      .topbar { gap: 8px; }
+      .back-btn { width: 36px; height: 36px; }
+      .timer { padding: 5px 8px; gap: 4px; }
+      .timer svg { display: none; }
+      .submit-top { padding: 0 10px; min-height: 36px; }
+      .option-btn { padding: 11px 12px; gap: 10px; }
     }
+    @media (max-width: 340px) {
+      .option-btn .letter { width: 24px; height: 24px; }
+      .tracker { grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; }
+      .tracker-btn { height: 36px; }
+      .btn { padding: 0 12px; }
+      dialog { padding: 18px; }
+    }
+
+    /* ---------- Responsive: short screens (landscape phones, keyboard open) ---------- */
+    @media (max-height: 480px) {
+      .topbar { padding-block: 6px; padding-top: max(6px, env(safe-area-inset-top)); }
+      .bottom-bar { padding-block: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+      .btn { min-height: 40px; }
+      .tracker { margin-top: 12px; padding-top: 12px; }
+    }
+
+    /* ---------- Responsive: large screens ---------- */
+    @media (min-width: 1100px) {
+      :root {
+        --fs-title: 19px; --fs-sub: 13px; --fs-q: 20px; --fs-body: 16px; --fs-small: 13.5px;
+      }
+      .app { max-width: 860px; }
+      .tracker { grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); }
+      .tracker-btn { height: 44px; }
+    }
+
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     [hidden] { display: none !important; }
   </style>
@@ -298,16 +334,17 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <div class="topbar-text">
-        <h1 id="cbtTitle">Practice session</h1>
+        <h1 id="cbtTitle">PRIME-CBT</h1>
         <p id="cbtSubtitle">Loading…</p>
       </div>
-      <span class="offline-pill" id="offlinePill" hidden role="status">Offline</span>
       <span class="timer" id="timer" hidden role="timer" aria-live="off">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span id="timerText">--:--</span>
+        <span id="timerText">0:00</span>
       </span>
       <button type="button" class="submit-top" id="submitTop" hidden>Submit</button>
     </header>
+
+    <div class="offline-banner" id="offlineBanner" role="status" hidden>You’re offline. Your answers are kept on this device — reconnect to submit.</div>
 
     <main class="content" id="content">
       <div class="state-panel" id="loadingPanel">
@@ -342,7 +379,7 @@
     /* ============================================================
        CONFIG — questions come live from your Supabase database.
        Scoring and XP are calculated on the server by the
-       submit_practice_session() function (see the SQL provided).
+       submit_practice_session() function.
        ============================================================ */
     const CONFIG = {
       SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
@@ -357,7 +394,7 @@
     const $ = (id) => document.getElementById(id);
     const el = {
       back: $('backLink'), title: $('cbtTitle'), sub: $('cbtSubtitle'),
-      offline: $('offlinePill'), timer: $('timer'), timerText: $('timerText'), submitTop: $('submitTop'),
+      offline: $('offlineBanner'), timer: $('timer'), timerText: $('timerText'), submitTop: $('submitTop'),
       content: $('content'), bar: $('bottomBar'), prev: $('prevBtn'), next: $('nextBtn'),
       dlg: $('submitDialog'), dlgBody: $('dlgBody'), dlgError: $('dlgError'), dlgCancel: $('dlgCancel'), dlgConfirm: $('dlgConfirm'),
       toast: $('toast')
@@ -382,7 +419,8 @@
       answers: {},            // question id -> selected index
       flags: new Set(),       // question ids
       index: 0, endAt: null, startedAt: Date.now(),
-      submitting: false, done: false
+      submitting: false, done: false,
+      retry: null             // set when a submit failed, so we can retry when the connection returns
     };
 
     /* ---------- helpers ---------- */
@@ -449,17 +487,23 @@
 
     /* ---------- data ---------- */
     async function resolveCourse() {
-      let q = db.from('courses').select('id,title,code').limit(1);
       const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseParam) || /^\d+$/.test(courseParam);
-      if (courseParam && isId) q = q.eq('id', courseParam);
-      else {
-        const t = (courseParam || topicParam).replace(/[%,()*]/g, ' ').trim();
-        if (!t) return null;
-        q = q.or(`title.ilike.${t},code.ilike.${t}`);
+      if (courseParam && isId) {
+        const { data, error } = await db.from('courses').select('id,title,code').eq('id', courseParam).limit(1);
+        if (error) throw error;
+        return data && data[0] ? data[0] : null;
       }
-      const { data, error } = await q;
-      if (error) throw error;
-      return data && data[0] ? data[0] : null;
+      const t = (courseParam || topicParam).trim();
+      if (!t) return null;
+      // Case-insensitive exact match. LIKE wildcards are escaped so names such as
+      // "Use of English, Part 1" or "100%" match literally instead of breaking the filter.
+      const pattern = t.replace(/[\\%_]/g, '\\$&').replace(/\*/g, '');
+      for (const col of ['title', 'code']) {
+        const { data, error } = await db.from('courses').select('id,title,code').ilike(col, pattern).limit(1);
+        if (error) throw error;
+        if (data && data[0]) return data[0];
+      }
+      return null;
     }
 
     const QCOLS = 'id,question,options,correct_index,explanation';
@@ -583,17 +627,19 @@
     el.submitTop.addEventListener('click', openSubmit);
     document.addEventListener('keydown', (e) => {
       if (!S.qs.length || el.dlg.open) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;   // keep browser shortcuts (Ctrl+C, Cmd+R…) working
       if (e.key === 'ArrowRight') go(S.index + 1);
       else if (e.key === 'ArrowLeft') go(S.index - 1);
       else {
         const k = e.key.toUpperCase(); let i = LETTERS.indexOf(k);
         if (i < 0 && /^[1-9]$/.test(e.key)) i = Number(e.key) - 1;
-        if (i >= 0 && i < S.qs[S.index].options.length) choose(i);
+        if (k.length === 1 && i >= 0 && i < S.qs[S.index].options.length) choose(i);
       }
     });
 
     /* ---------- timer (timed mode) ---------- */
     let tick = null;
+    let refreshTimer = () => {};
     function startTimer() {
       if (mode !== 'timed') return;
       if (!S.endAt) S.endAt = Date.now() + S.qs.length * CONFIG.secondsPerQuestion * 1000;
@@ -606,8 +652,11 @@
         el.timer.classList.toggle('danger', left <= 60);
         if (left <= 0 && !S.submitting && !S.done) { clearInterval(tick); toast('Time’s up — submitting your answers.'); submit(true); }
       };
+      refreshTimer = update;
       update(); tick = setInterval(update, 500);
     }
+    // The countdown is based on a fixed end time, so it stays correct when the tab sleeps; refresh the moment it wakes
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshTimer(); });
 
     /* ---------- submit ---------- */
     function openSubmit() {
@@ -623,12 +672,12 @@
       el.dlgConfirm.disabled = false; el.dlgConfirm.textContent = 'Submit';
       if (!el.dlg.open) el.dlg.showModal();
     }
-    el.dlgCancel.addEventListener('click', () => el.dlg.close());
+    el.dlgCancel.addEventListener('click', () => { S.retry = null; el.dlg.close(); });
     el.dlgConfirm.addEventListener('click', () => submit(false));
 
     async function submit(auto) {
       if (S.submitting || S.done) return;
-      S.submitting = true;
+      S.submitting = true; S.retry = null;
       el.dlgConfirm.disabled = true; el.dlgConfirm.textContent = 'Submitting…';
       if (auto && !el.dlg.open) { el.dlgBody.textContent = 'Saving your answers…'; el.dlgError.hidden = true; el.dlg.showModal(); }
 
@@ -643,9 +692,10 @@
       S.submitting = false;
       if (error || !data) {
         console.error('[cbt] submit failed:', error);
+        S.retry = { auto: !!auto };   // retried automatically when the connection comes back
         el.dlgError.textContent = navigator.onLine
           ? 'Couldn’t save your session. Your answers are still here — try again.'
-          : 'You’re offline. Reconnect, then try again — your answers are still here.';
+          : 'You’re offline. Your answers are still here and will be submitted when you reconnect.';
         el.dlgError.hidden = false;
         el.dlgConfirm.disabled = false; el.dlgConfirm.textContent = 'Try again';
         if (auto) el.dlgCancel.hidden = true;
@@ -655,9 +705,14 @@
       location.href = `${CONFIG.resultsPage}?result=${encodeURIComponent(data)}`;
     }
 
-    /* ---------- connectivity ---------- */
+    /* ---------- connectivity (live) ---------- */
     const syncOnline = () => { el.offline.hidden = navigator.onLine; };
-    window.addEventListener('online', syncOnline); window.addEventListener('offline', syncOnline); syncOnline();
+    window.addEventListener('online', () => {
+      syncOnline();
+      if (S.retry && !S.submitting && !S.done) { toast('Back online — submitting your answers…'); submit(S.retry.auto); }
+    });
+    window.addEventListener('offline', syncOnline);
+    syncOnline();
 
     /* ---------- boot ---------- */
     async function init() {
@@ -693,7 +748,10 @@
           (saved.flags || []).forEach((k) => { if (ids.has(k)) S.flags.add(k); });
           S.index = Math.min(Math.max(0, saved.index || 0), S.qs.length - 1);
           S.startedAt = saved.startedAt || Date.now();
-          S.endAt = saved.endAt || null;
+          // A resumed timed session can never get more time than it started with
+          S.endAt = saved.endAt
+            ? Math.min(saved.endAt, S.startedAt + S.qs.length * CONFIG.secondsPerQuestion * 1000 + 60000)
+            : null;
           toast('Resumed your session');
         }
         renderHeader();
