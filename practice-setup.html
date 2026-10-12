@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
   <title>PRIME-CBT — Practice Setup</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #060b1a;
@@ -19,573 +20,801 @@
       --emerald: #10b981;
       --emerald-bright: #34d399;
       --teal: #2dd4bf;
-      --red: #f87171;
       --amber: #fbbf24;
-      --font-display: 'Lora', serif;
-      --font-body: 'Inter', sans-serif;
-      --ease: cubic-bezier(0.4, 0, 0.2, 1);
-      --pad: clamp(14px, 4vw, 40px);   /* side padding grows with the screen */
-    }
+      --red: #f87171;
+      --font-display: 'Lora', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-    /* Everything below is in rem, and rem scales with the screen width:
-       ~14px on a small phone up to ~18px on a large monitor. */
-    html { font-size: clamp(14px, 0.35vw + 13px, 18px); }
+      /* Fluid spacing + type */
+      --pad: clamp(14px, 4.5vw, 28px);
+      --fs-title: clamp(16px, 4.2vw, 21px);
+      --fs-sub: clamp(11.5px, 3.2vw, 13px);
+      --fs-body: clamp(13px, 3.6vw, 14.5px);
+      --fs-small: clamp(11px, 3vw, 12.5px);
+    }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    html, body { width: 100%; height: 100%; overflow: hidden; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
     body {
       font-family: var(--font-body);
       background: var(--bg);
       color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
       -webkit-font-smoothing: antialiased;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
 
-    /* ===== Shell: fills the whole screen ===== */
+    button { font-family: inherit; color: inherit; }
+
+    :focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+
+    /* ---------- App shell ---------- */
     .app {
       width: 100%;
-      height: 100vh;
-      height: 100dvh;
+      max-width: 680px;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       background: var(--bg);
-      position: relative;
-      overflow: hidden;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.35s var(--ease), visibility 0s linear 0.35s;
+      border-left: 1px solid rgba(51, 65, 85, 0.6);
+      border-right: 1px solid rgba(51, 65, 85, 0.6);
     }
-    .app.ready { opacity: 1; visibility: visible; transition: opacity 0.35s var(--ease), visibility 0s linear 0s; }
 
-    .wrap { width: 100%; max-width: 68rem; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
+    /* Tablet / desktop: floating card, never taller than the viewport */
+    @media (min-width: 720px) and (min-height: 640px) {
+      body { align-items: center; padding-block: 24px; }
+      .app {
+        min-height: 0;
+        height: min(100dvh - 48px, 860px);
+        border: 1px solid rgba(51, 65, 85, 0.8);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+      }
+    }
 
+    /* ---------- Top bar ---------- */
     .topbar {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 3vw, 16px);
+      padding: 14px var(--pad) 12px;
+      padding-top: max(14px, env(safe-area-inset-top));
       flex-shrink: 0;
-      background: rgba(6, 11, 26, 0.9);
+      background: rgba(6, 11, 26, 0.92);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
-      padding-top: env(safe-area-inset-top);
       z-index: 30;
     }
-    .topbar .wrap { display: flex; align-items: center; gap: 0.9rem; padding-top: 0.85rem; padding-bottom: 0.8rem; }
+
     .back-btn {
-      width: 2.7rem; height: 2.7rem; flex-shrink: 0;
-      border-radius: 0.75rem;
-      background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border);
+      width: 40px; height: 40px;
+      border-radius: 11px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      color: var(--muted-light); cursor: pointer;
-      transition: background 0.25s var(--ease), color 0.25s var(--ease), transform 0.2s var(--ease);
+      color: var(--muted-light);
+      cursor: pointer;
+      transition: background .2s, color .2s, transform .2s;
+      flex-shrink: 0;
     }
     .back-btn:active { transform: scale(0.94); }
-    .back-btn svg { width: 1.2rem; height: 1.2rem; }
-    .topbar-title { min-width: 0; }
-    .topbar-title h1 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
-    .topbar-title p { font-size: 0.85rem; color: var(--muted); margin-top: 1px; }
+    .back-btn svg { width: 18px; height: 18px; }
 
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding-top: clamp(16px, 3vw, 36px);
-      padding-bottom: clamp(20px, 3vw, 36px);
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    .topbar-title { min-width: 0; flex: 1; }
+    .topbar-title h1 {
+      font-family: var(--font-display);
+      font-size: var(--fs-title);
+      font-weight: 700;
+      line-height: 1.2;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-
-    /* Phones: one column. Wider screens: settings left, summary + start right. */
-    .layout { display: flex; flex-direction: column; gap: clamp(18px, 2.5vw, 28px); }
-    .col { display: flex; flex-direction: column; gap: clamp(18px, 2.5vw, 26px); min-width: 0; }
-
-    .footer {
-      flex-shrink: 0;
-      background: linear-gradient(to top, var(--bg) 80%, rgba(6, 11, 26, 0));
-      padding-top: 0.9rem;
-      padding-bottom: max(1rem, env(safe-area-inset-bottom));
-      z-index: 30;
+    .topbar-title p {
+      font-size: var(--fs-sub);
+      color: var(--muted);
+      margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-
-    .fade { animation: fadeIn 0.3s var(--ease) both; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* ===== Topic ===== */
-    .topic-card {
-      display: flex; align-items: center; gap: 0.9rem;
-      background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border);
-      border-radius: 1rem; padding: 0.9rem 1rem;
-    }
-    .topic-icon {
-      width: 2.75rem; height: 2.75rem; flex-shrink: 0; border-radius: 0.75rem;
-      background: rgba(16, 185, 129, 0.15); color: var(--emerald-bright);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .topic-icon svg { width: 1.3rem; height: 1.3rem; }
-    .topic-info { flex: 1; min-width: 0; }
-    .topic-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .topic-name { font-size: 1.05rem; font-weight: 600; margin-top: 2px; overflow-wrap: anywhere; }
-    .topic-change {
-      font-size: 0.85rem; font-weight: 600; color: var(--emerald-bright);
-      text-decoration: none; padding: 0.5rem 0.65rem; border-radius: 0.5rem; flex-shrink: 0;
-      transition: background 0.25s var(--ease);
-    }
-    .topic-card.missing { border-style: dashed; }
-    .topic-card.missing .topic-icon { background: rgba(251, 191, 36, 0.12); color: var(--amber); }
 
     .live-pill {
-      display: none; align-items: center; gap: 0.55rem; align-self: flex-start;
-      font-size: 0.82rem; font-weight: 600; color: var(--muted);
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 0.4rem 0.8rem; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.8);
+      font-size: 11.5px; font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
     }
-    .live-pill i { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--emerald-bright); animation: pulse 2s infinite; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .live-pill.on { color: var(--emerald-bright); border-color: rgba(16, 185, 129, 0.35); }
+    .live-pill.on .live-dot { background: var(--emerald); animation: pulse 2s ease-in-out infinite; }
+    .live-pill.off { color: var(--amber); border-color: rgba(251, 191, 36, 0.35); }
+    .live-pill.off .live-dot { background: var(--amber); }
     @keyframes pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
-      70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+      50%      { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
     }
 
-    /* ===== Options ===== */
+    /* ---------- Content ---------- */
+    .content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: clamp(14px, 3.5vw, 24px) var(--pad);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    .setup-section { margin-bottom: clamp(18px, 4vw, 26px); }
+
+    .section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px;
+    }
     .section-label {
-      font-size: 0.8rem; font-weight: 600; color: var(--muted);
-      margin-bottom: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
+      font-size: var(--fs-small);
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-    .options-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.2rem, 1fr)); gap: 0.65rem; }
+    .section-meta { font-size: var(--fs-small); color: var(--muted); text-align: right; }
+    .section-meta b { color: var(--emerald-bright); font-weight: 600; }
+
+    /* ---------- Option chips ---------- */
+    .options-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(72px, 20vw, 104px), 1fr));
+      gap: clamp(8px, 2.2vw, 12px);
+    }
+
     .option-chip {
-      padding: 0.85rem 0.5rem; min-height: 3rem; border-radius: 0.8rem;
-      background: var(--surface); border: 1.5px solid var(--border);
-      color: var(--muted-light); font: inherit; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; user-select: none;
-      transition: background 0.25s var(--ease), border-color 0.25s var(--ease),
-                  color 0.25s var(--ease), box-shadow 0.25s var(--ease), transform 0.15s var(--ease);
+      min-height: 44px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--muted-light);
+      font-size: var(--fs-body);
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1px;
+      line-height: 1.2;
+      transition: border-color .2s, background .2s, color .2s, opacity .2s;
     }
-    .option-chip:active { transform: scale(0.96); }
+    .option-chip .chip-n { font-size: 11px; font-weight: 500; color: var(--muted); }
     .option-chip.active {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(45, 212, 191, 0.12));
-      border-color: var(--emerald); color: var(--emerald-bright);
+      border-color: var(--emerald);
+      color: var(--emerald-bright);
       box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
     }
+    .option-chip.active .chip-n { color: rgba(52, 211, 153, 0.8); }
+    .option-chip:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-    .mode-card {
-      background: rgba(15, 23, 42, 0.8); border: 1.5px solid var(--border);
-      border-radius: 1rem; padding: 1.05rem 0.8rem; text-align: center; cursor: pointer;
-      font: inherit; color: inherit;
-      transition: background 0.28s var(--ease), border-color 0.28s var(--ease),
-                  box-shadow 0.28s var(--ease), transform 0.2s var(--ease);
+    /* ---------- Mode cards ---------- */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(8px, 2.2vw, 14px);
     }
-    .mode-card:active { transform: scale(0.98); }
+    @media (max-width: 339px) { .mode-grid { grid-template-columns: 1fr; } }
+
+    .mode-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: clamp(12px, 3.5vw, 18px) 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .25s, background .25s, box-shadow .25s;
+      min-width: 0;
+    }
     .mode-card.active {
       background: linear-gradient(145deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.8));
-      border-color: var(--emerald); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.15);
+      border-color: var(--emerald);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.15);
     }
     .mode-icon {
-      width: 2.9rem; height: 2.9rem; border-radius: 0.8rem;
-      background: rgba(16, 185, 129, 0.12); color: var(--emerald-bright);
-      display: flex; align-items: center; justify-content: center; margin: 0 auto 0.65rem;
-      transition: transform 0.3s var(--ease), background 0.3s var(--ease);
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-bright);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px;
+      transition: transform .3s ease, background .3s;
     }
     .mode-card.active .mode-icon { background: rgba(16, 185, 129, 0.22); transform: scale(1.08); }
-    .mode-icon svg { width: 1.4rem; height: 1.4rem; }
-    .mode-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.2rem; }
-    .mode-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.35; }
+    .mode-icon svg { width: 21px; height: 21px; }
+    .mode-title { font-size: var(--fs-body); font-weight: 600; margin-bottom: 3px; }
+    .mode-desc { font-size: var(--fs-small); color: var(--muted); line-height: 1.35; }
 
+    /* ---------- Toggle ---------- */
     .toggle-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-      background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border);
-      border-radius: 1rem; padding: 0.95rem 1.1rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px clamp(14px, 4vw, 20px);
+      text-align: left;
+      cursor: pointer;
     }
-    .toggle-info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.15rem; }
-    .toggle-info p { font-size: 0.85rem; color: var(--muted); }
+    .toggle-info { min-width: 0; }
+    .toggle-info h3 { font-size: var(--fs-body); font-weight: 600; margin-bottom: 2px; }
+    .toggle-info p { font-size: var(--fs-small); color: var(--muted); }
     .toggle {
-      position: relative; width: 3.2rem; height: 1.75rem; flex-shrink: 0;
-      background: var(--border); border: none; border-radius: 999px; cursor: pointer;
-      transition: background 0.25s var(--ease);
+      position: relative;
+      width: 48px; height: 26px;
+      background: var(--border);
+      border-radius: 999px;
+      transition: background .25s;
+      flex-shrink: 0;
     }
-    .toggle.active { background: var(--emerald); }
+    .toggle-row[aria-checked="true"] .toggle { background: var(--emerald); }
     .toggle-thumb {
-      position: absolute; top: 0.2rem; left: 0.2rem; width: 1.35rem; height: 1.35rem;
+      position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px;
       background: #fff; border-radius: 50%;
-      transition: transform 0.25s var(--ease); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+      transition: transform .25s cubic-bezier(.4, 0, .2, 1);
+      box-shadow: 0 2px 5px rgba(0,0,0,.25);
     }
-    .toggle.active .toggle-thumb { transform: translateX(1.45rem); }
+    .toggle-row[aria-checked="true"] .toggle-thumb { transform: translateX(22px); }
 
-    /* ===== Summary + start ===== */
-    .summary {
-      background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25);
-      border-radius: 1rem; padding: 1rem 1.15rem;
+    /* ---------- Status panels (loading / error / empty) ---------- */
+    .state-panel {
+      min-height: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 10px;
+      padding: 32px 12px;
     }
-    .summary-label { font-size: 0.72rem; font-weight: 600; color: var(--emerald-bright); text-transform: uppercase; letter-spacing: 0.05em; }
-    .summary-text { font-size: 1rem; font-weight: 500; color: var(--text); margin-top: 0.35rem; line-height: 1.55; }
+    .state-panel h2 { font-family: var(--font-display); font-size: var(--fs-title); }
+    .state-panel p { color: var(--muted); font-size: var(--fs-body); max-width: 36ch; line-height: 1.5; }
+    .state-btn {
+      margin-top: 8px;
+      padding: 11px 20px; min-height: 44px;
+      border-radius: 12px;
+      border: 1.5px solid var(--emerald);
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-bright);
+      font-weight: 600; font-size: var(--fs-body);
+      cursor: pointer;
+    }
+    .spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--emerald);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ---------- Bottom CTA ---------- */
+    .bottom-cta {
+      flex-shrink: 0;
+      padding: 14px var(--pad);
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      background: linear-gradient(to top, var(--bg) 80%, rgba(6, 11, 26, 0));
+      border-top: 1px solid rgba(51, 65, 85, 0.4);
+      z-index: 40;
+    }
     .start-btn {
-      width: 100%; min-height: 3.4rem; border: none; border-radius: 0.95rem;
+      width: 100%;
+      min-height: 50px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 14px;
       background: linear-gradient(135deg, #10b981, #059669);
-      color: #022c22; font: inherit; font-size: 1.05rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-      cursor: pointer; box-shadow: 0 6px 24px rgba(16, 185, 129, 0.3);
-      transition: transform 0.2s var(--ease), box-shadow 0.25s var(--ease), opacity 0.25s var(--ease);
+      color: #022c22;
+      font-size: clamp(14px, 3.8vw, 16px);
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(16, 185, 129, 0.3);
+      transition: transform .2s, box-shadow .2s, opacity .2s;
     }
     .start-btn:active { transform: scale(0.98); }
     .start-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-    .start-btn svg { width: 1.15rem; height: 1.15rem; transition: transform 0.25s var(--ease); }
+    .start-btn svg { width: 17px; height: 17px; flex-shrink: 0; transition: transform .25s; }
 
-    /* The side panel (desktop) holds its own start button; phones use the bottom bar */
-    .side { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
-    .side .start-btn { display: none; }
-
-    /* ===== Toast ===== */
-    .toast {
-      position: absolute; left: 50%; bottom: 5.5rem; z-index: 60; text-align: center;
-      width: min(26rem, calc(100% - 2rem));
-      background: var(--surface); border: 1px solid var(--red);
-      color: var(--text); font-size: 0.9rem; font-weight: 600;
-      padding: 0.8rem 1rem; border-radius: 0.9rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-      opacity: 0; transform: translate(-50%, 12px); pointer-events: none;
-      transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
-    }
-    .toast.show { opacity: 1; transform: translate(-50%, 0); }
-
-    .option-chip:focus-visible, .mode-card:focus-visible, .toggle:focus-visible,
-    .back-btn:focus-visible, .start-btn:focus-visible, .topic-change:focus-visible {
-      outline: 2px solid var(--emerald-bright); outline-offset: 2px;
-    }
-
+    /* Hover effects only where hover exists (avoids sticky hover on touch) */
     @media (hover: hover) {
       .back-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); transform: translateX(-2px); }
-      .option-chip:not(.active):hover { border-color: rgba(16, 185, 129, 0.4); color: var(--text); }
-      .mode-card:not(.active):hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, 0.35); }
-      .topic-change:hover { background: rgba(16, 185, 129, 0.1); }
+      .option-chip:not(:disabled):hover { border-color: rgba(16, 185, 129, 0.4); color: var(--text); }
+      .mode-card:hover { border-color: rgba(16, 185, 129, 0.35); }
+      .toggle-row:hover { border-color: rgba(16, 185, 129, 0.35); }
       .start-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(16, 185, 129, 0.4); }
       .start-btn:not(:disabled):hover svg { transform: translateX(4px); }
     }
 
-    /* ===== Very small phones ===== */
-    @media (max-width: 340px) {
-      .options-row { grid-template-columns: repeat(2, 1fr); }
-      .mode-card { padding: 0.9rem 0.5rem; }
-      .toggle-row { padding: 0.8rem 0.9rem; }
+    /* Short screens (landscape phones) */
+    @media (max-height: 480px) {
+      .topbar { padding-block: 8px; }
+      .content { padding-block: 10px; }
+      .setup-section { margin-bottom: 14px; }
+      .mode-icon { display: none; }
+      .bottom-cta { padding-block: 8px; }
+      .start-btn { min-height: 44px; }
     }
 
-    /* ===== Tablets and up: two columns, summary panel stays in view ===== */
-    @media (min-width: 840px) {
-      .layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr); align-items: start; }
-      .side { position: sticky; top: 0; }
-      .side .start-btn { display: flex; }
-      .footer { display: none; }
-      .toast { bottom: 2rem; }
-    }
-
-    /* ===== Short landscape screens (phones on their side) ===== */
-    @media (max-height: 520px) and (orientation: landscape) {
-      .topbar .wrap { padding-top: 0.45rem; padding-bottom: 0.45rem; }
-      .content { padding-top: 12px; }
-      .start-btn { min-height: 2.8rem; }
-      .footer { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    /* Very wide / large text */
+    @media (min-width: 720px) {
+      .mode-icon { width: 48px; height: 48px; }
+      .mode-icon svg { width: 24px; height: 24px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
     }
+
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="app" id="appRoot">
-
-    <!-- Top Bar -->
-    <div class="topbar">
-      <div class="wrap">
-        <button type="button" class="back-btn" id="backBtn" aria-label="Go back">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <div class="topbar-title">
-          <h1>Set up practice</h1>
-          <p>Customize your session</p>
-        </div>
+  <div class="app">
+    <header class="topbar">
+      <button type="button" class="back-btn" id="backBtn" aria-label="Go back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="topbar-title">
+        <h1 id="courseTitle">Set up practice</h1>
+        <p id="courseSub">Loading course…</p>
       </div>
-    </div>
+      <div class="live-pill" id="livePill" role="status" aria-live="polite">
+        <span class="live-dot"></span><span id="liveText">Connecting</span>
+      </div>
+    </header>
 
-    <!-- Content -->
-    <div class="content">
-      <div class="wrap">
-        <div class="layout">
+    <main class="content" id="content">
+      <!-- Loading -->
+      <div class="state-panel" id="loadingPanel">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading available questions…</p>
+      </div>
 
-          <!-- LEFT: the choices -->
-          <div class="col">
+      <!-- Error / empty -->
+      <div class="state-panel" id="messagePanel" hidden>
+        <h2 id="msgTitle"></h2>
+        <p id="msgBody"></p>
+        <button type="button" class="state-btn" id="msgBtn"></button>
+      </div>
 
-            <div class="topic-card" id="topicCard">
-              <div class="topic-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+      <!-- Setup form -->
+      <div id="setupForm" hidden>
+        <section class="setup-section">
+          <div class="section-head">
+            <div class="section-label" id="qLabel">Number of Questions</div>
+            <div class="section-meta" id="availableText"></div>
+          </div>
+          <div class="options-row" id="questionCount" role="radiogroup" aria-labelledby="qLabel"></div>
+        </section>
+
+        <section class="setup-section">
+          <div class="section-head">
+            <div class="section-label" id="dLabel">Difficulty</div>
+          </div>
+          <div class="options-row" id="difficulty" role="radiogroup" aria-labelledby="dLabel">
+            <button type="button" class="option-chip" data-value="easy"  role="radio">Easy<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="medium" role="radio">Medium<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="hard"  role="radio">Hard<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="mixed" role="radio">Mixed<span class="chip-n"></span></button>
+          </div>
+        </section>
+
+        <section class="setup-section">
+          <div class="section-head">
+            <div class="section-label" id="mLabel">Mode</div>
+          </div>
+          <div class="mode-grid" id="modeSelect" role="radiogroup" aria-labelledby="mLabel">
+            <div class="mode-card" data-value="practice" role="radio" tabindex="0">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
               </div>
-              <div class="topic-info">
-                <div class="topic-label">Topic</div>
-                <div class="topic-name" id="topicName"></div>
-              </div>
-              <a href="practice.html" class="topic-change" id="topicChange">Change</a>
+              <div class="mode-title">Practice</div>
+              <div class="mode-desc">See answers instantly</div>
             </div>
-
-            <div class="live-pill" id="livePill"><i></i><span id="liveText"></span></div>
-
-            <div>
-              <div class="section-label">Number of Questions</div>
-              <div class="options-row" id="questionCount">
-                <button type="button" class="option-chip" data-value="10" aria-pressed="false">10</button>
-                <button type="button" class="option-chip" data-value="20" aria-pressed="false">20</button>
-                <button type="button" class="option-chip" data-value="30" aria-pressed="false">30</button>
-                <button type="button" class="option-chip" data-value="50" aria-pressed="false">50</button>
+            <div class="mode-card" data-value="timed" role="radio" tabindex="0">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
               </div>
+              <div class="mode-title">Timed</div>
+              <div class="mode-desc">Race against time</div>
             </div>
-
-            <div>
-              <div class="section-label">Difficulty</div>
-              <div class="options-row" id="difficulty">
-                <button type="button" class="option-chip" data-value="easy" aria-pressed="false">Easy</button>
-                <button type="button" class="option-chip" data-value="medium" aria-pressed="false">Medium</button>
-                <button type="button" class="option-chip" data-value="hard" aria-pressed="false">Hard</button>
-                <button type="button" class="option-chip" data-value="mixed" aria-pressed="false">Mixed</button>
-              </div>
-            </div>
-
-            <div>
-              <div class="section-label">Mode</div>
-              <div class="mode-grid" id="modeSelect" role="radiogroup" aria-label="Mode">
-                <button type="button" class="mode-card" data-value="practice" role="radio" aria-checked="false">
-                  <div class="mode-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 20h9"/>
-                      <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                    </svg>
-                  </div>
-                  <div class="mode-title">Practice</div>
-                  <div class="mode-desc">See answers instantly</div>
-                </button>
-                <button type="button" class="mode-card" data-value="timed" role="radio" aria-checked="false">
-                  <div class="mode-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <path d="M12 6v6l4 2"/>
-                    </svg>
-                  </div>
-                  <div class="mode-title">Timed</div>
-                  <div class="mode-desc">Race against time</div>
-                </button>
-              </div>
-            </div>
-
-            <div class="toggle-row">
-              <div class="toggle-info">
-                <h3>Randomize Questions</h3>
-                <p>Shuffle the order of questions</p>
-              </div>
-              <button type="button" class="toggle" id="randomizeToggle" role="switch" aria-checked="false" aria-label="Randomize questions">
-                <span class="toggle-thumb"></span>
-              </button>
-            </div>
-
           </div>
+        </section>
 
-          <!-- RIGHT: live summary (+ start button on wide screens) -->
-          <div class="side">
-            <div class="summary" id="summary">
-              <div class="summary-label">Your session</div>
-              <div class="summary-text" id="summaryText"></div>
-            </div>
-            <button type="button" class="start-btn" disabled>
-              <span class="start-label">Start Practice</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-          </div>
-
-        </div>
+        <section class="setup-section">
+          <button type="button" class="toggle-row" id="randomizeToggle" role="switch" aria-checked="true">
+            <span class="toggle-info">
+              <h3>Randomize Questions</h3>
+              <p>Shuffle the order of questions</p>
+            </span>
+            <span class="toggle" aria-hidden="true"><span class="toggle-thumb"></span></span>
+          </button>
+        </section>
       </div>
-    </div>
+    </main>
 
-    <!-- Bottom CTA (phones) -->
-    <div class="footer">
-      <div class="wrap">
-        <button type="button" class="start-btn" disabled>
-          <span class="start-label">Start Practice</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <footer class="bottom-cta">
+      <button type="button" class="start-btn" id="startBtn" disabled>
+        <span id="startLabel">Start Practice</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </footer>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="profile-gate.js"></script>
   <script>
-    // ========== SUPABASE CLIENT ==========
-    const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  (() => {
+    'use strict';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const $ = (id) => document.getElementById(id);
+    /* ============================================================
+       CONFIG — set once. Everything shown on this page is read live
+       from your database; nothing is hardcoded.
+       Adjust the table / column names if yours differ.
+       ============================================================ */
+    const CONFIG = {
+      SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh', // publishable key (safe for client-side use)
+      tables: { courses: 'courses', questions: 'questions' },
+      cols: {
+        courseId: 'id',
+        courseTitle: 'title',
+        courseCode: 'code',
+        questionCourse: 'course_id',
+        questionDifficulty: 'difficulty'
+      },
+      countSteps: [10, 20, 30, 50, 100], // selectable sizes; only those the course can actually fill are shown
+      nextPage: 'cbt.html'
+    };
 
-      const countGroup = $('questionCount');
-      const diffGroup = $('difficulty');
-      const modeGroup = $('modeSelect');
-      const toggle = $('randomizeToggle');
-      const startBtns = document.querySelectorAll('.start-btn');
+    const DIFFICULTIES = ['easy', 'medium', 'hard'];
+    const PREF_KEY = 'primecbt:practice-setup';
 
-      const DIFF_LABEL = { easy: 'Easy', medium: 'Medium', hard: 'Hard', mixed: 'Mixed difficulty' };
-      const MODE_LABEL = { practice: 'Practice mode', timed: 'Timed mode' };
-      const DEFAULTS = { count: '10', difficulty: 'medium', mode: 'practice', randomize: true };
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      title: $('courseTitle'), sub: $('courseSub'),
+      pill: $('livePill'), pillText: $('liveText'),
+      loading: $('loadingPanel'), msg: $('messagePanel'),
+      msgTitle: $('msgTitle'), msgBody: $('msgBody'), msgBtn: $('msgBtn'),
+      form: $('setupForm'),
+      qRow: $('questionCount'), dRow: $('difficulty'),
+      modeGrid: $('modeSelect'), toggle: $('randomizeToggle'),
+      avail: $('availableText'),
+      start: $('startBtn'), startLabel: $('startLabel')
+    };
 
-      const topic = (new URLSearchParams(window.location.search).get('topic') || '').trim();
-      let user = null;
+    const state = {
+      course: null,
+      counts: { easy: 0, medium: 0, hard: 0, total: 0 },
+      count: null,
+      difficulty: 'medium',
+      mode: 'practice',
+      randomize: true
+    };
 
-      let toastTimer = null;
-      function toast(msg) {
-        const t = $('toast');
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+    /* ---------- Saved choices (user's own selections only) ---------- */
+    try {
+      const saved = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+      if (['easy', 'medium', 'hard', 'mixed'].includes(saved.difficulty)) state.difficulty = saved.difficulty;
+      if (['practice', 'timed'].includes(saved.mode)) state.mode = saved.mode;
+      if (typeof saved.randomize === 'boolean') state.randomize = saved.randomize;
+      if (Number.isInteger(saved.count)) state.count = saved.count;
+    } catch (_) { /* storage unavailable */ }
+    const savePrefs = () => {
+      try {
+        localStorage.setItem(PREF_KEY, JSON.stringify({
+          difficulty: state.difficulty, mode: state.mode,
+          randomize: state.randomize, count: state.count
+        }));
+      } catch (_) {}
+    };
+
+    /* ---------- UI helpers ---------- */
+    function show(panel) {
+      el.loading.hidden = panel !== 'loading';
+      el.msg.hidden = panel !== 'message';
+      el.form.hidden = panel !== 'form';
+    }
+
+    function showMessage(title, body, btnText, btnAction) {
+      el.msgTitle.textContent = title;
+      el.msgBody.textContent = body;
+      el.msgBtn.textContent = btnText;
+      el.msgBtn.onclick = btnAction;
+      el.start.disabled = true;
+      show('message');
+    }
+
+    function setLive(status) {
+      el.pill.classList.remove('on', 'off');
+      if (status === 'live') { el.pill.classList.add('on'); el.pillText.textContent = 'Live'; }
+      else if (status === 'offline') { el.pill.classList.add('off'); el.pillText.textContent = 'Offline'; }
+      else { el.pillText.textContent = 'Connecting'; }
+    }
+
+    const goBack = () => {
+      if (history.length > 1) history.back();
+      else location.href = document.referrer || './';
+    };
+    $('backBtn').addEventListener('click', goBack);
+
+    /* ---------- Config / topic checks ---------- */
+    const params = new URLSearchParams(location.search);
+    const topicParam = (params.get('course') || params.get('topic') || '').trim();
+
+    if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY || !window.supabase) {
+      el.sub.textContent = 'Not connected';
+      setLive('offline');
+      showMessage(
+        'Database not connected',
+        'Add your Supabase URL and anon key in the CONFIG block at the top of this page’s script.',
+        'Go back', goBack
+      );
+      return;
+    }
+    if (!topicParam) {
+      el.sub.textContent = 'No course selected';
+      setLive('offline');
+      showMessage('No course selected', 'Choose a course first, then set up your practice session.', 'Choose a course', goBack);
+      return;
+    }
+
+    const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    const { tables: T, cols: C } = CONFIG;
+
+    /* ---------- Data ---------- */
+    async function resolveCourse() {
+      let q = db.from(T.courses).select('*').limit(1);
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(topicParam) || /^\d+$/.test(topicParam);
+      if (isId) {
+        q = q.eq(C.courseId, topicParam);
+      } else {
+        const safe = topicParam.replace(/[%,()*]/g, ' ').trim();
+        q = q.or(`${C.courseTitle}.ilike.${safe},${C.courseCode}.ilike.${safe}`);
       }
+      const { data, error } = await q;
+      if (error) throw error;
+      return data && data[0] ? data[0] : null;
+    }
 
-      const chipValue = (group) => { const el = group.querySelector('.active'); return el ? el.dataset.value : null; };
-      const isRandom = () => toggle.classList.contains('active');
+    async function countQuestions(difficulty) {
+      let q = db.from(T.questions)
+        .select('*', { count: 'exact', head: true })
+        .eq(C.questionCourse, state.course[C.courseId]);
+      if (difficulty) q = q.ilike(C.questionDifficulty, difficulty);
+      const { count, error } = await q;
+      if (error) throw error;
+      return count || 0;
+    }
 
-      function setActive(group, value) {
-        let found = false;
-        group.querySelectorAll('[data-value]').forEach((el) => {
-          const on = el.dataset.value === String(value);
-          if (on) found = true;
-          el.classList.toggle('active', on);
-          if (el.hasAttribute('aria-pressed')) el.setAttribute('aria-pressed', on);
-          if (el.hasAttribute('aria-checked')) el.setAttribute('aria-checked', on);
-        });
-        return found;
+    let loadToken = 0;
+    async function loadCounts() {
+      const token = ++loadToken;
+      const [total, ...byDiff] = await Promise.all([
+        countQuestions(null),
+        ...DIFFICULTIES.map(countQuestions)
+      ]);
+      if (token !== loadToken) return false; // a newer request superseded this one
+      state.counts = { total, easy: byDiff[0], medium: byDiff[1], hard: byDiff[2] };
+      return true;
+    }
+
+    const availableFor = (diff) => diff === 'mixed' ? state.counts.total : state.counts[diff] || 0;
+
+    /* ---------- Render ---------- */
+    function reconcile() {
+      // Keep the selected difficulty valid
+      if (availableFor(state.difficulty) === 0) {
+        const next = ['medium', 'easy', 'hard'].find((d) => availableFor(d) > 0);
+        state.difficulty = next || 'mixed';
       }
-      function setRandom(on) {
-        toggle.classList.toggle('active', !!on);
-        toggle.setAttribute('aria-checked', !!on);
+      // Keep the question count valid
+      const sizes = countOptions();
+      if (!sizes.includes(state.count)) {
+        state.count = sizes.includes(10) ? 10 : sizes[0] ?? null;
       }
+    }
 
-      // ----- Live summary -----
-      let lastSummary = '';
-      function renderSummary() {
-        const count = chipValue(countGroup);
-        const diff = chipValue(diffGroup);
-        const mode = chipValue(modeGroup);
-        const text = count + ' questions · ' + DIFF_LABEL[diff] + ' · ' + MODE_LABEL[mode] + ' · ' +
-                     (isRandom() ? 'Shuffled order' : 'Original order');
-        const el = $('summaryText');
-        if (text !== lastSummary) {
-          lastSummary = text;
-          el.textContent = text;
-          el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade');
-        }
-        const label = mode === 'timed' ? 'Start Timed Practice' : 'Start Practice';
-        document.querySelectorAll('.start-label').forEach((n) => { n.textContent = label; });
+    function countOptions() {
+      const avail = availableFor(state.difficulty);
+      if (avail <= 0) return [];
+      const sizes = CONFIG.countSteps.filter((n) => n <= avail);
+      if (!sizes.includes(avail) && (sizes.length === 0 || avail <= CONFIG.countSteps[CONFIG.countSteps.length - 1])) {
+        sizes.push(avail);
       }
+      return sizes;
+    }
 
-      function bind(group) {
-        group.querySelectorAll('[data-value]').forEach((el) => {
-          el.addEventListener('click', () => { setActive(group, el.dataset.value); renderSummary(); });
-        });
-      }
-      bind(countGroup);
-      bind(diffGroup);
-      bind(modeGroup);
-      toggle.addEventListener('click', () => { setRandom(!isRandom()); renderSummary(); });
+    function render() {
+      reconcile();
 
-      $('backBtn').addEventListener('click', () => {
-        if (window.history.length > 1) window.history.back();
-        else window.location.href = 'practice.html';
+      // Difficulty chips with live counts
+      el.dRow.querySelectorAll('.option-chip').forEach((chip) => {
+        const d = chip.dataset.value;
+        const n = availableFor(d);
+        chip.querySelector('.chip-n').textContent = n.toLocaleString() + (n === 1 ? ' question' : ' questions');
+        chip.disabled = n === 0;
+        const on = d === state.difficulty;
+        chip.classList.toggle('active', on);
+        chip.setAttribute('aria-checked', String(on));
       });
 
-      // ----- Remembered choices (per account, on this device) -----
-      const prefsKey = () => 'pcbt_practice_prefs_' + user.id;
-      function loadPrefs() { try { return JSON.parse(localStorage.getItem(prefsKey())) || {}; } catch (e) { return {}; } }
-      function savePrefs(p) { try { localStorage.setItem(prefsKey(), JSON.stringify(p)); } catch (e) {} }
-
-      // ----- Students on this topic right now (Supabase Realtime Presence) -----
-      function initPresence() {
-        if (!topic) return;
-        try {
-          const slug = topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
-          const ch = supabaseClient.channel('practice-' + slug, { config: { presence: { key: user.id } } });
-          ch.on('presence', { event: 'sync' }, () => {
-            const others = Math.max(0, Object.keys(ch.presenceState()).length - 1);
-            const pill = $('livePill');
-            if (others > 0) {
-              $('liveText').textContent = others + (others === 1 ? ' other student is' : ' other students are') + ' practising this topic now';
-              pill.style.display = 'inline-flex';
-            } else {
-              pill.style.display = 'none';
-            }
-          }).subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') await ch.track({ at: new Date().toISOString() });
-          });
-        } catch (e) { /* realtime unavailable: pill stays hidden */ }
-      }
-
-      // ----- Start -----
-      startBtns.forEach((btn) => btn.addEventListener('click', () => {
-        if (!topic) { toast('Pick a topic first'); return; }
-
-        const settings = {
-          count: chipValue(countGroup),
-          difficulty: chipValue(diffGroup),
-          mode: chipValue(modeGroup),
-          randomize: isRandom()
-        };
-        savePrefs(settings);
-
-        const params = new URLSearchParams({
-          topic: topic,
-          count: settings.count,
-          difficulty: settings.difficulty,
-          mode: settings.mode,
-          randomize: settings.randomize
-        });
-        window.location.href = 'cbt.html?' + params.toString();
-      }));
-
-      // ----- Start-up -----
-      async function init() {
-        let session = null;
-        try {
-          const res = await supabaseClient.auth.getSession();
-          session = res.data && res.data.session;
-        } catch (e) { session = null; }
-
-        if (!session) { window.location.replace('auth.html?mode=login'); return; }
-        if (needsProfileSetup(session.user)) { window.location.replace('profile-setup.html'); return; }
-        user = session.user;
-
-        const card = $('topicCard');
-        if (topic) {
-          $('topicName').textContent = topic;
-          startBtns.forEach((b) => { b.disabled = false; });
-        } else {
-          card.classList.add('missing');
-          $('topicName').textContent = 'No topic selected';
-          $('topicChange').textContent = 'Choose';
-          startBtns.forEach((b) => { b.disabled = true; });
+      // Question-count chips built from what actually exists
+      const avail = availableFor(state.difficulty);
+      const sizes = countOptions();
+      el.qRow.replaceChildren(...sizes.map((n) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'option-chip' + (n === state.count ? ' active' : '');
+        b.dataset.value = String(n);
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', String(n === state.count));
+        b.textContent = String(n);
+        if (!CONFIG.countSteps.includes(n)) {
+          b.textContent = 'All ' + n;
         }
+        return b;
+      }));
+      el.avail.replaceChildren();
+      const strong = document.createElement('b');
+      strong.textContent = avail.toLocaleString();
+      el.avail.append(strong, ' available');
 
-        const prefs = Object.assign({}, DEFAULTS, loadPrefs());
-        if (!setActive(countGroup, prefs.count)) setActive(countGroup, DEFAULTS.count);
-        if (!setActive(diffGroup, prefs.difficulty)) setActive(diffGroup, DEFAULTS.difficulty);
-        if (!setActive(modeGroup, prefs.mode)) setActive(modeGroup, DEFAULTS.mode);
-        setRandom(prefs.randomize !== false && prefs.randomize !== 'false');
-        renderSummary();
+      // Mode cards
+      el.modeGrid.querySelectorAll('.mode-card').forEach((c) => {
+        const on = c.dataset.value === state.mode;
+        c.classList.toggle('active', on);
+        c.setAttribute('aria-checked', String(on));
+      });
 
-        initPresence();
-        $('appRoot').classList.add('ready');
+      // Toggle
+      el.toggle.setAttribute('aria-checked', String(state.randomize));
+
+      // CTA
+      el.startLabel.textContent = state.mode === 'timed' ? 'Start Timed Test' : 'Start Practice';
+      el.start.disabled = !(state.count > 0);
+    }
+
+    function renderCourseHeader() {
+      const title = state.course[C.courseTitle] || 'Practice';
+      const code = state.course[C.courseCode];
+      document.title = `${title} — PRIME-CBT Practice`;
+      el.title.textContent = title;
+      el.sub.textContent = code ? String(code) : 'Customize your session';
+    }
+
+    async function refresh() {
+      try {
+        const ok = await loadCounts();
+        if (!ok) return;
+        if (state.counts.total === 0) {
+          showMessage(
+            'No questions yet',
+            `${state.course[C.courseTitle] || 'This course'} doesn’t have any questions yet. This page updates automatically when they are added.`,
+            'Choose another course', goBack
+          );
+          return;
+        }
+        show('form');
+        render();
+      } catch (err) {
+        console.error('[practice-setup] refresh failed:', err);
+        if (el.form.hidden) {
+          showMessage('Couldn’t load questions', 'Check your connection and try again.', 'Retry', init);
+        }
       }
+    }
 
-      init();
+    /* ---------- Realtime ---------- */
+    let channel = null;
+    let debounce = null;
+    const scheduleRefresh = () => { clearTimeout(debounce); debounce = setTimeout(refresh, 400); };
+
+    function subscribe() {
+      if (channel) db.removeChannel(channel);
+      channel = db.channel('practice-setup-' + state.course[C.courseId])
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: T.questions, filter: `${C.questionCourse}=eq.${state.course[C.courseId]}` },
+          scheduleRefresh)
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') setLive(navigator.onLine ? 'live' : 'offline');
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setLive('offline');
+        });
+    }
+
+    window.addEventListener('online', () => { setLive('live'); scheduleRefresh(); });
+    window.addEventListener('offline', () => setLive('offline'));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleRefresh(); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted) scheduleRefresh(); });
+
+    /* ---------- Interactions ---------- */
+    el.qRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.option-chip');
+      if (!chip) return;
+      state.count = Number(chip.dataset.value);
+      savePrefs(); render();
     });
+
+    el.dRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.option-chip');
+      if (!chip || chip.disabled) return;
+      state.difficulty = chip.dataset.value;
+      savePrefs(); render();
+    });
+
+    const pickMode = (card) => { state.mode = card.dataset.value; savePrefs(); render(); };
+    el.modeGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.mode-card');
+      if (card) pickMode(card);
+    });
+    el.modeGrid.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.mode-card');
+      if (card) { e.preventDefault(); pickMode(card); }
+    });
+
+    el.toggle.addEventListener('click', () => {
+      state.randomize = !state.randomize;
+      savePrefs(); render();
+    });
+
+    el.start.addEventListener('click', () => {
+      if (!state.course || !(state.count > 0)) return;
+      const out = new URLSearchParams({
+        course: String(state.course[C.courseId]),
+        topic: String(state.course[C.courseTitle] || topicParam),
+        count: String(state.count),
+        difficulty: state.difficulty,
+        mode: state.mode,
+        randomize: String(state.randomize)
+      });
+      location.href = `${CONFIG.nextPage}?${out.toString()}`;
+    });
+
+    /* ---------- Boot ---------- */
+    async function init() {
+      show('loading');
+      setLive('connecting');
+      try {
+        state.course = await resolveCourse();
+        if (!state.course) {
+          el.sub.textContent = 'Course not found';
+          showMessage('Course not found', 'We couldn’t find that course. Go back and pick one from the list.', 'Choose a course', goBack);
+          return;
+        }
+        renderCourseHeader();
+        await refresh();
+        subscribe();
+      } catch (err) {
+        console.error('[practice-setup] init failed:', err);
+        el.sub.textContent = 'Connection problem';
+        setLive('offline');
+        showMessage('Couldn’t load course', 'Check your connection and try again.', 'Retry', init);
+      }
+    }
+
+    init();
+  })();
   </script>
 </body>
 </html>
