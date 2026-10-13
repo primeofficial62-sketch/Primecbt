@@ -24,6 +24,7 @@
     (function () {
       function show(msg, where) {
         var b = document.getElementById('boot'); if (!b) return;
+        var l = document.getElementById('lock'); if (l) l.hidden = true;
         b.hidden = false;
         b.innerHTML = '<div><b>The admin panel could not start.</b><br><code></code><br><button onclick="location.reload()">Reload</button></div>';
         b.querySelector('code').textContent = msg + (where ? '  (' + where + ')' : '');
@@ -93,6 +94,13 @@
     .boot b { color: var(--text); font-size: 1.05rem; }
     .boot code { display: inline-block; max-width: 100%; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); color: var(--danger); font-size: .82rem; overflow-wrap: anywhere; }
     .boot button { margin-top: 14px; padding: 10px 18px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font-weight: 600; }
+
+    .pinwrap { position: relative; display: block; margin: 20px 0 8px; padding: 22px 34px; border-radius: 18px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.07); cursor: text; }
+    .pinwrap:focus-within { border-color: #fff; }
+    .pinwrap .dots { margin: 0; }
+    .pinwrap input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: 18px; opacity: 0; background: transparent; color: transparent; caret-color: transparent; font-size: 16px; }
+    .pinwrap input:focus { outline: none; }
+    .lock .hint { color: #AAB1DA; font-size: .85rem; }
 
     /* ---------- shell ---------- */
     .shell { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100dvh; }
@@ -303,16 +311,19 @@
 </head>
 <body>
 
-  <div class="boot" id="boot" role="status">Loading admin panel…</div>
+  <div class="boot" id="boot" role="status" hidden></div>
 
   <!-- PIN screen -->
-  <section class="lock" id="lock" hidden>
+  <section class="lock" id="lock">
     <div class="lock-in">
       <div class="mark">P</div>
       <h1 id="lockTitle">PRIME-CBT Admin</h1>
       <p class="sub" id="lockSub"></p>
-      <div class="dots" id="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-      <div class="pad" id="pad"></div>
+      <label class="pinwrap" for="pinIn">
+        <div class="dots" id="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <input id="pinIn" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your 4-digit PIN">
+      </label>
+      <p class="hint">Tap the dots and type your PIN</p>
     </div>
   </section>
 
@@ -505,58 +516,62 @@
     confirm: ['Confirm your PIN', 'Enter the same 4 digits again.']
   };
 
-  (function buildPad() {
-    var html = '';
-    '123456789'.split('').forEach(function (n) { html += '<button type="button" data-k="' + n + '">' + n + '</button>'; });
-    html += '<button type="button" class="ghost" disabled aria-hidden="true"></button>';
-    html += '<button type="button" data-k="0">0</button>';
-    html += '<button type="button" class="ghost" data-k="back" aria-label="Delete">⌫</button>';
-    $('pad').innerHTML = html;
-    $('pad').addEventListener('click', function (e) {
-      var b = e.target.closest('button[data-k]');
-      if (b) press(b.getAttribute('data-k'));
-    });
-    document.addEventListener('keydown', function (e) {
-      if ($('lock').hidden) return;
-      if (/^\d$/.test(e.key)) press(e.key);
-      else if (e.key === 'Backspace') press('back');
-    });
-  })();
-
   function drawDots() { var d = $('dots').children; for (var i = 0; i < 4; i++) d[i].classList.toggle('on', i < pin.length); }
   function setSub(text, isErr) { $('lockSub').textContent = text; $('lockSub').className = 'sub' + (isErr ? ' err' : ''); }
-  function setMode(m, note, isErr) { mode = m; pin = ''; $('lockTitle').textContent = lockCopy[m][0]; setSub(note || lockCopy[m][1], isErr); drawDots(); }
+  function setMode(m, note, isErr) { mode = m; pin = ''; $('pinIn').value = ''; $('lockTitle').textContent = lockCopy[m][0]; setSub(note || lockCopy[m][1], isErr); drawDots(); }
   function shake() { var d = $('dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); }
-  function lockPad(off) { $('pad').querySelectorAll('button[data-k]').forEach(function (b) { b.disabled = off; }); }
   function showLock() {
     setTask(null);
     $('app').hidden = true; $('tabbar').hidden = true; $('lock').hidden = false;
     document.body.classList.remove('menu-open');
     closeSheet(true); $('dialogRoot').innerHTML = ''; $('palRoot').innerHTML = '';
+    setTimeout(function () { try { $('pinIn').focus(); } catch (e) {} }, 60);
   }
 
-  async function press(k) {
+  var statusKnown = false, statusP = null, statusErr = '';
+  function checkStatus() {
+    statusP = (async function () {
+      try {
+        var s = await api('status');
+        statusKnown = true; statusErr = '';
+        if (s.authed) { enterApp(); return; }
+        var want = s.setup ? 'login' : 'create';
+        if (mode !== want) setMode(want);
+      } catch (e) {
+        statusKnown = false; statusErr = e.message;
+        setSub(e.message, true);
+        setTimeout(function () { if (!statusKnown && !$('lock').hidden) checkStatus(); }, 4000);
+      }
+    })();
+    return statusP;
+  }
+
+  async function onPin() {
     if (pinBusy) return;
-    if (k === 'back') { pin = pin.slice(0, -1); drawDots(); return; }
-    if (pin.length >= 4) return;
-    pin += k; drawDots();
-    if (pin.length < 4) return;
-    if (mode === 'create') { firstPin = pin; setMode('confirm'); return; }
-    if (mode === 'confirm' && pin !== firstPin) {
-      shake(); firstPin = '';
-      setTimeout(function () { setMode('create', 'Those did not match. Choose your PIN again.', true); }, 350);
-      return;
-    }
-    pinBusy = true; lockPad(true);
+    var typed = $('pinIn').value.replace(/\D/g, '').slice(0, 4);
+    $('pinIn').value = typed; pin = typed; drawDots();
+    if (typed.length < 4) return;
+    pinBusy = true;
     try {
-      await api(mode === 'login' ? 'login' : 'setup', { pin: pin });
+      if (!statusKnown) {
+        await (statusP || checkStatus());
+        if (!$('app').hidden) return;
+        if (!statusKnown) { shake(); setTimeout(function () { setMode('login', statusErr, true); }, 350); return; }
+      }
+      if (mode === 'create') { firstPin = typed; setMode('confirm'); return; }
+      if (mode === 'confirm' && typed !== firstPin) {
+        shake(); firstPin = '';
+        setTimeout(function () { setMode('create', 'Those did not match. Choose your PIN again.', true); }, 350);
+        return;
+      }
+      await api(mode === 'login' ? 'login' : 'setup', { pin: typed });
       enterApp();
     } catch (e) {
       shake();
       var again = mode;
       if (mode === 'confirm' && e.status === 409) again = 'login';
       setTimeout(function () { setMode(again === 'confirm' ? 'create' : again, e.message, true); }, 350);
-    } finally { pinBusy = false; lockPad(false); }
+    } finally { pinBusy = false; }
   }
 
   /* ================= data lookups ================= */
@@ -1353,16 +1368,4 @@
       var b = e.target.closest('[data-r]'); if (!b) return;
       var ok = await confirmBox({ title: 'Delete this reply?', text: 'This cannot be undone.', yes: 'Delete', danger: true });
       if (!ok) return;
-      try { await api('remove', { table: 'discussion_replies', id: rows[+b.getAttribute('data-r')].id }); toast('Deleted'); load(); } catch (err) { toast(err.message, true); }
-    });
-    load();
-  }
-
-  async function openImport(done) {
-    var courses;
-    try { courses = await lookup('courses', 'title'); } catch (e) { toast(e.message, true); return; }
-    if (!courses.length) { toast('Add a course first.', true); return; }
-    openSheet('Bulk import questions',
-      '<div class="fld"><label for="iCourse">Course *</label><select id="iCourse">' + courses.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[1]) + '</option>'; }).join('') + '</select></div>' +
-      '<div class="fld"><label for="iText">Questions as JSON *</label><textarea id="iText" rows="9" style="font-family:monospace;font-size:.82rem" placeholder=\'[{"question":"…","options":["…","…","…","…"],"correct_index":1,"explanation":"…","difficulty":"easy"}]\'></textarea>' +
-    
+      try { await api('remove', { table: 'discussion_re
