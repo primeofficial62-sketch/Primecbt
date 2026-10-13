@@ -152,22 +152,26 @@ export default async function handler(request) {
 
   // 3. Ask Gemini (OpenAI-compatible endpoint, same streaming format the page already reads)
   let upstream;
-  try {
+try {
+  for (const model of MODELS) {
     upstream = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         stream: true,
         temperature: 0.5,
         max_tokens: 2048,
         messages: [{ role: 'system', content: SYSTEM_PROMPT(data) }, ...messages],
       }),
     });
-  } catch (err) {
-    console.error('Gemini fetch failed:', err);
-    return json({ error: "Couldn't reach the AI service. Please try again." }, 502);
+    if (upstream.ok || ![403, 404, 429, 503].includes(upstream.status)) break;
+    console.error('Gemini model failed:', model, upstream.status);
   }
+} catch (err) {
+  console.error('Gemini fetch failed:', err);
+  return json({ error: "Couldn't reach the AI service. Please try again." }, 502);
+}
 
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => '');
