@@ -3,10 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#060b1a">
   <title>PRIME-CBT — PDF Reader</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Start network connections immediately -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://xuofkjjhupgmrphzgyun.supabase.co" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- PDF engine downloads in parallel with the page (deferred, never blocks paint) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- Non-blocking font -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+
   <style>
     :root {
       --bg: #060b1a;
@@ -16,14 +27,13 @@
       --text: #f1f5f9;
       --muted: #94a3b8;
       --emerald: #10b981;
-      --emerald-bright: #34d399;
       --amber: #fbbf24;
-      --red: #f87171;
       --pad: clamp(10px, 3vw, 24px);
-      --font-body: 'Inter', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
 
     html, body { height: 100%; overflow: hidden; }
 
@@ -51,9 +61,7 @@
       align-items: center;
       gap: 10px;
       padding: 10px var(--pad);
-      background: rgba(6, 11, 26, 0.94);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(6, 11, 26, 0.96);
       flex-shrink: 0;
       z-index: 30;
     }
@@ -108,7 +116,7 @@
       text-align: center;
       background: var(--surface); color: var(--text);
       border: 1px solid var(--border); border-radius: 10px;
-      font: inherit; font-size: 16px; /* no iOS zoom */
+      font: inherit; font-size: 16px;
       -moz-appearance: textfield;
     }
     .page-info input::-webkit-outer-spin-button,
@@ -141,6 +149,7 @@
       min-height: 0;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       background: var(--bg);
       padding: var(--pad);
       scrollbar-width: thin;
@@ -164,13 +173,14 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
       overflow: hidden;
       flex-shrink: 0;
+      contain: layout paint;
     }
-    .page canvas { display: block; width: 100%; height: 100%; }
+    .page canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
     .page-label {
       position: absolute; bottom: 8px; right: 10px;
       font-size: 11px; font-weight: 600;
       color: rgba(15, 23, 42, .55);
-      background: rgba(255, 255, 255, .7);
+      background: rgba(255, 255, 255, .75);
       padding: 2px 8px; border-radius: 999px;
       pointer-events: none;
     }
@@ -181,15 +191,25 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 12px; padding: 24px; text-align: center;
       color: var(--muted); font-size: 14px;
+      background: var(--bg);
+      z-index: 5;
     }
-    .state[hidden] { display: none; }
-    .state button, .state a {
+    .state-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .state button, .state a.btn {
       padding: 10px 18px; background: var(--emerald); color: #022c22;
       border: none; border-radius: 10px; font: inherit; font-weight: 600;
       cursor: pointer; text-decoration: none;
     }
-    .progress { width: min(260px, 70%); height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+    .state a.btn.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .state-hint { font-size: 12.5px; color: var(--muted); max-width: 300px; line-height: 1.5; }
+    .state-hint a { color: var(--emerald); }
+    .progress { width: min(260px, 70%); height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; position: relative; }
     .progress > div { height: 100%; width: 0; background: var(--emerald); transition: width .2s; }
+    .progress.indeterminate > div {
+      width: 40%; position: absolute; left: -40%;
+      animation: slide 1.1s ease-in-out infinite;
+    }
+    @keyframes slide { to { left: 100%; } }
 
     .toast {
       position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom));
@@ -203,8 +223,8 @@
     .toast.show { display: block; }
 
     /* ---------- Light mode ---------- */
-    .app.light-mode, .app.light-mode .viewer { background: #f1f5f9; }
-    .app.light-mode .topbar, .app.light-mode .bottom-bar { background: rgba(248, 250, 252, .94); border-color: #cbd5e1; }
+    .app.light-mode, .app.light-mode .viewer, .app.light-mode .state { background: #f1f5f9; }
+    .app.light-mode .topbar, .app.light-mode .bottom-bar { background: rgba(248, 250, 252, .96); border-color: #cbd5e1; }
     .app.light-mode .doc-title { color: #0f172a; }
     .app.light-mode .doc-sub, .app.light-mode .page-info, .app.light-mode .zoom-label { color: #64748b; }
     .app.light-mode .icon-btn, .app.light-mode .nav-btn, .app.light-mode .zoom-controls,
@@ -213,7 +233,8 @@
     .app.light-mode .icon-btn.active { color: #d97706; background: rgba(251,191,36,.15); }
     .app.light-mode .page-info input { color: #0f172a; }
     .app.light-mode .page { box-shadow: 0 6px 20px rgba(0, 0, 0, .12); }
-    .app.light-mode .state { color: #64748b; }
+    .app.light-mode .state, .app.light-mode .state-hint { color: #64748b; }
+    .app.light-mode .progress { background: #e2e8f0; }
 
     /* ---------- Small screens ---------- */
     @media (max-width: 480px) {
@@ -223,7 +244,7 @@
     @media (min-width: 1024px) {
       .topbar, .bottom-bar { padding-left: 32px; padding-right: 32px; }
     }
-    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
   </style>
 </head>
 <body>
@@ -256,7 +277,8 @@
       <div class="pages" id="pages"></div>
       <div class="state" id="state">
         <div id="stateText">Loading document…</div>
-        <div class="progress" id="progressWrap"><div id="progressBar"></div></div>
+        <div class="progress indeterminate" id="progressWrap"><div id="progressBar"></div></div>
+        <div class="state-hint" id="stateHint" hidden></div>
       </div>
     </main>
 
@@ -290,17 +312,17 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    window.SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
-    window.SUPABASE_ANON_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
-  </script>
+  <!-- Inline modules are deferred, so this runs right after pdf.js has loaded -->
+  <script type="module">
+    const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+    const SB_SCRIPTS = [
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js",
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ];
+    const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-    const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
 
     /* ================= Elements & storage keys ================= */
     const $ = id => document.getElementById(id);
@@ -312,24 +334,33 @@
     const params = new URLSearchParams(location.search);
     const matId = params.get('id');
     const fileParam = params.get('file');
+    const cacheKey = () => matId ? 'primecbt_mat_' + matId : (fileParam ? 'primecbt_matf_' + fileParam : null);
 
     /* ================= State ================= */
-    let material = null;      // row from Supabase
+    let material = null;
     let pdfDoc = null;
     let totalPages = 0;
     let currentPage = 1;
-    let zoom = 1;             // multiplier on fit-to-width
+    let zoom = 1;
     const MIN_ZOOM = 0.5, MAX_ZOOM = 3;
-    let pageEls = [];         // .page elements
-    let pageAspect = [];      // height / width per page
-    let renderTasks = {};     // page number -> render task
-    let rendered = {};        // page number -> zoom rendered at
+    const MAX_ACTIVE = 2;                 // parallel page renders
+    const MAX_CANVAS_PIXELS = 6e6;        // keeps phones from running out of memory
+    let pageEls = [];
+    let pageAspect = [];
+    let renderTasks = {};
+    let rendered = {};
+    let wanted = new Set();
+    let active = 0;
+    let layoutSig = '';
     let loadToken = 0;
-    let io = null;
+    let nearIO = null, farIO = null;
+    let currentLoadTask = null;
+    let slowTimer = null;
 
     /* ================= Helpers ================= */
-    const storeGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+    const storeGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
     const storeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+    const idle = cb => ('requestIdleCallback' in window) ? requestIdleCallback(cb, { timeout: 2500 }) : setTimeout(cb, 400);
 
     let toastTimer;
     function toast(msg) {
@@ -338,20 +369,45 @@
     }
 
     function showState(text, opts = {}) {
+      clearTimeout(slowTimer);
       $('state').hidden = false;
-      $('stateText').innerHTML = '';
-      const span = document.createElement('div'); span.textContent = text; $('stateText').appendChild(span);
+      $('stateHint').hidden = true;
+      const box = $('stateText');
+      box.innerHTML = '';
+      const span = document.createElement('div'); span.textContent = text; box.appendChild(span);
       $('progressWrap').style.display = opts.progress ? '' : 'none';
-      if (opts.retry) {
-        const b = document.createElement('button'); b.textContent = 'Try again'; b.onclick = loadMaterial;
-        $('stateText').appendChild(b);
+
+      if (opts.retry || opts.back || opts.open) {
+        const row = document.createElement('div'); row.className = 'state-actions'; row.style.marginTop = '12px';
+        if (opts.retry) {
+          const b = document.createElement('button'); b.textContent = 'Try again'; b.onclick = () => loadMaterial(true);
+          row.appendChild(b);
+        }
+        if (opts.open && material && material.file_url) {
+          const a = document.createElement('a'); a.className = 'btn ghost'; a.href = material.file_url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open original';
+          row.appendChild(a);
+        }
+        if (opts.back) {
+          const a = document.createElement('a'); a.className = 'btn ghost'; a.href = 'materials.html'; a.textContent = 'Back to Materials';
+          row.appendChild(a);
+        }
+        box.appendChild(row);
       }
-      if (opts.back) {
-        const a = document.createElement('a'); a.href = 'materials.html'; a.textContent = 'Back to Materials';
-        $('stateText').appendChild(a);
+
+      if (opts.progress) {
+        slowTimer = setTimeout(() => {
+          const h = $('stateHint');
+          h.hidden = false;
+          h.innerHTML = '';
+          h.append('Taking longer than usual — your connection may be slow. ');
+          if (material && material.file_url) {
+            const a = document.createElement('a'); a.href = material.file_url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open original';
+            h.appendChild(a);
+          }
+        }, 12000);
       }
     }
-    const hideState = () => { $('state').hidden = true; };
+    function hideState() { clearTimeout(slowTimer); $('state').hidden = true; }
 
     function titleFromUrl(url) {
       try {
@@ -366,40 +422,123 @@
       return Math.max(200, Math.min(avail, 900));
     }
     const pageWidth = () => fitWidth() * zoom;
+    const computeSig = () => Math.round(pageWidth()) + '@' + (window.devicePixelRatio || 1);
 
-    /* ================= Material lookup ================= */
+    /* ================= Supabase (loaded only when needed) ================= */
+    let sbPromise = null;
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = src; s.async = true;
+        s.onload = res; s.onerror = () => rej(new Error('script failed: ' + src));
+        document.head.appendChild(s);
+      });
+    }
+    function getSb() {
+      if (sbPromise) return sbPromise;
+      sbPromise = (async () => {
+        if (!window.supabase) {
+          for (const src of SB_SCRIPTS) {
+            try { await loadScript(src); if (window.supabase) break; } catch {}
+          }
+        }
+        if (!window.supabase) throw new Error('Could not reach the server.');
+        return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      })();
+      sbPromise.catch(() => { sbPromise = null; });
+      return sbPromise;
+    }
+
+    /* ================= Material lookup (cached for instant opens) ================= */
+    const COLS = 'id,title,category,file_url,file_type,pages,size_bytes';
+
     async function fetchMaterial() {
-      const cols = 'id,title,category,file_url,file_type,pages,size_bytes';
+      const sb = await getSb();
       if (matId) {
-        const { data, error } = await sb.from('materials').select(cols).eq('id', matId).maybeSingle();
+        const { data, error } = await sb.from('materials').select(COLS).eq('id', matId).maybeSingle();
         if (error) throw error;
         return data;
       }
       if (fileParam) {
-        if (/^https?:\/\//i.test(fileParam)) return { id: null, title: titleFromUrl(fileParam), file_url: fileParam };
-        const { data, error } = await sb.from('materials').select(cols).eq('file_url', fileParam).maybeSingle();
+        const { data, error } = await sb.from('materials').select(COLS).eq('file_url', fileParam).maybeSingle();
         if (error) throw error;
         return data;
       }
       return undefined;
     }
 
-    async function loadMaterial() {
-      const myToken = ++loadToken;
-      showState('Loading document…', { progress: true });
-      $('progressBar').style.width = '0%';
+    function cacheRow(row) {
+      const k = cacheKey();
+      if (k && row && row.file_url) storeSet(k, row);
+    }
+    function readCached() {
+      const k = cacheKey();
+      const c = k ? storeGet(k, null) : null;
+      return c && c.file_url ? c : null;
+    }
+
+    async function revalidate(token) {
       try {
         const row = await fetchMaterial();
-        if (myToken !== loadToken) return;
-        if (row === undefined) { showState('No document was selected.', { back: true }); return; }
-        if (!row) { showState('This material no longer exists.', { back: true }); return; }
+        if (token !== loadToken) return;
+        if (!row) {
+          const k = cacheKey(); if (k) { try { localStorage.removeItem(k); } catch {} }
+          showState('This material no longer exists.', { back: true });
+          return;
+        }
+        cacheRow(row);
+        const fileChanged = material && row.file_url !== material.file_url;
+        material = { ...material, ...row };
+        applyMeta();
+        if (fileChanged) { toast('This document was updated — reloading.'); loadMaterial(true); }
+      } catch { /* offline or slow: keep showing the cached copy */ }
+    }
+
+    async function loadMaterial(forceFresh = false) {
+      const token = ++loadToken;
+      showState('Loading document…', { progress: true });
+      $('progressWrap').classList.add('indeterminate');
+      $('progressBar').style.width = '';
+
+      try {
+        let row = null, fromCache = false;
+
+        if (fileParam && /^https?:\/\//i.test(fileParam)) {
+          row = { id: null, title: titleFromUrl(fileParam), file_url: fileParam };
+        } else if (!matId && !fileParam) {
+          showState('No document was selected.', { back: true });
+          return;
+        } else if (!forceFresh) {
+          row = readCached();
+          fromCache = !!row;
+        }
+
+        if (!row) {
+          row = await fetchMaterial();
+          if (token !== loadToken) return;
+          if (!row) { showState('This material no longer exists.', { back: true }); return; }
+          cacheRow(row);
+        }
+
         material = row;
         applyMeta();
-        await openPdf(row.file_url, myToken);
-        subscribeRealtime();
+
+        // Start the PDF download right away; check the database in parallel
+        const opening = openPdf(row.file_url, token);
+        if (fromCache) revalidate(token);
+        await opening;
+        if (token !== loadToken) return;
+        idle(subscribeRealtime);
       } catch (err) {
-        if (myToken !== loadToken) return;
-        showState('Could not load this document. ' + (err && err.message ? err.message : ''), { retry: true, back: true });
+        if (token !== loadToken) return;
+        console.error(err);
+        const name = err && err.name;
+        let msg = 'Could not load this document.';
+        if (name === 'MissingPDFException') msg = 'This file could not be found.';
+        else if (name === 'InvalidPDFException') msg = 'This file is not a valid PDF.';
+        else if (name === 'PasswordException') msg = 'This PDF is password protected.';
+        else if (err && err.message) msg += ' ' + err.message;
+        showState(msg, { retry: true, back: true, open: true });
       }
     }
 
@@ -412,22 +551,52 @@
       syncBookmarkBtn();
     }
 
-    /* ================= PDF loading & rendering ================= */
-    async function openPdf(url, token) {
-      if (pdfDoc) { try { pdfDoc.destroy(); } catch {} pdfDoc = null; }
-      Object.values(renderTasks).forEach(t => { try { t.cancel(); } catch {} });
-      renderTasks = {}; rendered = {};
+    /* ================= PDF loading ================= */
+    function pdfOptions(extra) {
+      return Object.assign({
+        rangeChunkSize: 262144,       // 256 KB chunks: first page shows without downloading the whole file
+        disableAutoFetch: true,       // only fetch pages the user actually views
+        disableStream: false,
+        isEvalSupported: false,
+        useSystemFonts: true,
+        enableXfa: false
+      }, extra || {});
+    }
 
-      const task = pdfjsLib.getDocument({ url });
+    async function getDocument(url, token, extra) {
+      if (currentLoadTask) { try { currentLoadTask.destroy(); } catch {} }
+      const task = pdfjsLib.getDocument(Object.assign({ url }, pdfOptions(extra)));
+      currentLoadTask = task;
       task.onProgress = p => {
-        if (p.total) $('progressBar').style.width = Math.min(100, Math.round(p.loaded / p.total * 100)) + '%';
+        if (token !== loadToken) return;
+        if (p.total) {
+          $('progressWrap').classList.remove('indeterminate');
+          $('progressBar').style.width = Math.min(100, Math.round(p.loaded / p.total * 100)) + '%';
+        }
       };
-      const doc = await task.promise;
-      if (token !== loadToken) { doc.destroy(); return; }
+      return task.promise;
+    }
+
+    async function openPdf(url, token) {
+      resetViewer();
+
+      let doc;
+      try {
+        doc = await getDocument(url, token);
+      } catch (err) {
+        if (token !== loadToken) return;
+        const n = err && err.name;
+        if (n === 'MissingPDFException' || n === 'InvalidPDFException' || n === 'PasswordException') throw err;
+        // Server may not allow range requests: fall back to a plain full download
+        doc = await getDocument(url, token, { disableRange: true, disableStream: true, disableAutoFetch: false });
+      }
+      if (token !== loadToken) { try { doc.destroy(); } catch {} return; }
+
       pdfDoc = doc;
       totalPages = doc.numPages;
 
       const first = await doc.getPage(1);
+      if (token !== loadToken) return;
       const vp = first.getViewport({ scale: 1 });
       pageAspect = new Array(totalPages).fill(vp.height / vp.width);
 
@@ -435,22 +604,33 @@
       $('pageInput').max = totalPages;
       $('pageInput').disabled = false;
 
+      const saved = material && material.id ? storeGet(progressKey(material.id), 1) : 1;
+      currentPage = Math.min(Math.max(1, +saved || 1), totalPages);
+
       buildPages();
       hideState();
-
-      const saved = storeGet(progressKey(material.id), 1);
-      currentPage = Math.min(Math.max(1, +saved || 1), totalPages);
-      requestAnimationFrame(() => goToPage(currentPage, false));
-      updatePageInfo();
+      goToPage(currentPage, false);
     }
 
-    function buildPages() {
-      if (io) io.disconnect();
+    function resetViewer() {
+      cancelAllRenders();
+      if (pdfDoc) { try { pdfDoc.destroy(); } catch {} pdfDoc = null; }
+      if (nearIO) nearIO.disconnect();
+      if (farIO) farIO.disconnect();
       pagesEl.innerHTML = '';
-      pageEls = [];
-      rendered = {};
+      pageEls = []; rendered = {}; wanted = new Set();
+    }
+
+    /* ================= Page layout & observers ================= */
+    function buildPages() {
+      if (nearIO) nearIO.disconnect();
+      if (farIO) farIO.disconnect();
+      pagesEl.innerHTML = '';
+      pageEls = []; rendered = {}; wanted = new Set();
+      layoutSig = computeSig();
       const w = pageWidth();
 
+      const frag = document.createDocumentFragment();
       for (let i = 1; i <= totalPages; i++) {
         const div = document.createElement('div');
         div.className = 'page';
@@ -461,60 +641,133 @@
         label.className = 'page-label';
         label.textContent = i + ' / ' + totalPages;
         div.appendChild(label);
-        pagesEl.appendChild(div);
+        frag.appendChild(div);
         pageEls.push(div);
       }
+      pagesEl.appendChild(frag);
+      setupObservers();
+    }
 
-      io = new IntersectionObserver(entries => {
-        entries.forEach(e => { if (e.isIntersecting) renderPage(+e.target.dataset.page); });
-      }, { root: viewer, rootMargin: '800px 0px' });
-      pageEls.forEach(el => io.observe(el));
+    function setupObservers() {
+      // Pages close to the screen get rendered (nearest first)
+      nearIO = new IntersectionObserver(entries => {
+        for (const e of entries) {
+          const n = +e.target.dataset.page;
+          if (e.isIntersecting) wanted.add(n); else wanted.delete(n);
+        }
+        pump();
+      }, { root: viewer, rootMargin: '1000px 0px' });
+
+      // Pages far away give their memory back
+      farIO = new IntersectionObserver(entries => {
+        for (const e of entries) {
+          if (e.isIntersecting) continue;
+          const n = +e.target.dataset.page;
+          cancelRender(n);
+          delete rendered[n];
+          const c = e.target.querySelector('canvas');
+          if (c) { c.width = 0; c.height = 0; c.remove(); }
+        }
+      }, { root: viewer, rootMargin: '3500px 0px' });
+
+      pageEls.forEach(el => { nearIO.observe(el); farIO.observe(el); });
+    }
+
+    /* ================= Render queue ================= */
+    function pump() {
+      if (!pdfDoc) return;
+      while (active < MAX_ACTIVE) {
+        let best = null, bestDist = Infinity;
+        for (const n of wanted) {
+          if (rendered[n] === layoutSig || renderTasks[n]) continue;
+          const d = Math.abs(n - currentPage);
+          if (d < bestDist) { bestDist = d; best = n; }
+        }
+        if (best === null) break;
+        renderPage(best);
+      }
+    }
+
+    function cancelRender(n) {
+      const slot = renderTasks[n];
+      if (!slot) return;
+      slot.cancelled = true;
+      if (slot.rt) { try { slot.rt.cancel(); } catch {} }
+    }
+    function cancelAllRenders() {
+      Object.keys(renderTasks).forEach(n => cancelRender(+n));
     }
 
     async function renderPage(num) {
-      if (!pdfDoc || rendered[num] === zoom + ':' + Math.round(pageWidth())) return;
-      const key = zoom + ':' + Math.round(pageWidth());
-      if (renderTasks[num]) { try { renderTasks[num].cancel(); } catch {} }
-
+      const doc = pdfDoc;
+      const mySig = layoutSig;
+      const slot = { rt: null, cancelled: false };
+      renderTasks[num] = slot;
+      active++;
       try {
-        const page = await pdfDoc.getPage(num);
+        const page = await doc.getPage(num);
+        if (slot.cancelled || doc !== pdfDoc) return;
+
         const base = page.getViewport({ scale: 1 });
         const cssW = pageWidth();
-        const cssScale = cssW / base.width;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const viewport = page.getViewport({ scale: cssScale * dpr });
+        const cssH = cssW * (base.height / base.width);
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+        if (cssW * cssH * dpr * dpr > MAX_CANVAS_PIXELS) dpr = Math.max(0.8, Math.sqrt(MAX_CANVAS_PIXELS / (cssW * cssH)));
+        const viewport = page.getViewport({ scale: (cssW / base.width) * dpr });
 
         const el = pageEls[num - 1];
         if (!el) return;
-        pageAspect[num - 1] = base.height / base.width;
-        el.style.width = cssW + 'px';
-        el.style.height = (cssW * pageAspect[num - 1]) + 'px';
+
+        // Fix the placeholder height if this page is a different size from page 1
+        const aspect = base.height / base.width;
+        if (Math.abs(aspect - pageAspect[num - 1]) > 0.005) {
+          pageAspect[num - 1] = aspect;
+          el.style.height = (cssW * aspect) + 'px';
+        }
 
         const canvas = document.createElement('canvas');
         canvas.width = Math.floor(viewport.width);
         canvas.height = Math.floor(viewport.height);
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false });
 
-        const rt = page.render({ canvasContext: ctx, viewport });
-        renderTasks[num] = rt;
-        await rt.promise;
+        slot.rt = page.render({ canvasContext: ctx, viewport });
+        await slot.rt.promise;
+        if (slot.cancelled || doc !== pdfDoc) return;
 
         const old = el.querySelector('canvas');
-        if (old) old.remove();
+        if (old) { old.width = 0; old.height = 0; old.remove(); }
         el.insertBefore(canvas, el.firstChild);
-        rendered[num] = key;
+        rendered[num] = mySig;
+        page.cleanup();
       } catch (err) {
-        if (err && err.name === 'RenderingCancelledException') return;
-        console.error('Render error page', num, err);
+        if (!(err && err.name === 'RenderingCancelledException')) console.error('Render error page', num, err);
+      } finally {
+        if (renderTasks[num] === slot) delete renderTasks[num];
+        active--;
+        pump();
       }
     }
 
-    /* Re-layout on zoom / resize, keeping the user's place */
+    /* Resize / zoom: keep pages in place, resize them, re-render sharp copies */
     function relayout() {
-      if (!pdfDoc) return;
-      const keep = currentPage;
-      buildPages();
-      goToPage(keep, false);
+      if (!pdfDoc || !pageEls.length) return;
+      const anchor = pageEls[currentPage - 1];
+      const frac = anchor ? (viewer.scrollTop - anchor.offsetTop) / Math.max(1, anchor.offsetHeight) : 0;
+
+      cancelAllRenders();
+      rendered = {}; wanted = new Set();
+      layoutSig = computeSig();
+
+      const w = pageWidth();
+      pageEls.forEach((el, i) => {
+        el.style.width = w + 'px';
+        el.style.height = (w * pageAspect[i]) + 'px';   // old canvas stretches meanwhile = instant zoom feedback
+      });
+      if (anchor) viewer.scrollTop = anchor.offsetTop + frac * anchor.offsetHeight;
+
+      // Re-run the observers so visible pages queue up again
+      nearIO.disconnect();
+      pageEls.forEach(el => nearIO.observe(el));
     }
 
     /* ================= Navigation ================= */
@@ -522,9 +775,8 @@
       n = Math.min(Math.max(1, n), totalPages);
       const el = pageEls[n - 1];
       if (!el) return;
-      const top = el.getBoundingClientRect().top - viewer.getBoundingClientRect().top + viewer.scrollTop - 12;
-      viewer.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
       currentPage = n;
+      viewer.scrollTo({ top: Math.max(0, el.offsetTop - 12), behavior: smooth ? 'smooth' : 'auto' });
       updatePageInfo();
     }
 
@@ -535,23 +787,31 @@
       $('zoomLabel').textContent = Math.round(zoom * 100) + '%';
     }
 
-    let scrollTick = false;
+    function pageAtLine() {
+      const line = viewer.scrollTop + viewer.clientHeight * 0.35;
+      let lo = 0, hi = pageEls.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (pageEls[mid].offsetTop <= line) lo = mid; else hi = mid - 1;
+      }
+      return lo + 1;
+    }
+
+    let scrollTick = false, saveTimer;
     viewer.addEventListener('scroll', () => {
       if (scrollTick || !pageEls.length) return;
       scrollTick = true;
       requestAnimationFrame(() => {
         scrollTick = false;
-        const vTop = viewer.getBoundingClientRect().top;
-        const line = vTop + viewer.clientHeight * 0.35;
-        let found = currentPage;
-        for (let i = 0; i < pageEls.length; i++) {
-          const r = pageEls[i].getBoundingClientRect();
-          if (r.top <= line && r.bottom > line) { found = i + 1; break; }
-        }
+        const found = pageAtLine();
         if (found !== currentPage) {
           currentPage = found;
           updatePageInfo();
-          if (material && material.id) storeSet(progressKey(material.id), currentPage);
+          pump();                                        // re-prioritise around the new page
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(() => {
+            if (material && material.id) storeSet(progressKey(material.id), currentPage);
+          }, 400);
         }
       });
     }, { passive: true });
@@ -577,7 +837,7 @@
       zoom = next;
       updatePageInfo();
       clearTimeout(zoomTimer);
-      zoomTimer = setTimeout(relayout, 120);
+      zoomTimer = setTimeout(relayout, 100);
     }
     $('zoomIn').addEventListener('click', () => setZoom(zoom + 0.15));
     $('zoomOut').addEventListener('click', () => setZoom(zoom - 0.15));
@@ -614,35 +874,45 @@
       if (history.length > 1) history.back(); else location.href = 'materials.html';
     });
 
-    /* ================= Realtime ================= */
+    /* ================= Realtime (starts after the document is on screen) ================= */
     let channel = null;
-    function subscribeRealtime() {
+    async function subscribeRealtime() {
       if (channel || !material || !material.id) return;
-      channel = sb.channel('material-' + material.id)
-        .on('postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'materials', filter: 'id=eq.' + material.id },
-          payload => {
-            const next = payload.new;
-            const fileChanged = next.file_url !== material.file_url;
-            material = { ...material, ...next };
-            applyMeta();
-            if (fileChanged) { toast('This document was updated — reloading.'); loadMaterial(); }
-          })
-        .on('postgres_changes',
-          { event: 'DELETE', schema: 'public', table: 'materials', filter: 'id=eq.' + material.id },
-          () => showState('This material was removed.', { back: true }))
-        .subscribe();
+      try {
+        const sb = await getSb();
+        if (channel) return;
+        channel = sb.channel('material-' + material.id)
+          .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'materials', filter: 'id=eq.' + material.id },
+            payload => {
+              const next = payload.new;
+              const fileChanged = next.file_url !== material.file_url;
+              material = { ...material, ...next };
+              cacheRow(material);
+              applyMeta();
+              if (fileChanged) { toast('This document was updated — reloading.'); loadMaterial(true); }
+            })
+          .on('postgres_changes',
+            { event: 'DELETE', schema: 'public', table: 'materials', filter: 'id=eq.' + material.id },
+            () => showState('This material was removed.', { back: true }))
+          .subscribe();
+      } catch { /* realtime is optional */ }
     }
 
+    let lastCheck = 0;
     document.addEventListener('visibilitychange', async () => {
       if (document.hidden || !material || !material.id) return;
+      if (Date.now() - lastCheck < 30000) return;
+      lastCheck = Date.now();
       try {
+        const sb = await getSb();
         const { data } = await sb.from('materials').select('title,category,file_url').eq('id', material.id).maybeSingle();
         if (!data) { showState('This material was removed.', { back: true }); return; }
         const fileChanged = data.file_url !== material.file_url;
         material = { ...material, ...data };
+        cacheRow(material);
         applyMeta();
-        if (fileChanged) loadMaterial();
+        if (fileChanged) loadMaterial(true);
       } catch {}
     });
 
