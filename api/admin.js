@@ -32,8 +32,8 @@ const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
 
 // Optional helpers: they load only if installed, so a missing package can never break the whole admin API.
-let pdfParse = null;
-try { pdfParse = require('pdf-parse/lib/pdf-parse.js'); } catch (e) { pdfParse = null; }
+let extractText = null;
+try { extractText = require('./_extract.js').extractText; } catch (e) { extractText = null; }
 let waitUntil = null;
 try { waitUntil = require('@vercel/functions').waitUntil; } catch (e) { waitUntil = null; }
 
@@ -246,22 +246,22 @@ function shuffleOptions(options, correct) {
 }
 
 async function loadMaterialText(mat, fallback) {
-  let text = '';
-  if (pdfParse && mat && mat.file_url) {
+async function loadMaterialText(mat, fallback) {
+  let text = '', problem = '';
+  if (!extractText) problem = 'The file reader is not installed (add "jszip": "3.10.1" to package.json).';
+  else if (mat && mat.file_url) {
     try {
       const dl = await fetch(mat.file_url);
-      if (dl.ok) {
-        const buf = Buffer.from(await dl.arrayBuffer());
-        if (buf.slice(0, 4).toString() === '%PDF') { const p = await pdfParse(buf); text = String(p.text || ''); }
-      }
-    } catch (e) { text = ''; }
+      if (dl.ok) text = (await extractText(Buffer.from(await dl.arrayBuffer()))).text;
+      else problem = 'Could not download the file (' + dl.status + ').';
+    } catch (e) { problem = (e && e.message) || ''; }
   }
+  text = String(text || '');
   if (text.replace(/\s+/g, '').length < 200 && fallback) text = String(fallback);
   text = text.replace(/\r/g, '').replace(/[ \t]+/g, ' ');
-  if (text.replace(/\s+/g, '').length < 200) throw new HttpError(400, 'No readable text found in this PDF. Scanned PDFs cannot be used.');
+  if (text.replace(/\s+/g, '').length < 200) throw new HttpError(400, problem || 'No readable text found in this file. Scanned PDFs and image-only slides cannot be used.');
   return text.slice(0, 400000);
 }
-
 async function setStatus(matId, patch) {
   try { await sb('/rest/v1/materials?id=eq.' + enc(matId), { method: 'PATCH', body: patch }); } catch (e) { /* columns not added yet: ignore */ }
 }
