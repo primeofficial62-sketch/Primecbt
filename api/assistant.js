@@ -1,17 +1,16 @@
 // Vercel Edge Function: /api/assistant  (the AI Study Assistant backend)
-// - Verifies the student is signed in
-// - Reads the student's REAL data from Supabase on the server (can't be faked from the browser)
-// - Streams the Groq model's reply back to the page
+// Save this file as:  api/assistant.js   (inside an "api" folder at the root of your repo)
 //
 // Environment variables (Vercel -> Project -> Settings -> Environment Variables):
-//   GROQ_API_KEY   required, from https://console.groq.com
-//   GROQ_MODEL     optional, defaults to llama-3.3-70b-versatile
+//   GEMINI_API_KEY   required, from https://aistudio.google.com/apikey
+//   GEMINI_MODEL     optional, defaults to gemini-2.5-flash
 
 export const config = { runtime: 'edge' };
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://xuofkjjhupgmrphzgyun.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const json = (body, status = 200) =>
@@ -103,13 +102,13 @@ STUDENT DATA (live from their account):
 ${data}`;
 
 // ====================================================================
-//  AI ASSISTANT (server side: auth, student data, Groq stream)
+//  AI ASSISTANT (server side: auth, student data, Gemini stream)
 // ====================================================================
 export default async function handler(request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return json({ error: 'The assistant is not set up yet (missing GROQ_API_KEY on the server).' }, 500);
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return json({ error: 'The assistant is not set up yet (missing GEMINI_API_KEY on the server).' }, 500);
 
   // 1. Who is asking? Only signed-in students.
   const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
@@ -143,32 +142,31 @@ export default async function handler(request) {
     return json({ error: 'Send a message first.' }, 400);
   }
 
-  // The student's local date comes from their device; everything else is read from the database
   const today = typeof body.today === 'string' && DATE_RE.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
   const data = await studentData(user, token, today);
 
-  // 3. Ask the model and stream the answer
+  // 3. Ask Gemini (OpenAI-compatible endpoint, same streaming format the page already reads)
   let upstream;
   try {
-    upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    upstream = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: MODEL,
         stream: true,
         temperature: 0.5,
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [{ role: 'system', content: SYSTEM_PROMPT(data) }, ...messages],
       }),
     });
   } catch (err) {
-    console.error('Groq fetch failed:', err);
+    console.error('Gemini fetch failed:', err);
     return json({ error: "Couldn't reach the AI service. Please try again." }, 502);
   }
 
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => '');
-    console.error('Groq error', upstream.status, detail);
+    console.error('Gemini error', upstream.status, detail);
     if (upstream.status === 429) return json({ error: 'The assistant is busy right now. Please try again in a moment.' }, 429);
     return json({ error: `The AI service had a problem (${upstream.status}). Please try again.` }, 502);
   }
