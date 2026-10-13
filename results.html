@@ -26,628 +26,474 @@
       --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       --pad: clamp(1rem, 4vw, 2rem);
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* Everything is in rem, so the page scales fluidly with the screen */
-    html {
-      font-size: clamp(14px, 13px + 0.35vw, 18px);
-      -webkit-text-size-adjust: 100%;
-      background: var(--bg);
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { font-size: clamp(14px, 13px + 0.35vw, 18px); -webkit-text-size-adjust: 100%; background: var(--bg); }
     body {
-      font-family: var(--font-body);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      justify-content: center;
+      font-family: var(--font-body); background: var(--bg); color: var(--text);
+      min-height: 100vh; min-height: 100dvh; display: flex; justify-content: center;
       -webkit-font-smoothing: antialiased;
     }
+    .app { width: 100%; max-width: 48rem; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+    @media (min-width: 52rem) { .app { border-left: 1px solid rgba(51,65,85,.5); border-right: 1px solid rgba(51,65,85,.5); } }
 
-    .app {
-      width: 100%;
-      max-width: 64rem;
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg);
-    }
-
-    @media (min-width: 64rem) {
-      .app { border-left: 1px solid rgba(51, 65, 85, 0.5); border-right: 1px solid rgba(51, 65, 85, 0.5); }
-    }
-
-    /* ---------- Content ---------- */
     .content {
-      flex: 1;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-      align-content: start;
-      align-items: start;
-      gap: clamp(1rem, 3vw, 1.5rem);
+      flex: 1; display: flex; flex-direction: column; gap: clamp(1rem, 3vw, 1.5rem);
       padding: max(var(--pad), env(safe-area-inset-top)) var(--pad) var(--pad);
       padding-left: max(var(--pad), env(safe-area-inset-left));
       padding-right: max(var(--pad), env(safe-area-inset-right));
     }
-
     .content > * { min-width: 0; }
-    .full { grid-column: 1 / -1; }
+    [hidden] { display: none !important; }
 
-    /* ---------- Status banner ---------- */
+    /* ---------- Status / loading / empty ---------- */
     .status {
-      background: rgba(248, 113, 113, 0.12);
-      border: 1px solid rgba(248, 113, 113, 0.35);
-      color: var(--muted-light);
-      border-radius: 0.75rem;
-      padding: 0.75rem 1rem;
-      font-size: 0.88rem;
-      line-height: 1.45;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.75rem;
-      overflow-wrap: anywhere;
+      background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35);
+      color: var(--muted-light); border-radius: .75rem; padding: .75rem 1rem;
+      font-size: .88rem; line-height: 1.45; display: flex; align-items: flex-start;
+      justify-content: space-between; gap: .75rem; overflow-wrap: anywhere;
     }
-    .status.info { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.35); }
-    .status[hidden] { display: none; }
     .status strong { color: var(--red); }
-    .status.info strong { color: var(--amber); }
     .status button {
-      flex-shrink: 0;
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      padding: 0.35rem 0.7rem;
-      font: inherit;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
+      flex-shrink: 0; background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: .5rem; padding: .35rem .7rem; font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer;
     }
-    .status button[hidden] { display: none; }
-
-    /* ---------- Empty state ---------- */
-    .empty-state {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px dashed var(--border);
-      border-radius: 1rem;
-      padding: 2.5rem 1.25rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.95rem;
-      line-height: 1.55;
+    .center-state {
+      background: rgba(15,23,42,.8); border: 1px dashed var(--border); border-radius: 1rem;
+      padding: 2.5rem 1.25rem; text-align: center; color: var(--muted); font-size: .95rem; line-height: 1.55;
     }
-    .empty-state a { color: var(--emerald-bright); font-weight: 600; text-decoration: none; }
+    .center-state a { color: var(--emerald-bright); font-weight: 600; text-decoration: none; }
+    .spinner {
+      width: 2rem; height: 2rem; border-radius: 50%; margin: 0 auto .75rem;
+      border: 3px solid var(--border); border-top-color: var(--emerald); animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ---------- Hero ---------- */
-    .hero { text-align: center; padding: clamp(0.5rem, 3vw, 1.5rem) 0; }
-
-    .hero-emoji { font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 0.5rem; display: inline-block; }
-
-    .hero-title {
-      font-family: var(--font-display);
-      font-size: clamp(1.5rem, 5vw, 2.2rem);
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-    }
-
+    .hero { text-align: center; padding: clamp(.5rem, 3vw, 1.5rem) 0; }
+    .hero-emoji { font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: .5rem; display: inline-block; }
+    .hero-title { font-family: var(--font-display); font-size: clamp(1.5rem, 5vw, 2.2rem); font-weight: 700; margin-bottom: .25rem; }
     .hero-score {
-      font-size: clamp(3rem, 12vw, 5rem);
-      font-weight: 800;
+      font-size: clamp(3rem, 12vw, 5rem); font-weight: 800;
       background: linear-gradient(135deg, var(--emerald-bright), var(--teal));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.1;
-      margin-bottom: 0.4rem;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1.1; margin-bottom: .4rem;
     }
-
-    .hero-meta { font-size: 1rem; color: var(--muted); overflow-wrap: anywhere; }
+    .hero-meta { font-size: 1rem; color: var(--muted); }
     .hero-meta strong { color: var(--emerald-bright); font-weight: 600; }
-    .hero-sub { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; overflow-wrap: anywhere; }
-
-    .improvement {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      background: rgba(16, 185, 129, 0.12);
-      color: var(--emerald-bright);
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 0.3rem 0.75rem;
-      border-radius: 999px;
-      margin-top: 0.75rem;
+    .hero-sub { font-size: .85rem; color: var(--muted); margin-top: .25rem; overflow-wrap: anywhere; }
+    .badge-pill {
+      display: inline-flex; align-items: center; background: rgba(16,185,129,.12); color: var(--emerald-bright);
+      font-size: .8rem; font-weight: 600; padding: .3rem .75rem; border-radius: 999px; margin-top: .75rem;
     }
 
     /* ---------- Stats ---------- */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
-      gap: 0.75rem;
-    }
-
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr)); gap: .75rem; }
     .stat-card {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 1rem 0.75rem;
-      text-align: center;
-      min-width: 0;
-      transition: border-color 0.2s ease, transform 0.2s ease;
+      background: rgba(15,23,42,.8); border: 1px solid var(--border); border-radius: 1rem;
+      padding: 1rem .75rem; text-align: center; min-width: 0;
     }
-    .stat-card:hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, 0.3); }
-
-    .stat-value { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.15rem; overflow-wrap: anywhere; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; margin-bottom: .15rem; }
     .stat-value.green { color: var(--emerald-bright); }
     .stat-value.red { color: var(--red); }
     .stat-value.amber { color: var(--amber); }
     .stat-value.blue { color: #60a5fa; }
-    .stat-label { font-size: 0.8rem; color: var(--muted); }
+    .stat-label { font-size: .8rem; color: var(--muted); }
 
     /* ---------- Sections ---------- */
-    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--muted-light); }
-
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: .75rem; color: var(--muted-light); }
     .topic-item {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--border);
-      border-radius: 0.9rem;
-      padding: 0.8rem 1rem;
-      margin-bottom: 0.5rem;
+      background: rgba(15,23,42,.8); border: 1px solid var(--border); border-radius: .9rem;
+      padding: .8rem 1rem; margin-bottom: .5rem;
     }
-
-    .topic-header { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.45rem; }
-    .topic-name { font-size: 0.95rem; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
-    .topic-score { font-size: 0.88rem; font-weight: 600; flex-shrink: 0; }
-
-    .topic-bar { height: 0.4rem; background: rgba(51, 65, 85, 0.6); border-radius: 999px; overflow: hidden; }
-    .topic-fill { height: 100%; width: 0; border-radius: 999px; transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+    .topic-header { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .45rem; }
+    .topic-name { font-size: .95rem; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+    .topic-score { font-size: .88rem; font-weight: 600; flex-shrink: 0; }
+    .topic-bar { height: .4rem; background: rgba(51,65,85,.6); border-radius: 999px; overflow: hidden; }
+    .topic-fill { height: 100%; width: 0; border-radius: 999px; transition: width .9s cubic-bezier(.22,1,.36,1); }
     .topic-fill.emerald { background: linear-gradient(90deg, #10b981, #34d399); }
     .topic-fill.amber { background: var(--amber); }
     .topic-fill.red { background: var(--red); }
-
     .topic-score.emerald { color: var(--emerald-bright); }
     .topic-score.amber { color: var(--amber); }
     .topic-score.red { color: var(--red); }
 
     .recommend-card {
-      background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(15, 23, 42, 0.8));
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      border-radius: 1rem;
-      padding: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
+      background: linear-gradient(145deg, rgba(16,185,129,.1), rgba(15,23,42,.8));
+      border: 1px solid rgba(16,185,129,.3); border-radius: 1rem; padding: 1rem;
+      display: flex; align-items: center; gap: .85rem;
     }
-
     .recommend-icon {
-      width: 2.9rem;
-      height: 2.9rem;
-      border-radius: 0.8rem;
-      background: rgba(16, 185, 129, 0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.35rem;
-      flex-shrink: 0;
+      width: 2.9rem; height: 2.9rem; border-radius: .8rem; background: rgba(16,185,129,.15);
+      display: flex; align-items: center; justify-content: center; font-size: 1.35rem; flex-shrink: 0;
     }
-
     .recommend-body { min-width: 0; }
-    .recommend-body h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.15rem; overflow-wrap: anywhere; }
-    .recommend-body p { font-size: 0.85rem; color: var(--muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .recommend-body h3 { font-size: .98rem; font-weight: 600; margin-bottom: .15rem; overflow-wrap: anywhere; }
+    .recommend-body p { font-size: .85rem; color: var(--muted); line-height: 1.45; overflow-wrap: anywhere; }
 
-    /* ---------- Bottom actions (sticky, never covers content) ---------- */
+    /* ---------- Correction section ---------- */
+    .tabs { display: flex; gap: .5rem; margin-bottom: .85rem; flex-wrap: wrap; }
+    .tab {
+      min-height: 2.5rem; padding: 0 1rem; border-radius: .75rem; font: inherit; font-size: .85rem; font-weight: 600;
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
+    }
+    .tab[aria-pressed="true"] { border-color: var(--emerald); color: var(--emerald-bright); background: rgba(16,185,129,.1); }
+
+    .rev-item {
+      background: rgba(15,23,42,.85); border: 1px solid var(--border); border-radius: 1rem;
+      padding: 1rem; margin-bottom: .75rem;
+    }
+    .rev-item.bad { border-color: rgba(248,113,113,.4); }
+    .rev-item.good { border-color: rgba(16,185,129,.35); }
+    .rev-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
+    .rev-num { font-size: .8rem; font-weight: 700; color: var(--muted); }
+    .tag { font-size: .72rem; font-weight: 700; padding: .2rem .55rem; border-radius: 999px; }
+    .tag.bad { background: rgba(248,113,113,.15); color: var(--red); }
+    .tag.good { background: rgba(16,185,129,.15); color: var(--emerald-bright); }
+    .tag.skip { background: rgba(251,191,36,.15); color: var(--amber); }
+    .rev-q { font-size: .98rem; font-weight: 600; line-height: 1.5; margin-bottom: .75rem; overflow-wrap: anywhere; white-space: pre-line; }
+    .rev-ans {
+      border-radius: .65rem; padding: .6rem .8rem; font-size: .88rem; line-height: 1.45;
+      margin-bottom: .5rem; overflow-wrap: anywhere; border: 1px solid transparent;
+    }
+    .rev-ans small { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; margin-bottom: .15rem; opacity: .85; }
+    .rev-ans.you-bad { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.4); color: var(--red); }
+    .rev-ans.you-skip { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.35); color: var(--amber); }
+    .rev-ans.correct { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.4); color: var(--emerald-bright); }
+    .rev-exp { font-size: .85rem; color: var(--muted-light); line-height: 1.55; margin-top: .6rem; overflow-wrap: anywhere; white-space: pre-line; }
+    .rev-exp b { color: var(--muted); font-weight: 700; }
+
+    /* ---------- Bottom actions ---------- */
     .bottom-actions {
-      position: sticky;
-      bottom: 0;
-      z-index: 40;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 1rem var(--pad);
-      padding-bottom: max(1rem, env(safe-area-inset-bottom));
-      padding-left: max(var(--pad), env(safe-area-inset-left));
-      padding-right: max(var(--pad), env(safe-area-inset-right));
-      background: linear-gradient(to top, var(--bg) 75%, rgba(6, 11, 26, 0));
+      position: sticky; bottom: 0; z-index: 40; display: flex; flex-direction: column; gap: .5rem;
+      padding: 1rem var(--pad); padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      background: linear-gradient(to top, var(--bg) 75%, rgba(6,11,26,0));
     }
-
     .btn {
-      min-height: 3rem;
-      border-radius: 0.9rem;
-      font: inherit;
-      font-size: 0.95rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      text-decoration: none;
-      gap: 0.5rem;
-      padding: 0.5rem 1.25rem;
-      cursor: pointer;
-      border: none;
-      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-      overflow-wrap: anywhere;
+      min-height: 3rem; border-radius: .9rem; font: inherit; font-size: .95rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none;
+      padding: .5rem 1.25rem; cursor: pointer; border: none; transition: transform .15s ease;
     }
-    .btn:active { transform: scale(0.97); }
-    .btn:focus-visible, .status button:focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #022c22;
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.28);
-    }
-    .btn-primary:hover { box-shadow: 0 10px 24px rgba(16, 185, 129, 0.38); }
-
+    .btn:active { transform: scale(.97); }
+    .btn:focus-visible, .tab:focus-visible, .status button:focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+    .btn-primary { background: linear-gradient(135deg, #10b981, #059669); color: #022c22; box-shadow: 0 6px 20px rgba(16,185,129,.28); }
     .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
-    .btn-secondary:hover { background: var(--surface-2); }
-
     @media (min-width: 40rem) {
       .bottom-actions { flex-direction: row; justify-content: center; }
       .bottom-actions .btn { flex: 0 1 18rem; }
     }
-
-    /* ---------- Edge cases ---------- */
-    @media (max-height: 480px) and (orientation: landscape) {
-      .bottom-actions { position: static; }
-    }
-
-    @media (min-width: 1800px) { html { font-size: 20px; } }
-
-    @media (prefers-reduced-motion: reduce) {
-      * { transition: none !important; }
-    }
+    @media (max-height: 480px) and (orientation: landscape) { .bottom-actions { position: static; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
   </style>
 </head>
 <body>
   <div class="app">
     <main class="content">
-      <!-- Status / save messages -->
-      <div class="status full" id="statusBanner" role="alert" hidden>
+      <div class="status" id="statusBanner" role="alert" hidden>
         <span id="statusText"></span>
-        <button type="button" id="statusRetry" hidden>Retry</button>
+        <button type="button" id="statusRetry">Retry</button>
       </div>
 
-      <!-- Empty state -->
-      <div class="empty-state full" id="emptyState" hidden></div>
+      <div class="center-state" id="loadingState">
+        <div class="spinner" aria-hidden="true"></div>
+        Calculating your result…
+      </div>
 
-      <!-- Everything below is only shown when there is a real result -->
-      <div class="full" id="resultWrap" hidden style="display:none">
-        <div class="content" style="padding:0">
-          <!-- Hero -->
-          <div class="hero full">
-            <div class="hero-emoji" id="heroEmoji"></div>
-            <div class="hero-title" id="heroTitle"></div>
-            <div class="hero-score" id="heroScore"></div>
-            <div class="hero-meta" id="heroMeta"></div>
-            <div class="hero-sub" id="heroSub"></div>
-            <div class="improvement" id="heroBadge"></div>
-          </div>
+      <div class="center-state" id="emptyState" hidden></div>
 
-          <!-- Stats -->
-          <div class="stats-grid full" id="statsGrid"></div>
+      <div id="resultWrap" hidden style="display:flex;flex-direction:column;gap:clamp(1rem,3vw,1.5rem)">
+        <div class="hero">
+          <div class="hero-emoji" id="heroEmoji"></div>
+          <div class="hero-title" id="heroTitle"></div>
+          <div class="hero-score" id="heroScore"></div>
+          <div class="hero-meta" id="heroMeta"></div>
+          <div class="hero-sub" id="heroSub"></div>
+          <div class="badge-pill" id="heroBadge"></div>
+        </div>
 
-          <!-- Topic Performance -->
-          <div class="section">
-            <h2 class="section-title">Topic Performance</h2>
-            <div id="topicList"></div>
-          </div>
+        <div class="stats-grid" id="statsGrid"></div>
 
-          <!-- Recommendation -->
-          <div class="section">
-            <h2 class="section-title">Recommendation</h2>
-            <div class="recommend-card">
-              <div class="recommend-icon" id="recIcon"></div>
-              <div class="recommend-body">
-                <h3 id="recTitle"></h3>
-                <p id="recText"></p>
-              </div>
+        <div class="section" id="topicSection" hidden>
+          <h2 class="section-title">Topic Performance</h2>
+          <div id="topicList"></div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Recommendation</h2>
+          <div class="recommend-card">
+            <div class="recommend-icon" id="recIcon"></div>
+            <div class="recommend-body">
+              <h3 id="recTitle"></h3>
+              <p id="recText"></p>
             </div>
           </div>
+        </div>
+
+        <div class="section" id="reviewSection">
+          <h2 class="section-title">Correction</h2>
+          <div class="tabs" role="group" aria-label="Filter questions">
+            <button type="button" class="tab" id="tabWrong" aria-pressed="true"></button>
+            <button type="button" class="tab" id="tabAll" aria-pressed="false"></button>
+          </div>
+          <div id="reviewList"></div>
         </div>
       </div>
     </main>
 
-    <!-- Bottom Actions -->
     <div class="bottom-actions" id="bottomActions" hidden>
-      <a class="btn btn-primary" id="practiceMoreBtn" href="practice.html">Practice More</a>
+      <a class="btn btn-primary" id="practiceMoreBtn" href="practice-setup.html">Practice More</a>
       <a class="btn btn-secondary" href="home.html">Back to Home</a>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+  (() => {
+    'use strict';
+
     /* ====== CONFIG ======
-       Where the result comes from (first match wins):
-       1. URL params:  results.html?score=24&total=30&topic=Genetics  (optional: incorrect, time, course, mode)
-       2. The submitted exam session saved by the exam page (key below). For scoring, each question needs
-          its correct answer:  questions: [ { id, topic, correct }, … ]  and  answers: { id: chosen }.
-    */
-    const SESSION_KEY = 'cbt_session';
-    const SUPABASE_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
-    const RESULTS_TABLE = 'test_results';
-    const SETUP_URL = 'practice-setup.html';
+       The quiz page sends the user here as results.html?result=<id>.
+       The page loads that saved attempt from Supabase through get_practice_result(),
+       then RE-CALCULATES the score from the stored answers and the correct answers.
+       Nothing is read from the URL except the id, so the score cannot be faked or go stale. */
+    const CONFIG = {
+      SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+      RPC_NAME: 'get_practice_result',
+      loginPage: 'login.html',
+      setupPage: 'practice-setup.html',
+      homePage: 'home.html'
+    };
     /* ==================== */
 
     const $ = (id) => document.getElementById(id);
+    const LETTERS = 'ABCDEFGHIJ';
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
       (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const pct = (c, t) => (t > 0 ? Math.round((c / t) * 100) : 0);
     const tier = (p) => (p >= 70 ? 'emerald' : p >= 50 ? 'amber' : 'red');
+    const optText = (o) => (o && typeof o === 'object') ? (o.text ?? o.label ?? '') : String(o ?? '');
+    const toIdx = (v) => (v === null || v === undefined || v === '' || isNaN(Number(v))) ? null : Number(v);
 
-    let store = null;
-    let sessionObj = null;
-    let result = null;
+    const resultId = (new URLSearchParams(location.search).get('result') || '').trim();
+    let db = null;
+    let viewAll = false;
+    let model = null;
 
-    /* ---------- Helpers ---------- */
-    function showStatus(message, type) {
-      const el = $('statusBanner');
-      el.classList.toggle('info', type === 'info');
-      $('statusText').innerHTML = '<strong>' + (type === 'info' ? 'Note:' : 'Problem:') + '</strong> ' + esc(message);
-      $('statusRetry').hidden = type === 'info';
-      el.hidden = false;
+    function showStatus(msg) {
+      $('statusText').innerHTML = '<strong>Problem:</strong> ' + esc(msg);
+      $('statusBanner').hidden = false;
     }
-    function clearStatus() { $('statusBanner').hidden = true; }
-
+    function showEmpty(msg, linkText, href) {
+      $('loadingState').hidden = true;
+      $('resultWrap').style.display = 'none';
+      $('bottomActions').hidden = true;
+      const box = $('emptyState');
+      box.hidden = false;
+      box.innerHTML = esc(msg) + (href ? '<br><a href="' + esc(href) + '">' + esc(linkText) + '</a>' : '');
+    }
     function formatDuration(sec) {
       if (sec == null || !isFinite(sec) || sec <= 0) return '–';
-      const h = Math.floor(sec / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = Math.floor(sec % 60);
+      const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
       if (h > 0) return h + 'h ' + String(m).padStart(2, '0') + 'm';
       return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
-    function readSession() {
-      const stores = [];
-      try { stores.push(window.sessionStorage); } catch (e) {}
-      try { stores.push(window.localStorage); } catch (e) {}
-      for (const s of stores) {
-        try {
-          const raw = s.getItem(SESSION_KEY);
-          if (raw) { store = s; return JSON.parse(raw); }
-        } catch (e) { /* ignore unreadable value */ }
+    /* ---------- Strict scoring ----------
+       A question is correct ONLY when an answer was given AND it equals the correct option.
+       Unanswered questions are never correct and are counted separately.
+       Percentage = correct / total questions in the attempt (unanswered count against you). */
+    function buildModel(raw) {
+      const rawItems = Array.isArray(raw.items) ? raw.items : [];
+      const items = rawItems.map((it, i) => {
+        const options = Array.isArray(it.options) ? it.options : [];
+        const correctIdx = toIdx(it.correct_index);
+        const selectedIdx = toIdx(it.selected_index);
+        const valid = correctIdx !== null && correctIdx >= 0 && correctIdx < options.length;
+        const answered = selectedIdx !== null;
+        return {
+          pos: it.position != null ? Number(it.position) : i,
+          question: it.question || '',
+          options, correctIdx, selectedIdx, valid, answered,
+          isCorrect: valid && answered && selectedIdx === correctIdx,
+          explanation: (it.explanation || '').trim(),
+          topic: (it.topic || '').trim()
+        };
+      }).sort((a, b) => a.pos - b.pos);
+
+      const total = items.length;
+      const correct = items.filter((x) => x.isCorrect).length;
+      const unanswered = items.filter((x) => !x.answered).length;
+      const wrong = total - correct - unanswered;
+      const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+      if (raw.correct != null && Number(raw.correct) !== correct) {
+        console.warn('[results] server score', raw.correct, 'differs from recalculated', correct, '- using recalculated.');
       }
-      return null;
-    }
 
-    function writeSession() {
-      if (!store || !sessionObj) return;
-      try { store.setItem(SESSION_KEY, JSON.stringify(sessionObj)); } catch (e) {}
-    }
-
-    /* ---------- Build the result from real data ---------- */
-    function fromParams() {
-      const p = new URLSearchParams(window.location.search);
-      const total = parseInt(p.get('total'), 10);
-      const score = parseInt(p.get('score'), 10);
-      if (!(total > 0) || isNaN(score)) return null;
-
-      const incorrectParam = parseInt(p.get('incorrect'), 10);
-      const wrong = !isNaN(incorrectParam) ? incorrectParam : Math.max(total - score, 0);
-      const time = parseInt(p.get('time'), 10);
-
-      return {
-        source: 'params',
-        mode: p.get('mode') === 'exam' ? 'exam' : 'practice',
-        code: p.get('course') || '',
-        title: '',
-        topic: p.get('topic') || '',
-        total,
-        correct: score,
-        wrong,
-        unanswered: Math.max(total - score - wrong, 0),
-        duration: !isNaN(time) ? time : null,
-        topics: []
-      };
-    }
-
-    function fromSession(s) {
-      if (!s || s.status !== 'submitted' || !Array.isArray(s.questions) || !s.questions.length) return null;
-
-      const answers = s.answers || {};
       const byTopic = new Map();
-      let correct = 0, wrong = 0, unanswered = 0, gradable = 0;
-
-      s.questions.forEach((q, i) => {
-        const id = q && typeof q === 'object' && q.id != null ? String(q.id) : String(i);
-        const key = q && typeof q === 'object'
-          ? (q.correct != null ? q.correct : (q.correct_answer != null ? q.correct_answer : q.answer))
-          : null;
-        if (key == null) return;
-        gradable++;
-
-        const given = Array.isArray(answers) ? answers[i] : (answers[id] !== undefined ? answers[id] : answers[i]);
-        const has = given !== undefined && given !== null && given !== '';
-        const isCorrect = has && String(given).trim().toLowerCase() === String(key).trim().toLowerCase();
-
-        if (isCorrect) correct++; else if (has) wrong++; else unanswered++;
-
-        const topic = (q && q.topic) || s.topic || '';
-        if (topic) {
-          if (!byTopic.has(topic)) byTopic.set(topic, { name: topic, c: 0, t: 0 });
-          const g = byTopic.get(topic);
-          g.t++;
-          if (isCorrect) g.c++;
-        }
+      items.forEach((x) => {
+        if (!x.topic) return;
+        if (!byTopic.has(x.topic)) byTopic.set(x.topic, { name: x.topic, c: 0, t: 0 });
+        const g = byTopic.get(x.topic); g.t++; if (x.isCorrect) g.c++;
       });
-
-      if (gradable !== s.questions.length) return { ungradable: true };
-
-      let duration = s.duration_seconds != null ? Number(s.duration_seconds) : null;
-      if (duration == null && s.started_at && s.submitted_at) {
-        duration = Math.round((new Date(s.submitted_at) - new Date(s.started_at)) / 1000);
-      }
-
-      const topics = [...byTopic.values()].map((g) => ({ name: g.name, c: g.c, t: g.t, p: pct(g.c, g.t) }))
+      const topics = [...byTopic.values()]
+        .map((g) => ({ ...g, p: g.t ? Math.round((g.c / g.t) * 100) : 0 }))
         .sort((a, b) => a.p - b.p);
 
       return {
-        source: 'session',
-        mode: s.mode === 'practice' ? 'practice' : 'exam',
-        code: s.course_code || '',
-        title: s.course_title || '',
-        topic: topics.length === 1 ? topics[0].name : (s.topic || ''),
-        total: s.questions.length,
-        correct, wrong, unanswered,
-        duration,
-        topics
+        items, total, correct, wrong, unanswered, percentage, topics,
+        mode: raw.mode === 'timed' ? 'timed' : 'practice',
+        title: raw.course_title || '', code: raw.course_code || '', courseId: raw.course_id || '',
+        duration: raw.duration_seconds != null ? Number(raw.duration_seconds) : null,
+        invalid: items.filter((x) => !x.valid).length
       };
     }
 
     /* ---------- Render ---------- */
-    function render(r) {
-      const percentage = pct(r.correct, r.total);
-      const label = r.topic || r.title || r.code || '';
-
-      $('heroEmoji').textContent = percentage >= 70 ? '🎉' : percentage >= 50 ? '👍' : '📚';
-      $('heroTitle').textContent = percentage >= 70 ? 'Great Job!' : percentage >= 50 ? 'Good Effort!' : 'Keep Practicing!';
-      $('heroScore').textContent = percentage + '%';
-      $('heroMeta').innerHTML = `<strong>${r.correct}</strong> / ${r.total} Correct`;
-      $('heroSub').textContent = [r.code, r.title && r.title !== r.code ? r.title : ''].filter(Boolean).join(' • ');
+    function render(m) {
+      const p = m.percentage;
+      $('heroEmoji').textContent = p >= 70 ? '🎉' : p >= 50 ? '👍' : '📚';
+      $('heroTitle').textContent = p >= 70 ? 'Great Job!' : p >= 50 ? 'Good Effort!' : 'Keep Practicing!';
+      $('heroScore').textContent = p + '%';
+      $('heroMeta').innerHTML = `<strong>${m.correct}</strong> / ${m.total} Correct`;
+      $('heroSub').textContent = [m.code, m.title && m.title !== m.code ? m.title : ''].filter(Boolean).join(' • ');
       $('heroSub').hidden = !$('heroSub').textContent;
-      $('heroBadge').textContent = r.mode === 'practice' ? 'Practice Complete' : 'Exam Complete';
+      $('heroBadge').textContent = m.mode === 'timed' ? 'Timed Exam Complete' : 'Practice Complete';
 
+      const tc = tier(p) === 'emerald' ? 'green' : tier(p) === 'amber' ? 'amber' : 'red';
       const cards = [
-        { v: percentage + '%', c: tier(percentage) === 'emerald' ? 'green' : tier(percentage) === 'amber' ? 'amber' : 'red', l: 'Accuracy' },
-        { v: formatDuration(r.duration), c: 'blue', l: 'Time Taken' },
-        { v: r.correct, c: 'green', l: 'Correct' },
-        { v: r.wrong, c: 'red', l: 'Incorrect' }
+        { v: p + '%', c: tc, l: 'Accuracy' },
+        { v: formatDuration(m.duration), c: 'blue', l: 'Time Taken' },
+        { v: m.correct, c: 'green', l: 'Correct' },
+        { v: m.wrong, c: 'red', l: 'Incorrect' }
       ];
-      if (r.unanswered > 0) cards.push({ v: r.unanswered, c: 'amber', l: 'Unanswered' });
+      if (m.unanswered > 0) cards.push({ v: m.unanswered, c: 'amber', l: 'Unanswered' });
       $('statsGrid').innerHTML = cards.map((x) =>
         `<div class="stat-card"><div class="stat-value ${x.c}">${esc(x.v)}</div><div class="stat-label">${x.l}</div></div>`).join('');
 
-      // Topic performance: per-topic when known, otherwise one overall row
-      const rows = r.topics.length
-        ? r.topics
-        : [{ name: label || 'Overall', c: r.correct, t: r.total, p: percentage }];
-      $('topicList').innerHTML = rows.map((g) => {
-        const t = tier(g.p);
-        return `
-          <div class="topic-item">
-            <div class="topic-header">
-              <span class="topic-name">${esc(g.name)}</span>
-              <span class="topic-score ${t}">${g.p}%</span>
-            </div>
-            <div class="topic-bar"><div class="topic-fill ${t}" data-w="${g.p}"></div></div>
-          </div>`;
-      }).join('');
-      requestAnimationFrame(() => setTimeout(() => {
-        document.querySelectorAll('.topic-fill').forEach((b) => { b.style.width = b.dataset.w + '%'; });
-      }, 150));
+      // Topic performance only when the questions carry topics
+      if (m.topics.length) {
+        $('topicSection').hidden = false;
+        $('topicList').innerHTML = m.topics.map((g) => {
+          const t = tier(g.p);
+          return `<div class="topic-item">
+            <div class="topic-header"><span class="topic-name">${esc(g.name)}</span><span class="topic-score ${t}">${g.p}% (${g.c}/${g.t})</span></div>
+            <div class="topic-bar"><div class="topic-fill ${t}" data-w="${g.p}"></div></div></div>`;
+        }).join('');
+        requestAnimationFrame(() => setTimeout(() => {
+          document.querySelectorAll('.topic-fill').forEach((b) => { b.style.width = b.dataset.w + '%'; });
+        }, 150));
+      }
 
-      // Recommendation from the actual numbers
-      const weakest = r.topics.length > 1 ? r.topics[0] : null;
+      // Recommendation from real numbers
+      const weakest = m.topics.length > 1 ? m.topics[0] : null;
       if (weakest && weakest.p < 70) {
         $('recIcon').textContent = '🎯';
         $('recTitle').textContent = 'Focus on ' + weakest.name;
-        $('recText').textContent = `You scored ${weakest.p}% (${weakest.c}/${weakest.t}) here. Review the questions you missed in this topic first.`;
-      } else if (percentage >= 70) {
+        $('recText').textContent = `You scored ${weakest.p}% (${weakest.c}/${weakest.t}) here. Check the corrections below first.`;
+      } else if (p >= 70) {
         $('recIcon').textContent = '✅';
-        $('recTitle').textContent = label ? `Strong result in ${label}` : 'Strong result';
-        $('recText').textContent = `You got ${r.correct} of ${r.total} right. Keep practicing regularly to stay sharp.`;
+        $('recTitle').textContent = 'Strong result';
+        $('recText').textContent = `You got ${m.correct} of ${m.total} right. Keep practicing regularly to stay sharp.`;
       } else {
         $('recIcon').textContent = '📖';
-        $('recTitle').textContent = label ? `Review ${label}` : 'Review your mistakes';
-        $('recText').textContent = `You missed ${r.wrong + r.unanswered} of ${r.total} questions. Go through those answers to strengthen your understanding.`;
+        $('recTitle').textContent = 'Review your mistakes';
+        $('recText').textContent = `You missed ${m.wrong + m.unanswered} of ${m.total} questions. Go through the corrections below.`;
       }
 
-      $('practiceMoreBtn').textContent = label ? `Practice More ${label}` : 'Practice More';
+      const q = m.courseId ? `?course=${encodeURIComponent(m.courseId)}` : '';
+      $('practiceMoreBtn').href = CONFIG.setupPage + q;
+      $('practiceMoreBtn').textContent = m.title ? `Practice More ${m.title}` : 'Practice More';
 
-      $('resultWrap').hidden = false;
-      $('resultWrap').style.display = '';
-      $('bottomActions').hidden = false;
+      renderReview();
+
+      $('loadingState').hidden = true;
       $('emptyState').hidden = true;
+      $('resultWrap').style.display = 'flex';
+      $('bottomActions').hidden = false;
     }
 
-    function renderEmpty(message) {
-      $('resultWrap').hidden = true;
-      $('resultWrap').style.display = 'none';
-      $('bottomActions').hidden = true;
-      $('emptyState').hidden = false;
-      $('emptyState').innerHTML = esc(message) + '<br><a href="' + esc(SETUP_URL) + '">Start a practice session</a>';
-    }
+    function renderReview() {
+      const m = model;
+      const missed = m.items.filter((x) => !x.isCorrect);
+      $('tabWrong').textContent = `Needs correction (${missed.length})`;
+      $('tabAll').textContent = `All questions (${m.total})`;
+      $('tabWrong').setAttribute('aria-pressed', String(!viewAll));
+      $('tabAll').setAttribute('aria-pressed', String(viewAll));
 
-    /* ---------- Save to Supabase so Profile + Progress update live ---------- */
-    async function saveResult(force) {
-      if (!result) return;
-
-      // Don't save twice for the same attempt
-      if (result.source === 'session') {
-        if (sessionObj && sessionObj.result_saved) return;
-      } else if (!force) {
-        const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-        if (nav && nav.type !== 'navigate') return; // reload / back-forward: already saved
-      }
-
-      if (!window.supabase || !window.supabase.createClient) {
-        showStatus('The Supabase library did not load, so this result was not saved.');
+      const list = viewAll ? m.items : missed;
+      if (!list.length) {
+        $('reviewList').innerHTML = '<div class="center-state">🎉 Perfect score — nothing to correct.</div>';
         return;
       }
+      $('reviewList').innerHTML = list.map((x) => {
+        const state = x.isCorrect ? 'good' : x.answered ? 'bad' : 'skip';
+        const tagText = x.isCorrect ? 'Correct' : x.answered ? 'Incorrect' : 'Unanswered';
+        const label = (i) => `${LETTERS[i] || i + 1}. ${optText(x.options[i])}`;
+
+        let youBlock = '';
+        if (!x.isCorrect) {
+          youBlock = x.answered
+            ? `<div class="rev-ans you-bad"><small>Your answer</small>${esc(label(x.selectedIdx))}</div>`
+            : `<div class="rev-ans you-skip"><small>Your answer</small>You didn’t answer this question</div>`;
+        }
+        const correctBlock = x.valid
+          ? `<div class="rev-ans correct"><small>Correct answer</small>${esc(label(x.correctIdx))}</div>`
+          : `<div class="rev-ans you-skip"><small>Correct answer</small>Not available for this question</div>`;
+        const exp = x.explanation ? `<div class="rev-exp"><b>Explanation:</b> ${esc(x.explanation)}</div>` : '';
+
+        return `<article class="rev-item ${state === 'good' ? 'good' : 'bad'}">
+          <div class="rev-head"><span class="rev-num">Question ${x.pos + 1}</span><span class="tag ${state}">${tagText}</span></div>
+          <div class="rev-q">${esc(x.question)}</div>
+          ${youBlock}${correctBlock}${exp}
+        </article>`;
+      }).join('');
+    }
+
+    /* ---------- Load ---------- */
+    async function load() {
+      $('statusBanner').hidden = true;
+      $('loadingState').hidden = false;
+      $('emptyState').hidden = true;
+
+      if (!resultId) return showEmpty('No result selected.', 'Start a practice session', CONFIG.setupPage);
+      if (!window.supabase || !window.supabase.createClient) {
+        $('loadingState').hidden = true;
+        return showStatus('The app did not load. Check your connection and retry.');
+      }
+      if (!db) db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
       try {
-        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const { data, error: authError } = await sb.auth.getSession();
-        if (authError) throw authError;
-        if (!data.session) {
-          showStatus('You are not signed in, so this result was not saved to your progress.', 'info');
-          return;
+        const { data: { session }, error: sErr } = await db.auth.getSession();
+        if (sErr) throw sErr;
+        if (!session) {
+          const next = location.pathname.split('/').pop() + location.search;
+          return location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(next)}`);
         }
 
-        const { error } = await sb.from(RESULTS_TABLE).insert({
-          user_id: data.session.user.id,
-          course_code: result.code || null,
-          course_title: result.title || null,
-          topic: result.topic || null,
-          mode: result.mode,
-          score: result.correct,
-          total_questions: result.total,
-          duration_seconds: result.duration && result.duration > 0 ? Math.round(result.duration) : 0
-        });
+        const { data, error } = await db.rpc(CONFIG.RPC_NAME, { p_result_id: resultId });
         if (error) throw error;
+        if (!data) return showEmpty('We couldn’t find that result. It may belong to another account.', 'Start a practice session', CONFIG.setupPage);
 
-        if (result.source === 'session' && sessionObj) {
-          sessionObj.result_saved = true;
-          writeSession();
+        const raw = typeof data === 'string' ? JSON.parse(data) : data;
+        model = buildModel(raw);
+        if (!model.total) return showEmpty('This session has no questions, so there is nothing to score.', 'Start a practice session', CONFIG.setupPage);
+
+        render(model);
+        if (model.invalid > 0) {
+          showStatus(`${model.invalid} question(s) have no valid answer key and were counted as not correct.`);
         }
-        clearStatus();
       } catch (e) {
-        console.error('[results] save failed:', e);
-        showStatus('Your result could not be saved: ' + ((e && e.message) || e));
+        console.error('[results] load failed:', e);
+        $('loadingState').hidden = true;
+        showStatus('Could not load your result: ' + ((e && e.message) || e));
       }
     }
 
-    /* ---------- Init ---------- */
-    document.addEventListener('DOMContentLoaded', () => {
-      $('statusRetry').addEventListener('click', () => saveResult(true));
-
-      sessionObj = readSession();
-      result = fromParams();
-      if (!result) result = fromSession(sessionObj);
-
-      if (result && result.ungradable) {
-        result = null;
-        renderEmpty('This session has no answer key, so a score cannot be calculated.');
-        return;
-      }
-      if (!result) {
-        renderEmpty('No results to show yet.');
-        return;
-      }
-
-      render(result);
-      saveResult(false);
-    });
+    $('statusRetry').addEventListener('click', load);
+    $('tabWrong').addEventListener('click', () => { viewAll = false; renderReview(); });
+    $('tabAll').addEventListener('click', () => { viewAll = true; renderReview(); });
+    document.addEventListener('DOMContentLoaded', load);
+  })();
   </script>
 </body>
 </html>
