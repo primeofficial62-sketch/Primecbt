@@ -780,6 +780,59 @@
     }
     return d.publicUrl;
   }
+  /* ---------- PDF autofill ---------- */
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  async function pdfOutline(pdf) {
+    var out = await pdf.getOutline(), titles = [];
+    if (!out) return titles;
+    (function walk(items, depth) {
+      items.forEach(function (it) {
+        if (it.title && it.title.trim()) titles.push(it.title.trim());
+        if (it.items && it.items.length && depth < 1) walk(it.items, depth + 1);
+      });
+    })(out, 0);
+    return titles;
+  }
+  async function pdfHeadings(pdf) {
+    var lines = [], n = Math.min(pdf.numPages, 40);
+    for (var p = 1; p <= n; p++) {
+      var tc = await (await pdf.getPage(p)).getTextContent(), rows = {};
+      tc.items.forEach(function (it) {
+        if (!it.str.trim()) return;
+        var y = Math.round(it.transform[5]), sz = Math.abs(it.transform[0]);
+        rows[y] = rows[y] || { text: '', size: 0 };
+        rows[y].text += it.str + ' ';
+        rows[y].size = Math.max(rows[y].size, sz);
+      });
+      Object.keys(rows).forEach(function (k) { lines.push({ text: rows[k].text.trim(), size: rows[k].size }); });
+    }
+    if (!lines.length) return [];
+    var sizes = lines.map(function (l) { return l.size; }).sort(function (a, b) { return a - b; });
+    var median = sizes[Math.floor(sizes.length / 2)], seen = {};
+    return lines.filter(function (l) {
+      var k = l.text.toLowerCase();
+      if (l.size <= median * 1.15 || l.text.length < 4 || l.text.length > 80 || /^\d+$/.test(l.text) || seen[k]) return false;
+      seen[k] = 1; return true;
+    }).map(function (l) { return l.text; }).slice(0, 15);
+  }
+  function setVal(id, v) {
+    var el = $(id); if (!el || v === '' || v == null) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  async function autofillFromPdf(f) {
+    if (!window.pdfjsLib) return;
+    var pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+    var topics = [];
+    try { topics = await pdfOutline(pdf); } catch (e) {}
+    if (!topics.length) { try { topics = await pdfHeadings(pdf); } catch (e) {} }
+    setVal('f_page_count', pdf.numPages);
+    setVal('f_size_bytes', f.size);
+    setVal('f_material_type', 'PDF');
+    if (topics.length) setVal('f_topic', topics.join(', '));
+      }
+  
   function wireUpload() {
     var inp = $('f_upload'); if (!inp) return;
     inp.addEventListener('change', async function () {
@@ -796,6 +849,11 @@
         if ($('f_size_bytes')) $('f_size_bytes').value = f.size;
         if ($('f_material_type') && !$('f_material_type').value.trim()) {
           $('f_material_type').value = ext === 'pdf' ? 'PDF' : /^(ppt|pptx)$/.test(ext) ? 'Slides' : /^(png|jpe?g|gif|webp|heic)$/.test(ext) ? 'Image' : 'Notes';
+        }
+        if (ext === 'pdf' || f.type === 'application/pdf') {
+          $('upStatus').textContent = 'Reading PDF…';
+          try { await autofillFromPdf(f); } catch (e) { console.error('PDF autofill failed', e); }
+          if (!$('upStatus')) { upBusy = false; return; }
         }
         $('upStatus').textContent = 'Uploaded: ' + f.name;
       } catch (e) {
