@@ -380,6 +380,7 @@
        CONFIG — questions come live from your Supabase database.
        Scoring and XP are calculated on the server by the
        submit_practice_session() function.
+       Question rotation uses the user_seen_questions table.
        ============================================================ */
     const CONFIG = {
       SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
@@ -521,7 +522,29 @@
       const { data, error } = await q;
       if (error) throw error;
       const rows = (data || []).filter((r) => Array.isArray(r.options) && r.options.length >= 2);
-      return (randomize ? shuffle(rows) : rows).slice(0, wantCount);
+
+      // ---- Rotation ----
+      // Serve questions this user has NOT seen yet for this course. When they run out,
+      // fall back to the ones seen longest ago, so the same questions never repeat early.
+      let seenAt = new Map();
+      try {
+        const { data: seenRows } = await db.from('user_seen_questions')
+          .select('question_id,seen_at')
+          .eq('user_id', S.user.id)
+          .eq('course_id', S.course.id)
+          .limit(5000);
+        seenAt = new Map((seenRows || []).map((r) => [r.question_id, r.seen_at]));
+      } catch (_) { /* if the table is unreachable, just behave like before */ }
+
+      const fresh = rows.filter((r) => !seenAt.has(r.id));
+      let picked = (randomize ? shuffle(fresh) : fresh).slice(0, wantCount);
+      if (picked.length < wantCount) {
+        const stale = rows
+          .filter((r) => seenAt.has(r.id))
+          .sort((a, b) => new Date(seenAt.get(a.id)) - new Date(seenAt.get(b.id)));
+        picked = picked.concat(stale.slice(0, wantCount - picked.length));
+      }
+      return randomize ? shuffle(picked) : picked;
     }
 
     /* ---------- render ---------- */
@@ -702,6 +725,16 @@
         return;
       }
       S.done = true; clearInterval(tick); clearSaved();
+
+      // Mark these questions as seen so the next quiz on this course rotates to new ones.
+      try {
+        const now = new Date().toISOString();
+        await db.from('user_seen_questions').upsert(
+          S.qs.map((q) => ({ user_id: S.user.id, question_id: q.id, course_id: S.course.id, seen_at: now })),
+          { onConflict: 'user_id,question_id' }
+        );
+      } catch (_) { /* never block the results page because of this */ }
+
       location.href = `${CONFIG.resultsPage}?result=${encodeURIComponent(data)}`;
     }
 
