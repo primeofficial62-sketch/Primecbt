@@ -1691,6 +1691,7 @@
     var sec = SECTIONS.filter(function (s) { return s.id === id; })[0];
     if (!sec) return;
     current = id;
+    try { localStorage.setItem('pc-section', id); } catch (e) {}
     setTask(null);
     closeSheet(true);
     if (dlgDone) dlgDone(false);
@@ -1719,7 +1720,10 @@
     $('splash').hidden = true;
     $('lock').hidden = true; $('app').hidden = false;
     buildNav();
-    go('dashboard');
+    var saved = '', y = 0;
+    try { saved = localStorage.getItem('pc-section') || ''; y = +sessionStorage.getItem('pc-scroll') || 0; } catch (e) {}
+    if (!SECTIONS.some(function (s) { return s.id === saved; })) saved = 'dashboard';
+    go(saved).then(function () { if (y) window.scrollTo(0, y); });
   }
 
   async function lockNow() {
@@ -1753,6 +1757,14 @@
         if (found) showStudent(found);
       }
     });
+
+    var scrollT;
+    window.addEventListener('scroll', function () {
+      clearTimeout(scrollT);
+      scrollT = setTimeout(function () { try { sessionStorage.setItem('pc-scroll', String(window.scrollY)); } catch (e) {} }, 150);
+    }, { passive: true });
+
+    $('pinIn').addEventListener('input', onPin);
 
     $('pinIn').addEventListener('input', onPin);
     setMode('login');
