@@ -3,14 +3,17 @@
 //   SUPABASE_URL                 e.g. https://xuofkjjhupgmrphzgyun.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY    Supabase > Settings > API Keys > secret / service_role key
 //   ADMIN_SESSION_SECRET         any long random text (40+ characters)
+//   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
 
 const crypto = require('crypto');
 
 const URL_ = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SECRET = process.env.ADMIN_SESSION_SECRET || '';
+const BUCKET = process.env.STORAGE_BUCKET || 'materials';
 const COOKIE = 'admin_session';
 const WEEK = 7 * 24 * 3600;
+const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
 
 // What the panel may touch. columns = fields it may write. search = fields the search box looks in.
 const TABLES = {
@@ -41,7 +44,7 @@ async function sb(path, opts) {
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
   if (!res.ok) {
-    const msg = (data && (data.message || data.msg || data.error_description)) || 'Database error';
+    const msg = (data && (data.message || data.msg || data.error_description || data.error)) || 'Database error';
     if (/foreign key|violates/i.test(msg)) throw new HttpError(409, 'This item is still in use by other records. Remove those first.');
     throw new HttpError(res.status >= 500 ? 502 : 400, msg);
   }
@@ -110,6 +113,19 @@ async function count(table, filter) {
   return parseInt(cr.split('/')[1], 10) || 0;
 }
 async function safeCount(table, filter) { try { return await count(table, filter); } catch (e) { return 0; } }
+
+/* ---------- file uploads (Supabase Storage) ---------- */
+async function signUpload(path) {
+  const r = await sb('/storage/v1/object/upload/sign/' + BUCKET + '/' + enc(path), { method: 'POST', body: {} });
+  const d = r.data || {};
+  let signed = d.url || d.signedURL || d.signedUrl || '';
+  if (!signed) throw new HttpError(502, 'Storage did not return an upload link.');
+  if (signed.indexOf('http') !== 0) {
+    if (signed.indexOf('/storage/v1') !== 0) signed = '/storage/v1' + (signed.charAt(0) === '/' ? '' : '/') + signed;
+    signed = URL_ + signed;
+  }
+  return signed;
+}
 
 /* ---------- actions ---------- */
 const actions = {
@@ -232,6 +248,30 @@ const actions = {
     if (!isId(String(b.id))) throw new HttpError(400, 'Bad id.');
     await sb('/rest/v1/' + b.table + '?id=eq.' + enc(b.id), { method: 'DELETE' });
     return { ok: true };
+  },
+
+  // Gives the admin page a one-time link to upload a file straight to Supabase Storage,
+  // and the public link to save in the "File link" box.
+  async upload_url(req, res, b) {
+    await requireAuth(req);
+    const original = String(b.name || 'file');
+    const ext = (original.split('.').pop() || '').toLowerCase();
+    if (UPLOAD_EXT.indexOf(ext) < 0) throw new HttpError(400, 'This file type is not allowed.');
+    const base = original.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || 'file';
+    const path = Date.now() + '-' + crypto.randomBytes(3).toString('hex') + '-' + base + '.' + ext;
+
+    let signedUrl;
+    try {
+      signedUrl = await signUpload(path);
+    } catch (e) {
+      // First upload ever: create the public bucket, then try again.
+      if (/bucket not found|not found/i.test(e.message)) {
+        try { await sb('/storage/v1/bucket', { method: 'POST', body: { id: BUCKET, name: BUCKET, public: true } }); }
+        catch (e2) { if (!/already exists|duplicate/i.test(e2.message)) throw new HttpError(500, 'Could not create the "' + BUCKET + '" storage bucket: ' + e2.message); }
+        signedUrl = await signUpload(path);
+      } else throw e;
+    }
+    return { signedUrl: signedUrl, publicUrl: URL_ + '/storage/v1/object/public/' + BUCKET + '/' + enc(path) };
   },
 
   async notify(req, res, b) {
