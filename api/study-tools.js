@@ -18,8 +18,8 @@ const DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 40;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const MAX_CHARS = 60000;
 
-let pdfParse = null;
-try { pdfParse = require('pdf-parse/lib/pdf-parse.js'); } catch (e) { pdfParse = null; }
+let extractText = null;
+try { extractText = require('./_extract.js').extractText; } catch (e) { extractText = null; }
 
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 
@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method !== 'POST') throw new HttpError(405, 'Method not allowed.');
     if (!GEMINI_KEY) throw new HttpError(500, 'The assistant is not set up yet (missing GEMINI_API_KEY on the server).');
-    if (!pdfParse) throw new HttpError(500, 'The PDF reader is not installed (add "pdf-parse": "1.1.1" to package.json).');
+    if (!extractText) throw new HttpError(500, 'The file reader is not installed (add "pdf-parse": "1.1.1" and "jszip": "3.10.1" to package.json).');
 
     // Signed-in students only
     const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -103,18 +103,17 @@ module.exports = async function handler(req, res) {
     const m = await supa('/rest/v1/materials?select=id,title,course,topic,file_url&id=eq.' + encodeURIComponent(b.material_id) + '&limit=1', token);
     const mat = m.ok && m.data && m.data[0];
     if (!mat) throw new HttpError(404, 'Material not found.');
-    if (!/\.pdf(\?|#|$)/i.test(mat.file_url || '')) throw new HttpError(400, 'Only PDF materials can be used here.');
+    if (!/\.(pdf|pptx|docx)(\?|#|$)/i.test(mat.file_url || '')) throw new HttpError(400, 'Only PDF, PowerPoint (.pptx) or Word (.docx) materials can be used here.');
 
     const dl = await fetch(mat.file_url);
-    if (!dl.ok) throw new HttpError(502, 'Could not open this PDF (' + dl.status + ').');
+    if (!dl.ok) throw new HttpError(502, 'Could not open this file (' + dl.status + ').');
     const buf = Buffer.from(await dl.arrayBuffer());
-    if (buf.slice(0, 4).toString() !== '%PDF') throw new HttpError(400, 'This file is not a PDF.');
-    if (buf.length > MAX_PDF_BYTES) throw new HttpError(400, 'This PDF is too large for study tools (over 20 MB).');
+    if (buf.length > MAX_PDF_BYTES) throw new HttpError(400, 'This file is too large for study tools (over 20 MB).');
 
     let text = '';
-    try { const p = await pdfParse(buf); text = String(p.text || ''); } catch (e) { text = ''; }
+    try { text = (await extractText(buf)).text; } catch (e) { throw new HttpError(400, e.message || 'This file could not be read.'); }
     text = text.replace(/\r/g, '').replace(/[ \t]+/g, ' ').trim();
-    if (text.replace(/\s+/g, '').length < 200) throw new HttpError(400, 'No readable text found in this PDF. Scanned PDFs cannot be used.');
+    if (text.replace(/\s+/g, '').length < 200) throw new HttpError(400, 'No readable text found in this file. Scanned PDFs and image-only slides cannot be used.');
     const clipped = text.length > MAX_CHARS;
     text = text.slice(0, MAX_CHARS);
 
