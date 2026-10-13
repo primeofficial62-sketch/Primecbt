@@ -152,7 +152,7 @@
       #menuBtn { display: inline-grid; }
       .tabbar { display: grid; }
     }
-    @media (min-width: 1024px) { .content { padding-bottom: 40px; } }
+    @media (min-width: 1024px) { .content { padding-bottom: 40px; } .tabbar { display: none !important; } }
     @media (max-width: 560px) { .live small { display: none; } .live { padding: 8px; } .live b { display: none; } }
 
     /* ---------- controls ---------- */
@@ -522,6 +522,7 @@
   function shake() { var d = $('dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); }
   function showLock() {
     setTask(null);
+    current = '';
     $('app').hidden = true; $('tabbar').hidden = true; $('lock').hidden = false;
     document.body.classList.remove('menu-open');
     closeSheet(true); $('dialogRoot').innerHTML = ''; $('palRoot').innerHTML = '';
@@ -1368,4 +1369,3 @@
       var b = e.target.closest('[data-r]'); if (!b) return;
       var ok = await confirmBox({ title: 'Delete this reply?', text: 'This cannot be undone.', yes: 'Delete', danger: true });
       if (!ok) return;
-      try { await api('remove', { table: 'discussion_re
