@@ -19,6 +19,19 @@
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
+  <script>
+    // If anything goes wrong, show the reason on screen instead of a blank page.
+    (function () {
+      function show(msg, where) {
+        var b = document.getElementById('boot'); if (!b) return;
+        b.hidden = false;
+        b.innerHTML = '<div><b>The admin panel could not start.</b><br><code></code><br><button onclick="location.reload()">Reload</button></div>';
+        b.querySelector('code').textContent = msg + (where ? '  (' + where + ')' : '');
+      }
+      window.addEventListener('error', function (e) { show(e.message || 'Unknown error', (e.filename || '').split('/').pop() + ':' + (e.lineno || '')); });
+      window.addEventListener('unhandledrejection', function (e) { show((e.reason && e.reason.message) || String(e.reason || 'Unknown error')); });
+    })();
+  </script>
   <style>
     :root {
       --bg: #F1F3F9; --surface: #FFFFFF; --surface-2: #F6F7FC; --line: #E0E4F0; --line-2: #CBD1E6;
@@ -75,6 +88,11 @@
     .pad button:disabled { opacity: .4; }
     @media (max-height: 600px) { .lock { place-items: start center; } .mark { width: 42px; height: 42px; } .dots { margin: 12px 0; } .pad { --k: 52px; gap: 8px; } }
     @media (prefers-reduced-motion: reduce) { .dots.shake { animation: none; } }
+
+    .boot { min-height: 100dvh; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); font-size: .95rem; line-height: 1.6; }
+    .boot b { color: var(--text); font-size: 1.05rem; }
+    .boot code { display: inline-block; max-width: 100%; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); color: var(--danger); font-size: .82rem; overflow-wrap: anywhere; }
+    .boot button { margin-top: 14px; padding: 10px 18px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font-weight: 600; }
 
     /* ---------- shell ---------- */
     .shell { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100dvh; }
@@ -285,6 +303,8 @@
 </head>
 <body>
 
+  <div class="boot" id="boot" role="status">Loading admin panel…</div>
+
   <!-- PIN screen -->
   <section class="lock" id="lock" hidden>
     <div class="lock-in">
@@ -421,17 +441,19 @@
   /* ================= server calls ================= */
   var net = { ok: true };
   async function api(action, payload) {
-    var res;
+    var res, data = {}, ctrl = new AbortController(), timer = setTimeout(function () { ctrl.abort(); }, 20000);
     try {
       res = await fetch(API_URL, {
-        method: 'POST', credentials: 'same-origin',
+        method: 'POST', credentials: 'same-origin', signal: ctrl.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(Object.assign({ action: action }, payload || {}))
       });
-    } catch (e) { net.ok = false; updatePill(); throw new Error('No connection. Check your internet and try again.'); }
+      try { data = await res.json(); } catch (e) { /* not JSON */ }
+    } catch (e) {
+      net.ok = false; updatePill();
+      throw new Error(e && e.name === 'AbortError' ? 'The server took too long to respond. Check your connection and try again.' : 'No connection. Check your internet and try again.');
+    } finally { clearTimeout(timer); }
     net.ok = true;
-    var data = {};
-    try { data = await res.json(); } catch (e) { /* not JSON */ }
     if (res.status === 401 && action !== 'login') { showLock(); setMode('login'); }
     if (!res.ok) {
       var err = new Error(data.error || ('Request failed (' + res.status + ').'));
@@ -1343,29 +1365,4 @@
     openSheet('Bulk import questions',
       '<div class="fld"><label for="iCourse">Course *</label><select id="iCourse">' + courses.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[1]) + '</option>'; }).join('') + '</select></div>' +
       '<div class="fld"><label for="iText">Questions as JSON *</label><textarea id="iText" rows="9" style="font-family:monospace;font-size:.82rem" placeholder=\'[{"question":"…","options":["…","…","…","…"],"correct_index":1,"explanation":"…","difficulty":"easy"}]\'></textarea>' +
-      '<div class="hint">correct_index counts from 0, so the first option is 0. Up to 300 questions at a time. Everything is checked before anything is saved.</div></div>',
-      '<button class="btn" id="iCancel">Cancel</button><button class="btn primary" id="iGo">Import questions</button>');
-    $('iCancel').onclick = function () { closeSheet(); };
-    $('iGo').onclick = async function () {
-      var items;
-      try { items = JSON.parse($('iText').value); } catch (e) { toast('That is not valid JSON. Check the brackets and quotes.', true); return; }
-      if (!Array.isArray(items)) { toast('The JSON must be a list: [ {...}, {...} ]', true); return; }
-      var btn = $('iGo'); btn.disabled = true;
-      try {
-        var r = await api('import_questions', { course_id: $('iCourse').value, items: items });
-        closeSheet(true); toast(r.added + (r.added === 1 ? ' question' : ' questions') + ' imported'); done();
-      } catch (e) { btn.disabled = false; toast(e.message, true); }
-    };
-  }
-
-  /* ================= navigation ================= */
-  var current = null;
-  var TABS = ['dashboard', 'students', 'questions', 'results'];
-  function buildNav() {
-    var html = '<div class="brand"><span class="mark">P</span><div><b>PRIME-CBT</b><small>Admin panel</small></div></div>', last = '';
-    SECTIONS.forEach(function (s) {
-      if (s.group !== last) { html += '<div class="nav-group">' + esc(s.group) + '</div>'; last = s.group; }
-      html += '<button class="nav" data-go="' + s.id + '">' + icon(s.icon) + '<span>' + esc(s.label) + '</span></button>';
-    });
-    html += '<div class="side-foot"><button class="nav" id="navLock">' + icon('lock') + '<span>Lock panel</span></button></div>';
-    $('drawer
+    
