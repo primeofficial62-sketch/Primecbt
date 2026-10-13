@@ -6,9 +6,10 @@
 //   GEMINI_API_KEY               needed for question writing (free key at aistudio.google.com)
 //   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
 //   GEMINI_MODEL                 (optional) force one Gemini model first. Otherwise the newest available one is used.
-//   QUESTIONS_PER_PDF            (optional) questions to write for every PDF. Defaults to 100.
+//   QUESTIONS_PER_PDF            (optional) questions to write for every file. Defaults to 100.
 //
-// Needs in package.json:  "pdf-parse": "1.1.1"  and  "@vercel/functions": "^2.0.0"
+// Needs in package.json:  "pdf-parse": "1.1.1", "jszip": "3.10.1" and "@vercel/functions": "^2.0.0"
+// Needs the file  api/_extract.js  (reads PDF, PowerPoint .pptx and Word .docx files)
 // Needs in Supabase: run setup.sql once.
 
 const crypto = require('crypto');
@@ -120,7 +121,8 @@ async function requireAuth(req) {
 /* ---------- helpers ---------- */
 const clean = function (s) { return String(s == null ? '' : s).replace(/[,()*%\\"']/g, ' ').trim().slice(0, 80); };
 const isId = function (s) { return typeof s === 'string' && /^[0-9a-zA-Z_-]{1,64}$/.test(s); };
-const isPdfUrl = function (u) { return /\.pdf(\?|#|$)/i.test(String(u || '')); };
+// A file the question writer can read: PDF, PowerPoint (.pptx) or Word (.docx).
+const isPdfUrl = function (u) { return /\.(pdf|pptx|docx)(\?|#|$)/i.test(String(u || '')); };
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 function tableOf(name) {
   if (!Object.prototype.hasOwnProperty.call(TABLES, name)) throw new HttpError(400, 'Unknown section.');
@@ -245,10 +247,10 @@ function shuffleOptions(options, correct) {
   return { options: items.map(function (i) { return i.t; }), correct_index: items.findIndex(function (i) { return i.ok; }) };
 }
 
-async function loadMaterialText(mat, fallback) {
+// Downloads the file (PDF, .pptx or .docx) and returns its text.
 async function loadMaterialText(mat, fallback) {
   let text = '', problem = '';
-  if (!extractText) problem = 'The file reader is not installed (add "jszip": "3.10.1" to package.json).';
+  if (!extractText) problem = 'The file reader is not installed (add "jszip": "3.10.1" to package.json and upload api/_extract.js).';
   else if (mat && mat.file_url) {
     try {
       const dl = await fetch(mat.file_url);
@@ -262,6 +264,7 @@ async function loadMaterialText(mat, fallback) {
   if (text.replace(/\s+/g, '').length < 200) throw new HttpError(400, problem || 'No readable text found in this file. Scanned PDFs and image-only slides cannot be used.');
   return text.slice(0, 400000);
 }
+
 async function setStatus(matId, patch) {
   try { await sb('/rest/v1/materials?id=eq.' + enc(matId), { method: 'PATCH', body: patch }); } catch (e) { /* columns not added yet: ignore */ }
 }
@@ -318,7 +321,7 @@ async function generateForMaterial(mat, courseId, opts) {
         Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < 4 &&
         typeof it.source_quote === 'string';
       const quote = ok ? normText(it.source_quote) : '';
-      if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { stats.rejected++; return; }   // the quoted passage must really exist in the PDF
+      if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { stats.rejected++; return; }   // the quoted passage must really exist in the file
       const key = normText(it.question);
       if (existing[key]) { stats.duplicates++; return; }
       existing[key] = 1;
@@ -342,7 +345,7 @@ async function generateForMaterial(mat, courseId, opts) {
   function buildPrompt(chunk, n) {
     const avoid = stems.slice(-60).map(function (s) { return '- ' + s; }).join('\n');
     return 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\n' +
-      'Material: ' + (mat.title || 'PDF') + '\n\n' +
+      'Material: ' + (mat.title || 'File') + '\n\n' +
       'Write ' + n + ' multiple-choice questions (fewer if the material does not support that many) using ONLY the text between the <material> tags.\n' +
       'Rules:\n' +
       '- Cover many different facts. Never write two questions about the same fact.\n' +
@@ -375,7 +378,7 @@ async function generateForMaterial(mat, courseId, opts) {
     await Promise.all([worker(), worker(), worker()]);
   }
 
-  // Pass 1: split the PDF into parts and write about 15 questions per part (asking for a few extra, since weak ones are thrown away).
+  // Pass 1: split the file into parts and write about 15 questions per part (asking for a few extra, since weak ones are thrown away).
   const parts = Math.min(Math.max(Math.ceil(need / 15), 1), 10);
   const chunks = splitText(text, parts);
   await pass(chunks, Math.min(Math.max(Math.ceil(need / parts * 1.35), 5), 30));
@@ -390,7 +393,7 @@ async function generateForMaterial(mat, courseId, opts) {
   let status = 'done', note = null;
   if (total < target * 0.9) {
     if (stats.apiErrors > 0) { status = 'partial'; note = stats.lastError; }          // will be retried automatically later
-    else { note = 'This PDF only supports about ' + total + ' good questions.'; }       // nothing more to get from it
+    else { note = 'This file only supports about ' + total + ' good questions.'; }      // nothing more to get from it
   }
   await setStatus(mat.id, { qgen_status: status, qgen_count: total, qgen_error: note });
   if (!stats.saved && stats.apiErrors > 0) throw new HttpError(502, stats.lastError);
@@ -432,7 +435,7 @@ async function autoGenerate(matId) {
   } finally { delete running[key]; }
 }
 
-// Picks up any PDF that has no questions yet (or a stuck / half-finished run). One PDF at a time.
+// Picks up any file that has no questions yet (or a stuck / half-finished run). One file at a time.
 async function sweep() {
   if (!GEMINI_KEY) return;
   let rows;
@@ -519,7 +522,7 @@ const actions = {
 
   async stats(req) {
     await requireAuth(req);
-    background(sweep());   // automatically writes questions for any PDF that still has none
+    background(sweep());   // automatically writes questions for any file that still has none
     const since = new Date(Date.now() - 5 * 60000).toISOString();
     const r = await Promise.all([
       safeCount('profiles', '&last_seen=gte.' + enc(since)), safeCount('profiles'), safeCount('test_results'), safeCount('questions'),
@@ -601,7 +604,7 @@ const actions = {
         savedId = await write(rest);
       } else throw e;
     }
-    // A PDF was added: write its questions automatically in the background.
+    // A readable file was added: write its questions automatically in the background.
     if (b.table === 'materials' && savedId != null && isPdfUrl(data.file_url)) background(autoGenerate(savedId));
     return { ok: true };
   },
@@ -641,7 +644,7 @@ const actions = {
   },
 
   // The "Make questions" button. Normally not needed any more (questions are written automatically),
-  // but it still works to retry or top up a PDF.
+  // but it still works to retry or top up a file.
   async generate_questions(req, res, b) {
     await requireAuth(req);
     if (!GEMINI_KEY) throw new HttpError(500, 'Add GEMINI_API_KEY in Vercel > Settings > Environment Variables, then redeploy.');
@@ -649,7 +652,7 @@ const actions = {
     const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(b.material_id) + '&select=*')).data || [])[0];
     if (!mat) throw new HttpError(400, 'Material not found.');
     const key = String(mat.id);
-    if (running[key]) throw new HttpError(409, 'Questions are already being written for this PDF. Check again in a few minutes.');
+    if (running[key]) throw new HttpError(409, 'Questions are already being written for this file. Check again in a few minutes.');
     running[key] = true;
     try {
       const out = await generateForMaterial(mat, b.course_id, { text: String(b.text || '').slice(0, 400000) });
