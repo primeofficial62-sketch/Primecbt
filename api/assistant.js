@@ -9,7 +9,12 @@ export const config = { runtime: 'edge' };
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://xuofkjjhupgmrphzgyun.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODELS = [...new Set([
+  process.env.GEMINI_MODEL,
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-3.5-flash-lite'
+].filter(Boolean))];
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
