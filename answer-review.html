@@ -200,6 +200,23 @@
       line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line;
     }
 
+    /* ---------- Explain with AI ---------- */
+    .ai-btn {
+      align-self: flex-start;
+      min-height: 40px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1.5px solid var(--emerald);
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-bright);
+      font-size: var(--fs-body);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color .2s, transform .2s;
+    }
+    .ai-btn:active { transform: scale(0.96); }
+    @media (hover: hover) { .ai-btn:hover { background: rgba(16, 185, 129, 0.22); } }
+
     /* ---------- States ---------- */
     .state-panel {
       min-height: 100%;
@@ -424,6 +441,13 @@
     }
 
     /* ---------- card ---------- */
+    // Opens the AI Study Assistant and sends this question automatically.
+    function askAI(q, mine, right) {
+      const t = 'Explain this question to me:\n' + String(q).slice(0, 500) +
+        '\nMy answer: ' + String(mine).slice(0, 150) +
+        '\nCorrect answer: ' + String(right).slice(0, 150);
+      location.href = 'ai-assistant.html?ask=' + encodeURIComponent(t.slice(0, 900));
+    }
     function badge(cls, text) {
       const s = document.createElement('span');
       s.className = 'status-badge ' + cls; s.textContent = text; return s;
@@ -463,6 +487,12 @@
           const e = document.createElement('div'); e.className = 'explanation'; e.textContent = x.explanation;
           card.append(e);
         }
+        const ai = document.createElement('button');
+        ai.type = 'button';
+        ai.className = 'ai-btn';
+        ai.textContent = 'Explain with AI';
+        ai.addEventListener('click', () => askAI(x.question, x.mine || 'Not answered', x.right || 'Unknown'));
+        card.append(ai);
       }
       return card;
     }
