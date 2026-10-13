@@ -6,8 +6,13 @@
   <title>PRIME-CBT — Log In / Sign Up</title>
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://xuofkjjhupgmrphzgyun.supabase.co" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap"></noscript>
   <script>document.documentElement.classList.add('checking');</script>
   <style>
     :root {
@@ -62,8 +67,7 @@ html.checking .stage { visibility: hidden; }
       align-items: center;
       justify-content: space-between;
       padding: 20px 0 10px;
-      background: rgba(6, 11, 26, 0.95);
-      backdrop-filter: blur(12px);
+      background: #060b1a;
       z-index: 10;
     }
 
@@ -104,19 +108,11 @@ html.checking .stage { visibility: hidden; }
       font-size: 17px;
     }
 
-    .mark {
-      width: 32px;
-      height: 32px;
-      background: var(--emerald);
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .mark svg {
-      width: 16px;
-      height: 16px;
+    .topbrand img {
+      display: block;
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
     }
 
     .spacer {
@@ -785,7 +781,7 @@ html.checking .stage { visibility: hidden; }
     </button>
 
     <a href="index.html" class="topbrand">
-      <img src="logo-icon.webp" alt="" width="32" height="32" style="border-radius:9px;display:block">
+      <img src="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png" alt="" width="34" height="34">
       PRIME-CBT
     </a>
 
@@ -794,9 +790,9 @@ html.checking .stage { visibility: hidden; }
 
   <main class="content">
 
-    <img src="logo.webp" alt="PRIME-CBT" width="100" height="100" style="display:block;margin:0 auto 12px;mix-blend-mode:screen">
-
     <div class="mode-headline mode-headline-register active" id="headlineRegister">
+      <h1 class="headline">Create your<br><span class="accent">account.</span></h1>
+    </div>
 
     <div class="mode-headline mode-headline-login" id="headlineLogin">
       <h1 class="headline">Welcome back.<br><span class="accent">Let's get studying.</span></h1>
@@ -1000,7 +996,7 @@ html.checking .stage { visibility: hidden; }
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="profile-gate.js"></script>
 <script>
   // ========== SUPABASE CLIENT ==========
