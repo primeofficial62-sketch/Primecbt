@@ -3,7 +3,9 @@
 //   SUPABASE_URL                 e.g. https://xuofkjjhupgmrphzgyun.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY    Supabase > Settings > API Keys > secret / service_role key
 //   ADMIN_SESSION_SECRET         any long random text (40+ characters)
+//   ANTHROPIC_API_KEY            needed for "Make questions" (console.anthropic.com > API keys)
 //   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
+//   ANTHROPIC_MODEL              (optional) model used to write questions. Defaults to claude-sonnet-5-5.
 
 const crypto = require('crypto');
 
@@ -11,6 +13,8 @@ const URL_ = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL |
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SECRET = process.env.ADMIN_SESSION_SECRET || '';
 const BUCKET = process.env.STORAGE_BUCKET || 'materials';
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 const COOKIE = 'admin_session';
 const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
@@ -113,6 +117,38 @@ async function count(table, filter) {
   return parseInt(cr.split('/')[1], 10) || 0;
 }
 async function safeCount(table, filter) { try { return await count(table, filter); } catch (e) { return 0; } }
+
+/* ---------- question writing from a PDF ---------- */
+const normText = function (s) { return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); };
+
+function parseJsonArray(text) {
+  const start = text.indexOf('[');
+  if (start < 0) return null;
+  const end = text.lastIndexOf(']');
+  if (end > start) { try { return JSON.parse(text.slice(start, end + 1)); } catch (e) { /* try to salvage below */ } }
+  const lastObj = text.lastIndexOf('}');
+  if (lastObj > start) { try { return JSON.parse(text.slice(start, lastObj + 1) + ']'); } catch (e) { /* give up */ } }
+  return null;
+}
+
+async function askClaude(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 8000,
+      system: 'You write multiple-choice exam questions for university students strictly from the course material you are given. Never use outside knowledge. Reply with a JSON array only, no other text.',
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    const msg = (data && data.error && data.error.message) || 'The question writer is not available.';
+    throw new HttpError(res.status === 401 ? 500 : 502, res.status === 401 ? 'The ANTHROPIC_API_KEY in Vercel is not valid.' : msg);
+  }
+  return ((data.content || []).filter(function (c) { return c.type === 'text'; }).map(function (c) { return c.text; })).join('');
+}
 
 /* ---------- file uploads (Supabase Storage) ---------- */
 let bucketReady = false;
@@ -286,6 +322,77 @@ const actions = {
       } else throw e;
     }
     return { signedUrl: signedUrl, publicUrl: URL_ + '/storage/v1/object/public/' + BUCKET + '/' + enc(path) };
+  },
+
+  async generate_questions(req, res, b) {
+    await requireAuth(req);
+    if (!ANTHROPIC_KEY) throw new HttpError(500, 'Add ANTHROPIC_API_KEY in Vercel > Settings > Environment Variables, then redeploy.');
+    if (!isId(String(b.course_id)) || !isId(String(b.material_id))) throw new HttpError(400, 'Missing course or material.');
+    const text = String(b.text || '').slice(0, 150000);
+    if (text.length < 200) throw new HttpError(400, 'This PDF has no readable text. Scanned PDFs cannot be used.');
+    const count = Math.min(Math.max(parseInt(b.count, 10) || 20, 5), 40);
+
+    const course = ((await sb('/rest/v1/courses?id=eq.' + enc(b.course_id) + '&select=title,code')).data || [])[0];
+    if (!course) throw new HttpError(400, 'Course not found.');
+    const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(b.material_id) + '&select=title')).data || [])[0];
+
+    const prompt = 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\n' +
+      'Material: ' + ((mat && mat.title) || 'PDF') + '\n\n' +
+      'Write ' + count + ' multiple-choice questions (fewer if the material does not support that many) using ONLY the text between the <material> tags.\n' +
+      'Rules:\n' +
+      '- Each question has exactly 4 options and exactly one correct option.\n' +
+      '- "source_quote" must be copied word for word from the material (15 to 200 characters) and must support the correct answer.\n' +
+      '- Do not mention "the text", "the slide" or "the material" inside a question.\n' +
+      '- "difficulty" is one of easy, medium, hard. "explanation" is one or two sentences.\n' +
+      '- "correct_index" is the position of the correct option, starting at 0.\n' +
+      'Return a JSON array only, in this shape:\n' +
+      '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy","source_quote":""}]\n\n' +
+      '<material>\n' + text + '\n</material>';
+
+    const reply = await askClaude(prompt);
+    const items = parseJsonArray(reply);
+    if (!Array.isArray(items) || !items.length) throw new HttpError(502, 'The question writer returned nothing usable. Try again.');
+
+    const haystack = normText(text);
+    const existing = {};
+    ((await sb('/rest/v1/questions?course_id=eq.' + enc(b.course_id) + '&select=question&limit=5000')).data || []).forEach(function (q) { existing[normText(q.question)] = 1; });
+
+    let rejected = 0, duplicates = 0;
+    const rows = [];
+    items.forEach(function (it) {
+      const ok = it && typeof it.question === 'string' && it.question.trim() &&
+        Array.isArray(it.options) && it.options.length >= 2 && it.options.length <= 8 &&
+        it.options.every(function (o) { return typeof o === 'string' && o.trim(); }) &&
+        Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < it.options.length &&
+        typeof it.source_quote === 'string';
+      const quote = ok ? normText(it.source_quote) : '';
+      if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { rejected++; return; }
+      const key = normText(it.question);
+      if (existing[key]) { duplicates++; return; }
+      existing[key] = 1;
+      rows.push({
+        course_id: b.course_id,
+        question: it.question.trim(),
+        options: it.options.map(function (o) { return o.trim(); }),
+        correct_index: it.correct_index,
+        explanation: (it.explanation || '').toString().trim() || null,
+        difficulty: ['easy', 'medium', 'hard'].indexOf(it.difficulty) > -1 ? it.difficulty : null,
+        source_quote: it.source_quote.trim().slice(0, 400),
+        ai_generated: true
+      });
+    });
+
+    if (rows.length) {
+      try {
+        await sb('/rest/v1/questions', { method: 'POST', body: rows });
+      } catch (e) {
+        // If the table has no source_quote / ai_generated columns yet, save without them.
+        if (/column|schema cache/i.test(e.message)) {
+          await sb('/rest/v1/questions', { method: 'POST', body: rows.map(function (r) { const c = Object.assign({}, r); delete c.source_quote; delete c.ai_generated; return c; }) });
+        } else throw e;
+      }
+    }
+    return { saved: rows.length, rejected: rejected, duplicates: duplicates };
   },
 
   async notify(req, res, b) {
