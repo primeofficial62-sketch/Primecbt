@@ -24,7 +24,7 @@ const TABLES = {
   support_tickets: { cols: ['status'], search: ['subject', 'email', 'message'], order: 'created_at', del: true },
   courses: { cols: ['title', 'code', 'description'], search: ['title', 'code'], order: 'title', asc: true, del: true },
   questions: { cols: ['course_id', 'question', 'options', 'correct_index', 'explanation', 'difficulty'], search: ['question'], order: 'created_at', del: true },
-  materials: { cols: ['title', 'course', 'topic', 'material_type', 'file_url', 'page_count', 'size_bytes'], search: ['title', 'course', 'topic'], order: 'created_at', del: true },
+  materials: { cols: ['title', 'course', 'topic', 'category', 'material_type', 'file_url', 'page_count', 'size_bytes'], search: ['title', 'course', 'topic'], order: 'created_at', del: true },
   achievements: { cols: ['title', 'slug', 'description', 'icon', 'metric', 'threshold', 'sort_order'], search: ['title', 'slug'], order: 'sort_order', asc: true, del: true },
   discussion_posts: { cols: ['title', 'body', 'is_pinned'], search: ['title', 'body'], order: 'created_at', del: true },
   discussion_replies: { cols: [], search: ['body'], order: 'created_at', asc: true, del: true },
@@ -281,11 +281,24 @@ const actions = {
     const t = tableOf(b.table);
     const data = pick(b.data, t.cols);
     if (!Object.keys(data).length) throw new HttpError(400, 'Nothing to save.');
-    if (b.id) {
-      if (!isId(String(b.id))) throw new HttpError(400, 'Bad id.');
-      await sb('/rest/v1/' + b.table + '?id=eq.' + enc(b.id), { method: 'PATCH', body: data });
-    } else {
-      await sb('/rest/v1/' + b.table, { method: 'POST', body: data });
+    // The student site reads "category", so keep it in step with the material type.
+    if (b.table === 'materials' && data.material_type && !data.category) data.category = data.material_type;
+    async function write(body) {
+      if (b.id) {
+        if (!isId(String(b.id))) throw new HttpError(400, 'Bad id.');
+        await sb('/rest/v1/' + b.table + '?id=eq.' + enc(b.id), { method: 'PATCH', body: body });
+      } else {
+        await sb('/rest/v1/' + b.table, { method: 'POST', body: body });
+      }
+    }
+    try {
+      await write(data);
+    } catch (e) {
+      // If the "category" column has not been added in Supabase yet, save without it.
+      if (b.table === 'materials' && 'category' in data && /category|schema cache/i.test(e.message)) {
+        const rest = Object.assign({}, data); delete rest.category;
+        await write(rest);
+      } else throw e;
     }
     return { ok: true };
   },
