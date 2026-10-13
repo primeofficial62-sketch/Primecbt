@@ -105,20 +105,6 @@
       font-size: var(--fs-sub); color: var(--text-muted); margin-top: 1px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .live-pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 10px; border-radius: 999px;
-      border: 1px solid var(--border); background: rgba(15, 23, 42, 0.8);
-      font-size: 11.5px; font-weight: 600; color: var(--text-muted);
-      flex-shrink: 0;
-    }
-    @media (max-width: 359px) { .live-pill { display: none; } }
-    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
-    .live-pill.on { color: var(--emerald-bright); border-color: rgba(16, 185, 129, 0.35); }
-    .live-pill.on .live-dot { background: var(--emerald); animation: pulse 2s ease-in-out infinite; }
-    .live-pill.off { color: var(--amber-bright); border-color: rgba(251, 191, 36, 0.35); }
-    .live-pill.off .live-dot { background: var(--amber-bright); }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); } 50% { box-shadow: 0 0 0 5px rgba(16,185,129,0); } }
 
     /* ---------- Filters ---------- */
     .filters {
@@ -296,9 +282,6 @@
         <h1>Answer Review</h1>
         <p id="subtitle">Loading…</p>
       </div>
-      <div class="live-pill" id="livePill" role="status" aria-live="polite">
-        <span class="live-dot"></span><span id="liveText">Connecting</span>
-      </div>
     </header>
 
     <nav class="filters" id="filters" aria-label="Filter questions" hidden></nav>
@@ -327,26 +310,28 @@
     'use strict';
 
     /* ============================================================
-       CONFIG — everything shown is read live from Supabase.
-       Open this page as review.html?result=<practice_results.id>
-       (without ?result it shows your most recent session).
+       CONFIG — reads the saved attempt from Supabase.
+       Open as answer-review.html?result=<id>  (the same id used by
+       results.html). Without ?result it shows your most recent attempt.
+       Correct/incorrect is re-checked here from the saved answer key,
+       so it always agrees with the results page.
        ============================================================ */
     const CONFIG = {
       SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
       SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
       loginPage: 'login.html',
       resultsPage: 'results.html',
-      tables: { results: 'practice_results', answers: 'practice_answers', questions: 'questions' }
+      tables: { sessions: 'cbt_sessions', answers: 'cbt_session_answers', courses: 'courses' }
     };
 
     const $ = (id) => document.getElementById(id);
     const el = {
       back: $('backLink'), sub: $('subtitle'),
-      pill: $('livePill'), liveText: $('liveText'),
       filters: $('filters'), list: $('reviewList'), bar: $('bottomBar'),
       prev: $('prevBtn'), next: $('nextBtn'), page: $('pageIndicator')
     };
     const T = CONFIG.tables;
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     if (!window.supabase) {
       el.sub.textContent = 'Not connected';
@@ -356,17 +341,11 @@
     const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
     const state = {
-      user: null, result: null, items: [],
+      user: null, result: null, course: null, items: [],
       filter: 'all', currentId: null
     };
 
     /* ---------- helpers ---------- */
-    function setLive(s) {
-      el.pill.classList.remove('on', 'off');
-      if (s === 'live') { el.pill.classList.add('on'); el.liveText.textContent = 'Live'; }
-      else if (s === 'offline') { el.pill.classList.add('off'); el.liveText.textContent = 'Offline'; }
-      else el.liveText.textContent = 'Connecting';
-    }
     function redirectToLogin() {
       const next = location.pathname.split('/').pop() + location.search;
       location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(next)}`);
@@ -388,8 +367,9 @@
     }
     const letter = (i) => String.fromCharCode(65 + i);
     const optText = (o) => (o && typeof o === 'object') ? (o.text ?? o.label ?? '') : String(o ?? '');
+    const toIdx = (v) => (v === null || v === undefined || v === '' || isNaN(Number(v))) ? null : Number(v);
     function answerLabel(options, idx) {
-      if (idx === null || idx === undefined || !Array.isArray(options) || idx < 0 || idx >= options.length) return null;
+      if (idx === null || !Array.isArray(options) || idx < 0 || idx >= options.length) return null;
       return `${letter(idx)}. ${optText(options[idx])}`;
     }
 
@@ -397,13 +377,18 @@
     function normalise(rows) {
       return rows.map((r, i) => {
         const q = r.questions || null;
-        const skipped = r.selected_index === null || r.selected_index === undefined;
-        const status = skipped ? 'skipped' : (r.is_correct ? 'correct' : 'wrong');
+        const sel = toIdx(r.selected_index);
+        const key = toIdx(r.correct_index);
+        const options = q && Array.isArray(q.options) ? q.options : [];
+        const skipped = sel === null;
+        const isCorrect = !skipped && key !== null && sel === key;
         return {
-          id: r.id, n: i + 1, status, flagged: !!r.flagged,
+          id: r.id, n: i + 1,
+          status: skipped ? 'skipped' : (isCorrect ? 'correct' : 'wrong'),
+          flagged: !!r.flagged,
           question: q ? q.question : null,
-          mine: answerLabel(q && q.options, r.selected_index),
-          right: q ? answerLabel(q.options, q.correct_index) : null,
+          mine: answerLabel(options, sel),
+          right: answerLabel(options, key),
           explanation: q ? q.explanation : null,
           removed: !q
         };
@@ -538,9 +523,10 @@
 
     /* ---------- data ---------- */
     async function resolveResult() {
-      const wanted = new URLSearchParams(location.search).get('result');
-      let q = db.from(T.results)
-        .select('id,course_id,total_questions,correct_answers,mode,created_at,courses(title,code)')
+      const wanted = (new URLSearchParams(location.search).get('result') || '').trim();
+      if (wanted && !UUID.test(wanted)) return null;
+      let q = db.from(T.sessions)
+        .select('id,course_id,total_questions,mode,created_at')
         .eq('user_id', state.user.id);
       q = wanted ? q.eq('id', wanted) : q.order('created_at', { ascending: false }).limit(1);
       const { data, error } = await q.maybeSingle();
@@ -548,17 +534,24 @@
       return data;
     }
 
+    async function loadCourse() {
+      try {
+        const { data } = await db.from(T.courses).select('title,code').eq('id', state.result.course_id).maybeSingle();
+        state.course = data || null;
+      } catch (_) { state.course = null; }
+    }
+
     async function loadAnswers() {
       const { data, error } = await db.from(T.answers)
-        .select('id,position,selected_index,is_correct,flagged,questions(question,options,correct_index,explanation)')
-        .eq('result_id', state.result.id)
-        .order('position', { ascending: true });
+        .select('id,q_order,selected_index,correct_index,flagged,questions(question,options,explanation)')
+        .eq('session_id', state.result.id)
+        .order('q_order', { ascending: true });
       if (error) throw error;
       state.items = normalise(data || []);
     }
 
     function renderHeader() {
-      const c = state.result.courses || {};
+      const c = state.course || {};
       const label = c.code || c.title || 'Practice session';
       const n = state.items.length;
       el.sub.textContent = `${label} • ${n} ${n === 1 ? 'Question' : 'Questions'}`;
@@ -566,45 +559,10 @@
       document.title = `${c.title || 'Answer Review'} — PRIME-CBT Review`;
     }
 
-    async function refresh(initial) {
-      try {
-        await loadAnswers();
-        renderHeader();
-        if (!state.items.length) {
-          showMessage('No answers recorded', 'This session doesn’t have any saved answers to review yet.', 'Back to results', null, el.back.href);
-          return;
-        }
-        if (initial) state.currentId = state.items[0].id;
-        renderView(initial);
-      } catch (err) {
-        console.error('[review] refresh failed:', err);
-        if (initial || !state.items.length) showMessage('Couldn’t load your answers', 'Check your connection and try again.', 'Retry', () => init());
-      }
-    }
-
-    /* ---------- realtime ---------- */
-    let channel = null, debounce = null;
-    const schedule = () => { clearTimeout(debounce); debounce = setTimeout(() => refresh(false), 400); };
-    function subscribe() {
-      if (channel) db.removeChannel(channel);
-      channel = db.channel('review-' + state.result.id)
-        .on('postgres_changes', { event: '*', schema: 'public', table: T.answers, filter: `result_id=eq.${state.result.id}` }, schedule)
-        .on('postgres_changes', { event: '*', schema: 'public', table: T.questions, filter: `course_id=eq.${state.result.course_id}` }, schedule)
-        .subscribe((s) => {
-          if (s === 'SUBSCRIBED') setLive(navigator.onLine ? 'live' : 'offline');
-          else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(s)) setLive('offline');
-        });
-    }
-    window.addEventListener('online', () => { setLive('live'); schedule(); });
-    window.addEventListener('offline', () => setLive('offline'));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && state.result) schedule(); });
-    window.addEventListener('pageshow', (e) => { if (e.persisted && state.result) schedule(); });
-
     db.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') redirectToLogin(); });
 
     /* ---------- boot ---------- */
     async function init() {
-      setLive('connecting');
       try {
         const { data: { session } } = await db.auth.getSession();
         if (!session) return redirectToLogin();
@@ -618,13 +576,19 @@
           showMessage('Nothing to review yet', 'Finish a practice session and your answers will show up here.', 'Back to results', null, CONFIG.resultsPage);
           return;
         }
-        await refresh(true);
-        subscribe();
+        await loadCourse();
+        await loadAnswers();
+        renderHeader();
+        if (!state.items.length) {
+          showMessage('No answers recorded', 'This session doesn’t have any saved answers to review yet.', 'Back to results', null, el.back.href);
+          return;
+        }
+        state.currentId = state.items[0].id;
+        renderView(true);
       } catch (err) {
         console.error('[review] init failed:', err);
-        setLive('offline');
         el.sub.textContent = 'Connection problem';
-        showMessage('Couldn’t connect', 'Check your connection and try again.', 'Retry', () => init());
+        showMessage('Couldn’t load your answers', 'Check your connection and try again.', 'Retry', () => init());
       }
     }
     init();
