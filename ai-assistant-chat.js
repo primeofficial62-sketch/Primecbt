@@ -525,7 +525,7 @@
   modal.innerHTML =
     '<div class="aix-panel" role="dialog" aria-label="Summaries and flashcards">' +
     '<div class="aix-ph"><strong>Summaries and flashcards</strong><button type="button" class="aix-x" aria-label="Close">&times;</button></div>' +
-    '<input class="aix-search" type="search" placeholder="Search your PDF materials">' +
+    '<input class="aix-search" type="search" placeholder="Search your materials">' +
     '<select class="aix-select" size="6" aria-label="Choose a material"></select>' +
     '<div class="aix-row"><button type="button" class="aix-go" data-a="summary">Summarise</button><button type="button" class="aix-go" data-a="flashcards">Flashcards</button></div>' +
     '<div class="aix-out" aria-live="polite"></div></div>';
@@ -562,9 +562,9 @@
     try {
       var r = await sb.from('materials').select('id,title,course,topic,file_url').order('created_at', { ascending: false }).limit(300);
       if (r.error) throw r.error;
-      materials = (r.data || []).filter(function (m) { return /\.pdf(\?|#|$)/i.test(m.file_url || ''); });
+      materials = (r.data || []).filter(function (m) { return /\.(pdf|pptx|docx)(\?|#|$)/i.test(m.file_url || ''); });
       materialsLoaded = true;
-      mOut.textContent = materials.length ? 'Pick a material, then choose Summarise or Flashcards.' : 'No PDF materials are available yet.';
+      mOut.textContent = materials.length ? 'Pick a material, then choose Summarise or Flashcards.' : 'No materials are available yet.';
     } catch (e) {
       mOut.textContent = "Couldn't load materials. Check your connection and try again.";
     }
