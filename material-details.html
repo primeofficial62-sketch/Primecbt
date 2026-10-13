@@ -4,8 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>PRIME-CBT — Material Details</title>
+
+  <!-- Open connections early -->
+  <link rel="preconnect" href="https://xuofkjjhupgmrphzgyun.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Fonts load without blocking the first paint (only the weights actually used) -->
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Inter:wght@400;500;600;700&display=swap">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Inter:wght@400;500;600;700&display=swap"></noscript>
+
+  <!-- Start downloading scripts right away; they run in order after the page is parsed -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="profile-gate.js" defer></script>
+
+  <!-- Warm up the page people open next -->
+  <link rel="prefetch" href="pdf-reader.html">
+
   <style>
     :root {
       --bg: #060b1a;
@@ -19,8 +36,8 @@
       --emerald-bright: #34d399;
       --amber: #fbbf24;
       --red: #f87171;
-      --font-display: 'Lora', serif;
-      --font-body: 'Inter', sans-serif;
+      --font-display: 'Lora', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
       /* Fluid on phones, centered column on large screens */
       --col: 720px;
@@ -55,9 +72,8 @@
       padding-block: 12px;
       padding-top: max(12px, env(safe-area-inset-top));
       padding-inline: var(--gutter) var(--gutter-r);
-      background: rgba(6, 11, 26, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      /* Solid color instead of backdrop-filter blur: blur is slow on mid/low-end phones */
+      background: rgba(6, 11, 26, 0.97);
       border-bottom: 1px solid rgba(51, 65, 85, 0.4);
     }
 
@@ -67,7 +83,7 @@
       border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       color: var(--muted-light); cursor: pointer; padding: 0;
-      transition: background .2s ease, color .2s ease, border-color .2s ease;
+      transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .15s ease;
     }
     .back-btn:hover, .icon-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); }
     .back-btn:active, .icon-btn:active { transform: scale(0.94); }
@@ -85,6 +101,16 @@
     .state-msg { text-align: center; color: var(--muted); font-size: .95rem; line-height: 1.5; padding: 60px 16px; }
     .state-msg a { color: var(--emerald-bright); }
     [hidden] { display: none !important; }
+
+    /* Loading skeleton (shown instead of a blank "Loading..." screen) */
+    .skel {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    .skel-card { height: 230px; border-radius: 24px; margin-bottom: 20px; }
+    .skel-row  { height: 76px; border-radius: 16px; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
 
     .banner {
       margin-bottom: 16px; padding: 10px 14px; border-radius: 12px; font-size: .85rem; line-height: 1.4;
@@ -169,7 +195,7 @@
       font: inherit; font-size: 15px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 8px;
       cursor: pointer; border: none; text-decoration: none;
-      transition: transform .15s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease, opacity .2s;
+      transition: transform .15s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, opacity .2s;
       white-space: nowrap;
     }
     .btn:active { transform: scale(0.97); }
@@ -222,7 +248,10 @@
       .file-icon-large { display: none; }
     }
 
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; }
+      .skel { animation: none; }
+    }
   </style>
 </head>
 <body>
@@ -243,7 +272,11 @@
 
     <div class="content">
       <div class="banner" id="errorBanner" hidden></div>
-      <div class="state-msg" id="stateMsg">Loading material...</div>
+      <div id="skeleton" aria-hidden="true">
+        <div class="skel skel-card"></div>
+        <div class="skel skel-row"></div>
+      </div>
+      <div class="state-msg" id="stateMsg" hidden></div>
 
       <div id="detail" hidden>
         <div class="preview-card">
@@ -285,10 +318,9 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="profile-gate.js"></script>
   <script>
-  /* PRIME-CBT offline downloads store (same module as downloads.html — keep them identical) */
+  /* PRIME-CBT offline downloads store (same module as downloads.html — keep them identical)
+     Change vs. before: has() now only counts the record instead of loading the whole PDF record. */
   (function () {
     var DB_NAME = 'prime-cbt-offline';
     var STORE = 'pdfs';
@@ -340,7 +372,7 @@
       });
     }
     function get(id) { return run('readonly', function (s) { return s.get(id); }).then(function (r) { return r || null; }); }
-    function has(id) { return get(id).then(function (r) { return !!r; }); }
+    function has(id) { return run('readonly', function (s) { return s.count(id); }).then(function (n) { return n > 0; }); }
     function remove(id) { return run('readwrite', function (s) { s.delete(id); }).then(notify); }
     function clear() { return run('readwrite', function (s) { s.clear(); }).then(notify); }
 
@@ -374,18 +406,24 @@
                               onChange: function (fn) { listeners.push(fn); } };
   })();
   </script>
+
   <script>
-  (() => {
+  /* Deferred scripts (Supabase library + profile-gate.js) have already run by DOMContentLoaded */
+  document.addEventListener('DOMContentLoaded', () => {
     const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
     const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const LOGIN_URL = 'auth.html?mode=login';
+    const SEED_PREFIX = 'primecbt_material_v1_';           // last-seen copy of each material
+    const LIST_CACHE_KEY = 'primecbt_materials_cache_v2';  // written by materials.html
+    const MIN_REFRESH_MS = 30000;                          // throttle refetch on tab focus
 
     const $ = (id) => document.getElementById(id);
     const materialId = new URLSearchParams(location.search).get('id');
 
+    let supabaseClient = null;
     let me = null, material = null;
-    let saved = false, downloaded = false, downloading = false, progress = 0;
+    let saved = false, savedReady = false, downloaded = false, downloading = false, progress = 0;
+    let lastRefresh = 0, realtimeStarted = false;
 
     /* ───── Helpers ───── */
     function el(tag, cls, text) {
@@ -421,16 +459,43 @@
     }
     function setMessage(text, linkText, href) {
       const m = $('stateMsg');
+      $('skeleton').hidden = true;
       m.hidden = false;
       m.replaceChildren(document.createTextNode(text));
       if (linkText) { m.append(document.createTextNode(' ')); const a = el('a', null, linkText); a.href = href; m.append(a); }
       $('detail').hidden = true;
+    }
+    function showDetail() {
+      $('skeleton').hidden = true;
+      $('stateMsg').hidden = true;
+      $('detail').hidden = false;
     }
 
     const ICON_BOOKMARK = (filled) => '<svg viewBox="0 0 24 24" fill="' + (filled ? 'currentColor' : 'none') +
       '" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>';
     const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
     const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    /* ───── Local copy of the material (instant paint on repeat visits) ───── */
+    function readSeed(id) {
+      try {
+        const s = JSON.parse(localStorage.getItem(SEED_PREFIX + id));
+        if (s && s.id != null && s.title) return s;
+      } catch (_) {}
+      try {
+        // Fall back to the list that materials.html already cached
+        const c = JSON.parse(localStorage.getItem(LIST_CACHE_KEY));
+        const row = c && Array.isArray(c.data) && c.data.find((x) => String(x.id) === String(id));
+        if (row && row.title) return row;
+      } catch (_) {}
+      return null;
+    }
+    function writeSeed(m) {
+      try { localStorage.setItem(SEED_PREFIX + m.id, JSON.stringify(m)); } catch (_) {}
+    }
+    function dropSeed(id) {
+      try { localStorage.removeItem(SEED_PREFIX + id); } catch (_) {}
+    }
 
     /* ───── Rendering ───── */
     function renderMaterial() {
@@ -454,7 +519,9 @@
         card.append(row);
       }
       $('detailsSection').hidden = rows.length === 0;
-      $('readBtn').href = 'pdf-reader.html?id=' + encodeURIComponent(m.id);
+      // Passing the file URL along lets the reader start without waiting on its own lookup
+      $('readBtn').href = 'pdf-reader.html?id=' + encodeURIComponent(m.id) +
+        (m.file_url && m.file_url !== '.pdf' ? '&file=' + encodeURIComponent(m.file_url) : '');
       $('shareBtn').disabled = false;
       renderSaved();
       renderOffline();
@@ -462,7 +529,8 @@
 
     function renderSaved() {
       const top = $('saveBtn'), bot = $('saveBottomBtn');
-      top.disabled = bot.disabled = !material;
+      // Stay disabled until we really know the saved state, so a tap can't toggle the wrong way
+      top.disabled = bot.disabled = !material || !savedReady;
       top.classList.toggle('active', saved);
       top.setAttribute('aria-pressed', String(saved));
       top.innerHTML = ICON_BOOKMARK(saved);
@@ -493,9 +561,9 @@
       return data;
     }
     async function loadSaved() {
-      const { data } = await supabaseClient.from('saved_materials')
+      const { data, error } = await supabaseClient.from('saved_materials')
         .select('material_id').eq('user_id', me.id).eq('material_id', materialId).maybeSingle();
-      saved = !!data;
+      if (!error) saved = !!data;
     }
     async function loadOffline() {
       try { downloaded = await PrimeDownloads.has(String(materialId)); } catch (_) { downloaded = false; }
@@ -513,7 +581,7 @@
 
     /* ───── Actions ───── */
     async function toggleSave() {
-      if (!material) return;
+      if (!material || !savedReady) return;
       const next = !saved;
       saved = next; renderSaved();
       const q = next
@@ -538,10 +606,15 @@
       }
       if (!material.file_url || material.file_url === '.pdf') { toast('This file is not available to download', true); return; }
       downloading = true; progress = 0; renderOffline();
+      let lastPaint = 0;
       try {
         await PrimeDownloads.save(
           { id: material.id, title: material.title, course: material.course, url: material.file_url },
-          { onProgress: (p) => { progress = p; renderOffline(); } }
+          { onProgress: (p) => {
+              progress = p;
+              const now = Date.now();
+              if (now - lastPaint > 150 || p >= 1) { lastPaint = now; renderOffline(); }   // don't repaint on every chunk
+            } }
         );
         toast('Downloaded for offline reading');
       } catch (e) {
@@ -566,11 +639,14 @@
     PrimeDownloads.onChange(async () => { await loadOffline(); renderOffline(); });
 
     function startRealtime() {
+      if (realtimeStarted) return;
+      realtimeStarted = true;
+
       supabaseClient.channel('material-' + materialId)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'materials', filter: 'id=eq.' + materialId },
-            (p) => { material = Object.assign(material || {}, p.new); renderMaterial(); })
+            (p) => { material = Object.assign(material || {}, p.new); writeSeed(material); renderMaterial(); })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'materials' }, (p) => {
-          if (p.old && String(p.old.id) === String(materialId)) setMessage('This material is no longer available.', 'Back to Materials', 'materials.html');
+          if (p.old && String(p.old.id) === String(materialId)) { dropSeed(materialId); setMessage('This material is no longer available.', 'Back to Materials', 'materials.html'); }
         })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'saved_materials', filter: 'user_id=eq.' + me.id },
             (p) => { if (String(p.new.material_id) === String(materialId)) { saved = true; renderSaved(); } })
@@ -584,17 +660,35 @@
 
       document.addEventListener('visibilitychange', async () => {
         if (document.visibilityState !== 'visible') return;
+        if (Date.now() - lastRefresh < MIN_REFRESH_MS) return;   // no refetch on every quick tab switch
+        lastRefresh = Date.now();
         try {
-          const fresh = await loadMaterial();
-          if (!fresh) { setMessage('This material is no longer available.', 'Back to Materials', 'materials.html'); return; }
-          material = fresh; await loadSaved(); await loadOffline(); renderMaterial();
+          const [fresh] = await Promise.all([loadMaterial(), loadSaved(), loadOffline()]);
+          if (!fresh) { dropSeed(materialId); setMessage('This material is no longer available.', 'Back to Materials', 'materials.html'); return; }
+          material = fresh; writeSeed(fresh); renderMaterial();
         } catch (_) {}
       });
+    }
+
+    // Realtime is a nice-to-have: connect after the page is already on screen
+    function startRealtimeWhenIdle() {
+      if ('requestIdleCallback' in window) requestIdleCallback(startRealtime, { timeout: 3000 });
+      else setTimeout(startRealtime, 800);
     }
 
     /* ───── Boot ───── */
     (async function init() {
       if (!materialId) { setMessage('No material selected.', 'Back to Materials', 'materials.html'); return; }
+
+      const existing = window.supabaseClient || window.sb || window.db;
+      if (existing && typeof existing.from === 'function' && existing.auth) supabaseClient = existing;
+      else if (window.supabase && window.supabase.createClient) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      else { setMessage("Couldn't load this page. Check your connection and refresh."); return; }
+
+      // Start the slow things immediately, in parallel, instead of one after another
+      const matP = loadMaterial();
+      matP.catch(() => {});            // handled below; avoids an "unhandled rejection" if we redirect first
+      const offP = loadOffline();      // local device check, needs no login
 
       let session = null;
       try { session = (await supabaseClient.auth.getSession()).data.session; } catch (_) {}
@@ -605,24 +699,49 @@
       me = session.user;
       supabaseClient.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') location.replace(LOGIN_URL); });
 
-      try {
-        material = await loadMaterial();
-        if (!material) { setMessage('This material is no longer available.', 'Back to Materials', 'materials.html'); return; }
-        await Promise.all([loadSaved(), loadOffline()]);
-      } catch (e) {
-        console.error('material:', e && e.message);
-        material = await offlineFallback();
-        if (!material) { setMessage("Couldn't load this material. Check your connection and refresh."); return; }
-        await loadOffline();
-        showError("You're offline. Showing the saved copy on this device.");
+      const savedP = loadSaved().catch(() => {});
+
+      // 1) Paint the last-known copy right away (no waiting for the network)
+      const seed = readSeed(materialId);
+      if (seed) {
+        material = seed;
+        showDetail();
+        renderMaterial();
+        offP.then(renderOffline);
       }
 
-      $('stateMsg').hidden = true;
-      $('detail').hidden = false;
-      renderMaterial();
-      startRealtime();
+      // 2) Swap in fresh data when it arrives
+      try {
+        const fresh = await matP;
+        if (!fresh) { dropSeed(materialId); setMessage('This material is no longer available.', 'Back to Materials', 'materials.html'); return; }
+        material = fresh;
+        writeSeed(fresh);
+        lastRefresh = Date.now();
+        await offP;
+        showDetail();
+        renderMaterial();
+      } catch (e) {
+        console.error('material:', e && e.message);
+        await offP;
+        if (seed) {
+          showError("Couldn't refresh this material. Showing the last version saved on this device.");
+        } else {
+          material = await offlineFallback();
+          if (!material) { setMessage("Couldn't load this material. Check your connection and refresh."); return; }
+          showDetail();
+          renderMaterial();
+          showError("You're offline. Showing the saved copy on this device.");
+        }
+      }
+
+      startRealtimeWhenIdle();
+
+      // 3) Saved/bookmark state arrives in parallel; the buttons unlock once it's known
+      await savedP;
+      savedReady = true;
+      renderSaved();
     })();
-  })();
+  });
   </script>
 </body>
 </html>
