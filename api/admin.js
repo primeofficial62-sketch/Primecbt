@@ -115,6 +115,19 @@ async function count(table, filter) {
 async function safeCount(table, filter) { try { return await count(table, filter); } catch (e) { return 0; } }
 
 /* ---------- file uploads (Supabase Storage) ---------- */
+let bucketReady = false;
+async function ensureBucket() {
+  if (bucketReady) return;
+  try {
+    await sb('/storage/v1/bucket/' + enc(BUCKET));
+  } catch (e) {
+    try { await sb('/storage/v1/bucket', { method: 'POST', body: { id: BUCKET, name: BUCKET, public: true } }); }
+    catch (e2) {
+      if (!/already exists|duplicate/i.test(e2.message)) throw new HttpError(500, 'Could not create the "' + BUCKET + '" storage bucket: ' + e2.message);
+    }
+  }
+  bucketReady = true;
+}
 async function signUpload(path) {
   const r = await sb('/storage/v1/object/upload/sign/' + BUCKET + '/' + enc(path), { method: 'POST', body: {} });
   const d = r.data || {};
@@ -260,14 +273,15 @@ const actions = {
     const base = original.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || 'file';
     const path = Date.now() + '-' + crypto.randomBytes(3).toString('hex') + '-' + base + '.' + ext;
 
+    await ensureBucket();
     let signedUrl;
     try {
       signedUrl = await signUpload(path);
     } catch (e) {
-      // First upload ever: create the public bucket, then try again.
-      if (/bucket not found|not found/i.test(e.message)) {
-        try { await sb('/storage/v1/bucket', { method: 'POST', body: { id: BUCKET, name: BUCKET, public: true } }); }
-        catch (e2) { if (!/already exists|duplicate/i.test(e2.message)) throw new HttpError(500, 'Could not create the "' + BUCKET + '" storage bucket: ' + e2.message); }
+      // Bucket may have been removed after we cached it: create it again and retry once.
+      if (/not found|does not exist|related resource/i.test(e.message)) {
+        bucketReady = false;
+        await ensureBucket();
         signedUrl = await signUpload(path);
       } else throw e;
     }
