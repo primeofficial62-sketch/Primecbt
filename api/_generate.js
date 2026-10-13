@@ -1,11 +1,21 @@
 // api/_generate.js
 // Makes exam questions strictly from ONE uploaded PDF and saves them to the `questions` table.
 // The leading underscore keeps Vercel from exposing this file as its own endpoint.
-// Needs:  npm i pdf-parse   and the env var ANTHROPIC_API_KEY.
+// Needs:  npm i pdf-parse   and the env var GEMINI_API_KEY (get one free at aistudio.google.com).
+// Optional env var: GEMINI_MODEL (forces one specific model first).
 
 const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
+// Newest first. If a model is missing or its free quota is used up, the next one is tried.
+const MODELS = [
+  process.env.GEMINI_MODEL,
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash-lite'
+].filter(Boolean);
+
+const MAX_PDF_BYTES = 14 * 1024 * 1024; // sent inline as base64 (+33%), which must stay under Gemini's request limit
 
 // lower-case, letters and digits only, single spaces. Used to compare text safely.
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -25,35 +35,48 @@ const SYSTEM = [
   '8. Skip tables of contents, references, acknowledgements and blank or unreadable parts.'
 ].join('\n');
 
-const TOOL = {
-  name: 'submit_questions',
-  description: 'Submit the exam questions written from the PDF.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      questions: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            question: { type: 'string' },
-            options: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
-            correct_index: { type: 'integer', minimum: 0, maximum: 3 },
-            explanation: { type: 'string' },
-            difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
-            source_quote: { type: 'string' }
-          },
-          required: ['question', 'options', 'correct_index', 'explanation', 'difficulty', 'source_quote']
-        }
+const RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    questions: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          question: { type: 'STRING' },
+          options: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 4, maxItems: 4 },
+          correct_index: { type: 'INTEGER' },
+          explanation: { type: 'STRING' },
+          difficulty: { type: 'STRING', enum: ['easy', 'medium', 'hard'] },
+          source_quote: { type: 'STRING' }
+        },
+        required: ['question', 'options', 'correct_index', 'explanation', 'difficulty', 'source_quote']
       }
-    },
-    required: ['questions']
-  }
+    }
+  },
+  required: ['questions']
 };
 
+// Calls one Gemini model. Returns { ok, status, data, message }.
+async function callGemini(model, key, body) {
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json().catch(() => ({}));
+  return {
+    ok: resp.ok,
+    status: resp.status,
+    data,
+    message: (data && data.error && data.error.message) || ('The AI request failed (' + resp.status + ').')
+  };
+}
+
 async function generateFromMaterial(supabase, args) {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error('ANTHROPIC_API_KEY is not set on the server.');
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY is not set on the server. Add it in Vercel > Settings > Environment Variables, then redeploy.');
   const count = Math.min(40, Math.max(5, parseInt(args.count, 10) || 20));
 
   const { data: mat, error: mErr } = await supabase.from('materials').select('id,title,file_url').eq('id', args.material_id).single();
@@ -66,7 +89,7 @@ async function generateFromMaterial(supabase, args) {
   if (!dl.ok) throw new Error('Could not download the PDF (' + dl.status + '). Is the storage bucket public?');
   const buf = Buffer.from(await dl.arrayBuffer());
   if (buf.slice(0, 4).toString() !== '%PDF') throw new Error('This file is not a PDF.');
-  if (buf.length > 30 * 1024 * 1024) throw new Error('This PDF is over 30 MB. Compress or split it.');
+  if (buf.length > MAX_PDF_BYTES) throw new Error('This PDF is over 14 MB. Compress or split it.');
 
   // 2. read its text so every question can be checked against it afterwards
   let pdfText = '', pages = 0;
@@ -74,29 +97,48 @@ async function generateFromMaterial(supabase, args) {
   if (pdfText.length < 200) throw new Error('No readable text found. This PDF looks scanned. Upload a text-based PDF.');
   if (pages > 100) throw new Error('This PDF has ' + pages + ' pages. The limit is 100. Split it into smaller PDFs.');
 
-  // 3. ask Claude, forcing a structured answer
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 12000,
-      system: SYSTEM,
-      tools: [TOOL],
-      tool_choice: { type: 'tool', name: 'submit_questions' },
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } },
-          { type: 'text', text: 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\nWrite up to ' + count + ' questions from this PDF only. Follow every rule.' }
-        ]
-      }]
-    })
-  });
-  const out = await resp.json().catch(() => ({}));
-  if (!resp.ok) throw new Error((out.error && out.error.message) || 'The AI request failed (' + resp.status + ').');
-  const block = (out.content || []).find((b) => b.type === 'tool_use');
-  const raw = (block && block.input && block.input.questions) || [];
+  // 3. ask Gemini, forcing a structured JSON answer
+  const body = {
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{
+      role: 'user',
+      parts: [
+        { inline_data: { mime_type: 'application/pdf', data: buf.toString('base64') } },
+        { text: 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\nWrite up to ' + count + ' questions from this PDF only. Follow every rule.' }
+      ]
+    }],
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: 16000,
+      responseMimeType: 'application/json',
+      responseSchema: RESPONSE_SCHEMA
+    }
+  };
+
+  let result = null, lastMessage = '';
+  for (const model of [...new Set(MODELS)]) {
+    const r = await callGemini(model, key, body);
+    if (r.ok) { result = r; break; }
+    lastMessage = r.message;
+    // model missing (404), not allowed on this key (403) or quota used up (429): try the next model
+    if ([403, 404, 429].includes(r.status)) continue;
+    throw new Error(r.message);
+  }
+  if (!result) throw new Error(lastMessage || 'All Gemini models failed. Check your API key and quota in Google AI Studio.');
+
+  const cand = (result.data.candidates || [])[0];
+  if (!cand) {
+    const why = result.data.promptFeedback && result.data.promptFeedback.blockReason;
+    throw new Error('Gemini returned no answer' + (why ? ' (' + why + ')' : '') + '. Try again.');
+  }
+  const text = ((cand.content && cand.content.parts) || []).map((p) => p.text || '').join('').trim();
+  let raw = [];
+  try {
+    const clean = text.replace(/^```json\s*|^```\s*|```$/g, '').trim();
+    raw = (JSON.parse(clean).questions) || [];
+  } catch (e) {
+    throw new Error('Gemini sent an unreadable answer' + (cand.finishReason === 'MAX_TOKENS' ? ' (too long). Ask for fewer questions.' : '. Try again.'));
+  }
 
   // 4. strict checks. Anything that fails is thrown away.
   const { data: existing } = await supabase.from('questions').select('question').eq('course_id', course.id).limit(5000);
