@@ -864,14 +864,25 @@
       upBusy = false;
     });
   }
-
+async function courseOptions() {
+    var rows = (await api('list', { table: 'courses', limit: 500 })).rows;
+    return rows.map(function (c) { return [c.code || c.title, (c.code ? c.code + ' - ' : '') + c.title]; });
+  }
+  
   async function openForm(sec, row, after) {
     var isEdit = !!row, optsMap = {};
     try {
       for (var i = 0; i < sec.fields.length; i++) {
         var f = sec.fields[i];
-        if (f.type === 'select') optsMap[f.key] = f.lookup ? await lookup(f.lookup, f.lookupLabel) : (f.opts || []);
-      }
+        if (f.type === 'select') {
+          if (f.courseText) {
+            var co = await courseOptions();
+            if (!co.length) { toast('Add a course first, then add materials to it.', true); return; }
+            if (row && row[f.key] && !co.some(function (o) { return o[0] === row[f.key]; })) co.push([row[f.key], row[f.key]]);
+            optsMap[f.key] = co;
+          } else optsMap[f.key] = f.lookup ? await lookup(f.lookup, f.lookupLabel) : (f.opts || []);
+        }
+  
     } catch (e) { toast(e.message, true); return; }
     var body = sec.fields.map(function (f) { return fieldHtml(f, row, optsMap); }).join('');
     var editable = sec.fields.some(function (f) { return f.type !== 'static'; });
