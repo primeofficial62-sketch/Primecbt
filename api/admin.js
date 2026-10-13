@@ -3,9 +3,13 @@
 //   SUPABASE_URL                 e.g. https://xuofkjjhupgmrphzgyun.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY    Supabase > Settings > API Keys > secret / service_role key
 //   ADMIN_SESSION_SECRET         any long random text (40+ characters)
-//   GEMINI_API_KEY               needed for "Make questions" (free key at aistudio.google.com)
+//   GEMINI_API_KEY               needed for question writing (free key at aistudio.google.com)
 //   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
 //   GEMINI_MODEL                 (optional) force one Gemini model first. Otherwise the newest available one is used.
+//   QUESTIONS_PER_PDF            (optional) questions to write for every PDF. Defaults to 100.
+//
+// Needs in package.json:  "pdf-parse": "1.1.1"  and  "@vercel/functions": "^2.0.0"
+// Needs in Supabase: run setup.sql once.
 
 const crypto = require('crypto');
 
@@ -14,6 +18,7 @@ const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SECRET = process.env.ADMIN_SESSION_SECRET || '';
 const BUCKET = process.env.STORAGE_BUCKET || 'materials';
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+const TARGET = Math.min(Math.max(parseInt(process.env.QUESTIONS_PER_PDF, 10) || 100, 10), 300);
 // Newest first. If a model is missing on your key or its free quota is used up, the next one is tried.
 const GEMINI_MODELS = [
   process.env.GEMINI_MODEL,
@@ -25,6 +30,12 @@ const GEMINI_MODELS = [
 const COOKIE = 'admin_session';
 const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
+
+// Optional helpers: they load only if installed, so a missing package can never break the whole admin API.
+let pdfParse = null;
+try { pdfParse = require('pdf-parse/lib/pdf-parse.js'); } catch (e) { pdfParse = null; }
+let waitUntil = null;
+try { waitUntil = require('@vercel/functions').waitUntil; } catch (e) { waitUntil = null; }
 
 // What the panel may touch. columns = fields it may write. search = fields the search box looks in.
 const TABLES = {
@@ -109,6 +120,8 @@ async function requireAuth(req) {
 /* ---------- helpers ---------- */
 const clean = function (s) { return String(s == null ? '' : s).replace(/[,()*%\\"']/g, ' ').trim().slice(0, 80); };
 const isId = function (s) { return typeof s === 'string' && /^[0-9a-zA-Z_-]{1,64}$/.test(s); };
+const isPdfUrl = function (u) { return /\.pdf(\?|#|$)/i.test(String(u || '')); };
+const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 function tableOf(name) {
   if (!Object.prototype.hasOwnProperty.call(TABLES, name)) throw new HttpError(400, 'Unknown section.');
   return TABLES[name];
@@ -125,7 +138,13 @@ async function count(table, filter) {
 }
 async function safeCount(table, filter) { try { return await count(table, filter); } catch (e) { return 0; } }
 
-/* ---------- question writing from a PDF ---------- */
+// Runs a job after the response is sent (Vercel keeps the function alive until it finishes).
+function background(promise) {
+  const safe = Promise.resolve(promise).catch(function (e) { console.error('background job failed:', e && e.message); });
+  if (waitUntil) { try { waitUntil(safe); } catch (e) { /* ignore */ } }
+}
+
+/* ---------- question writing (Gemini) ---------- */
 const normText = function (s) { return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); };
 
 function parseJsonArray(text) {
@@ -166,34 +185,267 @@ async function askGemini(prompt) {
       responseSchema: QUESTIONS_SCHEMA
     }
   };
-  let lastMsg = '';
-  const tried = {};
-  for (const model of GEMINI_MODELS) {
-    if (tried[model]) continue;
-    tried[model] = 1;
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + enc(model) + ':generateContent', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json().catch(function () { return {}; });
-    if (res.ok) {
-      const cand = (data.candidates || [])[0];
-      if (!cand) {
-        const why = data.promptFeedback && data.promptFeedback.blockReason;
-        throw new HttpError(502, 'The question writer returned no answer' + (why ? ' (' + why + ')' : '') + '. Try again.');
+  let lastMsg = '', lastStatus = 0;
+  for (let round = 0; round < 3; round++) {
+    const tried = {};
+    for (const model of GEMINI_MODELS) {
+      if (tried[model]) continue;
+      tried[model] = 1;
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + enc(model) + ':generateContent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(function () { return {}; });
+      if (res.ok) {
+        const cand = (data.candidates || [])[0];
+        if (!cand) {
+          const why = data.promptFeedback && data.promptFeedback.blockReason;
+          throw new HttpError(502, 'The question writer returned no answer' + (why ? ' (' + why + ')' : '') + '. Try again.');
+        }
+        return ((cand.content && cand.content.parts) || []).map(function (p) { return p.text || ''; }).join('');
       }
-      return ((cand.content && cand.content.parts) || []).map(function (p) { return p.text || ''; }).join('');
+      lastStatus = res.status;
+      lastMsg = (data && data.error && data.error.message) || 'The question writer is not available.';
+      if (res.status === 401 || (res.status === 400 && /api key/i.test(lastMsg))) throw new HttpError(500, 'The GEMINI_API_KEY in Vercel is not valid.');
+      // model missing (404), not allowed (403), quota used up (429) or busy (503): try the next model
+      if (res.status === 403 || res.status === 404 || res.status === 429 || res.status === 503) continue;
+      throw new HttpError(502, lastMsg);
     }
-    lastMsg = (data && data.error && data.error.message) || 'The question writer is not available.';
-    // key rejected: no point trying other models
-    if (res.status === 400 && /api key/i.test(lastMsg)) throw new HttpError(500, 'The GEMINI_API_KEY in Vercel is not valid.');
-    if (res.status === 401) throw new HttpError(500, 'The GEMINI_API_KEY in Vercel is not valid.');
-    // model missing (404), not allowed (403) or quota used up (429): try the next model
-    if (res.status === 403 || res.status === 404 || res.status === 429) continue;
-    throw new HttpError(502, lastMsg);
+    // every model said "quota" or "busy": wait for the per-minute limit to reset, then go round again
+    if (lastStatus === 429 || lastStatus === 503) { await sleep(8000 * (round + 1)); continue; }
+    break;
   }
   throw new HttpError(502, lastMsg || 'The question writer is not available. Check your Gemini key and quota in Google AI Studio.');
+}
+
+// Splits long text into n parts, cutting at a line break where possible.
+function splitText(text, n) {
+  if (n <= 1) return [text];
+  const size = Math.ceil(text.length / n), out = [];
+  let pos = 0;
+  while (pos < text.length && out.length < n) {
+    let end = Math.min(text.length, pos + size);
+    if (end < text.length) { const nl = text.indexOf('\n', end); if (nl > -1 && nl - end < 800) end = nl; }
+    out.push(text.slice(pos, end));
+    pos = end;
+  }
+  if (pos < text.length && out.length) out[out.length - 1] += text.slice(pos);
+  return out;
+}
+
+// Mixes the options so the right answer is not always in the same place. Skips "all of the above" style options.
+function shuffleOptions(options, correct) {
+  if (options.some(function (o) { return /\b(all|none|both)\b.*\b(above|these|them)\b|\bany of the above\b/i.test(o); })) return { options: options, correct_index: correct };
+  const items = options.map(function (t, i) { return { t: t, ok: i === correct }; });
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const x = items[i]; items[i] = items[j]; items[j] = x;
+  }
+  return { options: items.map(function (i) { return i.t; }), correct_index: items.findIndex(function (i) { return i.ok; }) };
+}
+
+async function loadMaterialText(mat, fallback) {
+  let text = '';
+  if (pdfParse && mat && mat.file_url) {
+    try {
+      const dl = await fetch(mat.file_url);
+      if (dl.ok) {
+        const buf = Buffer.from(await dl.arrayBuffer());
+        if (buf.slice(0, 4).toString() === '%PDF') { const p = await pdfParse(buf); text = String(p.text || ''); }
+      }
+    } catch (e) { text = ''; }
+  }
+  if (text.replace(/\s+/g, '').length < 200 && fallback) text = String(fallback);
+  text = text.replace(/\r/g, '').replace(/[ \t]+/g, ' ');
+  if (text.replace(/\s+/g, '').length < 200) throw new HttpError(400, 'No readable text found in this PDF. Scanned PDFs cannot be used.');
+  return text.slice(0, 400000);
+}
+
+async function setStatus(matId, patch) {
+  try { await sb('/rest/v1/materials?id=eq.' + enc(matId), { method: 'PATCH', body: patch }); } catch (e) { /* columns not added yet: ignore */ }
+}
+
+async function insertQuestions(rows) {
+  try {
+    await sb('/rest/v1/questions', { method: 'POST', body: rows });
+  } catch (e) {
+    // If the table has no source_material_id / source_quote / ai_generated columns yet, save without them.
+    if (/column|schema cache/i.test(e.message)) {
+      await sb('/rest/v1/questions', { method: 'POST', body: rows.map(function (r) { const c = Object.assign({}, r); delete c.source_material_id; delete c.source_quote; delete c.ai_generated; return c; }) });
+    } else throw e;
+  }
+}
+
+// Writes questions for ONE material until it has `target` questions saved. Safe to run again: it only writes what is missing.
+async function generateForMaterial(mat, courseId, opts) {
+  opts = opts || {};
+  const target = opts.target || TARGET;
+  const matKey = String(mat.id);
+
+  const course = ((await sb('/rest/v1/courses?id=eq.' + enc(courseId) + '&select=title,code')).data || [])[0];
+  if (!course) throw new HttpError(400, 'Course not found.');
+
+  const have = await safeCount('questions', '&source_material_id=eq.' + enc(matKey));
+  const need = target - have;
+  if (need <= 0) {
+    await setStatus(mat.id, { qgen_status: 'done', qgen_count: have, qgen_error: null });
+    return { saved: 0, rejected: 0, duplicates: 0, total: have };
+  }
+
+  await setStatus(mat.id, { qgen_status: 'processing', qgen_started_at: new Date().toISOString(), qgen_error: null });
+
+  let text;
+  try { text = await loadMaterialText(mat, opts.text); }
+  catch (e) { await setStatus(mat.id, { qgen_status: 'failed', qgen_error: e.message }); throw e; }
+
+  const haystack = normText(text);
+  const existing = {}, stems = [];
+  ((await sb('/rest/v1/questions?course_id=eq.' + enc(courseId) + '&select=question&limit=5000')).data || []).forEach(function (q) {
+    existing[normText(q.question)] = 1; stems.push(String(q.question).slice(0, 110));
+  });
+
+  const stats = { saved: 0, rejected: 0, duplicates: 0, apiErrors: 0, lastError: '' };
+
+  function validateAndKeep(items) {
+    const rows = [];
+    (items || []).forEach(function (it) {
+      if (stats.saved + rows.length >= need) return;
+      const options = it && Array.isArray(it.options) ? it.options.map(function (o) { return String(o == null ? '' : o).trim(); }) : [];
+      const ok = it && typeof it.question === 'string' && it.question.trim().length > 10 &&
+        options.length === 4 && options.every(Boolean) &&
+        new Set(options.map(normText)).size === 4 &&
+        Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < 4 &&
+        typeof it.source_quote === 'string';
+      const quote = ok ? normText(it.source_quote) : '';
+      if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { stats.rejected++; return; }   // the quoted passage must really exist in the PDF
+      const key = normText(it.question);
+      if (existing[key]) { stats.duplicates++; return; }
+      existing[key] = 1;
+      stems.push(it.question.trim().slice(0, 110));
+      const mixed = shuffleOptions(options, it.correct_index);
+      rows.push({
+        course_id: courseId,
+        question: it.question.trim(),
+        options: mixed.options,
+        correct_index: mixed.correct_index,
+        explanation: (it.explanation || '').toString().trim() || null,
+        difficulty: ['easy', 'medium', 'hard'].indexOf(it.difficulty) > -1 ? it.difficulty : null,
+        source_material_id: matKey,
+        source_quote: it.source_quote.trim().slice(0, 400),
+        ai_generated: true
+      });
+    });
+    return rows;
+  }
+
+  function buildPrompt(chunk, n) {
+    const avoid = stems.slice(-60).map(function (s) { return '- ' + s; }).join('\n');
+    return 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\n' +
+      'Material: ' + (mat.title || 'PDF') + '\n\n' +
+      'Write ' + n + ' multiple-choice questions (fewer if the material does not support that many) using ONLY the text between the <material> tags.\n' +
+      'Rules:\n' +
+      '- Cover many different facts. Never write two questions about the same fact.\n' +
+      '- Each question has exactly 4 options and exactly one correct option.\n' +
+      '- "source_quote" must be copied word for word from the material (15 to 200 characters) and must support the correct answer.\n' +
+      '- Do not mention "the text", "the slide" or "the material" inside a question.\n' +
+      '- "difficulty" is one of easy, medium, hard. Mix them. "explanation" is one or two sentences.\n' +
+      '- "correct_index" is the position of the correct option, starting at 0.\n' +
+      (avoid ? '- These questions already exist. Do not repeat or reword them:\n' + avoid + '\n' : '') +
+      'Return a JSON array only, in this shape:\n' +
+      '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy","source_quote":""}]\n\n' +
+      '<material>\n' + chunk + '\n</material>';
+  }
+
+  async function pass(chunks, perChunk) {
+    let next = 0;
+    async function worker() {
+      while (next < chunks.length && stats.saved < need) {
+        const i = next++;
+        try {
+          const items = parseJsonArray(await askGemini(buildPrompt(chunks[i], perChunk)));
+          const rows = validateAndKeep(items);
+          if (rows.length) { await insertQuestions(rows); stats.saved += rows.length; }
+        } catch (e) {
+          stats.apiErrors++; stats.lastError = e.message || 'Unknown error';
+          if (/not valid/i.test(stats.lastError)) next = chunks.length;   // a bad key will fail every call: stop now
+        }
+      }
+    }
+    await Promise.all([worker(), worker(), worker()]);
+  }
+
+  // Pass 1: split the PDF into parts and write about 15 questions per part (asking for a few extra, since weak ones are thrown away).
+  const parts = Math.min(Math.max(Math.ceil(need / 15), 1), 10);
+  const chunks = splitText(text, parts);
+  await pass(chunks, Math.min(Math.max(Math.ceil(need / parts * 1.35), 5), 30));
+
+  // Pass 2: top up whatever is still missing.
+  const missing = need - stats.saved;
+  if (missing >= 3 && stats.lastError.indexOf('not valid') < 0) {
+    await pass(chunks, Math.min(Math.max(Math.ceil(missing / parts * 1.6), 3), 25));
+  }
+
+  const total = have + stats.saved;
+  let status = 'done', note = null;
+  if (total < target * 0.9) {
+    if (stats.apiErrors > 0) { status = 'partial'; note = stats.lastError; }          // will be retried automatically later
+    else { note = 'This PDF only supports about ' + total + ' good questions.'; }       // nothing more to get from it
+  }
+  await setStatus(mat.id, { qgen_status: status, qgen_count: total, qgen_error: note });
+  if (!stats.saved && stats.apiErrors > 0) throw new HttpError(502, stats.lastError);
+  return { saved: stats.saved, rejected: stats.rejected, duplicates: stats.duplicates, total: total };
+}
+
+/* ---------- automatic runs ---------- */
+const running = {};
+
+// Finds the course a material belongs to, using its "course" value (code or title) or its title.
+async function courseForMaterial(mat) {
+  const courses = (await sb('/rest/v1/courses?select=id,title,code&limit=1000')).data || [];
+  const want = normText(mat.course), title = normText(mat.title);
+  if (want) {
+    const hit = courses.find(function (c) { return normText(c.code) === want; }) ||
+      courses.find(function (c) { return normText(c.title) === want; }) ||
+      courses.find(function (c) { const k = normText(c.code); return k && want.indexOf(k) > -1; });
+    if (hit) return hit;
+  }
+  return courses.find(function (c) { const k = normText(c.code); return k && title.indexOf(k) > -1; }) || null;
+}
+
+async function autoGenerate(matId) {
+  const key = String(matId);
+  if (running[key] || !GEMINI_KEY) return null;
+  running[key] = true;
+  try {
+    const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(matId) + '&select=*')).data || [])[0];
+    if (!mat || !isPdfUrl(mat.file_url) || mat.qgen_status === 'done') return null;
+    const course = await courseForMaterial(mat);
+    if (!course) {
+      await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'No course matches "' + (mat.course || mat.title || '') + '". Create a course with that code or title, then press Make questions.' });
+      return null;
+    }
+    return await generateForMaterial(mat, course.id);
+  } catch (e) {
+    console.error('auto generate failed:', e && e.message);
+    return null;
+  } finally { delete running[key]; }
+}
+
+// Picks up any PDF that has no questions yet (or a stuck / half-finished run). One PDF at a time.
+async function sweep() {
+  if (!GEMINI_KEY) return;
+  let rows;
+  try {
+    rows = (await sb('/rest/v1/materials?select=id,file_url,qgen_status,qgen_started_at&or=(qgen_status.is.null,qgen_status.eq.partial,qgen_status.eq.processing)&limit=25')).data || [];
+  } catch (e) { return; }   // setup.sql has not been run yet
+  const stale = Date.now() - 10 * 60000;
+  for (const m of rows) {
+    if (!isPdfUrl(m.file_url)) { await setStatus(m.id, { qgen_status: 'skipped' }); continue; }
+    if (m.qgen_status && m.qgen_started_at && new Date(m.qgen_started_at).getTime() > stale) continue;
+    await autoGenerate(m.id);
+    return;
+  }
 }
 
 /* ---------- file uploads (Supabase Storage) ---------- */
@@ -267,6 +519,7 @@ const actions = {
 
   async stats(req) {
     await requireAuth(req);
+    background(sweep());   // automatically writes questions for any PDF that still has none
     const since = new Date(Date.now() - 5 * 60000).toISOString();
     const r = await Promise.all([
       safeCount('profiles', '&last_seen=gte.' + enc(since)), safeCount('profiles'), safeCount('test_results'), safeCount('questions'),
@@ -333,19 +586,23 @@ const actions = {
       if (b.id) {
         if (!isId(String(b.id))) throw new HttpError(400, 'Bad id.');
         await sb('/rest/v1/' + b.table + '?id=eq.' + enc(b.id), { method: 'PATCH', body: body });
-      } else {
-        await sb('/rest/v1/' + b.table, { method: 'POST', body: body });
+        return b.id;
       }
+      const r = await sb('/rest/v1/' + b.table, { method: 'POST', body: body, headers: b.table === 'materials' ? { Prefer: 'return=representation' } : {} });
+      return r.data && r.data[0] ? r.data[0].id : null;
     }
+    let savedId = null;
     try {
-      await write(data);
+      savedId = await write(data);
     } catch (e) {
       // If the "category" column has not been added in Supabase yet, save without it.
       if (b.table === 'materials' && 'category' in data && /category|schema cache/i.test(e.message)) {
         const rest = Object.assign({}, data); delete rest.category;
-        await write(rest);
+        savedId = await write(rest);
       } else throw e;
     }
+    // A PDF was added: write its questions automatically in the background.
+    if (b.table === 'materials' && savedId != null && isPdfUrl(data.file_url)) background(autoGenerate(savedId));
     return { ok: true };
   },
 
@@ -383,75 +640,21 @@ const actions = {
     return { signedUrl: signedUrl, publicUrl: URL_ + '/storage/v1/object/public/' + BUCKET + '/' + enc(path) };
   },
 
+  // The "Make questions" button. Normally not needed any more (questions are written automatically),
+  // but it still works to retry or top up a PDF.
   async generate_questions(req, res, b) {
     await requireAuth(req);
     if (!GEMINI_KEY) throw new HttpError(500, 'Add GEMINI_API_KEY in Vercel > Settings > Environment Variables, then redeploy.');
     if (!isId(String(b.course_id)) || !isId(String(b.material_id))) throw new HttpError(400, 'Missing course or material.');
-    const text = String(b.text || '').slice(0, 150000);
-    if (text.length < 200) throw new HttpError(400, 'This PDF has no readable text. Scanned PDFs cannot be used.');
-    const count = Math.min(Math.max(parseInt(b.count, 10) || 20, 5), 40);
-
-    const course = ((await sb('/rest/v1/courses?id=eq.' + enc(b.course_id) + '&select=title,code')).data || [])[0];
-    if (!course) throw new HttpError(400, 'Course not found.');
-    const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(b.material_id) + '&select=title')).data || [])[0];
-
-    const prompt = 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\n' +
-      'Material: ' + ((mat && mat.title) || 'PDF') + '\n\n' +
-      'Write ' + count + ' multiple-choice questions (fewer if the material does not support that many) using ONLY the text between the <material> tags.\n' +
-      'Rules:\n' +
-      '- Each question has exactly 4 options and exactly one correct option.\n' +
-      '- "source_quote" must be copied word for word from the material (15 to 200 characters) and must support the correct answer.\n' +
-      '- Do not mention "the text", "the slide" or "the material" inside a question.\n' +
-      '- "difficulty" is one of easy, medium, hard. "explanation" is one or two sentences.\n' +
-      '- "correct_index" is the position of the correct option, starting at 0.\n' +
-      'Return a JSON array only, in this shape:\n' +
-      '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy","source_quote":""}]\n\n' +
-      '<material>\n' + text + '\n</material>';
-
-    const reply = await askGemini(prompt);
-    const items = parseJsonArray(reply);
-    if (!Array.isArray(items) || !items.length) throw new HttpError(502, 'The question writer returned nothing usable. Try again.');
-
-    const haystack = normText(text);
-    const existing = {};
-    ((await sb('/rest/v1/questions?course_id=eq.' + enc(b.course_id) + '&select=question&limit=5000')).data || []).forEach(function (q) { existing[normText(q.question)] = 1; });
-
-    let rejected = 0, duplicates = 0;
-    const rows = [];
-    items.forEach(function (it) {
-      const ok = it && typeof it.question === 'string' && it.question.trim() &&
-        Array.isArray(it.options) && it.options.length >= 2 && it.options.length <= 8 &&
-        it.options.every(function (o) { return typeof o === 'string' && o.trim(); }) &&
-        Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < it.options.length &&
-        typeof it.source_quote === 'string';
-      const quote = ok ? normText(it.source_quote) : '';
-      if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { rejected++; return; }
-      const key = normText(it.question);
-      if (existing[key]) { duplicates++; return; }
-      existing[key] = 1;
-      rows.push({
-        course_id: b.course_id,
-        question: it.question.trim(),
-        options: it.options.map(function (o) { return o.trim(); }),
-        correct_index: it.correct_index,
-        explanation: (it.explanation || '').toString().trim() || null,
-        difficulty: ['easy', 'medium', 'hard'].indexOf(it.difficulty) > -1 ? it.difficulty : null,
-        source_quote: it.source_quote.trim().slice(0, 400),
-        ai_generated: true
-      });
-    });
-
-    if (rows.length) {
-      try {
-        await sb('/rest/v1/questions', { method: 'POST', body: rows });
-      } catch (e) {
-        // If the table has no source_quote / ai_generated columns yet, save without them.
-        if (/column|schema cache/i.test(e.message)) {
-          await sb('/rest/v1/questions', { method: 'POST', body: rows.map(function (r) { const c = Object.assign({}, r); delete c.source_quote; delete c.ai_generated; return c; }) });
-        } else throw e;
-      }
-    }
-    return { saved: rows.length, rejected: rejected, duplicates: duplicates };
+    const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(b.material_id) + '&select=*')).data || [])[0];
+    if (!mat) throw new HttpError(400, 'Material not found.');
+    const key = String(mat.id);
+    if (running[key]) throw new HttpError(409, 'Questions are already being written for this PDF. Check again in a few minutes.');
+    running[key] = true;
+    try {
+      const out = await generateForMaterial(mat, b.course_id, { text: String(b.text || '').slice(0, 400000) });
+      return { saved: out.saved, rejected: out.rejected, duplicates: out.duplicates, total: out.total };
+    } finally { delete running[key]; }
   },
 
   async notify(req, res, b) {
