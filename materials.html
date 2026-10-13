@@ -303,7 +303,6 @@
   <script>
     /* ================= Supabase client ================= */
     function getClient() {
-      // Use whichever your shared config already exposes
       const existing = window.supabaseClient || window.sb || window.db;
       if (existing && typeof existing.from === 'function') return existing;
       if (window.supabase && typeof window.supabase.from === 'function') return window.supabase;
@@ -341,10 +340,22 @@
       doc:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>'
     };
 
+    /* Tolerant field readers: work even if some columns are missing or named differently */
+    const titleOf    = m => m.title || m.name || 'Untitled';
+    const urlOf      = m => m.file_url || m.url || m.pdf_url || m.file || '';
+    const categoryOf = m => m.category || m.course || m.course_code || '';
+
+    function typeOf(m) {
+      if (m.file_type) return String(m.file_type).toUpperCase();
+      const ext = urlOf(m).split('?')[0].split('#')[0].split('.').pop();
+      return ext && ext.length <= 5 && /^[a-z0-9]+$/i.test(ext) ? ext.toUpperCase() : '';
+    }
+
     function iconClass(m) {
-      if (m.category === 'Study Guides') return 'guide';
-      if (m.category === 'Course Notes') return 'note';
-      if (m.category === 'Handouts') return 'doc';
+      const c = categoryOf(m);
+      if (c === 'Study Guides') return 'guide';
+      if (c === 'Course Notes') return 'note';
+      if (c === 'Handouts') return 'doc';
       return 'pdf';
     }
 
@@ -357,26 +368,28 @@
     function metaParts(m) {
       const parts = [];
       if (m.pages) parts.push(m.pages + (m.pages === 1 ? ' page' : ' pages'));
-      if (m.file_type) parts.push(String(m.file_type).toUpperCase());
+      const type = typeOf(m);
+      if (type) parts.push(type);
       const size = formatSize(m.size_bytes);
       if (size) parts.push(size);
-      if (!parts.length && m.category) parts.push(m.category);
+      if (!parts.length && categoryOf(m)) parts.push(categoryOf(m));
       return parts;
     }
 
     function cardHTML(m) {
-      const href = 'pdf-reader.html?id=' + encodeURIComponent(m.id) + '&file=' + encodeURIComponent(m.file_url || '');
+      const href = 'pdf-reader.html?id=' + encodeURIComponent(m.id) + '&file=' + encodeURIComponent(urlOf(m));
       const meta = metaParts(m).map(p => '<span>' + esc(p) + '</span>').join('');
+      const ic = iconClass(m);
       return (
         '<a href="' + href + '" class="material-card" data-id="' + esc(m.id) + '">' +
-          '<div class="file-icon ' + iconClass(m) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + ICONS[iconClass(m)] + '</svg></div>' +
-          '<div class="material-body"><div class="material-title">' + esc(m.title) + '</div><div class="material-meta">' + meta + '</div></div>' +
+          '<div class="file-icon ' + ic + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + ICONS[ic] + '</svg></div>' +
+          '<div class="material-body"><div class="material-title">' + esc(titleOf(m)) + '</div><div class="material-meta">' + meta + '</div></div>' +
           '<div class="material-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>' +
         '</a>'
       );
     }
 
-    /* ================= Recently opened (real, per-device) ================= */
+    /* ================= Recently opened (per-device) ================= */
     function getRecent() {
       try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
     }
@@ -387,7 +400,7 @@
 
     /* ================= Render ================= */
     function renderCategories() {
-      const cats = [...new Set(materials.map(m => m.category).filter(Boolean))].sort();
+      const cats = [...new Set(materials.map(categoryOf).filter(Boolean))].sort();
       if (category !== 'all' && !cats.includes(category)) category = 'all';
       els.cats.innerHTML =
         ['all', ...cats].map(c =>
@@ -404,8 +417,8 @@
 
       // Filtered list
       const list = materials.filter(m =>
-        (category === 'all' || m.category === category) &&
-        (!query || (m.title || '').toLowerCase().includes(query))
+        (category === 'all' || categoryOf(m) === category) &&
+        (!query || titleOf(m).toLowerCase().includes(query))
       );
 
       els.allGrid.innerHTML = list.map(cardHTML).join('');
@@ -435,25 +448,39 @@
     }
 
     /* ================= Data ================= */
-    async function loadMaterials() {
-      if (!client) {
-        setLive(false, 'Not connected');
-        showError('Could not connect to the database. Check your internet connection and try again.');
-        return;
-      }
-      const { data, error } = await client
-        .from('materials')
-        .select('id,title,category,file_url,file_type,pages,size_bytes,created_at')
-        .order('created_at', { ascending: false });
+    let loading = false;
 
-      if (error) {
+    async function loadMaterials() {
+      if (loading) return;
+      loading = true;
+      try {
+        if (!client) {
+          setLive(false, 'Not connected');
+          showError('Could not connect to the database. Check your internet connection and try again.');
+          return;
+        }
+
+        // select('*') so a missing optional column (file_type, pages, size_bytes...) can't break the query
+        const { data, error } = await client.from('materials').select('*');
+
+        if (error) {
+          // Status reflects the network, not the query result
+          setLive(navigator.onLine, navigator.onLine ? 'Live' : 'Offline');
+          showError('Could not load materials. ' + (error.message || ''));
+          return;
+        }
+
+        materials = (data || []).slice().sort((a, b) =>
+          String(b.created_at || '').localeCompare(String(a.created_at || ''))
+        );
+        renderCategories();
+        render();
+      } catch (err) {
         setLive(false, 'Offline');
-        showError('Could not load materials. ' + (error.message || ''));
-        return;
+        showError('Could not load materials. ' + (err && err.message ? err.message : 'Network error.'));
+      } finally {
+        loading = false;
       }
-      materials = data || [];
-      renderCategories();
-      render();
     }
 
     function subscribeRealtime() {
@@ -492,9 +519,9 @@
     });
 
     // Refresh when the tab/app comes back to the foreground or the network returns
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) { loadMaterials(); } });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) loadMaterials(); });
     window.addEventListener('online', loadMaterials);
-    window.addEventListener('pageshow', e => { if (e.persisted) { loadMaterials(); } });
+    window.addEventListener('pageshow', e => { if (e.persisted) loadMaterials(); });
 
     loadMaterials();
     subscribeRealtime();
