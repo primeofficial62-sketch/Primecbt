@@ -3,9 +3,9 @@
 //   SUPABASE_URL                 e.g. https://xuofkjjhupgmrphzgyun.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY    Supabase > Settings > API Keys > secret / service_role key
 //   ADMIN_SESSION_SECRET         any long random text (40+ characters)
-//   ANTHROPIC_API_KEY            needed for "Make questions" (console.anthropic.com > API keys)
+//   GEMINI_API_KEY               needed for "Make questions" (free key at aistudio.google.com)
 //   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
-//   ANTHROPIC_MODEL              (optional) model used to write questions. Defaults to claude-sonnet-5-5.
+//   GEMINI_MODEL                 (optional) force one Gemini model first. Otherwise the newest available one is used.
 
 const crypto = require('crypto');
 
@@ -13,8 +13,15 @@ const URL_ = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL |
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SECRET = process.env.ADMIN_SESSION_SECRET || '';
 const BUCKET = process.env.STORAGE_BUCKET || 'materials';
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+// Newest first. If a model is missing on your key or its free quota is used up, the next one is tried.
+const GEMINI_MODELS = [
+  process.env.GEMINI_MODEL,
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash-lite'
+].filter(Boolean);
 const COOKIE = 'admin_session';
 const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
@@ -122,6 +129,7 @@ async function safeCount(table, filter) { try { return await count(table, filter
 const normText = function (s) { return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); };
 
 function parseJsonArray(text) {
+  text = String(text || '').replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
   const start = text.indexOf('[');
   if (start < 0) return null;
   const end = text.lastIndexOf(']');
@@ -131,23 +139,61 @@ function parseJsonArray(text) {
   return null;
 }
 
-async function askClaude(prompt) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 8000,
-      system: 'You write multiple-choice exam questions for university students strictly from the course material you are given. Never use outside knowledge. Reply with a JSON array only, no other text.',
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
-  const data = await res.json().catch(function () { return {}; });
-  if (!res.ok) {
-    const msg = (data && data.error && data.error.message) || 'The question writer is not available.';
-    throw new HttpError(res.status === 401 ? 500 : 502, res.status === 401 ? 'The ANTHROPIC_API_KEY in Vercel is not valid.' : msg);
+const QUESTIONS_SCHEMA = {
+  type: 'ARRAY',
+  items: {
+    type: 'OBJECT',
+    properties: {
+      question: { type: 'STRING' },
+      options: { type: 'ARRAY', items: { type: 'STRING' } },
+      correct_index: { type: 'INTEGER' },
+      explanation: { type: 'STRING' },
+      difficulty: { type: 'STRING', enum: ['easy', 'medium', 'hard'] },
+      source_quote: { type: 'STRING' }
+    },
+    required: ['question', 'options', 'correct_index', 'explanation', 'difficulty', 'source_quote']
   }
-  return ((data.content || []).filter(function (c) { return c.type === 'text'; }).map(function (c) { return c.text; })).join('');
+};
+
+async function askGemini(prompt) {
+  const body = {
+    systemInstruction: { parts: [{ text: 'You write multiple-choice exam questions for university students strictly from the course material you are given. Never use outside knowledge. Reply with a JSON array only, no other text.' }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: 16000,
+      responseMimeType: 'application/json',
+      responseSchema: QUESTIONS_SCHEMA
+    }
+  };
+  let lastMsg = '';
+  const tried = {};
+  for (const model of GEMINI_MODELS) {
+    if (tried[model]) continue;
+    tried[model] = 1;
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + enc(model) + ':generateContent', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (res.ok) {
+      const cand = (data.candidates || [])[0];
+      if (!cand) {
+        const why = data.promptFeedback && data.promptFeedback.blockReason;
+        throw new HttpError(502, 'The question writer returned no answer' + (why ? ' (' + why + ')' : '') + '. Try again.');
+      }
+      return ((cand.content && cand.content.parts) || []).map(function (p) { return p.text || ''; }).join('');
+    }
+    lastMsg = (data && data.error && data.error.message) || 'The question writer is not available.';
+    // key rejected: no point trying other models
+    if (res.status === 400 && /api key/i.test(lastMsg)) throw new HttpError(500, 'The GEMINI_API_KEY in Vercel is not valid.');
+    if (res.status === 401) throw new HttpError(500, 'The GEMINI_API_KEY in Vercel is not valid.');
+    // model missing (404), not allowed (403) or quota used up (429): try the next model
+    if (res.status === 403 || res.status === 404 || res.status === 429) continue;
+    throw new HttpError(502, lastMsg);
+  }
+  throw new HttpError(502, lastMsg || 'The question writer is not available. Check your Gemini key and quota in Google AI Studio.');
 }
 
 /* ---------- file uploads (Supabase Storage) ---------- */
@@ -339,7 +385,7 @@ const actions = {
 
   async generate_questions(req, res, b) {
     await requireAuth(req);
-    if (!ANTHROPIC_KEY) throw new HttpError(500, 'Add ANTHROPIC_API_KEY in Vercel > Settings > Environment Variables, then redeploy.');
+    if (!GEMINI_KEY) throw new HttpError(500, 'Add GEMINI_API_KEY in Vercel > Settings > Environment Variables, then redeploy.');
     if (!isId(String(b.course_id)) || !isId(String(b.material_id))) throw new HttpError(400, 'Missing course or material.');
     const text = String(b.text || '').slice(0, 150000);
     if (text.length < 200) throw new HttpError(400, 'This PDF has no readable text. Scanned PDFs cannot be used.');
@@ -362,7 +408,7 @@ const actions = {
       '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy","source_quote":""}]\n\n' +
       '<material>\n' + text + '\n</material>';
 
-    const reply = await askClaude(prompt);
+    const reply = await askGemini(prompt);
     const items = parseJsonArray(reply);
     if (!Array.isArray(items) || !items.length) throw new HttpError(502, 'The question writer returned nothing usable. Try again.');
 
