@@ -1012,9 +1012,25 @@ html.checking .stage { visibility: hidden; }
 const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // ========== RETURNING USER FLAG ==========
+  // Remembers (on this device) that someone has already signed up or logged in,
+  // so the next visit opens on the Log In tab instead of Sign Up.
+  const RETURNING_KEY = 'prime_returning_user';
+  function markReturningUser() {
+    try { localStorage.setItem(RETURNING_KEY, '1'); } catch (e) {}
+  }
+  function isReturningUser() {
+    try { return localStorage.getItem(RETURNING_KEY) === '1'; } catch (e) { return false; }
+  }
+
   // ========== READ URL MODE ==========
   const urlParams = new URLSearchParams(window.location.search);
-  const initialMode = urlParams.get('mode') === 'login' ? 'login' : 'register';
+  const modeParam = urlParams.get('mode');
+  // An explicit ?mode= always wins. Otherwise returning users land on Log In.
+  const initialMode =
+    modeParam === 'login' ? 'login' :
+    modeParam === 'register' ? 'register' :
+    (isReturningUser() ? 'login' : 'register');
   
   // ========== MODE SWITCHING ==========
   let pendingVerifyEmail = null;
@@ -1147,6 +1163,9 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
         return;
       }
 
+      // Account now exists — next visit should open on Log In
+      markReturningUser();
+
       if (data.session) {
         showToast('Account created successfully!', 'success');
         setTimeout(() => {
@@ -1232,6 +1251,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       return;
     }
 
+    markReturningUser();
     showToast('Logged in successfully!', 'success');
     setTimeout(() => {
       window.location.href = 'home.html';
@@ -1280,7 +1300,13 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
 
   // ========== ROUTE AFTER AUTH ==========
   // Runs when the page loads with a session (e.g. just returned from Google).
+  let routed = false;
   async function routeAfterAuth(session) {
+    if (routed) return;
+    routed = true;
+
+    markReturningUser();
+
     // Every Google user is kept. If setup isn't finished, send them to it
     // (whichever tab they used); otherwise straight to home.
     if (needsProfileSetup(session.user)) {
@@ -1291,15 +1317,45 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   }
 
   const showPage = () => document.documentElement.classList.remove('checking');
-setTimeout(showPage, 4000);
 
-supabaseClient.auth.getSession().then(({ data }) => {
-  if (data && data.session) {
-    routeAfterAuth(data.session);
-  } else {
-    showPage();
+  // Detect a return from Google (PKCE "?code=" or implicit "#access_token=" or an error)
+  const returnParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const isOAuthReturn =
+    urlParams.has('code') ||
+    returnParams.has('access_token') ||
+    urlParams.has('error') ||
+    returnParams.has('error');
+
+  // While Supabase is still exchanging the Google code for a session, keep the
+  // page hidden so the user never sees the Sign Up form flash up again.
+  setTimeout(showPage, isOAuthReturn ? 8000 : 4000);
+
+  if (isOAuthReturn) {
+    const oauthError =
+      urlParams.get('error_description') || returnParams.get('error_description');
+    if (oauthError) {
+      showPage();
+      showToast(oauthError.replace(/\+/g, ' '), 'error');
+    }
+
+    // Fires as soon as the session is ready after the Google redirect
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        routeAfterAuth(session);
+      }
+    });
   }
-}).catch(showPage);
+
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if (data && data.session) {
+      routeAfterAuth(data.session);
+    } else if (!isOAuthReturn) {
+      showPage();
+    }
+    // If this is an OAuth return with no session yet, stay hidden:
+    // onAuthStateChange above will route as soon as the session lands,
+    // and the timeout is the fallback.
+  }).catch(showPage);
 
   // ========== GOOGLE OAUTH ==========
   // Requires Google enabled as a provider in your Supabase dashboard
