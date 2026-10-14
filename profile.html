@@ -189,7 +189,10 @@
     justify-content: center;
     font-weight: 700;
     font-size: 1.6rem;
+    overflow: hidden;
   }
+
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   .level-badge {
     position: absolute;
@@ -617,6 +620,9 @@
       results: 'test_results'          // user_id, score, total_questions
     };
 
+    // If the photo is saved as a file path in Supabase Storage, this is the bucket it lives in.
+    const AVATAR_BUCKET = 'avatars';
+
     // Used only when the profile has no `level` value. Match your home page formula.
     const levelFromXp = (xp) => Math.floor(xp / 500) + 1;
     /* ================================================================ */
@@ -641,16 +647,46 @@
 
     function clearStatus() { $('statusBanner').hidden = true; }
 
+    /* ---------- Photo: works with a full link, an uploaded image, or a Storage file path ---------- */
+    function pickAvatar(p, meta) {
+      const v = p.avatar_url || p.avatar || p.photo_url || p.image_url || p.profile_image || p.picture ||
+                meta.avatar_url || meta.avatar || meta.picture || '';
+      if (!v) return '';
+      let url = v;
+      if (!/^(https?:|data:|blob:)/i.test(v)) {
+        try { url = sb.storage.from(AVATAR_BUCKET).getPublicUrl(v).data.publicUrl; } catch (e) { return ''; }
+      }
+      // Cache-bust when the profile changes, so a new photo shows right away
+      const ver = p.updated_at || '';
+      return ver && /^https?:/i.test(url) ? url + (url.indexOf('?') > -1 ? '&' : '?') + 'v=' + encodeURIComponent(ver) : url;
+    }
+
+    function setAvatar(name, url) {
+      const box = $('avatar');
+      box.textContent = initials(name);
+      if (!url) return;
+      const img = new Image();
+      img.alt = '';
+      img.onload = () => { box.textContent = ''; box.appendChild(img); };
+      img.src = url;
+    }
+
     function renderFromAuthOnly() {
       const meta = (authUser && authUser.user_metadata) || {};
       const name = meta.full_name || meta.name || ((authUser && authUser.email) || '').split('@')[0] || 'Student';
-      $('avatar').textContent = initials(name);
+      setAvatar(name, pickAvatar({}, meta));
       $('profileName').textContent = name;
       $('profileMeta').textContent = (authUser && authUser.email) || '';
     }
 
     async function loadAll() {
       if (!sb || !uid) return;
+
+      // Always use the freshest account data (name/photo saved from the account page)
+      try {
+        const { data: u } = await sb.auth.getUser();
+        if (u && u.user) authUser = u.user;
+      } catch (e) { /* keep the session copy */ }
 
       const results = await Promise.allSettled([
         sb.from(T.profiles).select('*').eq('id', uid).maybeSingle(),
@@ -676,10 +712,10 @@
       const p = (data[0] && data[0].data) || {};
       const meta = authUser.user_metadata || {};
       const name =
-        p.full_name || meta.full_name || meta.name ||
+        p.full_name || p.name || p.display_name || meta.full_name || meta.name ||
         (authUser.email || '').split('@')[0] || 'Student';
 
-      $('avatar').textContent = initials(name);
+      setAvatar(name, pickAvatar(p, meta));
       $('profileName').textContent = name;
       $('profileMeta').textContent =
         [p.department, p.study_level ? `${p.study_level} Level` : null]
@@ -775,6 +811,7 @@
 
         sb.auth.onAuthStateChange((event) => {
           if (event === 'SIGNED_OUT') window.location.href = 'auth.html';
+          if (event === 'USER_UPDATED') loadAll();
         });
       } catch (e) {
         console.error('[profile] init error:', e);
@@ -800,6 +837,8 @@
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) loadAll();
       });
+      // Coming back from the account page (back button / bfcache): refresh so the edit shows
+      window.addEventListener('pageshow', (e) => { if (e.persisted) loadAll(); });
 
       init();
     });
