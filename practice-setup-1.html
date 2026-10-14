@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>PRIME-CBT — Practice Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b1a;
+      --surface: #0f172a;
+      --surface-2: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --muted-light: #cbd5e1;
+      --emerald: #10b981;
+      --emerald-bright: #34d399;
+      --teal: #2dd4bf;
+      --amber: #fbbf24;
+      --red: #f87171;
+      --font-display: 'Lora', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+      --pad: clamp(14px, 4.5vw, 28px);
+      --fs-title: clamp(16px, 4.2vw, 21px);
+      --fs-sub: clamp(11.5px, 3.2vw, 13px);
+      --fs-body: clamp(13px, 3.6vw, 14.5px);
+      --fs-small: clamp(11px, 3vw, 12.5px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      -webkit-font-smoothing: antialiased;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    button { font-family: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    /* ---------- App shell ---------- */
+    .app {
+      width: 100%;
+      max-width: 680px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      border-left: 1px solid rgba(51, 65, 85, 0.6);
+      border-right: 1px solid rgba(51, 65, 85, 0.6);
+    }
+
+    @media (min-width: 720px) and (min-height: 640px) {
+      body { align-items: center; padding-block: 24px; }
+      .app {
+        min-height: 0;
+        height: min(100dvh - 48px, 860px);
+        border: 1px solid rgba(51, 65, 85, 0.8);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      display: flex; align-items: center;
+      gap: clamp(10px, 3vw, 16px);
+      padding: 14px var(--pad) 12px;
+      padding-top: max(14px, env(safe-area-inset-top));
+      flex-shrink: 0;
+      background: rgba(6, 11, 26, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      z-index: 30;
+    }
+
+    .back-btn {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: 11px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted-light);
+      cursor: pointer;
+      transition: background .2s, color .2s, transform .2s;
+    }
+    .back-btn:active { transform: scale(0.94); }
+    .back-btn svg { width: 18px; height: 18px; }
+
+    .topbar-title { min-width: 0; flex: 1; }
+    .topbar-title h1 {
+      font-family: var(--font-display);
+      font-size: var(--fs-title); font-weight: 700; line-height: 1.2;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .topbar-title p {
+      font-size: var(--fs-sub); color: var(--muted); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .live-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; flex-shrink: 0;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.8);
+      font-size: 11.5px; font-weight: 600; color: var(--muted);
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .live-pill.on { color: var(--emerald-bright); border-color: rgba(16, 185, 129, 0.35); }
+    .live-pill.on .live-dot { background: var(--emerald); animation: pulse 2s ease-in-out infinite; }
+    .live-pill.sync { color: var(--teal); border-color: rgba(45, 212, 191, 0.3); }
+    .live-pill.sync .live-dot { background: var(--teal); }
+    .live-pill.off { color: var(--amber); border-color: rgba(251, 191, 36, 0.35); }
+    .live-pill.off .live-dot { background: var(--amber); }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+      50%      { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+    }
+
+    /* ---------- Content ---------- */
+    .content {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: clamp(14px, 3.5vw, 24px) var(--pad);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    .setup-section { margin-bottom: clamp(18px, 4vw, 26px); }
+
+    .section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px;
+    }
+    .section-label {
+      font-size: var(--fs-small); font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .section-meta { font-size: var(--fs-small); color: var(--muted); text-align: right; }
+    .section-meta b { color: var(--emerald-bright); font-weight: 600; }
+
+    /* ---------- Option chips ---------- */
+    .options-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(72px, 20vw, 104px), 1fr));
+      gap: clamp(8px, 2.2vw, 12px);
+    }
+
+    .option-chip {
+      min-height: 44px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--muted-light);
+      font-size: var(--fs-body); font-weight: 600;
+      cursor: pointer; user-select: none;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1px; line-height: 1.2;
+      transition: border-color .2s, background .2s, color .2s, opacity .2s;
+    }
+    .option-chip .chip-n { font-size: 11px; font-weight: 500; color: var(--muted); }
+    .option-chip.active {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(45, 212, 191, 0.12));
+      border-color: var(--emerald);
+      color: var(--emerald-bright);
+      box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+    }
+    .option-chip.active .chip-n { color: rgba(52, 211, 153, 0.8); }
+    .option-chip:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ---------- Mode cards ---------- */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(8px, 2.2vw, 14px);
+    }
+    @media (max-width: 339px) { .mode-grid { grid-template-columns: 1fr; } }
+
+    .mode-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: clamp(12px, 3.5vw, 18px) 12px;
+      text-align: center; cursor: pointer; min-width: 0;
+      transition: border-color .25s, background .25s, box-shadow .25s;
+    }
+    .mode-card.active {
+      background: linear-gradient(145deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.8));
+      border-color: var(--emerald);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.15);
+    }
+    .mode-icon {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-bright);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px;
+      transition: transform .3s ease, background .3s;
+    }
+    .mode-card.active .mode-icon { background: rgba(16, 185, 129, 0.22); transform: scale(1.08); }
+    .mode-icon svg { width: 21px; height: 21px; }
+    .mode-title { font-size: var(--fs-body); font-weight: 600; margin-bottom: 3px; }
+    .mode-desc { font-size: var(--fs-small); color: var(--muted); line-height: 1.35; }
+
+    /* ---------- Toggle ---------- */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px clamp(14px, 4vw, 20px);
+      text-align: left; cursor: pointer;
+    }
+    .toggle-info { min-width: 0; }
+    .toggle-info h3 { font-size: var(--fs-body); font-weight: 600; margin-bottom: 2px; }
+    .toggle-info p { font-size: var(--fs-small); color: var(--muted); }
+    .toggle {
+      position: relative; width: 48px; height: 26px; flex-shrink: 0;
+      background: var(--border); border-radius: 999px; transition: background .25s;
+    }
+    .toggle-row[aria-checked="true"] .toggle { background: var(--emerald); }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      background: #fff; border-radius: 50%;
+      transition: transform .25s cubic-bezier(.4, 0, .2, 1);
+      box-shadow: 0 2px 5px rgba(0,0,0,.25);
+    }
+    .toggle-row[aria-checked="true"] .toggle-thumb { transform: translateX(22px); }
+
+    /* ---------- Per-mode info card ---------- */
+    .info-card {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.28);
+      border-radius: 16px;
+      padding: 14px clamp(14px, 4vw, 20px);
+      margin-bottom: 18px;
+    }
+    .info-card h3 { font-size: var(--fs-body); font-weight: 700; color: var(--emerald-bright); margin-bottom: 4px; }
+    .info-card p { font-size: var(--fs-small); color: var(--muted-light); line-height: 1.5; }
+    .info-card ul { margin: 10px 0 0; padding-left: 18px; font-size: var(--fs-small); color: var(--muted-light); line-height: 1.7; }
+
+    /* ---------- Status panels ---------- */
+    .state-panel {
+      min-height: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 10px; padding: 32px 12px;
+    }
+    .state-panel h2 { font-family: var(--font-display); font-size: var(--fs-title); }
+    .state-panel p { color: var(--muted); font-size: var(--fs-body); max-width: 36ch; line-height: 1.5; }
+    .state-btn {
+      margin-top: 8px; padding: 11px 20px; min-height: 44px;
+      border-radius: 12px;
+      border: 1.5px solid var(--emerald);
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-bright);
+      font-weight: 600; font-size: var(--fs-body); cursor: pointer;
+    }
+    .spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--emerald);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Bottom CTA ---------- */
+    .bottom-cta {
+      flex-shrink: 0;
+      padding: 14px var(--pad);
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      background: linear-gradient(to top, var(--bg) 80%, rgba(6, 11, 26, 0));
+      border-top: 1px solid rgba(51, 65, 85, 0.4);
+      z-index: 40;
+    }
+    .start-btn {
+      width: 100%; min-height: 50px; padding: 0 16px;
+      border: none; border-radius: 14px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #022c22;
+      font-size: clamp(14px, 3.8vw, 16px); font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(16, 185, 129, 0.3);
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+    .start-btn:active { transform: scale(0.98); }
+    .start-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+    .start-btn svg { width: 17px; height: 17px; flex-shrink: 0; transition: transform .25s; }
+
+    @media (hover: hover) {
+      .back-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); transform: translateX(-2px); }
+      .option-chip:not(:disabled):hover { border-color: rgba(16, 185, 129, 0.4); color: var(--text); }
+      .mode-card:hover { border-color: rgba(16, 185, 129, 0.35); }
+      .toggle-row:hover { border-color: rgba(16, 185, 129, 0.35); }
+      .start-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(16, 185, 129, 0.4); }
+      .start-btn:not(:disabled):hover svg { transform: translateX(4px); }
+    }
+
+    /* Short screens (landscape phones) */
+    @media (max-height: 480px) {
+      .topbar { padding-block: 8px; }
+      .content { padding-block: 10px; }
+      .setup-section { margin-bottom: 14px; }
+      .mode-icon { display: none; }
+      .bottom-cta { padding-block: 8px; }
+      .start-btn { min-height: 44px; }
+    }
+
+    @media (min-width: 720px) {
+      .mode-icon { width: 48px; height: 48px; }
+      .mode-icon svg { width: 24px; height: 24px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button type="button" class="back-btn" id="backBtn" aria-label="Go back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="topbar-title">
+        <h1 id="courseTitle">Set up practice</h1>
+        <p id="courseSub">Loading course…</p>
+      </div>
+      <div class="live-pill" id="livePill" role="status" aria-live="polite">
+        <span class="live-dot"></span><span id="liveText">Connecting</span>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+      <div class="state-panel" id="loadingPanel">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading available questions…</p>
+      </div>
+
+      <div class="state-panel" id="messagePanel" hidden>
+        <h2 id="msgTitle"></h2>
+        <p id="msgBody"></p>
+        <button type="button" class="state-btn" id="msgBtn"></button>
+      </div>
+
+      <div id="setupForm" hidden>
+        <div class="info-card" id="infoCard" hidden></div>
+
+        <section class="setup-section" id="countSection">
+          <div class="section-head">
+            <div class="section-label" id="qLabel">Number of Questions</div>
+            <div class="section-meta" id="availableText"></div>
+          </div>
+          <div class="options-row" id="questionCount" role="radiogroup" aria-labelledby="qLabel"></div>
+        </section>
+
+        <section class="setup-section" id="difficultySection">
+          <div class="section-head">
+            <div class="section-label" id="dLabel">Difficulty</div>
+          </div>
+          <div class="options-row" id="difficulty" role="radiogroup" aria-labelledby="dLabel">
+            <button type="button" class="option-chip" data-value="easy"   role="radio">Easy<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="medium" role="radio">Medium<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="hard"   role="radio">Hard<span class="chip-n"></span></button>
+            <button type="button" class="option-chip" data-value="mixed"  role="radio">Mixed<span class="chip-n"></span></button>
+          </div>
+        </section>
+
+        <section class="setup-section" id="timeSection" hidden>
+          <div class="section-head">
+            <div class="section-label" id="tLabel">Time per question</div>
+            <div class="section-meta" id="timeTotal"></div>
+          </div>
+          <div class="options-row" id="paceRow" role="radiogroup" aria-labelledby="tLabel"></div>
+        </section>
+
+        <section class="setup-section" id="modeSection">
+          <div class="section-head">
+            <div class="section-label" id="mLabel">Mode</div>
+          </div>
+          <div class="mode-grid" id="modeSelect" role="radiogroup" aria-labelledby="mLabel">
+            <div class="mode-card" data-value="practice" role="radio" tabindex="0">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </div>
+              <div class="mode-title">Practice</div>
+              <div class="mode-desc">See answers instantly</div>
+            </div>
+            <div class="mode-card" data-value="timed" role="radio" tabindex="0">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <div class="mode-title">Timed</div>
+              <div class="mode-desc">Race against time</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="setup-section" id="randSection">
+          <button type="button" class="toggle-row" id="randomizeToggle" role="switch" aria-checked="true">
+            <span class="toggle-info">
+              <h3>Randomize Questions</h3>
+              <p>Shuffle the order of questions</p>
+            </span>
+            <span class="toggle" aria-hidden="true"><span class="toggle-thumb"></span></span>
+          </button>
+        </section>
+      </div>
+    </main>
+
+    <footer class="bottom-cta">
+      <button type="button" class="start-btn" id="startBtn" disabled>
+        <span id="startLabel">Start Practice</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    /* ============================================================
+       CONFIG — everything shown is read live from your database.
+       Column names below are the preferred ones; the page also tries
+       common alternatives automatically if a column doesn't exist.
+       ============================================================ */
+    const CONFIG = {
+      SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+      tables: { courses: 'courses', questions: 'questions' },
+      cols: {
+        courseId: 'id',
+        courseTitle: 'title',
+        courseCode: 'code',
+        questionCourse: 'course_id',
+        questionDifficulty: 'difficulty'
+      },
+      countSteps: [10, 20, 30, 50, 100], // selectable sizes; only sizes the course can fill are shown
+      nextPage: 'cbt.html',
+      fallbackPage: 'practice.html',
+      pollMs: 20000                      // refresh interval used only when realtime isn't connected
+    };
+
+    const DIFFICULTIES = ['easy', 'medium', 'hard'];
+    const PREF_KEY = 'primecbt:practice-setup';
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      title: $('courseTitle'), sub: $('courseSub'),
+      pill: $('livePill'), pillText: $('liveText'),
+      loading: $('loadingPanel'), msg: $('messagePanel'),
+      msgTitle: $('msgTitle'), msgBody: $('msgBody'), msgBtn: $('msgBtn'),
+      form: $('setupForm'),
+      qRow: $('questionCount'), dRow: $('difficulty'), dSection: $('difficultySection'),
+      modeGrid: $('modeSelect'), toggle: $('randomizeToggle'),
+      avail: $('availableText'),
+      start: $('startBtn'), startLabel: $('startLabel')
+    };
+
+    const state = {
+      course: null,
+      qCourseCol: null,
+      qDiffCol: null,
+      counts: { easy: 0, medium: 0, hard: 0, total: 0 },
+      count: null,
+      difficulty: 'medium',
+      mode: 'practice',
+      randomize: true,
+      wantMax: false,
+      kind: 'generic',          // quick | weak | past | timed | mock | generic
+      pace: 60,                 // seconds per question (timed)
+      weakIds: [], weakTable: null, weakChecked: false,
+      pastCol: null, pastType: '', pastChecked: false, pastTotal: 0
+    };
+
+    let realtimeOn = false;
+    let lastRefreshOk = false;
+
+    /* ---------- Saved choices (the user's own selections) ---------- */
+    try {
+      const saved = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+      if (['easy', 'medium', 'hard', 'mixed'].includes(saved.difficulty)) state.difficulty = saved.difficulty;
+      if (['practice', 'timed'].includes(saved.mode)) state.mode = saved.mode;
+      if (typeof saved.randomize === 'boolean') state.randomize = saved.randomize;
+      if (Number.isInteger(saved.count)) state.count = saved.count;
+      if ([30, 45, 60, 90].includes(saved.pace)) state.pace = saved.pace;
+    } catch (_) {}
+    const savePrefs = () => {
+      if (state.kind !== 'generic' && state.kind !== 'timed') return;   // other modes have fixed settings
+      try {
+        localStorage.setItem(PREF_KEY, JSON.stringify({
+          difficulty: state.difficulty, mode: state.mode,
+          randomize: state.randomize, count: state.count, pace: state.pace
+        }));
+      } catch (_) {}
+    };
+
+    /* ---------- URL params (from practice.html) ---------- */
+    const params = new URLSearchParams(location.search);
+    const courseIdParam = (params.get('courseId') || '').trim();
+    const topicParam = (params.get('course') || params.get('topic') || '').trim();
+    const sourceMode = (params.get('mode') || '').trim();   // e.g. "Quick Practice", "Mock Exam"
+
+    // The entry mode chosen on the previous page decides how this page behaves
+    (function applyIncomingMode() {
+      const m = sourceMode.toLowerCase();
+      if (m.includes('mock')) state.kind = 'mock';
+      else if (m.includes('quick')) state.kind = 'quick';
+      else if (m.includes('weak')) state.kind = 'weak';
+      else if (m.includes('past')) state.kind = 'past';
+      else if (m.includes('timed')) state.kind = 'timed';
+      if (state.kind === 'generic') return;
+      state.mode = (state.kind === 'timed' || state.kind === 'mock') ? 'timed' : 'practice';
+      if (state.kind !== 'timed') state.difficulty = 'mixed';
+      if (state.kind === 'quick') { state.count = 10; state.randomize = true; }
+      if (state.kind === 'mock') state.randomize = true;
+      if (state.kind === 'weak') state.randomize = true;
+      if (state.kind === 'past') { state.randomize = false; state.wantMax = true; }
+    })();
+
+    /* ---------- UI helpers ---------- */
+    function show(panel) {
+      el.loading.hidden = panel !== 'loading';
+      el.msg.hidden = panel !== 'message';
+      el.form.hidden = panel !== 'form';
+    }
+
+    function showMessage(title, body, btnText, btnAction) {
+      el.msgTitle.textContent = title;
+      el.msgBody.textContent = body;
+      el.msgBtn.textContent = btnText;
+      el.msgBtn.onclick = btnAction;
+      el.start.disabled = true;
+      show('message');
+    }
+
+    function setLive(status) {
+      el.pill.classList.remove('on', 'off', 'sync');
+      if (status === 'live') { el.pill.classList.add('on'); el.pillText.textContent = 'Live'; }
+      else if (status === 'sync') { el.pill.classList.add('sync'); el.pillText.textContent = 'Synced'; }
+      else if (status === 'offline') { el.pill.classList.add('off'); el.pillText.textContent = 'Offline'; }
+      else { el.pillText.textContent = 'Connecting'; }
+    }
+    const settledStatus = () => !navigator.onLine ? 'offline' : realtimeOn ? 'live' : (lastRefreshOk ? 'sync' : 'offline');
+
+    const goBack = () => {
+      if (history.length > 1) history.back();
+      else location.href = CONFIG.fallbackPage;
+    };
+    $('backBtn').addEventListener('click', goBack);
+
+    /* ---------- Pre-flight checks ---------- */
+    if (!window.supabase) {
+      el.sub.textContent = 'Not connected';
+      setLive('offline');
+      showMessage('Database not connected', 'The database library failed to load. Check your internet connection and reload.', 'Reload', () => location.reload());
+      return;
+    }
+    if (!courseIdParam && !topicParam) {
+      el.sub.textContent = 'No course selected';
+      setLive('offline');
+      showMessage('No course selected', 'Choose a course first, then set up your practice session.', 'Choose a course', () => { location.href = CONFIG.fallbackPage; });
+      return;
+    }
+
+    const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    const { tables: T, cols: C } = CONFIG;
+
+    /* ---------- Data helpers ---------- */
+    const pick = (row, keys) => {
+      for (const k of keys) if (row && row[k] != null && String(row[k]).trim() !== '') return row[k];
+      return '';
+    };
+    const courseTitleOf = (c) => pick(c, [C.courseTitle, 'title', 'name', 'course_name', 'course_title', 'subject']);
+    const courseCodeOf = (c) => pick(c, [C.courseCode, 'code', 'course_code']);
+    const uniq = (arr) => [...new Set(arr)];
+
+    async function resolveCourse() {
+      // 1) By id (what practice.html sends)
+      const idCandidate = courseIdParam || (UUID_RE.test(topicParam) || /^\d+$/.test(topicParam) ? topicParam : '');
+      if (idCandidate) {
+        const { data, error } = await db.from(T.courses).select('*').eq(C.courseId, idCandidate).limit(1);
+        if (error) throw error;
+        if (data && data[0]) return data[0];
+      }
+      // 2) By title / code (older links), matched client-side so it works with any column names
+      if (topicParam) {
+        const { data, error } = await db.from(T.courses).select('*');
+        if (error) throw error;
+        const t = topicParam.toLowerCase();
+        return (data || []).find((c) =>
+          String(courseTitleOf(c)).toLowerCase() === t || String(courseCodeOf(c)).toLowerCase() === t) || null;
+      }
+      return null;
+    }
+
+    // Find which column actually exists (works with enum/text; errors mean "no such column")
+    async function detectColumn(table, candidates) {
+      for (const col of uniq(candidates)) {
+        const { error } = await db.from(table).select(col).limit(1);
+        if (!error) return col;
+      }
+      return null;
+    }
+
+    async function detectQuestionColumns() {
+      state.qCourseCol = await detectColumn(T.questions, [C.questionCourse, 'course_id', 'courseId', 'course']);
+      if (!state.qCourseCol) throw new Error('The questions table has no column linking it to a course.');
+      state.qDiffCol = await detectColumn(T.questions, [C.questionDifficulty, 'difficulty', 'level']);
+      el.dSection.hidden = !state.qDiffCol;
+      if (!state.qDiffCol) state.difficulty = 'mixed';
+    }
+
+    async function countQuestions(difficulty) {
+      let q = db.from(T.questions)
+        .select('*', { count: 'exact', head: true })
+        .eq(state.qCourseCol, state.course[C.courseId]);
+      if (difficulty && state.qDiffCol) q = q.ilike(state.qDiffCol, difficulty);
+      const { count, error } = await q;
+      if (error) throw error;
+      return count || 0;
+    }
+
+    let loadToken = 0;
+    async function loadCounts() {
+      const token = ++loadToken;
+      const [total, ...byDiff] = await Promise.all([
+        countQuestions(null),
+        ...(state.qDiffCol ? DIFFICULTIES.map(countQuestions) : [0, 0, 0])
+      ]);
+      if (token !== loadToken) return false;
+      state.counts = { total, easy: byDiff[0] || 0, medium: byDiff[1] || 0, hard: byDiff[2] || 0 };
+      if (state.kind === 'weak') await loadWeak();
+      if (state.kind === 'past') await loadPast();
+      return token === loadToken;
+    }
+
+    // Weak Topics: questions this student answered wrongly before (needs an answers table)
+    const WEAK_TABLES = ['question_attempts', 'user_answers', 'answers', 'test_answers', 'attempts'];
+    async function loadWeak() {
+      state.weakIds = [];
+      let uid = null;
+      try { const r = await db.auth.getSession(); uid = r.data && r.data.session && r.data.session.user.id; } catch (_) {}
+      if (!uid) return;
+      if (!state.weakChecked) {
+        state.weakChecked = true;
+        for (const t of WEAK_TABLES) {
+          const { error } = await db.from(t).select('question_id,is_correct,user_id').limit(1);
+          if (!error) { state.weakTable = t; break; }
+        }
+      }
+      if (!state.weakTable) return;
+      const { data, error } = await db.from(state.weakTable).select('question_id')
+        .eq('user_id', uid).eq('is_correct', false).limit(500);
+      if (error) throw error;
+      const ids = uniq((data || []).map((r) => r.question_id).filter(Boolean));
+      const keep = [];
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data: qs, error: e2 } = await db.from(T.questions).select('id')
+          .eq(state.qCourseCol, state.course[C.courseId]).in('id', ids.slice(i, i + 100));
+        if (e2) throw e2;
+        keep.push(...(qs || []).map((x) => x.id));
+      }
+      state.weakIds = keep;
+    }
+
+    // Past Questions: needs a tag on the question (is_past_question true, or an exam year)
+    async function loadPast() {
+      if (!state.pastChecked) {
+        state.pastChecked = true;
+        const flag = await detectColumn(T.questions, ['is_past_question', 'past_question', 'is_past']);
+        if (flag) { state.pastCol = flag; state.pastType = 'bool'; }
+        else {
+          const yr = await detectColumn(T.questions, ['exam_year', 'past_year', 'year']);
+          if (yr) { state.pastCol = yr; state.pastType = 'year'; }
+        }
+      }
+      if (!state.pastCol) { state.pastTotal = 0; return; }
+      let q = db.from(T.questions).select('*', { count: 'exact', head: true })
+        .eq(state.qCourseCol, state.course[C.courseId]);
+      q = state.pastType === 'bool' ? q.eq(state.pastCol, true) : q.not(state.pastCol, 'is', null);
+      const { count, error } = await q;
+      if (error) throw error;
+      state.pastTotal = count || 0;
+    }
+
+    const availableFor = (diff) => diff === 'mixed' ? state.counts.total : state.counts[diff] || 0;
+
+    /* ---------- Per-mode behaviour ---------- */
+    const KIND_INFO = {
+      quick: ['Quick Practice', 'A short random set with answers shown instantly. No timer, no pressure. Good for a fast warm-up.'],
+      weak:  ['Weak Topics', 'Only the questions you got wrong before, so you can fix your gaps. Answers are shown instantly.'],
+      past:  ['Past Questions', 'Questions from previous examinations, in their original order. Answers are shown instantly.'],
+      timed: ['Timed Practice', 'Race the clock. Answers are shown at the end, and the test submits itself when time runs out.'],
+      mock:  ['Mock Exam', 'A full simulation of the real examination.']
+    };
+    const PACES = [{ s: 30, name: 'Fast' }, { s: 45, name: 'Steady' }, { s: 60, name: 'Standard' }, { s: 90, name: 'Relaxed' }];
+    const MOCK_SECS = 45;
+    const STEPS = { quick: [5, 10, 15, 20], weak: [10, 20, 30, 50], past: [10, 20, 30, 50, 100] };
+    const stepsFor = () => STEPS[state.kind] || CONFIG.countSteps;
+    const isTimed = () => state.kind === 'timed' || state.kind === 'mock' || (state.kind === 'generic' && state.mode === 'timed');
+    const usesDifficulty = () => !!state.qDiffCol && (state.kind === 'timed' || state.kind === 'generic');
+    const secsPerQ = () => state.kind === 'mock' ? MOCK_SECS : state.pace;
+    const totalMinutes = () => Math.max(1, Math.ceil((state.count || 0) * secsPerQ() / 60));
+    function poolSize() {
+      if (state.kind === 'weak') return state.weakIds.length;
+      if (state.kind === 'past') return state.pastTotal;
+      if (state.kind === 'quick' || state.kind === 'mock') return state.counts.total;
+      return availableFor(state.difficulty);
+    }
+
+    /* ---------- Render ---------- */
+    function countOptions() {
+      const avail = poolSize();
+      if (avail <= 0) return [];
+      const steps = stepsFor();
+      const sizes = steps.filter((n) => n <= avail);
+      const top = steps[steps.length - 1];
+      if (!sizes.includes(avail) && (avail <= top || state.kind === 'past')) sizes.push(avail);
+      return sizes;
+    }
+
+    function reconcile() {
+      if (usesDifficulty() && availableFor(state.difficulty) === 0) {
+        const next = ['medium', 'easy', 'hard'].find((d) => availableFor(d) > 0);
+        state.difficulty = next || 'mixed';
+      }
+      if (state.kind === 'mock') { state.count = Math.min(poolSize(), 100) || null; return; }
+      const sizes = countOptions();
+      if (state.wantMax && sizes.length) {
+        state.count = sizes[sizes.length - 1];
+        state.wantMax = false;
+      }
+      if (!sizes.includes(state.count)) {
+        state.count = sizes.includes(10) ? 10 : (sizes[0] ?? null);
+      }
+    }
+
+    function renderInfo() {
+      const box = $('infoCard');
+      if (state.kind === 'generic') { box.hidden = true; return; }
+      const [title, text] = KIND_INFO[state.kind];
+      box.replaceChildren();
+      const h = document.createElement('h3'); h.textContent = title;
+      const p = document.createElement('p'); p.textContent = text;
+      box.append(h, p);
+      if (state.kind === 'mock') {
+        const ul = document.createElement('ul');
+        [
+          (state.count || 0) + ' questions, all difficulties, shuffled',
+          totalMinutes() + ' minutes (' + MOCK_SECS + ' seconds per question)',
+          'The timer cannot be paused',
+          'No answers shown until you submit',
+          'Submits automatically when time is up'
+        ].forEach((t) => { const li = document.createElement('li'); li.textContent = t; ul.append(li); });
+        box.append(ul);
+      }
+      box.hidden = false;
+    }
+
+    function render() {
+      reconcile();
+
+      $('modeSection').hidden = state.kind !== 'generic';
+      $('countSection').hidden = state.kind === 'mock';
+      el.dSection.hidden = !usesDifficulty();
+      $('timeSection').hidden = !(state.kind === 'timed' || (state.kind === 'generic' && state.mode === 'timed'));
+      $('randSection').hidden = state.kind === 'quick' || state.kind === 'mock';
+      $('qLabel').textContent = state.kind === 'weak' ? 'How many weak questions' : 'Number of Questions';
+
+      el.dRow.querySelectorAll('.option-chip').forEach((chip) => {
+        const d = chip.dataset.value;
+        const n = availableFor(d);
+        chip.querySelector('.chip-n').textContent = n.toLocaleString() + (n === 1 ? ' question' : ' questions');
+        chip.disabled = n === 0;
+        const on = d === state.difficulty;
+        chip.classList.toggle('active', on);
+        chip.setAttribute('aria-checked', String(on));
+      });
+
+      const avail = poolSize();
+      const sizes = countOptions();
+      el.qRow.replaceChildren(...sizes.map((n) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'option-chip' + (n === state.count ? ' active' : '');
+        b.dataset.value = String(n);
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', String(n === state.count));
+        b.textContent = stepsFor().includes(n) ? String(n) : 'All ' + n;
+        return b;
+      }));
+
+      $('paceRow').replaceChildren(...PACES.map((pc) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'option-chip' + (pc.s === state.pace ? ' active' : '');
+        b.dataset.value = String(pc.s);
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', String(pc.s === state.pace));
+        b.append(pc.name);
+        const n = document.createElement('span'); n.className = 'chip-n'; n.textContent = pc.s + ' sec each';
+        b.append(n);
+        return b;
+      }));
+      $('timeTotal').replaceChildren();
+      if (isTimed() && state.count) {
+        const b = document.createElement('b'); b.textContent = totalMinutes() + ' min';
+        $('timeTotal').append('Total ', b);
+      }
+
+      el.avail.replaceChildren();
+      const strong = document.createElement('b');
+      strong.textContent = avail.toLocaleString();
+      el.avail.append(strong, ' available');
+
+      el.modeGrid.querySelectorAll('.mode-card').forEach((c) => {
+        const on = c.dataset.value === state.mode;
+        c.classList.toggle('active', on);
+        c.setAttribute('aria-checked', String(on));
+      });
+
+      el.toggle.setAttribute('aria-checked', String(state.randomize));
+      renderInfo();
+
+      const mins = totalMinutes();
+      const labels = {
+        quick: 'Start Quick Practice',
+        weak: 'Practise Weak Topics',
+        past: 'Start Past Questions',
+        timed: 'Start Timed Test · ' + mins + ' min',
+        mock: 'Start Mock Exam · ' + mins + ' min'
+      };
+      el.startLabel.textContent = labels[state.kind] ||
+        (state.mode === 'timed' ? 'Start Timed Test · ' + mins + ' min' : 'Start Practice');
+      el.start.disabled = !(state.count > 0);
+    }
+
+    function renderCourseHeader() {
+      const title = courseTitleOf(state.course) || 'Practice';
+      const code = courseCodeOf(state.course);
+      document.title = `${title} — PRIME-CBT Practice`;
+      el.title.textContent = title;
+      el.sub.textContent = [code, sourceMode].filter(Boolean).join(' · ') || 'Customize your session';
+    }
+
+    async function refresh() {
+      try {
+        const ok = await loadCounts();
+        if (!ok) return;
+        lastRefreshOk = true;
+        setLive(settledStatus());
+        if (state.counts.total === 0) {
+          showMessage(
+            'No questions yet',
+            `${courseTitleOf(state.course) || 'This course'} doesn’t have any questions yet. This page updates automatically when they are added.`,
+            'Choose another course', () => { location.href = CONFIG.fallbackPage; }
+          );
+          return;
+        }
+        const toQuick = () => { const q = new URLSearchParams(location.search); q.set('mode', 'Quick Practice'); location.search = q.toString(); };
+        if (state.kind === 'weak' && state.weakIds.length === 0) {
+          showMessage('No weak topics yet',
+            'Answer some questions first. The ones you miss will show up here so you can practise them.',
+            'Try Quick Practice', toQuick);
+          return;
+        }
+        if (state.kind === 'past' && state.pastTotal === 0) {
+          showMessage('No past questions yet',
+            'Past questions for this course haven’t been added yet. This page updates automatically when they are.',
+            'Try Quick Practice', toQuick);
+          return;
+        }
+        show('form');
+        render();
+      } catch (err) {
+        console.error('[practice-setup] refresh failed:', err);
+        lastRefreshOk = false;
+        setLive(settledStatus());
+        if (el.form.hidden) {
+          showMessage('Couldn’t load questions', (err && err.message ? err.message + ' ' : '') + 'Check your connection and try again.', 'Retry', init);
+        }
+      }
+    }
+
+    /* ---------- Realtime (+ polling fallback) ---------- */
+    let channel = null;
+    let debounce = null;
+    const scheduleRefresh = () => { clearTimeout(debounce); debounce = setTimeout(refresh, 400); };
+
+    function subscribe() {
+      if (channel) db.removeChannel(channel);
+      const id = state.course[C.courseId];
+      channel = db.channel('practice-setup-' + id)
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: T.questions, filter: `${state.qCourseCol}=eq.${id}` },
+          scheduleRefresh)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: T.courses, filter: `${C.courseId}=eq.${id}` },
+          (payload) => { state.course = { ...state.course, ...payload.new }; renderCourseHeader(); })
+        .on('postgres_changes',
+          { event: 'DELETE', schema: 'public', table: T.courses, filter: `${C.courseId}=eq.${id}` },
+          () => showMessage('Course removed', 'This course is no longer available.', 'Choose a course', () => { location.href = CONFIG.fallbackPage; }))
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') { realtimeOn = true; }
+          else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) { realtimeOn = false; }
+          setLive(settledStatus());
+        });
+    }
+
+    setInterval(() => { if (state.course && !realtimeOn && !document.hidden) refresh(); }, CONFIG.pollMs);
+
+    window.addEventListener('online', () => { setLive(settledStatus()); scheduleRefresh(); });
+    window.addEventListener('offline', () => setLive('offline'));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && state.course) scheduleRefresh(); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted && state.course) scheduleRefresh(); });
+
+    /* ---------- Interactions ---------- */
+    el.qRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.option-chip');
+      if (!chip) return;
+      state.count = Number(chip.dataset.value);
+      savePrefs(); render();
+    });
+
+    el.dRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.option-chip');
+      if (!chip || chip.disabled) return;
+      state.difficulty = chip.dataset.value;
+      savePrefs(); render();
+    });
+
+    $('paceRow').addEventListener('click', (e) => {
+      const chip = e.target.closest('.option-chip');
+      if (!chip) return;
+      state.pace = Number(chip.dataset.value);
+      savePrefs(); render();
+    });
+
+    const pickMode = (card) => { state.mode = card.dataset.value; savePrefs(); render(); };
+    el.modeGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.mode-card');
+      if (card) pickMode(card);
+    });
+    el.modeGrid.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.mode-card');
+      if (card) { e.preventDefault(); pickMode(card); }
+    });
+
+    el.toggle.addEventListener('click', () => {
+      state.randomize = !state.randomize;
+      savePrefs(); render();
+    });
+
+    el.start.addEventListener('click', () => {
+      if (!state.course || !(state.count > 0)) return;
+      const id = String(state.course[C.courseId]);
+      const timed = isTimed();
+      const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+      const out = new URLSearchParams({
+        course: id,
+        courseId: id,
+        topic: String(courseTitleOf(state.course) || topicParam),
+        count: String(state.count),
+        difficulty: usesDifficulty() ? state.difficulty : 'mixed',
+        mode: timed ? 'timed' : 'practice',
+        kind: state.kind,
+        randomize: String(state.kind === 'quick' || state.kind === 'mock' ? true : state.randomize),
+        feedback: timed ? 'end' : 'instant',   // timed tests show answers at the end
+        s: Date.now().toString(36)
+      });
+      if (timed) {
+        out.set('timer', '1');
+        out.set('minutes', String(totalMinutes()));
+        out.set('secsPerQ', String(secsPerQ()));
+      }
+      if (state.kind === 'mock') out.set('exam', '1');
+      if (state.kind === 'weak') {
+        const ids = (state.randomize ? shuffle(state.weakIds) : state.weakIds).slice(0, state.count);
+        out.set('weak', '1');
+        out.set('ids', ids.join(','));
+      }
+      if (state.kind === 'past') {
+        out.set('past', '1');
+        if (state.pastCol) { out.set('pastCol', state.pastCol); out.set('pastType', state.pastType); }
+      }
+      if (sourceMode) out.set('source', sourceMode);
+      location.href = `${CONFIG.nextPage}?${out.toString()}`;
+    });
+
+    /* ---------- Boot ---------- */
+    async function init() {
+      show('loading');
+      setLive('connecting');
+      try {
+        state.course = await resolveCourse();
+        if (!state.course) {
+          el.sub.textContent = 'Course not found';
+          lastRefreshOk = true;
+          setLive(settledStatus());
+          showMessage('Course not found', 'We couldn’t find that course. Go back and pick one from the list.', 'Choose a course', () => { location.href = CONFIG.fallbackPage; });
+          return;
+        }
+        renderCourseHeader();
+        await detectQuestionColumns();
+        await refresh();
+        subscribe();
+      } catch (err) {
+        console.error('[practice-setup] init failed:', err);
+        el.sub.textContent = 'Connection problem';
+        lastRefreshOk = false;
+        setLive('offline');
+        showMessage('Couldn’t load course', (err && err.message ? err.message + ' ' : '') + 'Check your connection and try again.', 'Retry', init);
+      }
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
