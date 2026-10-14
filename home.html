@@ -762,6 +762,18 @@
       .panel { padding: 14px; }
     }
 
+    .menu-support { width:100%; background:none; border:none; cursor:pointer; text-align:left; font-family:inherit; }
+.sheet-backdrop { position:absolute; inset:0; z-index:300; background:rgba(6,11,26,.8); display:none; align-items:flex-end; justify-content:center; }
+.sheet-backdrop.open { display:flex; }
+.sheet { width:100%; max-width:480px; max-height:92%; overflow-y:auto; background:var(--card-bg); border:1px solid var(--border-color); border-radius:20px 20px 0 0; padding:20px; padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px); display:flex; flex-direction:column; gap:14px; }
+@media (min-width:600px) { .sheet-backdrop { align-items:center; } .sheet { border-radius:20px; } }
+.stars { display:flex; gap:6px; justify-content:center; }
+.star { background:none; border:none; font-size:36px; line-height:1; cursor:pointer; color:#475569; padding:2px; }
+.star.on { color:var(--amber-text); }
+.sheet textarea { width:100%; background:var(--bg-color); border:1px solid var(--border-color); border-radius:12px; padding:12px 14px; color:var(--text-main); font-size:16px; resize:none; outline:none; }
+.sheet textarea:focus { border-color:var(--primary); }
+    
+
   </style>
 </head>
 <body>
@@ -1003,6 +1015,12 @@
             Profile
           </a>
         </li>
+        <li>
+  <button type="button" class="menu-link menu-support" id="supportBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    Support &amp; Review
+  </button>
+        </li>
       </ul>
       <button type="button" class="menu-link menu-logout" id="logoutBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1010,6 +1028,29 @@
       </button>
       <div class="menu-footer"><img src="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png" alt="PRIME-CBT" width="48" height="48" style="display:block;margin:0 auto 6px;object-fit:contain"> PRIME-CBT</div>
     </nav>
+    <div class="sheet-backdrop" id="supportSheet">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Support and review">
+    <div class="panel-head">
+      <div class="big-line">Support &amp; Review</div>
+      <button type="button" class="link-btn" id="supportClose">Close</button>
+    </div>
+    <div class="chip-row" id="catChips">
+      <button type="button" class="chip active" data-cat="review">Review</button>
+      <button type="button" class="chip" data-cat="bug">Report a bug</button>
+      <button type="button" class="chip" data-cat="suggestion">Suggestion</button>
+    </div>
+    <div class="stars" id="stars">
+      <button type="button" class="star" data-v="1">★</button>
+      <button type="button" class="star" data-v="2">★</button>
+      <button type="button" class="star" data-v="3">★</button>
+      <button type="button" class="star" data-v="4">★</button>
+      <button type="button" class="star" data-v="5">★</button>
+    </div>
+    <textarea id="supportMsg" rows="4" maxlength="1000" placeholder="Tell us what you think..."></textarea>
+    <div class="card-sub" id="supportErr" style="color:#f87171" hidden></div>
+    <button type="button" class="btn-solid" id="supportSend">Send</button>
+  </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -1044,6 +1085,51 @@
         await supabaseClient.auth.signOut();
         window.location.replace('auth.html?mode=login');
       });
+
+      // ----- Support & Review -----
+const sheet = $('supportSheet');
+let rating = 0, category = 'review';
+const stars = document.querySelectorAll('#stars .star');
+const cats = document.querySelectorAll('#catChips .chip');
+const supportErr = (t) => { $('supportErr').textContent = t; $('supportErr').hidden = !t; };
+
+function setStars(n) {
+  rating = n;
+  stars.forEach((s) => s.classList.toggle('on', Number(s.dataset.v) <= n));
+}
+function closeSupport() { sheet.classList.remove('open'); }
+
+$('supportBtn').addEventListener('click', () => { setMenu(false); supportErr(''); sheet.classList.add('open'); });
+$('supportClose').addEventListener('click', closeSupport);
+sheet.addEventListener('click', (e) => { if (e.target === sheet) closeSupport(); });
+stars.forEach((s) => s.addEventListener('click', () => setStars(Number(s.dataset.v))));
+cats.forEach((c) => c.addEventListener('click', () => {
+  cats.forEach((x) => x.classList.remove('active'));
+  c.classList.add('active');
+  category = c.dataset.cat;
+}));
+
+$('supportSend').addEventListener('click', async () => {
+  const msg = $('supportMsg').value.trim();
+  if (category === 'review' && !rating) { supportErr('Tap a star rating first.'); return; }
+  if (msg.length < 5) { supportErr('Please write at least a few words.'); return; }
+  const btn = $('supportSend');
+  btn.disabled = true;
+  const { data: u } = await supabaseClient.auth.getUser();
+  const { error } = await supabaseClient.from('reviews').insert({
+    user_id: u.user.id,
+    rating: rating || null,
+    category,
+    message: msg
+  });
+  btn.disabled = false;
+  if (error) { supportErr('Could not send. Check your connection and try again.'); return; }
+  $('supportMsg').value = '';
+  setStars(0);
+  closeSupport();
+  showToast('Thanks! Your feedback was sent 🙏');
+});
+      
 
       // ----- Helpers -----
       const pad = (n) => String(n).padStart(2, '0');
@@ -1082,7 +1168,7 @@
       let popupTimer = null;
       let notifs = [];
 
-      const TYPE_EMOJI = { welcome: '🎉', exam: '🎓', exams: '🎓', study: '📘', community: '💬' };
+      const TYPE_EMOJI = { welcome:'🎉', exam:'🎓', exams:'🎓', study:'📘', community:'💬', support:'🙏', announcement:'📢' };
 
       function showNextPopup() {
         if (popupBusy || !popupQueue.length) return;
