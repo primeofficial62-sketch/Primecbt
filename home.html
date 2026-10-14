@@ -1087,6 +1087,7 @@
       });
 
       // ----- Support & Review -----
+// ----- Support & Review -----
 const sheet = $('supportSheet');
 let rating = 0, category = 'review';
 const stars = document.querySelectorAll('#stars .star');
@@ -1115,15 +1116,26 @@ $('supportSend').addEventListener('click', async () => {
   if (msg.length < 5) { supportErr('Please write at least a few words.'); return; }
   const btn = $('supportSend');
   btn.disabled = true;
+  supportErr('');
+
   const { data: u } = await supabaseClient.auth.getUser();
+  if (!u || !u.user) {
+    btn.disabled = false;
+    supportErr('Please log in again and retry.');
+    return;
+  }
+  const meta = u.user.user_metadata || {};
   const { error } = await supabaseClient.from('reviews').insert({
     user_id: u.user.id,
+    user_name: meta.full_name || meta.name || (u.user.email || '').split('@')[0],
+    user_email: u.user.email,
     rating: rating || null,
     category,
     message: msg
   });
   btn.disabled = false;
   if (error) { supportErr('Could not send. Check your connection and try again.'); return; }
+
   $('supportMsg').value = '';
   setStars(0);
   closeSupport();
