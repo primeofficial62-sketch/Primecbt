@@ -571,6 +571,7 @@ const actions = {
     const groups = [];
     const q = clean(b.q);
     if (q) groups.push(t.search.map(function (c) { return c + '.ilike.*' + enc(q) + '*'; }).join(','));
+    // A filter value may be plain text (e.g. "WMA 201"), so spaces are fine. Quotes, slashes and control characters are not.
     const okVal = function (s) { return typeof s === 'string' && s.length > 0 && s.length <= 120 && !/[\u0000-\u001f"\\]/.test(s); };
     const okOr = function (s) { return okVal(s) && !/[,()*%]/.test(s); };
     Object.keys(b.filters || {}).forEach(function (k) {
@@ -581,7 +582,9 @@ const actions = {
         const vals = v.map(String).filter(okOr).slice(0, 6);
         if (vals.length === 1) qs += '&' + k + '=ilike.' + enc(vals[0]);
         else if (vals.length > 1) groups.push(vals.map(function (x) { return k + '.ilike.' + enc(x); }).join(','));
-      } else if (okVal(String(v))) qs += '&' + k + '=eq.' + enc(String(v));
+      } else if (okVal(String(v))) {
+        qs += '&' + k + '=eq.' + enc(String(v));
+      }
     });
     if (groups.length === 1) qs += '&or=(' + groups[0] + ')';
     else if (groups.length > 1) qs += '&and=(' + groups.map(function (g) { return 'or(' + g + ')'; }).join(',') + ')';
@@ -589,6 +592,7 @@ const actions = {
     const total = parseInt((r.res.headers.get('content-range') || '').split('/')[1], 10) || 0;
     return { rows: r.data || [], total: total };
   },
+
   async save(req, res, b) {
     await requireAuth(req);
     const t = tableOf(b.table);
