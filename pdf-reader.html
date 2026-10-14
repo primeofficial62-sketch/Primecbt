@@ -1091,7 +1091,14 @@
         });
         if (error) {
           let msg = 'Could not get an explanation. Please try again.';
-          try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch {}
+          try {
+            const raw = await error.context.text();
+            let j = null; try { j = JSON.parse(raw); } catch {}
+            if (j && j.error) msg = j.error;
+            else msg = 'Server error ' + error.context.status + ': ' + String((j && j.message) || raw).slice(0, 200);
+          } catch {
+            msg = 'Could not reach the explain function. Check it is deployed and named explain-page.';
+          }
           throw new Error(msg);
         }
         if (n !== sheetPage) return;                     // user closed the panel meanwhile
