@@ -423,10 +423,13 @@
     let slowTimer = null;
 
     /* ---- AI explain state (declared up here so every function can reach it) ---- */
-    const EXPLAIN_DELAY = 25000;          // pill appears after 25s on a page
+    const EXPLAIN_DELAY = 25000;          // normal: pill appears after 25s on a page
+    const EXPLAIN_FIRST_DELAY = 800;      // very first time: pill appears almost immediately
+    const EXPLAIN_FIRST_STAY = 10000;     // first pill stays 10s, then hides; normal 25s timing resumes
     const explainCache = new Map();
     const exDismissed = new Set();
     let armedPage = 0, explainTimer = null, explainBusy = false, sheetPage = 0;
+    let exFirstShown = false, exHideTimer = null;
 
     /* ================= Helpers ================= */
     const storeGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
@@ -693,6 +696,7 @@
       // AI explain: start fresh for the new document
       clearTimeout(explainTimer);
       armedPage = 0; sheetPage = 0;
+      exFirstShown = false; clearTimeout(exHideTimer);
       exDismissed.clear();
       $('explainPill').hidden = true;
       $('explainSheet').hidden = true;
@@ -1001,8 +1005,13 @@
     function showExplainPill() {
       if (!pdfDoc || !$('explainSheet').hidden) return;
       $('explainPill').hidden = false;
+      if (!exFirstShown) {                               // first appearance: auto-hide after 10s
+        exFirstShown = true;
+        clearTimeout(exHideTimer);
+        exHideTimer = setTimeout(hideExplainPill, EXPLAIN_FIRST_STAY);
+      }
     }
-    function hideExplainPill() { $('explainPill').hidden = true; }
+    function hideExplainPill() { clearTimeout(exHideTimer); $('explainPill').hidden = true; }
 
     function armExplain() {
       if (!pdfDoc || currentPage === armedPage) return;
@@ -1010,7 +1019,7 @@
       clearTimeout(explainTimer);
       hideExplainPill();
       if (exDismissed.has(armedPage) || !$('explainSheet').hidden) return;
-      explainTimer = setTimeout(showExplainPill, EXPLAIN_DELAY);
+      explainTimer = setTimeout(showExplainPill, exFirstShown ? EXPLAIN_DELAY : EXPLAIN_FIRST_DELAY);
     }
 
     // Reads the text of one page. If the page has no real text (scanned PDF), sends a small image instead.
