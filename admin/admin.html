@@ -860,7 +860,7 @@
     return rows.map(function (c) { return [c.code || c.title, (c.code ? c.code + ' - ' : '') + c.title]; });
   }
   
-  async function openForm(sec, row, after) {
+  async function openForm(sec, row, after, preset) {
     var isEdit = !!row, optsMap = {};
     try {
       for (var i = 0; i < sec.fields.length; i++) {
@@ -875,7 +875,7 @@
         }
       }
     } catch (e) { toast(e.message, true); return; }
-    var body = sec.fields.map(function (f) { return fieldHtml(f, row, optsMap); }).join('');
+    var body = sec.fields.map(function (f) { return fieldHtml(f, row || preset || null, optsMap); }).join('');
     var editable = sec.fields.some(function (f) { return f.type !== 'static'; });
     openSheet((isEdit ? 'Edit ' : 'Add ') + sec.noun, body,
       '<button class="btn" id="fCancel">' + (editable ? 'Cancel' : 'Close') + '</button>' + (editable ? '<button class="btn primary" id="fSave">Save changes</button>' : ''));
@@ -915,12 +915,22 @@
 
   /* ================= generic list view ================= */
   var PAGE = 30;
-  async function renderList(sec) {
+  async function renderList(sec, cfg) {
+    cfg = cfg || {};
     var st = { q: '', filter: '', offset: 0, rows: [], total: 0, busy: false, sig: '' };
-    var filterOpts = null;
-    if (sec.filter) { try { filterOpts = sec.filter.courseText ? await courseOptions() : sec.filter.lookup ? await lookup(sec.filter.lookup, sec.filter.lookupLabel) : sec.filter.opts; } catch (e) { filterOpts = []; } }
+    var filterOpts = null, courseRowsF = [];
+    if (sec.filter) {
+      try {
+        if (sec.filter.courseText) {
+          courseRowsF = (await api('list', { table: 'courses', limit: 500 })).rows;
+          filterOpts = courseRowsF.map(function (c) { return [c.id, (c.code ? c.code + ' - ' : '') + c.title]; });
+        } else filterOpts = sec.filter.lookup ? await lookup(sec.filter.lookup, sec.filter.lookupLabel) : sec.filter.opts;
+      } catch (e) { filterOpts = []; }
+    }
 
-    var top = '<div class="bar">';
+    var top = '';
+    if (cfg.back) top += '<div class="bar"><button class="btn" id="lBack">\u2190 ' + esc(cfg.backLabel || 'Back') + '</button><div class="h3 grow">' + esc(cfg.title || '') + '</div></div>';
+    top += '<div class="bar">';
     if (sec.search !== false) top += '<label class="search">' + icon('search') + '<input type="search" id="lq" placeholder="Search ' + esc(sec.label.toLowerCase()) + '" aria-label="Search"></label>';
     if (filterOpts) top += '<select id="lf" aria-label="' + esc(sec.filter.label) + '"><option value="">' + esc(sec.filter.label) + '</option>' + filterOpts.map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select>';
     top += '<span class="count grow" id="lCount" style="text-align:right"></span>';
@@ -932,6 +942,7 @@
     function rowHtml(r, i, fresh) {
       var d = sec.row(r), acts = '';
       (sec.actions || []).forEach(function (a, ai) { acts += '<button class="btn small" data-act="' + ai + '" data-i="' + i + '">' + esc(typeof a.label === 'function' ? a.label(r) : a.label) + '</button>'; });
+      if (sec.edit !== false && sec.fields) acts = '<button class="btn small" data-edit="' + i + '">Edit</button>' + acts;
       if (sec.del !== false) acts += '<button class="btn small danger" data-del="' + i + '">Delete</button>';
       var tap = sec.edit !== false || sec.view;
       return '<div class="row' + (tap ? ' tap' : '') + (acts ? ' has-acts' : '') + (fresh && fresh[r.id] ? ' fresh' : '') + '" data-i="' + i + '"><div class="row-main"><div class="row-title">' + esc(d.title) +
@@ -940,17 +951,36 @@
         (acts ? '<div class="row-actions">' + acts + '</div>' : '') + '</div>';
     }
     function paint(fresh) {
-      $('lRows').innerHTML = st.rows.length ? st.rows.map(function (r, i) { return rowHtml(r, i, fresh); }).join('') : emptyHtml(st.q || st.filter ? 'Nothing matches your search.' : (sec.empty || 'Nothing here yet.'));
+      $('lRows').innerHTML = st.rows.length ? st.rows.map(function (r, i) { return rowHtml(r, i, fresh); }).join('') : emptyHtml(st.q || st.filter ? 'Nothing matches your search.' : (cfg.empty || sec.empty || 'Nothing here yet.'));
       $('lCount').textContent = st.total ? st.rows.length + ' of ' + st.total : '';
       $('lMore').innerHTML = st.rows.length < st.total ? '<button class="btn" id="lMoreBtn">Load more</button>' : '';
     }
-    function filtersNow() { var f = {}; if (sec.filter && st.filter) f[sec.filter.key] = st.filter; return f; }
+    function filtersNow() {
+      var f = {};
+      if (cfg.fixed) Object.keys(cfg.fixed).forEach(function (k) { f[k] = cfg.fixed[k]; });
+      if (sec.filter && st.filter && !sec.filter.courseText) f[sec.filter.key] = st.filter;
+      return f;
+    }
+    // Materials store the course as free text (title or code), so an exact server match misses rows.
+    // For that filter we pull the list and match each row with sameCourse() instead.
+    async function fetchRows(limit, offset) {
+      var cs = sec.filter && sec.filter.courseText && st.filter ? courseRowsF.filter(function (c) { return c.id === st.filter; })[0] : null;
+      if (!cs) return api('list', { table: sec.table, q: st.q, filters: filtersNow(), limit: limit, offset: offset });
+      var all = [], off = 0, tot = 1;
+      while (off < tot && off < 5000) {
+        var d = await api('list', { table: sec.table, q: st.q, filters: {}, limit: 500, offset: off });
+        all = all.concat(d.rows); tot = d.total || 0; off += d.rows.length;
+        if (!d.rows.length) break;
+      }
+      var m = all.filter(function (r) { return sameCourse(cs, r.course); });
+      return { rows: offset ? [] : m, total: m.length };
+    }
     async function load(reset) {
       if (st.busy) return;
       st.busy = true;
       if (reset) { st.offset = 0; st.rows = []; $('lRows').innerHTML = '<div class="loading">Loading…</div>'; }
       try {
-        var d = await api('list', { table: sec.table, q: st.q, filters: filtersNow(), limit: PAGE, offset: st.offset });
+        var d = await fetchRows(PAGE, st.offset);
         st.rows = st.rows.concat(d.rows); st.total = d.total; st.offset = st.rows.length;
         if (sec.prepare) await sec.prepare(d.rows);
         st.sig = JSON.stringify(st.rows) + '|' + st.total;
@@ -963,7 +993,7 @@
       st.busy = true;
       try {
         var n = Math.min(500, Math.max(PAGE, st.rows.length));
-        var d = await api('list', { table: sec.table, q: st.q, filters: filtersNow(), limit: n, offset: 0 });
+        var d = await fetchRows(n, 0);
         if (sec.prepare) await sec.prepare(d.rows);
         var sig = JSON.stringify(d.rows) + '|' + d.total;
         if (sig !== st.sig) {
@@ -980,7 +1010,8 @@
     var timer;
     if ($('lq')) $('lq').addEventListener('input', function (e) { clearTimeout(timer); timer = setTimeout(function () { st.q = e.target.value.trim(); load(true); }, 300); });
     if ($('lf')) $('lf').addEventListener('change', function (e) { st.filter = e.target.value; load(true); });
-    if ($('lAdd')) $('lAdd').onclick = function () { openForm(sec, null, done); };
+    if ($('lAdd')) $('lAdd').onclick = function () { openForm(sec, null, done, cfg.preset); };
+    if ($('lBack')) $('lBack').onclick = function () { if (cfg.back) cfg.back(); };
     $('view').addEventListener('click', async function (e) {
       if (e.target.closest('[data-retry]')) { load(true); return; }
       var tool = e.target.closest('[data-tool]');
@@ -994,6 +1025,8 @@
         try { await api('remove', { table: sec.table, id: r.id }); toast('Deleted'); load(true); } catch (err) { toast(err.message, true); }
         return;
       }
+      var ed = e.target.closest('[data-edit]');
+      if (ed) { openForm(sec, st.rows[+ed.getAttribute('data-edit')], done); return; }
       var act = e.target.closest('[data-act]');
       if (act) { sec.actions[+act.getAttribute('data-act')].run(st.rows[+act.getAttribute('data-i')], done); return; }
       var rowEl = e.target.closest('.row.tap');
@@ -1004,6 +1037,60 @@
     });
     await load(true);
     setTask(refresh, 30000);
+  }
+
+
+  /* ================= questions grouped by course ================= */
+  function freshView() { var old = $('view'), fresh = old.cloneNode(false); old.parentNode.replaceChild(fresh, old); }
+  async function renderQCourses(sec) {
+    var courses = [], counts = {}, q = '', loaded = false;
+    $('view').innerHTML = '<div class="bar"><label class="search">' + icon('search') + '<input type="search" id="qcq" placeholder="Search courses" aria-label="Search courses"></label>' +
+      '<span class="count grow" id="qcCount" style="text-align:right"></span>' +
+      '<button class="btn" id="qcImport">' + icon('upload') + 'Bulk import</button></div><div class="rows" id="qcRows"><div class="loading">Loading\u2026</div></div>';
+    function paint() {
+      var list = courses.filter(function (c) { return !q || ((c.title || '') + ' ' + (c.code || '')).toLowerCase().indexOf(q) > -1; });
+      var total = 0; courses.forEach(function (c) { total += counts[c.id] || 0; });
+      if ($('qcCount')) $('qcCount').textContent = loaded ? courses.length + ' courses, ' + num(total) + ' questions' : '';
+      if (!$('qcRows')) return;
+      $('qcRows').innerHTML = list.length ? list.map(function (c) {
+        var n = counts[c.id];
+        return '<div class="row tap" data-cid="' + esc(c.id) + '"><div class="row-main"><div class="row-title">' + esc(c.title) + (c.code ? '<span class="tag">' + esc(c.code) + '</span>' : '') + '</div>' +
+          '<div class="row-sub">' + (n == null ? 'Counting\u2026' : n + (n === 1 ? ' question' : ' questions')) + '</div></div>' +
+          '<span class="tag ' + (n ? 'green' : '') + '" style="align-self:center">' + (n == null ? '\u2013' : n) + ' \u203A</span></div>';
+      }).join('') : emptyHtml(courses.length ? 'No courses match your search.' : 'No courses yet. Add a course first, then add questions to it.');
+    }
+    async function pull() {
+      var rows = (await api('list', { table: 'courses', limit: 500 })).rows;
+      courses = rows.slice().sort(function (a, b) { return String(a.title || '').localeCompare(String(b.title || '')); });
+      lookups.courses = rows.map(function (r) { return [r.id, r.title || r.code || r.id]; });
+      loaded = true; paint();
+      await Promise.all(courses.map(function (c) {
+        return api('list', { table: 'questions', filters: { course_id: c.id }, limit: 1 })
+          .then(function (d) { counts[c.id] = d.total || 0; })
+          .catch(function () { counts[c.id] = counts[c.id] || 0; });
+      }));
+      paint();
+    }
+    function openCourse(c) {
+      setTask(null); freshView();
+      renderList(sec, {
+        fixed: { course_id: c.id }, preset: { course_id: c.id }, title: c.title + (c.code ? ' (' + c.code + ')' : ''),
+        back: function () { setTask(null); freshView(); renderQCourses(sec); }, backLabel: 'All courses',
+        empty: 'No questions in this course yet.'
+      });
+    }
+    var timer;
+    $('qcq').addEventListener('input', function (e) { clearTimeout(timer); timer = setTimeout(function () { q = e.target.value.trim().toLowerCase(); paint(); }, 200); });
+    $('qcImport').onclick = function () { openImport(function () { pull().catch(function () {}); }); };
+    $('view').addEventListener('click', function (e) {
+      if (e.target.closest('[data-retry]')) { pull().catch(function (er) { $('qcRows').innerHTML = emptyHtml(er.message, true); }); return; }
+      var r = e.target.closest('[data-cid]');
+      if (!r) return;
+      var c = courses.filter(function (x) { return String(x.id) === r.getAttribute('data-cid'); })[0];
+      if (c) openCourse(c);
+    });
+    try { await pull(); } catch (e) { $('qcRows').innerHTML = emptyHtml(e.message, true); return; }
+    setTask(function () { return pull(); }, 30000);
   }
 
   /* ================= section definitions ================= */
@@ -1038,8 +1125,7 @@
       row: function (r) { return { title: r.title, tag: r.code || '', sub: clip(r.description, 100) }; }
     },
     {
-      id: 'questions', label: 'Questions', group: 'Content', icon: 'help', kind: 'list', table: 'questions', noun: 'question', empty: 'No questions yet.', tab: 'Questions',
-      filter: { key: 'course_id', label: 'All courses', lookup: 'courses', lookupLabel: 'title' },
+      id: 'questions', label: 'Questions', group: 'Content', icon: 'help', kind: 'qcourses', table: 'questions', noun: 'question', empty: 'No questions yet.', tab: 'Questions',
       prepare: function () { return lookup('courses', 'title'); },
       fields: [
         { key: 'course_id', label: 'Course', type: 'select', lookup: 'courses', lookupLabel: 'title', required: true },
@@ -1343,428 +1429,4 @@
 
   function showStudent(s) {
     if (!s) return;
-    var kv = [['Name', s.name], ['Email', s.email], ['Phone', s.phone], ['School', s.institution], ['Department', s.department], ['Level', s.level], ['Plan', s.plan], ['XP', s.xp], ['Streak', s.streak ? s.streak + ' days' : '0'], ['Exam date', s.exam_date], ['Sign-in', s.provider], ['Joined', fmtDate(s.joined)], ['Last seen', fmtDate(s.last_seen) + (isOnline(s) ? ' (online now)' : '')]]
-      .filter(function (p) { return p[1] !== '' && p[1] != null; });
-    openSheet(s.name || s.email || 'Student',
-      '<dl class="kv">' + kv.map(function (p) { return '<dt>' + esc(p[0]) + '</dt><dd>' + esc(p[1]) + '</dd>'; }).join('') + '</dl>' +
-      '<div><div class="h3" style="margin-bottom:8px">Recent tests</div><div id="sTests" class="stack"><div class="loading" style="padding:12px">Loading…</div></div></div>',
-      '<button class="btn" id="sClose">Close</button><button class="btn" id="sCopy">Copy email</button><button class="btn primary" id="sMsg">Send notification</button>');
-    $('sClose').onclick = function () { closeSheet(); };
-    $('sCopy').onclick = function () {
-      if (navigator.clipboard && s.email) navigator.clipboard.writeText(s.email).then(function () { toast('Email copied'); }, function () { toast('Could not copy. Select the email and copy it by hand.', true); });
-      else toast('Could not copy this email.', true);
-    };
-    $('sMsg').onclick = function () { closeSheet(true); pendingTo = s.id; go('notifications'); };
-    api('list', { table: 'test_results', filters: { user_id: s.id }, limit: 8 }).then(function (d) {
-      var el = $('sTests'); if (!el) return;
-      var rows = d.rows.slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
-      el.innerHTML = rows.length ? rows.map(function (r) {
-        return '<div class="row"><div class="row-main"><div class="row-title">' + esc(r.course_title || r.course_code || 'Test') + '<span class="tag green">' + esc(r.score + '/' + r.total_questions) + '</span></div><div class="row-sub">' + esc((r.mode || '') + '  ' + fmtDate(r.created_at)) + '</div></div></div>';
-      }).join('') : '<div class="muted small">This student has not taken a test yet.</div>';
-    }).catch(function () { var el = $('sTests'); if (el) el.innerHTML = '<div class="muted small">Could not load test history.</div>'; });
-  }
-
-  /* ================= notifications ================= */
-  var pendingTo = null;
-  async function renderNotifications() {
-    var to = pendingTo; pendingTo = null;
-    $('view').innerHTML =
-      '<div class="split"><div class="card stack"><div class="h3">New notification</div>' +
-      '<div class="fld"><label for="nTo">Send to</label><select id="nTo"><option value="all">All students</option><option value="one">One student</option></select></div>' +
-      '<div class="fld" id="nOne" hidden><label for="nSearch">Find the student</label><input type="search" id="nSearch" placeholder="Type a name or email"><select id="nPick" size="5" style="margin-top:8px;background-image:none;padding-right:12px"></select></div>' +
-      '<div class="fld"><label for="nType">Type</label><select id="nType"><option value="info">General</option><option value="exam">Exams</option><option value="study">Study</option><option value="community">Community</option><option value="welcome">Welcome</option></select></div>' +
-      '<div class="fld"><label for="nTitle">Title * <span class="ctr" id="nTitleC">0/120</span></label><input id="nTitle" maxlength="120" placeholder="e.g. New past questions added"></div>' +
-      '<div class="fld"><label for="nBody">Message <span class="ctr" id="nBodyC">0/600</span></label><textarea id="nBody" rows="4" maxlength="600"></textarea></div>' +
-      '<div class="preview" id="nPrev" hidden></div>' +
-      '<button class="btn primary" id="nSend">' + icon('bell') + 'Send notification</button></div>' +
-      '<div class="stack"><div class="h3">Recently sent</div><div class="stack" id="nHist"><div class="loading">Loading…</div></div></div></div>';
-
-    var students = [];
-    function fillPick() {
-      var q = $('nSearch').value.toLowerCase().trim();
-      var m = students.filter(function (s) { return !q || ((s.name || '') + ' ' + (s.email || '')).toLowerCase().indexOf(q) > -1; }).slice(0, 60);
-      $('nPick').innerHTML = m.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc((s.name || 'Student') + ' (' + s.email + ')') + '</option>'; }).join('');
-      if (m.length === 1 || (to && m.length)) $('nPick').value = m[0].id;
-    }
-    function preview() {
-      var t = $('nTitle').value.trim(), b = $('nBody').value.trim();
-      $('nTitleC').textContent = $('nTitle').value.length + '/120'; $('nBodyC').textContent = $('nBody').value.length + '/600';
-      $('nPrev').hidden = !t && !b;
-      $('nPrev').innerHTML = '<div class="small muted" style="margin-bottom:4px">What students will see</div><div class="row-title">' + esc(t || 'Untitled') + '<span class="tag">' + esc($('nType').options[$('nType').selectedIndex].text) + '</span></div>' + (b ? '<div class="row-sub">' + esc(b) + '</div>' : '');
-    }
-    $('nTo').addEventListener('change', async function () {
-      $('nOne').hidden = $('nTo').value !== 'one';
-      if (!$('nOne').hidden && !students.length) { try { students = await getStudents(); fillPick(); } catch (e) { toast(e.message, true); } }
-    });
-    $('nSearch').addEventListener('input', fillPick);
-    ['nTitle', 'nBody', 'nType'].forEach(function (id) { $(id).addEventListener('input', preview); $(id).addEventListener('change', preview); });
-    if (to) {
-      $('nTo').value = 'one'; $('nOne').hidden = false;
-      try { students = await getStudents(); } catch (e) { /* shown by the history list */ }
-      var s = students.filter(function (x) { return x.id === to; })[0];
-      if (s) { $('nSearch').value = s.email; fillPick(); $('nPick').value = to; }
-    }
-
-    $('nSend').onclick = async function () {
-      var btn = $('nSend'), all = $('nTo').value === 'all', title = $('nTitle').value.trim();
-      if (!title) { toast('Add a title first.', true); return; }
-      var target = all ? 'all' : $('nPick').value;
-      if (!target) { toast('Choose a student.', true); return; }
-      var ok = await confirmBox({ title: all ? 'Send to all students?' : 'Send to the selected student?', text: all ? 'Every student will get this notification. You cannot recall it, but you can delete it afterwards.' : '', yes: 'Send now' });
-      if (!ok) return;
-      btn.disabled = true;
-      try {
-        var r = await api('notify', { to: target, title: title, body: $('nBody').value, type: $('nType').value });
-        toast('Sent to ' + r.sent + (r.sent === 1 ? ' student' : ' students'));
-        $('nTitle').value = ''; $('nBody').value = ''; preview();
-        await loadHist();
-      } catch (e) { toast(e.message, true); }
-      btn.disabled = false;
-    };
-
-    var items = [], histSig = '';
-    async function loadHist() {
-      var d = await api('notif_history'), sig = JSON.stringify(d.items);
-      if (sig === histSig) return;
-      histSig = sig; items = d.items;
-      $('nHist').innerHTML = items.length ? items.map(function (n, i) {
-        return '<div class="row has-acts"><div class="row-main"><div class="row-title">' + esc(n.title) + '<span class="tag">' + esc(n.type || 'info') + '</span></div>' +
-          (n.body ? '<div class="row-sub">' + esc(clip(n.body, 100)) + '</div>' : '') +
-          '<div class="row-sub">Sent to ' + n.count + (n.count === 1 ? ' student' : ' students') + '  ' + esc(ago(n.last_at)) + '</div></div>' +
-          '<div class="row-actions"><button class="btn small danger" data-d="' + i + '">Delete</button></div></div>';
-      }).join('') : emptyHtml('Nothing sent yet. Your sent notifications will show up here.');
-    }
-    $('nHist').addEventListener('click', async function (e) {
-      if (e.target.closest('[data-retry]')) { histSig = ''; try { await loadHist(); } catch (err) { toast(err.message, true); } return; }
-      var b = e.target.closest('[data-d]'); if (!b) return;
-      var n = items[+b.getAttribute('data-d')];
-      var ok = await confirmBox({ title: 'Delete this notification?', text: 'It will be removed for all ' + n.count + ' students who received it.', yes: 'Delete', danger: true });
-      if (!ok) return;
-      try { await api('del_notifs', { title: n.title, body: n.body }); toast('Deleted'); histSig = ''; await loadHist(); } catch (err) { toast(err.message, true); }
-    });
-    try { await loadHist(); } catch (e) { $('nHist').innerHTML = emptyHtml(e.message, true); }
-    setTask(loadHist, 30000);
-  }
-
-  /* ================= settings ================= */
-  function renderSecurity() {
-    $('view').innerHTML = '<div class="split"><div class="card stack"><div class="h3">Change your PIN</div>' +
-      ['pCur:Current PIN', 'pNew:New PIN', 'pNew2:Repeat new PIN'].map(function (s) {
-        var p = s.split(':');
-        return '<div class="fld"><label for="' + p[0] + '">' + p[1] + '</label><input id="' + p[0] + '" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off"></div>';
-      }).join('') + '<button class="btn primary" id="pSave">Save new PIN</button>' +
-      '<div class="count">Changing your PIN signs out every other device.</div></div>' +
-      '<div class="stack"><div class="card stack"><div class="h3">This device</div><div class="count">You stay signed in here for 7 days.</div><div class="bar"><button class="btn" id="pLock">' + icon('lock') + 'Lock now</button><button class="btn" id="pTheme">Switch light or dark theme</button></div></div>' +
-      '<div class="card stack"><div class="h3">Shortcuts</div><div class="count">Press / or Ctrl+K to search the panel and jump to any section or student. Data refreshes on its own while this tab is open.</div></div></div></div>';
-    $('pLock').onclick = lockNow;
-    $('pTheme').onclick = toggleTheme;
-    $('pSave').onclick = async function () {
-      var cur = $('pCur').value, n1 = $('pNew').value, n2 = $('pNew2').value;
-      if (!/^\d{4}$/.test(cur) || !/^\d{4}$/.test(n1)) { toast('PINs must be exactly 4 digits.', true); return; }
-      if (n1 !== n2) { toast('The new PINs do not match.', true); return; }
-      try { await api('change_pin', { current: cur, pin: n1 }); toast('PIN changed'); $('pCur').value = $('pNew').value = $('pNew2').value = ''; } catch (e) { toast(e.message, true); }
-    };
-  }
-
-  /* ---------- sheets used by sections ---------- */
-  async function openReplies(post) {
-    openSheet('Replies', '<div class="loading">Loading…</div>');
-    var rows = [];
-    async function load() {
-      try {
-        await getStudents();
-        rows = (await api('list', { table: 'discussion_replies', filters: { post_id: post.id }, limit: 200 })).rows;
-        if (!$('sheetBody')) return;
-        $('sheetBody').innerHTML = rows.length ? rows.map(function (r, i) {
-          return '<div class="row has-acts"><div class="row-main"><div class="row-title">' + esc(studentName(r.author_id)) + '</div><div class="row-sub">' + esc(r.body) + '</div><div class="row-sub">' + esc(ago(r.created_at)) + '</div></div>' +
-            '<div class="row-actions"><button class="btn small danger" data-r="' + i + '">Delete</button></div></div>';
-        }).join('') : emptyHtml('No replies on this post.');
-      } catch (e) { if ($('sheetBody')) $('sheetBody').innerHTML = emptyHtml(e.message); }
-    }
-    $('sheetBody').addEventListener('click', async function (e) {
-      var b = e.target.closest('[data-r]'); if (!b) return;
-      var ok = await confirmBox({ title: 'Delete this reply?', text: 'This cannot be undone.', yes: 'Delete', danger: true });
-      if (!ok) return;
-      try { await api('remove', { table: 'discussion_replies', id: rows[+b.getAttribute('data-r')].id }); toast('Reply deleted'); load(); } catch (err) { toast(err.message, true); }
-    });
-    load();
-  }
-
-  /* ---------- bulk question import ---------- */
-  // Format: one question per block, blocks separated by a blank line.
-  //   What is the capital of France?
-  //   A. Berlin
-  //   B. Paris
-  //   C. Madrid
-  //   D. Rome
-  //   Answer: B
-  //   Explanation: Paris has been the capital since ... (optional)
-  //   Difficulty: easy (optional)
-  function parseQuestions(text) {
-    var blocks = String(text || '').replace(/\r/g, '').split(/\n\s*\n/), items = [], errors = [], n = 0;
-    blocks.forEach(function (block) {
-      var lines = block.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
-      if (!lines.length) return;
-      n++;
-      var q = [], opts = [], ans = -1, expl = [], diff = '', zone = 'q';
-      lines.forEach(function (line) {
-        var m;
-        if ((m = line.match(/^answer\s*[:\-]\s*\(?([A-Ha-h])\)?\b/i))) { ans = LETTERS.indexOf(m[1].toUpperCase()); zone = 'a'; return; }
-        if ((m = line.match(/^explanation\s*[:\-]\s*(.*)$/i))) { expl = [m[1]]; zone = 'e'; return; }
-        if ((m = line.match(/^difficulty\s*[:\-]\s*(\w+)/i))) { diff = m[1].toLowerCase(); zone = 'd'; return; }
-        if ((m = line.match(/^([A-Ha-h])[.)]\s+(.*)$/)) && LETTERS[opts.length] === m[1].toUpperCase() && zone !== 'e') { opts.push(m[2].trim()); zone = 'o'; return; }
-        if (zone === 'e') expl.push(line);
-        else if (zone === 'o' && opts.length) opts[opts.length - 1] += ' ' + line;
-        else if (zone === 'q') q.push(line);
-      });
-      if (q.length) q[0] = q[0].replace(/^\d+\s*[.)]\s*/, '');
-      var question = q.join(' ').trim(), why = '';
-      if (!question) why = 'no question text';
-      else if (opts.length < 2) why = 'needs at least 2 options (A. B. ...)';
-      else if (opts.some(function (o) { return !o; })) why = 'has an empty option';
-      else if (ans < 0 || ans >= opts.length) why = 'missing or invalid "Answer: B" line';
-      if (why) { errors.push('Question ' + n + ' ' + why + '.'); return; }
-      items.push({ question: question, options: opts, correct_index: ans, explanation: expl.join(' ').trim(), difficulty: DIFFS.indexOf(diff) > -1 ? diff : '' });
-    });
-    return { items: items, errors: errors };
-  }
-
-  async function openImport(done) {
-    var courses;
-    try { courses = await lookup('courses', 'title'); } catch (e) { toast(e.message, true); return; }
-    if (!courses.length) { toast('Add a course first, then import its questions.', true); return; }
-    var example = 'What is the capital of France?\nA. Berlin\nB. Paris\nC. Madrid\nD. Rome\nAnswer: B\nExplanation: Paris is the capital of France.\nDifficulty: easy\n\nWhich gas do plants absorb?\nA. Oxygen\nB. Nitrogen\nC. Carbon dioxide\nAnswer: C';
-    openSheet('Bulk import questions',
-      '<div class="fld"><label for="iCourse">Course *</label><select id="iCourse"><option value="">Choose…</option>' + courses.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[1]) + '</option>'; }).join('') + '</select></div>' +
-      '<div class="fld"><label for="iText">Questions *</label><textarea id="iText" rows="12" style="font-family:monospace;font-size:14px" placeholder="' + esc(example) + '"></textarea>' +
-      '<div class="hint">One question per block, blocks separated by a blank line. Options start with A. B. C. and so on. Add an "Answer: B" line. "Explanation:" and "Difficulty: easy/medium/hard" are optional.</div></div>' +
-      '<div class="fld"><label for="iFile">Or load a .txt file</label><input type="file" id="iFile" accept=".txt,text/plain"></div>' +
-      '<div class="preview" id="iPrev" hidden></div>',
-      '<button class="btn" id="iCancel">Cancel</button><button class="btn primary" id="iGo">Import</button>');
-    $('iCancel').onclick = function () { closeSheet(); };
-
-    function preview() {
-      var r = parseQuestions($('iText').value), box = $('iPrev');
-      box.hidden = !$('iText').value.trim();
-      box.innerHTML = '<div class="row-title">' + r.items.length + (r.items.length === 1 ? ' question' : ' questions') + ' ready to import</div>' +
-        (r.errors.length ? '<div class="row-sub" style="color:var(--danger)">' + r.errors.length + ' skipped:<br>' + r.errors.slice(0, 6).map(esc).join('<br>') + (r.errors.length > 6 ? '<br>and ' + (r.errors.length - 6) + ' more.' : '') + '</div>' : '');
-      return r;
-    }
-    $('iText').addEventListener('input', preview);
-    $('iFile').addEventListener('change', function (e) {
-      var f = e.target.files && e.target.files[0]; if (!f) return;
-      var rd = new FileReader();
-      rd.onload = function () { $('iText').value = String(rd.result || ''); preview(); };
-      rd.onerror = function () { toast('Could not read that file.', true); };
-      rd.readAsText(f);
-    });
-    $('iGo').onclick = async function () {
-      var course = $('iCourse').value;
-      if (!course) { toast('Choose a course first.', true); return; }
-      var r = preview();
-      if (!r.items.length) { toast('No valid questions found. Check the format.', true); return; }
-      var ok = await confirmBox({ title: 'Import ' + r.items.length + (r.items.length === 1 ? ' question?' : ' questions?'), text: r.errors.length ? r.errors.length + ' block(s) with problems will be skipped.' : '', yes: 'Import' });
-      if (!ok) return;
-      var btn = $('iGo'), saved = 0, failed = 0, lastErr = '';
-      btn.disabled = true;
-      for (var i = 0; i < r.items.length; i++) {
-        btn.textContent = 'Importing ' + (i + 1) + ' of ' + r.items.length + '…';
-        try {
-          var it = r.items[i];
-          await api('save', { table: 'questions', data: { course_id: course, question: it.question, options: it.options, correct_index: it.correct_index, explanation: it.explanation, difficulty: it.difficulty } });
-          saved++;
-        } catch (e) { failed++; lastErr = e.message; if (e.status === 401) break; }
-      }
-      if (!$('iGo')) return;
-      if (failed) { btn.disabled = false; btn.textContent = 'Import'; toast(saved + ' imported, ' + failed + ' failed. ' + lastErr, true); if (saved && done) done(); return; }
-      closeSheet(true);
-      toast('Imported ' + saved + (saved === 1 ? ' question' : ' questions'));
-      if (done) done();
-    };
-  }
-
-  /* ================= questions from PDFs ================= */
-  var AUTO_GENERATE = true;     // true = make questions automatically right after a PDF is uploaded. Set false to stop that.
-  var QUESTIONS_PER_PDF = 20;   // questions requested from each PDF (5 to 40)
-  var genBusy = false;
-
-  function normName(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
-  function isPdfMaterial(m) { return /\.pdf(\?|#|$)/i.test(m.file_url || '') || /pdf/i.test(m.material_type || ''); }
-  function sameCourse(c, text) {
-    var t = normName(text), title = normName(c.title), code = normName(c.code);
-    if (!t) return false;
-    return t === title || (code && t === code) || (code.length >= 3 && (' ' + t + ' ').indexOf(' ' + code + ' ') > -1);
-  }
-  async function allCourses() { return (await api('list', { table: 'courses', limit: 500 })).rows; }
-  async function allMaterials() { return (await api('list', { table: 'materials', limit: 500 })).rows; }
-  function noCourseMsg(text) { return 'No course matches "' + (text || '') + '". Set the material\'s Course to the exact course title or code.'; }
-
-  async function generateForCourse(course) {
-    try {
-      var mats = (await allMaterials()).filter(function (m) { return isPdfMaterial(m) && sameCourse(course, m.course); });
-      if (!mats.length) { toast('No PDFs found for this course. Set each PDF material\'s Course to "' + (course.code || course.title) + '".', true); return; }
-      runGeneration(course, mats);
-    } catch (e) { toast(e.message, true); }
-  }
-  async function generateForMaterialRow(m) {
-    try {
-      if (!isPdfMaterial(m)) { toast('This material is not a PDF.', true); return; }
-      var course = (await allCourses()).filter(function (c) { return sameCourse(c, m.course); })[0];
-      if (!course) { toast(noCourseMsg(m.course), true); return; }
-      runGeneration(course, [m]);
-    } catch (e) { toast(e.message, true); }
-  }
-  async function autoGenerateForUpload(d) {
-    try {
-      if (!isPdfMaterial(d)) return;
-      var course = (await allCourses()).filter(function (c) { return sameCourse(c, d.course); })[0];
-      if (!course) { toast('PDF saved, but no questions made. ' + noCourseMsg(d.course), true); return; }
-      var rows = [];
-      try { rows = (await api('list', { table: 'materials', filters: { file_url: d.file_url }, limit: 1 })).rows; } catch (e) { /* fall back below */ }
-      if (!rows.length) rows = (await allMaterials()).filter(function (x) { return x.file_url === d.file_url; });
-      if (!rows.length) { toast('PDF saved. Use "Make questions" on it to create questions.', true); return; }
-      runGeneration(course, [rows[0]]);
-    } catch (e) { toast(e.message, true); }
-  }
-
-  async function runGeneration(course, mats) {
-    if (genBusy) { toast('Questions are already being made. Please wait.', true); return; }
-    genBusy = true;
-    openSheet('Questions from PDFs: ' + (course.title || course.code),
-      '<div class="count">Questions are written only from the PDFs of this course. Each one must quote a passage that really exists in the PDF, or it is thrown away.</div><div class="stack" id="genLog"></div>',
-      '<button class="btn primary" id="genClose" disabled>Working…</button>');
-    $('genLog').innerHTML = mats.map(function (m, i) {
-      return '<div class="row"><div class="row-main"><div class="row-title">' + esc(m.title) + '</div><div class="row-sub" id="g_' + i + '">Waiting…</div></div></div>';
-    }).join('');
-    var say = function (i, text) { var el = $('g_' + i); if (el) el.textContent = text; };
-    var total = 0, failed = 0;
-    for (var i = 0; i < mats.length; i++) {
-      try {
-        say(i, 'Reading the PDF…');
-        var pdfText = await pdfTextFromUrl(mats[i].file_url);
-        say(i, 'Writing questions. This can take up to a minute…');
-        var r = await api('generate_questions', { material_id: mats[i].id, course_id: course.id, count: QUESTIONS_PER_PDF, text: pdfText }, 120000);
-        total += r.saved;
-        say(i, r.saved + (r.saved === 1 ? ' question added' : ' questions added') + (r.rejected ? '. ' + r.rejected + ' rejected (not backed by the PDF)' : '') + (r.duplicates ? '. ' + r.duplicates + ' already existed' : '') + '.');
-      } catch (e) {
-        failed++; say(i, 'Failed: ' + e.message);
-        if (e.status === 401) break;
-      }
-    }
-    genBusy = false;
-    var btn = $('genClose');
-    if (btn) {
-      btn.disabled = false; btn.textContent = 'Done';
-      btn.onclick = function () { closeSheet(); if (current === 'questions') go('questions'); };
-    }
-    toast(total + (total === 1 ? ' question' : ' questions') + ' added' + (failed ? ', ' + failed + ' PDF(s) failed' : ''), !!failed && !total);
-  }
-
-  /* ================= navigation ================= */
-  var current = '';
-
-  function buildNav() {
-    var h = '<div class="brand"><div class="mark">P</div><div><b>PRIME-CBT</b><small>Admin panel</small></div></div>', group = '';
-    SECTIONS.forEach(function (s) {
-      if (s.group !== group) { group = s.group; h += '<div class="nav-group">' + esc(group) + '</div>'; }
-      h += '<button class="nav" data-go="' + s.id + '" data-nav="' + s.id + '">' + icon(s.icon) + '<span>' + esc(s.label) + '</span></button>';
-    });
-    h += '<div class="side-foot"><button class="nav" id="navLock">' + icon('lock') + '<span>Lock panel</span></button></div>';
-    $('drawer').innerHTML = h;
-    $('navLock').onclick = lockNow;
-
-  }
-
-  function markActive() {
-    document.querySelectorAll('[data-nav]').forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-nav') === current); });
-  }
-
-  async function go(id) {
-    var sec = SECTIONS.filter(function (s) { return s.id === id; })[0];
-    if (!sec) return;
-    current = id;
-    try { localStorage.setItem('pc-section', id); } catch (e) {}
-    setTask(null);
-    closeSheet(true);
-    if (dlgDone) dlgDone(false);
-    $('dialogRoot').innerHTML = ''; $('palRoot').innerHTML = '';
-    document.body.classList.remove('menu-open');
-    // Swap the content node so listeners from the previous section are dropped.
-    var old = $('view'), fresh = old.cloneNode(false);
-    old.parentNode.replaceChild(fresh, old);
-    $('pageTitle').textContent = sec.label;
-    markActive();
-    window.scrollTo(0, 0);
-    try {
-      if (sec.kind === 'dashboard') await renderDashboard();
-      else if (sec.kind === 'students') await renderStudents();
-      else if (sec.kind === 'notifications') await renderNotifications();
-      else if (sec.kind === 'security') renderSecurity();
-      else await renderList(sec);
-    } catch (e) {
-      if (current === id) $('view').innerHTML = emptyHtml(e.message || 'Something went wrong.', true);
-    }
-  }
-
-  function enterApp() {
-    if (!$('app').hidden) return;
-    hint(true);
-    $('splash').hidden = true;
-    $('lock').hidden = true; $('app').hidden = false;
-    buildNav();
-    var saved = '', y = 0;
-    try { saved = localStorage.getItem('pc-section') || ''; y = +sessionStorage.getItem('pc-scroll') || 0; } catch (e) {}
-    if (!SECTIONS.some(function (s) { return s.id === saved; })) saved = 'dashboard';
-    go(saved).then(function () { if (y) window.scrollTo(0, y); });
-  }
-
-  async function lockNow() {
-    try { await api('logout'); } catch (e) { /* locking locally anyway */ }
-    lookups = {}; studentCache = null;
-    showLock();
-    setMode('login');
-  }
-
-  /* ================= start ================= */
-  function init() {
-    $('menuBtn').innerHTML = icon('menu');
-    $('refreshBtn').innerHTML = icon('refresh');
-    $('searchBtn').innerHTML = icon('search');
-    themeIcons();
-
-    $('menuBtn').onclick = function () { document.body.classList.toggle('menu-open'); };
-    $('scrim').onclick = function () { document.body.classList.remove('menu-open'); };
-    $('refreshBtn').onclick = function () { runTask(true); };
-    $('searchBtn').onclick = openPalette;
-    $('themeBtn').onclick = toggleTheme;
-
-    // One delegated handler for every "go to section" and "open student" button.
-    document.addEventListener('click', function (e) {
-      var g = e.target.closest('[data-go]');
-      if (g) { go(g.getAttribute('data-go')); return; }
-      var s = e.target.closest('[data-student]');
-      if (s) {
-        var id = s.getAttribute('data-student');
-        var found = (studentCache || []).filter(function (x) { return x.id === id; })[0];
-        if (found) showStudent(found);
-      }
-    });
-
-    var scrollT;
-    window.addEventListener('scroll', function () {
-      clearTimeout(scrollT);
-      scrollT = setTimeout(function () { try { sessionStorage.setItem('pc-scroll', String(window.scrollY)); } catch (e) {} }, 150);
-    }, { passive: true });
-
-    $('pinIn').addEventListener('input', onPin);
-    setMode('login');
-    if (hint()) enterApp();   // was signed in: go straight to the panel, no PIN flash
-    checkStatus();
-    setTimeout(function () { try { $('pinIn').focus(); } catch (e) {} }, 60);
-  }
-
-  init();
-})();
-</script>
-</body>
-</html>
+    var kv = [['Name', s.name], ['Email', s.email], ['Phone', s.phone], ['School', s.institution], ['Department', s.department], ['Level', s.level], ['Plan', s.plan], ['XP', s.xp], ['Streak', s.streak ? s.streak + ' days' : '0'], ['Exam date', s.exam_date], ['Sign-in', s.pro
