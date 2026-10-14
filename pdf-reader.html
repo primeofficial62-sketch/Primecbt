@@ -1078,8 +1078,13 @@
       try {
         const payload = await getPagePayload(n);
         const sb = await getSb();
-        const { data, error } = await sb.functions.invoke('explain-page', {
-          body: {
+        const { data: sess } = await sb.auth.getSession();
+        const tok = sess && sess.session && sess.session.access_token;
+        if (!tok) throw new Error('Please log in to use AI explanations.');
+        const resp = await fetch('/api/explain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
+          body: JSON.stringify({
             material_key: String(material.id || material.file_url),
             file_url: material.file_url,
             title: material.title,
@@ -1087,19 +1092,12 @@
             page: n,
             mode,
             ...payload
-          }
+          })
         });
-        if (error) {
-          let msg = 'Could not get an explanation. Please try again.';
-          try {
-            const raw = await error.context.text();
-            let j = null; try { j = JSON.parse(raw); } catch {}
-            if (j && j.error) msg = j.error;
-            else msg = 'Server error ' + error.context.status + ': ' + String((j && j.message) || raw).slice(0, 200);
-          } catch {
-            msg = 'Could not reach the explain function. Check it is deployed and named explain-page.';
-          }
-          throw new Error(msg);
+        let data = null;
+        try { data = await resp.json(); } catch {}
+        if (!resp.ok || !data || !data.explanation) {
+          throw new Error((data && data.error) || ('Server error ' + resp.status + '. Please try again.'));
         }
         if (n !== sheetPage) return;                     // user closed the panel meanwhile
         explainCache.set(ck, data.explanation);
