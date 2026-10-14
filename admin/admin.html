@@ -7,10 +7,10 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#101436">
   <title>PRIME-CBT Admin</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
   <script>
     // Apply the saved theme before first paint so there is no flash.
     (function () {
@@ -538,7 +538,7 @@
   function checkStatus() {
     statusP = (async function () {
       try {
-        var s = await api('status');
+        var s = await api('status', null, 8000);
         statusKnown = true; statusErr = '';
         if (s.authed) { enterApp(); return; }
         var want = s.setup ? 'login' : 'create';
@@ -1429,4 +1429,4 @@
 
   function showStudent(s) {
     if (!s) return;
-    var kv = [['Name', s.name], ['Email', s.email], ['Phone', s.phone], ['School', s.institution], ['Department', s.department], ['Level', s.level], ['Plan', s.plan], ['XP', s.xp], ['Streak', s.streak ? s.streak + ' days' : '0'], ['Exam date', s.exam_date], ['Sign-in', s.pro
+    var kv = [['Name', s.name], ['Email', s.email], ['Phone', s.phone], ['School', s.institution], ['Department', s.department], ['Level', s.level], ['Plan', s.plan], ['XP', s.xp], ['Streak', s.streak ? s.streak + ' d
