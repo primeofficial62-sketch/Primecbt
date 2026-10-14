@@ -174,6 +174,8 @@
       background: none; border: none; color: var(--emerald-bright);
       font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0;
     }
+    .clear-btn[hidden] { display: none; }
+    .head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 
     .grid {
       display: grid;
@@ -201,6 +203,9 @@
     }
     .material-card:hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, .4); }
     .material-card:active { transform: scale(0.99); }
+
+    /* Course card is a button, so reset the button look */
+    .course-card { width: 100%; text-align: left; font: inherit; cursor: pointer; }
 
     .file-icon {
       width: 44px; height: 44px; flex-shrink: 0;
@@ -295,7 +300,10 @@
 
       <section class="section">
         <div class="section-header">
-          <h2 id="allTitle">All Materials</h2>
+          <div class="head-left">
+            <button class="clear-btn" id="backCourses" type="button" hidden>&larr; Courses</button>
+            <h2 id="allTitle">Courses</h2>
+          </div>
           <span class="count" id="countText"></span>
         </div>
         <div class="grid" id="allGrid">
@@ -321,16 +329,17 @@
 
       /* ================= Config ================= */
       const RECENT_KEY = 'primecbt_recent_materials';
-      const CACHE_KEY  = 'primecbt_materials_cache_v1';
+      const CACHE_KEY  = 'primecbt_materials_cache_v2';   // v2: now includes the course field
       const PAGE_SIZE  = 30;               // cards rendered at a time
       const MIN_REFRESH_MS = 30000;        // don't refetch more often than this on tab focus
-      const NARROW_COLUMNS = 'id,title,file_url,category,file_type,pages,size_bytes,created_at';
+      const NARROW_COLUMNS = 'id,title,file_url,category,course,file_type,pages,size_bytes,created_at';
       const KEEP_FIELDS = ['id','title','name','file_url','url','pdf_url','file','category','course','course_code','file_type','pages','size_bytes','created_at'];
 
       /* ================= State ================= */
       let materials = [];
       let category = 'all';
       let query = '';
+      let openCourse = '';                 // key of the course that is currently opened ('' = course list)
       let shown = PAGE_SIZE;
       let filtered = [];
       let signature = '';
@@ -346,7 +355,8 @@
         recentSection: $('recentSection'), recentGrid: $('recentGrid'),
         allGrid: $('allGrid'), count: $('countText'), state: $('stateBox'),
         dot: $('liveDot'), live: $('liveText'),
-        moreWrap: $('moreWrap'), moreBtn: $('moreBtn')
+        moreWrap: $('moreWrap'), moreBtn: $('moreBtn'),
+        title: $('allTitle'), back: $('backCourses')
       };
 
       /* ================= Helpers ================= */
@@ -356,13 +366,18 @@
         pdf:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
         note: '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
         guide:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',
-        doc:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>'
+        doc:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>',
+        folder:'<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>'
       };
 
       /* Tolerant field readers */
       const titleOf    = m => m.title || m.name || 'Untitled';
       const urlOf      = m => m.file_url || m.url || m.pdf_url || m.file || '';
       const categoryOf = m => m.category || m.course || m.course_code || '';
+
+      /* Course grouping: "STS 201", "sts201" and "STS  201" all land in the same course */
+      const courseOf  = m => String(m.course || m.course_code || '').trim();
+      const courseKey = m => courseOf(m).toLowerCase().replace(/[^a-z0-9]+/g, '') || '__other';
 
       function typeOf(m) {
         if (m.file_type) return String(m.file_type).toUpperCase();
@@ -405,6 +420,18 @@
             '<div class="material-body"><div class="material-title">' + esc(titleOf(m)) + '</div><div class="material-meta">' + meta + '</div></div>' +
             '<div class="material-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>' +
           '</a>'
+        );
+      }
+
+      function courseCardHTML(g) {
+        const n = g.items.length;
+        return (
+          '<button type="button" class="material-card course-card" data-course="' + esc(g.key) + '">' +
+            '<div class="file-icon guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + ICONS.folder + '</svg></div>' +
+            '<div class="material-body"><div class="material-title">' + esc(g.label) + '</div>' +
+            '<div class="material-meta"><span>' + n + (n === 1 ? ' material' : ' materials') + '</span></div></div>' +
+            '<div class="material-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>' +
+          '</button>'
         );
       }
 
@@ -457,11 +484,46 @@
         els.recentGrid.innerHTML = recentItems.map(cardHTML).join('');
       }
 
+      function groupByCourse(list) {
+        const map = new Map();
+        list.forEach(m => {
+          const key = courseKey(m);
+          if (!map.has(key)) map.set(key, { key, label: courseOf(m) || 'Other', items: [] });
+          map.get(key).items.push(m);
+        });
+        return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+      }
+
       function render() {
         renderRecent();
 
-        filtered = materials.filter(m =>
-          (category === 'all' || categoryOf(m) === category) &&
+        const base = materials.filter(m => category === 'all' || categoryOf(m) === category);
+
+        // Course list: shown when nothing is opened and the student is not searching
+        if (!openCourse && !query) {
+          const groups = groupByCourse(base);
+          filtered = [];
+          els.back.hidden = true;
+          els.title.textContent = 'Courses';
+          els.allGrid.innerHTML = groups.map(courseCardHTML).join('');
+          els.count.textContent = groups.length ? groups.length + (groups.length === 1 ? ' course' : ' courses') : '';
+          els.moreWrap.hidden = true;
+          if (!groups.length) {
+            els.state.hidden = false;
+            els.state.textContent = materials.length ? 'No materials in this category.' : 'No materials have been uploaded yet.';
+          } else {
+            els.state.hidden = true;
+          }
+          return;
+        }
+
+        // Materials list: inside a course, or search results across all courses
+        const group = openCourse ? groupByCourse(base).filter(g => g.key === openCourse)[0] : null;
+        els.back.hidden = !openCourse;
+        els.title.textContent = openCourse ? (group ? group.label : 'Course') : 'Search results';
+
+        filtered = base.filter(m =>
+          (!openCourse || courseKey(m) === openCourse) &&
           (!query || titleOf(m).toLowerCase().includes(query))
         );
 
@@ -482,6 +544,7 @@
       }
 
       function showMore() {
+        if (!filtered.length) return;
         const from = shown;
         shown += PAGE_SIZE;
         // Append only the new cards instead of re-rendering everything
@@ -626,6 +689,30 @@
         render();
       });
 
+      // Open a course (phone back button returns to the course list)
+      els.allGrid.addEventListener('click', e => {
+        const card = e.target.closest('.course-card');
+        if (!card) return;
+        openCourse = card.dataset.course;
+        shown = PAGE_SIZE;
+        try { history.pushState({ course: openCourse }, ''); } catch {}
+        render();
+        window.scrollTo(0, 0);
+      });
+
+      els.back.addEventListener('click', () => {
+        if (history.state && history.state.course) { history.back(); return; }
+        openCourse = '';
+        shown = PAGE_SIZE;
+        render();
+      });
+
+      window.addEventListener('popstate', e => {
+        openCourse = (e.state && e.state.course) || '';
+        shown = PAGE_SIZE;
+        render();
+      });
+
       els.moreBtn.addEventListener('click', showMore);
 
       // Auto-load the next chunk when the button scrolls into view
@@ -636,7 +723,7 @@
       }
 
       document.addEventListener('click', e => {
-        const card = e.target.closest('.material-card');
+        const card = e.target.closest('.material-card:not(.course-card)');
         if (card) pushRecent(card.dataset.id);
       });
 
