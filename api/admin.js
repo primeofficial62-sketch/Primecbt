@@ -568,16 +568,27 @@ const actions = {
     const limit = Math.min(Math.max(parseInt(b.limit, 10) || 30, 1), 500);
     const offset = Math.max(parseInt(b.offset, 10) || 0, 0);
     let qs = '?select=*&limit=' + limit + '&offset=' + offset + '&order=' + t.order + '.' + (t.asc ? 'asc' : 'desc');
+    const groups = [];
     const q = clean(b.q);
-    if (q) qs += '&or=(' + t.search.map(function (c) { return c + '.ilike.*' + enc(q) + '*'; }).join(',') + ')';
+    if (q) groups.push(t.search.map(function (c) { return c + '.ilike.*' + enc(q) + '*'; }).join(','));
+    const okVal = function (s) { return typeof s === 'string' && s.length > 0 && s.length <= 120 && !/[\u0000-\u001f"\\]/.test(s); };
+    const okOr = function (s) { return okVal(s) && !/[,()*%]/.test(s); };
     Object.keys(b.filters || {}).forEach(function (k) {
-      if (/^[a-z_]+$/.test(k) && isId(String(b.filters[k]))) qs += '&' + k + '=eq.' + enc(b.filters[k]);
+      if (!/^[a-z_]+$/.test(k)) return;
+      const v = b.filters[k];
+      if (Array.isArray(v)) {
+        // several accepted spellings (e.g. course code OR course title), case-insensitive
+        const vals = v.map(String).filter(okOr).slice(0, 6);
+        if (vals.length === 1) qs += '&' + k + '=ilike.' + enc(vals[0]);
+        else if (vals.length > 1) groups.push(vals.map(function (x) { return k + '.ilike.' + enc(x); }).join(','));
+      } else if (okVal(String(v))) qs += '&' + k + '=eq.' + enc(String(v));
     });
+    if (groups.length === 1) qs += '&or=(' + groups[0] + ')';
+    else if (groups.length > 1) qs += '&and=(' + groups.map(function (g) { return 'or(' + g + ')'; }).join(',') + ')';
     const r = await sb('/rest/v1/' + b.table + qs, { headers: { Prefer: 'count=exact' } });
     const total = parseInt((r.res.headers.get('content-range') || '').split('/')[1], 10) || 0;
     return { rows: r.data || [], total: total };
   },
-
   async save(req, res, b) {
     await requireAuth(req);
     const t = tableOf(b.table);
