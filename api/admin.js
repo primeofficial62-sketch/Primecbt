@@ -311,7 +311,7 @@ async function generateForMaterial(mat, courseId, opts) {
   const need = target - have;
   if (need <= 0) {
     await setStatus(mat.id, { qgen_status: 'done', qgen_count: have, qgen_error: null });
-    return { saved: 0, rejected: 0, duplicates: 0, total: have };
+    return { saved: 0, rejected: 0, duplicates: 0, total: have, already: true, course_title: course.title };
   }
 
   await setStatus(mat.id, { qgen_status: 'processing', qgen_started_at: new Date().toISOString(), qgen_error: null });
@@ -416,7 +416,7 @@ async function generateForMaterial(mat, courseId, opts) {
     await setStatus(mat.id, { qgen_status: status, qgen_count: total, qgen_error: note });
     finished = true;
     if (!stats.saved && stats.apiErrors > 0) throw new HttpError(502, stats.lastError);
-    return { saved: stats.saved, rejected: stats.rejected, duplicates: stats.duplicates, total: total };
+    return { saved: stats.saved, rejected: stats.rejected, duplicates: stats.duplicates, total: total, course_title: course.title };
   } catch (e) {
     // Never leave a file stuck on "processing" if something unexpected went wrong.
     if (!finished) await setStatus(mat.id, { qgen_status: 'failed', qgen_error: (e && e.message) || 'Question writing failed.' });
@@ -425,17 +425,33 @@ async function generateForMaterial(mat, courseId, opts) {
 }
 
 /* ---------- automatic runs ---------- */
-// Finds the course a material belongs to, using its "course" value (code or title) or its title.
+// Picks the course a material belongs to. Several courses can share one code (e.g. three "CHM 101" courses),
+// so when the code is not enough the words of the file name are compared with each course title.
+function titleScore(c, hay) {
+  const toks = normText(c.title).split(' ').filter(function (t) { return t.length >= 4; });
+  if (!toks.length) return 0;
+  let hit = 0;
+  toks.forEach(function (t) { if (hay.indexOf(t) > -1 || (t.length >= 7 && hay.indexOf(t.slice(0, 6)) > -1)) hit++; });
+  return hit / toks.length;
+}
+function pickCourse(mat, courses) {
+  const want = normText(mat.course), title = normText(mat.title);
+  let cands = [];
+  if (want) {
+    cands = courses.filter(function (c) { return normText(c.title) === want; });
+    if (!cands.length) cands = courses.filter(function (c) { return normText(c.code) === want; });
+    if (!cands.length) cands = courses.filter(function (c) { const k = normText(c.code); return k && want.indexOf(k) > -1; });
+  }
+  if (!cands.length) cands = courses.filter(function (c) { const k = normText(c.code); return k && (' ' + title + ' ').indexOf(' ' + k + ' ') > -1; });
+  if (cands.length <= 1) return { course: cands[0] || null };
+  const hay = ' ' + normText((mat.title || '') + ' ' + (mat.topic || '')) + ' ';
+  const scored = cands.map(function (c) { return { c: c, s: titleScore(c, hay) }; }).sort(function (a, b) { return b.s - a.s; });
+  if (scored[0].s >= 0.5 && scored[0].s > scored[1].s) return { course: scored[0].c };
+  return { course: null, ambiguous: cands };
+}
 async function courseForMaterial(mat) {
   const courses = (await sb('/rest/v1/courses?select=id,title,code&limit=1000')).data || [];
-  const want = normText(mat.course), title = normText(mat.title);
-  if (want) {
-    const hit = courses.find(function (c) { return normText(c.code) === want; }) ||
-      courses.find(function (c) { return normText(c.title) === want; }) ||
-      courses.find(function (c) { const k = normText(c.code); return k && want.indexOf(k) > -1; });
-    if (hit) return hit;
-  }
-  return courses.find(function (c) { const k = normText(c.code); return k && title.indexOf(k) > -1; }) || null;
+  return pickCourse(mat, courses);
 }
 
 async function autoGenerate(matId) {
@@ -444,12 +460,16 @@ async function autoGenerate(matId) {
   try {
     const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(matId) + '&select=*')).data || [])[0];
     if (!mat || !isPdfUrl(mat.file_url) || mat.qgen_status === 'done' || recentlyProcessing(mat)) return null;
-    const course = await courseForMaterial(mat);
-    if (!course) {
+    const picked = await courseForMaterial(mat);
+    if (picked.ambiguous) {
+      await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'Several courses share the code "' + (mat.course || '') + '". Edit this material and choose its exact course, then press Make questions.' });
+      return null;
+    }
+    if (!picked.course) {
       await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'No course matches "' + (mat.course || mat.title || '') + '". Create a course with that code or title, then press Make questions.' });
       return null;
     }
-    return await generateForMaterial(mat, course.id);
+    return await generateForMaterial(mat, picked.course.id);
   } catch (e) {
     console.error('auto generate failed:', e && e.message);
     return null;
@@ -689,13 +709,36 @@ const actions = {
     const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(b.material_id) + '&select=*')).data || [])[0];
     if (!mat) throw new HttpError(400, 'Material not found.');
     const key = String(mat.id);
+    // The server decides the course, so questions always go to the course the file really belongs to.
+    const picked = await courseForMaterial(mat);
+    let courseId = b.course_id;
+    if (picked.course) courseId = picked.course.id;
+    else if (picked.ambiguous) throw new HttpError(409, 'Several courses share the code "' + (mat.course || '') + '" (' + picked.ambiguous.map(function (c) { return c.title; }).join(', ') + '). Edit this material and choose its exact course.');
     const busy = { saved: 0, rejected: 0, duplicates: 0, total: 0, busy: true };
     if (recentlyProcessing(mat)) return busy;
     if (!tryLock(key)) return busy;
     try {
-      const out = await generateForMaterial(mat, b.course_id, { text: String(b.text || '').slice(0, 400000) });
-      return { saved: out.saved, rejected: out.rejected, duplicates: out.duplicates, total: out.total };
+      const out = await generateForMaterial(mat, courseId, { text: String(b.text || '').slice(0, 400000) });
+      return { saved: out.saved, rejected: out.rejected, duplicates: out.duplicates, total: out.total, already: !!out.already, course_title: out.course_title };
     } finally { unlock(key); }
+  },
+
+  // Moves questions that were filed under the wrong course (e.g. another course with the same code) to the right one.
+  async refile_questions(req) {
+    await requireAuth(req);
+    const courses = (await sb('/rest/v1/courses?select=id,title,code&limit=1000')).data || [];
+    const mats = (await sb('/rest/v1/materials?select=id,title,course,topic&limit=1000')).data || [];
+    let moved = 0, unclear = 0;
+    for (const m of mats) {
+      const r = pickCourse(m, courses);
+      if (!r.course) { if (r.ambiguous) unclear++; continue; }
+      const f = '&source_material_id=eq.' + enc(String(m.id)) + '&course_id=neq.' + enc(r.course.id);
+      const wrong = await safeCount('questions', f);
+      if (!wrong) continue;
+      await sb('/rest/v1/questions?select=id' + f, { method: 'PATCH', body: { course_id: r.course.id } });
+      moved += wrong;
+    }
+    return { moved: moved, unclear: unclear };
   },
 
   async notify(req, res, b) {
