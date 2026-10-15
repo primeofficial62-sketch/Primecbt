@@ -421,7 +421,7 @@
       align-items: center;
       gap: 10px;
       padding: 12px var(--pad);
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+      padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 12px) + 12px);
       border-top: 1px solid var(--border);
       background: var(--surface);
       flex-shrink: 0;
@@ -456,6 +456,27 @@
     }
     .send-btn:hover { background: var(--emerald-bright); transform: scale(1.05); }
     .send-btn:disabled { opacity: .5; cursor: default; transform: none; }
+
+    /* ───────── General chat ───────── */
+    .chat-list-item[hidden], .unread-badge[hidden] { display: none; }
+    .general-card { border-color: rgba(16, 185, 129, .45); }
+    .general-icon {
+      background: rgba(16, 185, 129, .12);
+      border-color: var(--emerald);
+      color: var(--emerald-bright);
+    }
+    .msg-sender {
+      display: block;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0 0 3px;
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: left;
+      color: var(--emerald-bright);
+    }
 
     /* ───────── Profile modal ───────── */
     .profile-modal {
@@ -565,6 +586,23 @@
 
       <div class="list-scroll">
         <div class="banner" id="errorBanner" hidden></div>
+
+        <section class="section">
+          <div class="section-header"><h2>Community</h2></div>
+          <button class="chat-list-item general-card" id="generalCard" type="button">
+            <div class="user-circle sm general-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="chat-item-info">
+              <div class="chat-item-header">
+                <span class="chat-item-title">General Chat</span>
+                <span class="chat-item-time" id="generalTime"></span>
+              </div>
+              <div class="chat-item-preview" id="generalPreview">Chat with all students</div>
+            </div>
+            <span class="unread-badge" id="generalBadge" hidden></span>
+          </button>
+        </section>
 
         <section class="section">
           <div class="section-header"><h2>Students</h2></div>
@@ -687,6 +725,21 @@
     let channel    = null;
     let query      = '';
 
+    /* General (everyone) room */
+    const GENERAL  = '__general__';
+    let gThread    = [];             // all loaded general messages
+    let gLast      = null;
+    let gUnread    = 0;
+    let generalOk  = true;
+    const gReadKey = () => 'prime_general_read_' + me.id;
+    const NAME_COLORS = ['#34d399', '#2dd4bf', '#fbbf24', '#f87171', '#a78bfa', '#60a5fa', '#f472b6'];
+    function colorFor(id) {
+      let h = 0;
+      for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) | 0;
+      return NAME_COLORS[Math.abs(h) % NAME_COLORS.length];
+    }
+    const senderName = (id) => (id === me.id ? 'You' : nameOf(profiles.get(id)));
+
     /* ═════ Helpers ═════ */
     function el(tag, cls, text) {
       const n = document.createElement(tag);
@@ -742,7 +795,7 @@
     }
 
     async function ensureProfile(id) {
-      if (profiles.has(id)) return;
+      if (id === me.id || profiles.has(id)) return;
       const { data } = await sb.from('profiles')
         .select('id, full_name, department, bio, last_seen').eq('id', id).maybeSingle();
       if (data) profiles.set(id, data);
@@ -781,6 +834,41 @@
       if (c) { c.unread = 0; renderChats(); }
       await sb.from('messages').update({ read_at: new Date().toISOString() })
         .eq('sender_id', pid).eq('receiver_id', me.id).is('read_at', null);
+    }
+
+    async function loadGeneral() {
+      const { data, error } = await sb.from('general_messages')
+        .select('id, sender_id, content, created_at')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      gThread = data.reverse();
+      gLast = gThread.length ? gThread[gThread.length - 1] : null;
+      const seen = Number(localStorage.getItem(gReadKey()) || 0);
+      gUnread = gThread.filter((m) => m.sender_id !== me.id && new Date(m.created_at).getTime() > seen).length;
+      await Promise.all([...new Set(gThread.map((m) => m.sender_id))].map(ensureProfile));
+    }
+
+    function markGeneralRead() {
+      gUnread = 0;
+      const t = gLast ? new Date(gLast.created_at).getTime() : Date.now();
+      localStorage.setItem(gReadKey(), String(t));
+      renderGeneralCard();
+    }
+
+    function renderGeneralCard() {
+      const card = $('generalCard');
+      card.hidden = !!query && !'general community everyone all students chat'.includes(query);
+      card.classList.toggle('active', activeId === GENERAL);
+      $('generalTime').textContent = gLast ? fmtListTime(gLast.created_at) : '';
+      if (!generalOk) $('generalPreview').textContent = 'General chat is not set up yet';
+      else if (gLast) {
+        const who = gLast.sender_id === me.id ? 'You' : senderName(gLast.sender_id).split(' ')[0];
+        $('generalPreview').textContent = who + ': ' + gLast.content;
+      } else $('generalPreview').textContent = 'Be the first to say hello';
+      const b = $('generalBadge');
+      b.hidden = gUnread <= 0;
+      b.textContent = gUnread > 99 ? '99+' : String(gUnread);
     }
 
     /* ═════ Rendering ═════ */
@@ -842,14 +930,23 @@
         item.addEventListener('click', () => openChat(pid));
         chatList.append(item);
       }
+      renderGeneralCard();
     }
 
     function bubble(m) {
       const mine = m.sender_id === me.id;
+      const general = activeId === GENERAL;
       const b = el('div', 'message-bubble ' + (mine ? 'outgoing' : 'incoming'));
       b.dataset.id = m.id;
+      if (general && !mine) {
+        const who = el('button', 'msg-sender', senderName(m.sender_id));
+        who.type = 'button';
+        who.style.color = colorFor(m.sender_id);
+        who.addEventListener('click', () => openProfile(m.sender_id));
+        b.append(who);
+      }
       b.append(document.createTextNode(m.content));
-      const t = fmtClock(m.created_at) + (mine ? (m.read_at ? ' ✓✓' : ' ✓') : '');
+      const t = fmtClock(m.created_at) + (!general && mine ? (m.read_at ? ' ✓✓' : ' ✓') : '');
       b.append(el('div', 'message-time', t));
       return b;
     }
@@ -883,6 +980,11 @@
 
     function updateChatHeader() {
       if (!activeId) return;
+      if (activeId === GENERAL) {
+        $('chatTitle').textContent = 'General Chat';
+        $('chatSubtitle').textContent = (online.size + 1) + ' online • ' + (profiles.size + 1) + ' students';
+        return;
+      }
       const p = profiles.get(activeId);
       $('chatTitle').textContent = nameOf(p);
       $('chatSubtitle').textContent = statusOf(activeId).text + (p?.department ? ' • ' + p.department : '');
@@ -892,6 +994,7 @@
     async function openChat(pid) {
       await ensureProfile(pid);
       activeId = pid;
+      thread = [];
       app.classList.add('in-chat');
       chatPane.classList.add('has-chat');
       updateChatHeader();
@@ -915,6 +1018,19 @@
       chatPane.classList.remove('has-chat');
       renderChats();
     }
+
+    function openGeneral() {
+      activeId = GENERAL;
+      thread = gThread;
+      app.classList.add('in-chat');
+      chatPane.classList.add('has-chat');
+      updateChatHeader();
+      renderThread();
+      markGeneralRead();
+      renderChats();
+      if (matchMedia('(min-width: 820px)').matches) chatInput.focus();
+    }
+    $('generalCard').addEventListener('click', openGeneral);
 
     $('chatBackBtn').addEventListener('click', closeChat);
     document.addEventListener('keydown', (e) => {
@@ -960,14 +1076,15 @@
       const text = chatInput.value.trim();
       if (!text || !activeId) return;
       sendBtn.disabled = true;
-      const { data, error } = await sb.from('messages')
-        .insert({ sender_id: me.id, receiver_id: activeId, content: text })
-        .select().single();
+      const toGeneral = activeId === GENERAL;
+      const { data, error } = toGeneral
+        ? await sb.from('general_messages').insert({ sender_id: me.id, content: text }).select().single()
+        : await sb.from('messages').insert({ sender_id: me.id, receiver_id: activeId, content: text }).select().single();
       sendBtn.disabled = false;
       if (error) { showError('Message not sent. Check your connection and try again.'); return; }
       showError('');
       chatInput.value = '';
-      applyMessage(data);
+      if (toGeneral) applyGeneral(data); else applyMessage(data);
       chatInput.focus();
     });
 
@@ -989,6 +1106,18 @@
         if (isIncoming && viewing) markRead(pid);
       }
       renderChats();
+    }
+
+    async function applyGeneral(m) {
+      await ensureProfile(m.sender_id);
+      if (gThread.some((x) => x.id === m.id)) return;
+      const viewing = activeId === GENERAL && document.visibilityState === 'visible';
+      if (activeId === GENERAL) appendToThread(m);   // thread === gThread while open
+      else gThread.push(m);
+      gLast = m;
+      if (viewing || m.sender_id === me.id) markGeneralRead();
+      else { gUnread++; renderGeneralCard(); }
+      updateChatHeader();
     }
 
     function onMessageUpdate(m) {
@@ -1021,6 +1150,8 @@
             (p) => onMessageUpdate(p.new))
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `sender_id=eq.${me.id}` },
             (p) => onMessageUpdate(p.new))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'general_messages' },
+            (p) => applyGeneral(p.new))
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' },
             (p) => { if (p.new.id !== me.id) { profiles.set(p.new.id, p.new); renderMembers(); } })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' },
@@ -1048,7 +1179,12 @@
       heartbeat();
       try {
         await loadConversations(); renderChats();
-        if (activeId) { thread = await loadThread(activeId); renderThread(); markRead(activeId); }
+        if (generalOk) {
+          await loadGeneral();
+          if (activeId === GENERAL) { thread = gThread; renderThread(); markGeneralRead(); }
+          else renderGeneralCard();
+        }
+        if (activeId && activeId !== GENERAL) { thread = await loadThread(activeId); renderThread(); markRead(activeId); }
       } catch (_) {}
     });
 
@@ -1067,6 +1203,8 @@
         showError('Could not load the community. Check your connection and refresh.');
         console.error(e);
       }
+      try { await loadGeneral(); }
+      catch (e) { generalOk = false; console.error('General chat unavailable:', e); }
       renderMembers();
       renderChats();
       startRealtime();
