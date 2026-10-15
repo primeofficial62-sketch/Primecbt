@@ -1174,7 +1174,7 @@
         { key: '_file', label: 'Upload a file', type: 'upload' },
         { key: 'title', label: 'Title', type: 'text', required: true },
         { key: 'topic', label: 'Topic', type: 'text' },
-        { key: 'material_type', label: 'Type', type: 'select', choices: ['PDF', 'Past questions', 'Notes', 'Slides', 'Image', 'Video'], required: true },
+        { key: 'material_type', label: 'Type', type: 'select', required: true, opts: [['PDF','PDF'], ['Past questions','Past questions'], ['Notes','Notes'], ['Slides','Slides'], ['Image','Image'], ['Video','Video']] },
         { key: 'file_url', label: 'File link', type: 'text', required: true, ph: 'https://…', hint: 'Filled in automatically after you upload. You can also paste a link instead.' },
         { key: 'page_count', label: 'Pages', type: 'number' },
         { key: 'size_bytes', label: 'File size in bytes', type: 'number' }
