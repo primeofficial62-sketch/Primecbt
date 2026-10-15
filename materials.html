@@ -30,6 +30,7 @@
       --teal: #2dd4bf;
       --red: #f87171;
       --blue: #60a5fa;
+      --amber: #fbbf24;
       --pad: clamp(14px, 4vw, 32px);
       --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
@@ -217,6 +218,7 @@
     .file-icon.note { background: rgba(16, 185, 129, .12);  color: var(--emerald-bright); }
     .file-icon.guide{ background: rgba(45, 212, 191, .12);  color: var(--teal); }
     .file-icon.doc  { background: rgba(96, 165, 250, .12);  color: var(--blue); }
+    .file-icon.pq   { background: rgba(251, 191, 36, .12);  color: var(--amber); }
 
     .material-body { flex: 1; min-width: 0; }
     .material-title {
@@ -287,7 +289,12 @@
       </label>
     </div>
 
-    <nav class="categories" id="categories" aria-label="Categories"></nav>
+    <!-- The All / PDF / Past questions tabs are drawn here by the script below (they show even before any data loads) -->
+    <nav class="categories" id="categories" aria-label="Categories">
+      <button type="button" class="cat-chip active" data-category="all">All</button>
+      <button type="button" class="cat-chip" data-category="PDF">PDF</button>
+      <button type="button" class="cat-chip" data-category="Past questions">Past questions</button>
+    </nav>
 
     <main class="content">
       <section class="section" id="recentSection" hidden>
@@ -335,6 +342,9 @@
       const NARROW_COLUMNS = 'id,title,file_url,category,course,file_type,pages,size_bytes,created_at';
       const KEEP_FIELDS = ['id','title','name','file_url','url','pdf_url','file','category','course','course_code','file_type','pages','size_bytes','created_at'];
 
+      /* These tabs always show, even when empty. They match the Type chosen in the admin panel. */
+      const PINNED_CATEGORIES = ['PDF', 'Past questions'];
+
       /* ================= State ================= */
       let materials = [];
       let category = 'all';
@@ -367,6 +377,7 @@
         note: '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
         guide:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',
         doc:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>',
+        pq:   '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/>',
         folder:'<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>'
       };
 
@@ -374,6 +385,10 @@
       const titleOf    = m => m.title || m.name || 'Untitled';
       const urlOf      = m => m.file_url || m.url || m.pdf_url || m.file || '';
       const categoryOf = m => m.category || m.course || m.course_code || '';
+
+      /* "Past questions", "past questions " and "PAST QUESTIONS" all count as the same tab */
+      const catNorm = c => String(c || '').trim().toLowerCase();
+      const sameCat = (a, b) => catNorm(a) === catNorm(b);
 
       /* Course grouping: "STS 201", "sts201" and "STS  201" all land in the same course */
       const courseOf  = m => String(m.course || m.course_code || '').trim();
@@ -387,6 +402,7 @@
 
       function iconClass(m) {
         const c = categoryOf(m);
+        if (sameCat(c, 'Past questions')) return 'pq';
         if (c === 'Study Guides') return 'guide';
         if (c === 'Course Notes') return 'note';
         if (c === 'Handouts') return 'doc';
@@ -469,11 +485,19 @@
 
       /* ================= Render ================= */
       function renderCategories() {
-        const cats = [...new Set(materials.map(categoryOf).filter(Boolean))].sort();
-        if (category !== 'all' && !cats.includes(category)) category = 'all';
+        // All, then PDF and Past questions (always there), then any other type already used by older materials
+        const seen = new Set(PINNED_CATEGORIES.map(catNorm));
+        const extra = [];
+        materials.map(categoryOf).filter(Boolean).forEach(c => {
+          const k = catNorm(c);
+          if (!seen.has(k)) { seen.add(k); extra.push(c); }
+        });
+        extra.sort();
+        const cats = [...PINNED_CATEGORIES, ...extra];
+        if (category !== 'all' && !cats.some(c => sameCat(c, category))) category = 'all';
         els.cats.innerHTML =
           ['all', ...cats].map(c =>
-            '<button type="button" class="cat-chip' + (c === category ? ' active' : '') + '" data-category="' + esc(c) + '">' +
+            '<button type="button" class="cat-chip' + (sameCat(c, category) ? ' active' : '') + '" data-category="' + esc(c) + '">' +
             (c === 'all' ? 'All' : esc(c)) + '</button>'
           ).join('');
       }
@@ -494,10 +518,16 @@
         return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
       }
 
+      function emptyMessage() {
+        if (!materials.length) return 'No materials have been uploaded yet.';
+        if (category !== 'all' && sameCat(category, 'Past questions')) return 'No past questions have been uploaded yet.';
+        return 'No materials in this category.';
+      }
+
       function render() {
         renderRecent();
 
-        const base = materials.filter(m => category === 'all' || categoryOf(m) === category);
+        const base = materials.filter(m => category === 'all' || sameCat(categoryOf(m), category));
 
         // Course list: shown when nothing is opened and the student is not searching
         if (!openCourse && !query) {
@@ -510,7 +540,7 @@
           els.moreWrap.hidden = true;
           if (!groups.length) {
             els.state.hidden = false;
-            els.state.textContent = materials.length ? 'No materials in this category.' : 'No materials have been uploaded yet.';
+            els.state.textContent = emptyMessage();
           } else {
             els.state.hidden = true;
           }
@@ -536,7 +566,7 @@
         if (!filtered.length) {
           els.state.hidden = false;
           els.state.textContent = materials.length
-            ? 'No materials match your search.'
+            ? (query ? 'No materials match your search.' : emptyMessage())
             : 'No materials have been uploaded yet.';
         } else {
           els.state.hidden = true;
@@ -685,6 +715,7 @@
         if (!chip) return;
         category = chip.dataset.category;
         shown = PAGE_SIZE;
+        openCourse = '';          // switching tabs goes back to that tab's course list
         renderCategories();
         render();
       });
