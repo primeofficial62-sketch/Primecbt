@@ -53,8 +53,15 @@
     button, input, textarea { font: inherit; color: inherit; }
     button { cursor: pointer; }
 
-    /* ---------- App shell ---------- */
+    /* ---------- App shell ----------
+       Fixed to the visible screen. The small script near the bottom of this
+       file sets the exact height from the real visible area, so the input
+       bar is never pushed under the phone's bottom edge or nav bar. */
     .app {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
       width: 100%;
       max-width: var(--app-max);
       height: 100vh;
@@ -63,7 +70,7 @@
       display: flex;
       flex-direction: column;
       background: var(--bg);
-      position: relative;
+      overflow: hidden;
     }
 
     @media (min-width: 900px) {
@@ -325,9 +332,11 @@
     .prompt-title { font-size: 0.85rem; font-weight: 600; color: #f1f5f9; }
     .prompt-desc { font-size: 0.75rem; color: var(--muted); }
 
-    /* ---------- Input dock ---------- */
+    /* ---------- Input dock ----------
+       Extra bottom padding lifts the typing box clear of the phone's
+       bottom edge / gesture bar. */
     .ai-input-dock {
-      padding: 12px max(var(--pad-x), env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(var(--pad-x), env(safe-area-inset-left));
+      padding: 12px max(var(--pad-x), env(safe-area-inset-right)) calc(max(env(safe-area-inset-bottom, 0px), 12px) + 14px) max(var(--pad-x), env(safe-area-inset-left));
       border-top: 1px solid var(--border);
       background: rgba(6, 11, 26, 0.95);
       -webkit-backdrop-filter: blur(12px);
@@ -404,7 +413,7 @@
       .ai-welcome { margin-top: 4px; gap: 6px; }
       .ai-avatar, .ai-welcome p { display: none; }
       .topbar { padding-top: max(6px, env(safe-area-inset-top)); padding-bottom: 6px; }
-      .ai-input-dock { padding-top: 8px; }
+      .ai-input-dock { padding-top: 8px; padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 8px) + 8px); }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -498,6 +507,34 @@
       </form>
     </div>
   </div>
+
+  <!-- Sizes the app to the real visible screen so the input bar is never cut off -->
+  <script>
+  (function () {
+    var app = document.querySelector('.app');
+    var area = document.getElementById('chatArea');
+    var input = document.getElementById('chatInput');
+    var vv = window.visualViewport;
+
+    function fit() {
+      if (vv && vv.scale > 1.01) return;          // ignore while pinch-zoomed
+      var stick = area.scrollHeight - area.scrollTop - area.clientHeight < 90;
+      app.style.height = (vv ? vv.height : window.innerHeight) + 'px';
+      app.style.top = (vv ? vv.offsetTop : 0) + 'px';
+      if (stick) area.scrollTop = area.scrollHeight;
+    }
+
+    if (vv) {
+      vv.addEventListener('resize', fit);
+      vv.addEventListener('scroll', fit);
+    }
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', function () { setTimeout(fit, 300); });
+    input.addEventListener('focus', function () { setTimeout(fit, 300); });
+    window.addEventListener('pageshow', fit);
+    fit();
+  })();
+  </script>
 
   <script src="ai-assistant-chat.js"></script>
 </body>
