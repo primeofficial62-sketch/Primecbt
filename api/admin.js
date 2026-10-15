@@ -281,6 +281,23 @@ async function insertQuestions(rows) {
   }
 }
 
+/* ---------- run locks ---------- */
+// One question-writing run per file at a time. A lock older than RUN_STALE_MS is treated as dead,
+// so a crashed or timed-out run can never leave a file blocked.
+const running = {};
+const RUN_STALE_MS = 6 * 60000;
+function tryLock(key) {
+  const t = running[key];
+  if (t && Date.now() - t < RUN_STALE_MS) return false;
+  running[key] = Date.now();
+  return true;
+}
+function unlock(key) { delete running[key]; }
+// Another server instance may be working on the file: the database status tells us.
+function recentlyProcessing(mat) {
+  return !!(mat && mat.qgen_status === 'processing' && mat.qgen_started_at && Date.now() - new Date(mat.qgen_started_at).getTime() < RUN_STALE_MS);
+}
+
 // Writes questions for ONE material until it has `target` questions saved. Safe to run again: it only writes what is missing.
 async function generateForMaterial(mat, courseId, opts) {
   opts = opts || {};
@@ -299,111 +316,115 @@ async function generateForMaterial(mat, courseId, opts) {
 
   await setStatus(mat.id, { qgen_status: 'processing', qgen_started_at: new Date().toISOString(), qgen_error: null });
 
-  let text;
-  try { text = await loadMaterialText(mat, opts.text); }
-  catch (e) { await setStatus(mat.id, { qgen_status: 'failed', qgen_error: e.message }); throw e; }
+  let finished = false;
+  try {
+    const text = await loadMaterialText(mat, opts.text);
 
-  const haystack = normText(text);
-  const existing = {}, stems = [];
-  ((await sb('/rest/v1/questions?course_id=eq.' + enc(courseId) + '&select=question&limit=5000')).data || []).forEach(function (q) {
-    existing[normText(q.question)] = 1; stems.push(String(q.question).slice(0, 110));
-  });
-
-  const stats = { saved: 0, rejected: 0, duplicates: 0, apiErrors: 0, lastError: '' };
-
-  function validateAndKeep(items) {
-    const rows = [];
-    (items || []).forEach(function (it) {
-      if (stats.saved + rows.length >= need) return;
-      const options = it && Array.isArray(it.options) ? it.options.map(function (o) { return String(o == null ? '' : o).trim(); }) : [];
-      const ok = it && typeof it.question === 'string' && it.question.trim().length > 10 &&
-        options.length === 4 && options.every(Boolean) &&
-        new Set(options.map(normText)).size === 4 &&
-        Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < 4 &&
-        typeof it.source_quote === 'string';
-      const quote = ok ? normText(it.source_quote) : '';
-      if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { stats.rejected++; return; }   // the quoted passage must really exist in the file
-      const key = normText(it.question);
-      if (existing[key]) { stats.duplicates++; return; }
-      existing[key] = 1;
-      stems.push(it.question.trim().slice(0, 110));
-      const mixed = shuffleOptions(options, it.correct_index);
-      rows.push({
-        course_id: courseId,
-        question: it.question.trim(),
-        options: mixed.options,
-        correct_index: mixed.correct_index,
-        explanation: (it.explanation || '').toString().trim() || null,
-        difficulty: ['easy', 'medium', 'hard'].indexOf(it.difficulty) > -1 ? it.difficulty : null,
-        source_material_id: matKey,
-        source_quote: it.source_quote.trim().slice(0, 400),
-        ai_generated: true
-      });
+    const haystack = normText(text);
+    const existing = {}, stems = [];
+    ((await sb('/rest/v1/questions?course_id=eq.' + enc(courseId) + '&select=question&limit=5000')).data || []).forEach(function (q) {
+      existing[normText(q.question)] = 1; stems.push(String(q.question).slice(0, 110));
     });
-    return rows;
-  }
 
-  function buildPrompt(chunk, n) {
-    const avoid = stems.slice(-60).map(function (s) { return '- ' + s; }).join('\n');
-    return 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\n' +
-      'Material: ' + (mat.title || 'File') + '\n\n' +
-      'Write ' + n + ' multiple-choice questions (fewer if the material does not support that many) using ONLY the text between the <material> tags.\n' +
-      'Rules:\n' +
-      '- Cover many different facts. Never write two questions about the same fact.\n' +
-      '- Each question has exactly 4 options and exactly one correct option.\n' +
-      '- "source_quote" must be copied word for word from the material (15 to 200 characters) and must support the correct answer.\n' +
-      '- Do not mention "the text", "the slide" or "the material" inside a question.\n' +
-      '- "difficulty" is one of easy, medium, hard. Mix them. "explanation" is one or two sentences.\n' +
-      '- "correct_index" is the position of the correct option, starting at 0.\n' +
-      (avoid ? '- These questions already exist. Do not repeat or reword them:\n' + avoid + '\n' : '') +
-      'Return a JSON array only, in this shape:\n' +
-      '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy","source_quote":""}]\n\n' +
-      '<material>\n' + chunk + '\n</material>';
-  }
+    const stats = { saved: 0, rejected: 0, duplicates: 0, apiErrors: 0, lastError: '' };
 
-  async function pass(chunks, perChunk) {
-    let next = 0;
-    async function worker() {
-      while (next < chunks.length && stats.saved < need) {
-        const i = next++;
-        try {
-          const items = parseJsonArray(await askGemini(buildPrompt(chunks[i], perChunk)));
-          const rows = validateAndKeep(items);
-          if (rows.length) { await insertQuestions(rows); stats.saved += rows.length; }
-        } catch (e) {
-          stats.apiErrors++; stats.lastError = e.message || 'Unknown error';
-          if (/not valid/i.test(stats.lastError)) next = chunks.length;   // a bad key will fail every call: stop now
+    function validateAndKeep(items) {
+      const rows = [];
+      (items || []).forEach(function (it) {
+        if (stats.saved + rows.length >= need) return;
+        const options = it && Array.isArray(it.options) ? it.options.map(function (o) { return String(o == null ? '' : o).trim(); }) : [];
+        const ok = it && typeof it.question === 'string' && it.question.trim().length > 10 &&
+          options.length === 4 && options.every(Boolean) &&
+          new Set(options.map(normText)).size === 4 &&
+          Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < 4 &&
+          typeof it.source_quote === 'string';
+        const quote = ok ? normText(it.source_quote) : '';
+        if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { stats.rejected++; return; }   // the quoted passage must really exist in the file
+        const key = normText(it.question);
+        if (existing[key]) { stats.duplicates++; return; }
+        existing[key] = 1;
+        stems.push(it.question.trim().slice(0, 110));
+        const mixed = shuffleOptions(options, it.correct_index);
+        rows.push({
+          course_id: courseId,
+          question: it.question.trim(),
+          options: mixed.options,
+          correct_index: mixed.correct_index,
+          explanation: (it.explanation || '').toString().trim() || null,
+          difficulty: ['easy', 'medium', 'hard'].indexOf(it.difficulty) > -1 ? it.difficulty : null,
+          source_material_id: matKey,
+          source_quote: it.source_quote.trim().slice(0, 400),
+          ai_generated: true
+        });
+      });
+      return rows;
+    }
+
+    function buildPrompt(chunk, n) {
+      const avoid = stems.slice(-60).map(function (s) { return '- ' + s; }).join('\n');
+      return 'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\n' +
+        'Material: ' + (mat.title || 'File') + '\n\n' +
+        'Write ' + n + ' multiple-choice questions (fewer if the material does not support that many) using ONLY the text between the <material> tags.\n' +
+        'Rules:\n' +
+        '- Cover many different facts. Never write two questions about the same fact.\n' +
+        '- Each question has exactly 4 options and exactly one correct option.\n' +
+        '- "source_quote" must be copied word for word from the material (15 to 200 characters) and must support the correct answer.\n' +
+        '- Do not mention "the text", "the slide" or "the material" inside a question.\n' +
+        '- "difficulty" is one of easy, medium, hard. Mix them. "explanation" is one or two sentences.\n' +
+        '- "correct_index" is the position of the correct option, starting at 0.\n' +
+        (avoid ? '- These questions already exist. Do not repeat or reword them:\n' + avoid + '\n' : '') +
+        'Return a JSON array only, in this shape:\n' +
+        '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy","source_quote":""}]\n\n' +
+        '<material>\n' + chunk + '\n</material>';
+    }
+
+    async function pass(chunks, perChunk) {
+      let next = 0;
+      async function worker() {
+        while (next < chunks.length && stats.saved < need) {
+          const i = next++;
+          try {
+            const items = parseJsonArray(await askGemini(buildPrompt(chunks[i], perChunk)));
+            const rows = validateAndKeep(items);
+            if (rows.length) { await insertQuestions(rows); stats.saved += rows.length; }
+          } catch (e) {
+            stats.apiErrors++; stats.lastError = e.message || 'Unknown error';
+            if (/not valid/i.test(stats.lastError)) next = chunks.length;   // a bad key will fail every call: stop now
+          }
         }
       }
+      await Promise.all([worker(), worker(), worker()]);
     }
-    await Promise.all([worker(), worker(), worker()]);
-  }
 
-  // Pass 1: split the file into parts and write about 15 questions per part (asking for a few extra, since weak ones are thrown away).
-  const parts = Math.min(Math.max(Math.ceil(need / 15), 1), 10);
-  const chunks = splitText(text, parts);
-  await pass(chunks, Math.min(Math.max(Math.ceil(need / parts * 1.35), 5), 30));
+    // Pass 1: split the file into parts and write about 15 questions per part (asking for a few extra, since weak ones are thrown away).
+    const parts = Math.min(Math.max(Math.ceil(need / 15), 1), 10);
+    const chunks = splitText(text, parts);
+    await pass(chunks, Math.min(Math.max(Math.ceil(need / parts * 1.35), 5), 30));
 
-  // Pass 2: top up whatever is still missing.
-  const missing = need - stats.saved;
-  if (missing >= 3 && stats.lastError.indexOf('not valid') < 0) {
-    await pass(chunks, Math.min(Math.max(Math.ceil(missing / parts * 1.6), 3), 25));
-  }
+    // Pass 2: top up whatever is still missing.
+    const missing = need - stats.saved;
+    if (missing >= 3 && stats.lastError.indexOf('not valid') < 0) {
+      await pass(chunks, Math.min(Math.max(Math.ceil(missing / parts * 1.6), 3), 25));
+    }
 
-  const total = have + stats.saved;
-  let status = 'done', note = null;
-  if (total < target * 0.9) {
-    if (stats.apiErrors > 0) { status = 'partial'; note = stats.lastError; }          // will be retried automatically later
-    else { note = 'This file only supports about ' + total + ' good questions.'; }      // nothing more to get from it
+    const total = have + stats.saved;
+    let status = 'done', note = null;
+    if (total < target * 0.9) {
+      if (stats.apiErrors > 0) { status = 'partial'; note = stats.lastError; }          // will be retried automatically later
+      else { note = 'This file only supports about ' + total + ' good questions.'; }      // nothing more to get from it
+    }
+    await setStatus(mat.id, { qgen_status: status, qgen_count: total, qgen_error: note });
+    finished = true;
+    if (!stats.saved && stats.apiErrors > 0) throw new HttpError(502, stats.lastError);
+    return { saved: stats.saved, rejected: stats.rejected, duplicates: stats.duplicates, total: total };
+  } catch (e) {
+    // Never leave a file stuck on "processing" if something unexpected went wrong.
+    if (!finished) await setStatus(mat.id, { qgen_status: 'failed', qgen_error: (e && e.message) || 'Question writing failed.' });
+    throw e;
   }
-  await setStatus(mat.id, { qgen_status: status, qgen_count: total, qgen_error: note });
-  if (!stats.saved && stats.apiErrors > 0) throw new HttpError(502, stats.lastError);
-  return { saved: stats.saved, rejected: stats.rejected, duplicates: stats.duplicates, total: total };
 }
 
 /* ---------- automatic runs ---------- */
-const running = {};
-
 // Finds the course a material belongs to, using its "course" value (code or title) or its title.
 async function courseForMaterial(mat) {
   const courses = (await sb('/rest/v1/courses?select=id,title,code&limit=1000')).data || [];
@@ -419,11 +440,10 @@ async function courseForMaterial(mat) {
 
 async function autoGenerate(matId) {
   const key = String(matId);
-  if (running[key] || !GEMINI_KEY) return null;
-  running[key] = true;
+  if (!GEMINI_KEY || !tryLock(key)) return null;
   try {
     const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(matId) + '&select=*')).data || [])[0];
-    if (!mat || !isPdfUrl(mat.file_url) || mat.qgen_status === 'done') return null;
+    if (!mat || !isPdfUrl(mat.file_url) || mat.qgen_status === 'done' || recentlyProcessing(mat)) return null;
     const course = await courseForMaterial(mat);
     if (!course) {
       await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'No course matches "' + (mat.course || mat.title || '') + '". Create a course with that code or title, then press Make questions.' });
@@ -433,7 +453,7 @@ async function autoGenerate(matId) {
   } catch (e) {
     console.error('auto generate failed:', e && e.message);
     return null;
-  } finally { delete running[key]; }
+  } finally { unlock(key); }
 }
 
 // Picks up any file that has no questions yet (or a stuck / half-finished run). One file at a time.
@@ -443,7 +463,7 @@ async function sweep() {
   try {
     rows = (await sb('/rest/v1/materials?select=id,file_url,qgen_status,qgen_started_at&or=(qgen_status.is.null,qgen_status.eq.partial,qgen_status.eq.processing)&limit=25')).data || [];
   } catch (e) { return; }   // setup.sql has not been run yet
-  const stale = Date.now() - 10 * 60000;
+  const stale = Date.now() - RUN_STALE_MS;
   for (const m of rows) {
     if (!isPdfUrl(m.file_url)) { await setStatus(m.id, { qgen_status: 'skipped' }); continue; }
     if (m.qgen_status && m.qgen_started_at && new Date(m.qgen_started_at).getTime() > stale) continue;
@@ -660,8 +680,8 @@ const actions = {
     return { signedUrl: signedUrl, publicUrl: URL_ + '/storage/v1/object/public/' + BUCKET + '/' + enc(path) };
   },
 
-  // The "Make questions" button. Normally not needed any more (questions are written automatically),
-  // but it still works to retry or top up a file.
+  // The "Make questions" button. Questions are normally written automatically when a file is saved,
+  // so if a run is already in progress this answers "busy" (not an error) instead of starting a second one.
   async generate_questions(req, res, b) {
     await requireAuth(req);
     if (!GEMINI_KEY) throw new HttpError(500, 'Add GEMINI_API_KEY in Vercel > Settings > Environment Variables, then redeploy.');
@@ -669,12 +689,13 @@ const actions = {
     const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(b.material_id) + '&select=*')).data || [])[0];
     if (!mat) throw new HttpError(400, 'Material not found.');
     const key = String(mat.id);
-    if (running[key]) throw new HttpError(409, 'Questions are already being written for this file. Check again in a few minutes.');
-    running[key] = true;
+    const busy = { saved: 0, rejected: 0, duplicates: 0, total: 0, busy: true };
+    if (recentlyProcessing(mat)) return busy;
+    if (!tryLock(key)) return busy;
     try {
       const out = await generateForMaterial(mat, b.course_id, { text: String(b.text || '').slice(0, 400000) });
       return { saved: out.saved, rejected: out.rejected, duplicates: out.duplicates, total: out.total };
-    } finally { delete running[key]; }
+    } finally { unlock(key); }
   },
 
   async notify(req, res, b) {
