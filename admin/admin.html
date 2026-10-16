@@ -1831,7 +1831,11 @@
     for (var i = 0; i < mats.length; i++) {
       try {
         say(i, 'Reading the PDF…');
-        var pdfText = await pdfTextFromUrl(mats[i].file_url);
+        var pdfText = '';
+        try { pdfText = await pdfTextFromUrl(mats[i].file_url); }
+        catch (e) { /* scanned PDF or reader problem: the server reads the pages instead */ }
+        say(i, pdfText ? 'Writing questions. This can take up to a minute…' : 'Scanned PDF: reading the pages with AI, then writing questions. This can take a few minutes…');
+        var r = await api('generate_questions', { material_id: mats[i].id, course_id: course.id, count: QUESTIONS_PER_PDF, text: pdfText, chosen: !!chosen }, 280000);
         say(i, 'Writing questions. This can take up to a minute…');
         var r = await api('generate_questions', { material_id: mats[i].id, course_id: course.id, count: QUESTIONS_PER_PDF, text: pdfText, chosen: !!chosen }, 120000);
         if (r.busy) { busyN++; say(i, 'Already being written in the background. Check Questions again in a few minutes.'); continue; }
