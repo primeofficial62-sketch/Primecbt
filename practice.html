@@ -257,7 +257,7 @@
     const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
 
     /* ================= State ================= */
-    let courses = [];
+    let courses = [];      // one entry per COURSE CODE (courses that share a code are combined)
     let loaded = false;
     let query = '';
 
@@ -267,7 +267,8 @@
       const m = location.hash.match(/course=([^&]+)/);
       return m ? decodeURIComponent(m[1]) : null;
     }
-    const selectedCourse = () => courses.find(c => String(c.id) === selectedId()) || null;
+    // A combined course is found by any of the course ids inside it
+    const selectedCourse = () => courses.find(c => c.ids.some(x => String(x) === selectedId())) || null;
 
     let toastTimer;
     function toast(msg) {
@@ -276,6 +277,35 @@
     }
 
     function setLive(on) { $('liveDot').classList.toggle('on', on); }
+
+    /* ================= Group courses by code =================
+       Several courses can share one code (for example CHM 101 split into topics).
+       The student sees ONE card per code, with the questions of all of them added together. */
+    const codeKey = c => String(c.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+    function groupByCode(list) {
+      const map = new Map();
+      list.forEach(c => {
+        const key = codeKey(c) || 'id:' + c.id;      // a course with no code stays on its own
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(c);
+      });
+      return [...map.values()].map(members => {
+        members.sort((a, b) => (b.count || 0) - (a.count || 0));
+        const first = members[0];
+        if (members.length === 1) return { ...first, ids: [first.id], members, topics: 1 };
+        const countsKnown = members.every(m => m.count != null);
+        return {
+          ...first,
+          ids: members.map(m => m.id),
+          members,
+          topics: members.length,
+          title: String(first.code).trim(),           // the combined course is shown by its code
+          description: '',
+          count: countsKnown ? members.reduce((n, m) => n + m.count, 0) : null
+        };
+      });
+    }
 
     /* ================= Data ================= */
     async function loadCourses() {
@@ -295,7 +325,7 @@
         return 'Untitled course';
       };
 
-      courses = (res.data || []).map(c => ({
+      const all = (res.data || []).map(c => ({
         ...c,
         title: pick(c, ['title', 'name', 'course_name', 'course_title', 'courseName', 'subject']) || anyText(c),
         code: pick(c, ['code', 'course_code']),
@@ -303,9 +333,11 @@
         count: Array.isArray(c.questions) && c.questions[0] ? Number(c.questions[0].count) : (c.questions ? 0 : null)
       }));
 
-      courses.sort((a, b) =>
-        (Number(a.sort_order ?? a.position ?? 0) - Number(b.sort_order ?? b.position ?? 0)) ||
-        a.title.localeCompare(b.title));
+      courses = groupByCode(all);
+
+      // Listed by course code (courses without a code go by their title)
+      const label = c => String(c.code || c.title || '');
+      courses.sort((a, b) => label(a).localeCompare(label(b), undefined, { numeric: true, sensitivity: 'base' }));
       loaded = true;
       render();
     }
@@ -339,7 +371,7 @@
     }
 
     function courseCard(c, i) {
-      const head = [c.code, c.description].filter(Boolean).join(' — ');
+      const head = c.topics > 1 ? c.topics + ' topics combined' : [c.code, c.description].filter(Boolean).join(' — ');
       const meta = c.count == null ? '' : '<div class="card-meta">' + c.count + (c.count === 1 ? ' question' : ' questions') + '</div>';
       return (
         '<button type="button" class="practice-card course-item" data-id="' + esc(c.id) + '">' +
@@ -352,7 +384,9 @@
     }
 
     function modeCard(m, course) {
+      // courseId = the main course of the code. courseIds = every course that shares the code (for pages that read it).
       const href = 'practice-setup.html?courseId=' + encodeURIComponent(course.id) +
+                   '&courseIds=' + encodeURIComponent(course.ids.join(',')) +
                    '&course=' + encodeURIComponent(course.title) +
                    '&mode=' + encodeURIComponent(m.name);
       return (
@@ -395,7 +429,8 @@
         $('topbarSubtitle').textContent = courses.length
           ? courses.length + (courses.length === 1 ? ' course available' : ' courses available')
           : 'Choose a subject to begin practicing';
-        const list = courses.filter(c => !q || [c.title, c.code, c.description].join(' ').toLowerCase().includes(q));
+        // Search matches the code, the title and the names of the topics inside a combined course
+        const list = courses.filter(c => !q || [c.title, c.code, c.description, ...c.members.map(m => m.title)].join(' ').toLowerCase().includes(q));
         $('coursesGrid').innerHTML = list.map(courseCard).join('');
         const s = $('coursesState');
         if (list.length) s.hidden = true;
