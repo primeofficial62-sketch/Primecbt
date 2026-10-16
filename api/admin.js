@@ -462,7 +462,7 @@ async function autoGenerate(matId) {
     if (!mat || !isPdfUrl(mat.file_url) || mat.qgen_status === 'done' || recentlyProcessing(mat)) return null;
     const picked = await courseForMaterial(mat);
     if (picked.ambiguous) {
-      await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'Several courses share the code "' + (mat.course || '') + '". Edit this material and choose its exact course, then press Make questions.' });
+      await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'Several courses share the code "' + (mat.course || '') + '". Open Courses and tap "Questions from PDFs" on the exact course.' });
       return null;
     }
     if (!picked.course) {
@@ -713,7 +713,12 @@ const actions = {
     const picked = await courseForMaterial(mat);
     let courseId = b.course_id;
     if (picked.course) courseId = picked.course.id;
-    else if (picked.ambiguous) throw new HttpError(409, 'Several courses share the code "' + (mat.course || '') + '" (' + picked.ambiguous.map(function (c) { return c.title; }).join(', ') + '). Edit this material and choose its exact course.');
+    else if (picked.ambiguous) {
+      // Several courses share this code. Only an explicit choice (the "Questions from PDFs" button on a course) decides.
+      const chosen = b.chosen ? picked.ambiguous.filter(function (c) { return String(c.id) === String(b.course_id); })[0] : null;
+      if (!chosen) throw new HttpError(409, 'Several courses share the code "' + (mat.course || '') + '" (' + picked.ambiguous.map(function (c) { return c.title; }).join(', ') + '). Open Courses and tap "Questions from PDFs" on the exact course.');
+      courseId = chosen.id;
+    }
     const busy = { saved: 0, rejected: 0, duplicates: 0, total: 0, busy: true };
     if (recentlyProcessing(mat)) return busy;
     if (!tryLock(key)) return busy;
@@ -768,6 +773,24 @@ const actions = {
     const n = await safeCount('questions', f);
     if (n) await sb('/rest/v1/questions?select=id' + f, { method: 'PATCH', body: { course_id: b.course_id } });
     return { moved: n };
+  },
+
+  // Materials are filed by course code only: a material saved under a course title is switched to that course's code.
+  async normalize_material_courses(req) {
+    await requireAuth(req);
+    const courses = (await sb('/rest/v1/courses?select=title,code&limit=1000')).data || [];
+    const mats = (await sb('/rest/v1/materials?select=id,course&limit=2000')).data || [];
+    const byTitle = {};
+    courses.forEach(function (c) { if (c.code && c.title) byTitle[normText(c.title)] = String(c.code).trim(); });
+    let changed = 0;
+    for (const m of mats) {
+      const t = normText(m.course), code = byTitle[t];
+      if (code && normText(code) !== t) {
+        await sb('/rest/v1/materials?id=eq.' + enc(String(m.id)), { method: 'PATCH', body: { course: code } });
+        changed++;
+      }
+    }
+    return { changed: changed };
   },
 
   async notify(req, res, b) {
