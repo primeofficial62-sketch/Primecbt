@@ -22,6 +22,7 @@
       --teal: #2dd4bf;
       --amber: #fbbf24;
       --red: #f87171;
+      --purple: #a78bfa;
       --font-display: 'Lora', Georgia, serif;
       --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -33,14 +34,17 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    html { height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
+    /* The page is exactly as tall as the visible screen. The Start button lives in a bar that never scrolls,
+       so it always stays on screen. (A small script near the bottom sets the exact height on phones.) */
     body {
       font-family: var(--font-body);
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: stretch;
@@ -57,23 +61,23 @@
     .app {
       width: 100%;
       max-width: 680px;
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       background: var(--bg);
       border-left: 1px solid rgba(51, 65, 85, 0.6);
       border-right: 1px solid rgba(51, 65, 85, 0.6);
+      overflow: hidden;
     }
 
     @media (min-width: 720px) and (min-height: 640px) {
       body { align-items: center; padding-block: 24px; }
       .app {
-        min-height: 0;
-        height: min(100dvh - 48px, 860px);
+        height: min(calc(100dvh - 48px), 860px);
         border: 1px solid rgba(51, 65, 85, 0.8);
         border-radius: 24px;
-        overflow: hidden;
         box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
       }
     }
@@ -263,6 +267,39 @@
     .info-card p { font-size: var(--fs-small); color: var(--muted-light); line-height: 1.5; }
     .info-card ul { margin: 10px 0 0; padding-left: 18px; font-size: var(--fs-small); color: var(--muted-light); line-height: 1.7; }
 
+    /* ---------- Past question papers ---------- */
+    .paper-list { display: grid; gap: 10px; }
+    .paper-card {
+      display: flex; align-items: center; gap: 12px;
+      min-width: 0;
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: inherit; text-decoration: none;
+      transition: border-color .2s, background .2s, transform .15s;
+    }
+    .paper-card:active { transform: scale(0.99); }
+    .paper-icon {
+      width: 42px; height: 42px; flex-shrink: 0;
+      border-radius: 11px;
+      background: rgba(167, 139, 250, 0.15);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      color: var(--purple);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .paper-icon svg { width: 20px; height: 20px; }
+    .paper-body { flex: 1; min-width: 0; }
+    .paper-title {
+      font-size: var(--fs-body); font-weight: 600; line-height: 1.35;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      word-break: break-word;
+    }
+    .paper-meta { font-size: var(--fs-small); color: var(--muted); margin-top: 2px; }
+    .paper-arrow { color: var(--muted); display: flex; flex-shrink: 0; }
+    .paper-arrow svg { width: 18px; height: 18px; }
+    @media (hover: hover) { .paper-card:hover { border-color: rgba(167, 139, 250, 0.5); background: rgba(30, 41, 59, 0.8); } }
+
     /* ---------- Status panels ---------- */
     .state-panel {
       min-height: 50%;
@@ -286,12 +323,12 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ---------- Bottom CTA ---------- */
+    /* ---------- Bottom CTA (never scrolls away, never sits under the phone's bottom edge) ---------- */
     .bottom-cta {
       flex-shrink: 0;
-      padding: 14px var(--pad);
-      padding-bottom: max(16px, env(safe-area-inset-bottom));
-      background: linear-gradient(to top, var(--bg) 80%, rgba(6, 11, 26, 0));
+      padding: 12px var(--pad);
+      padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 12px) + 10px);
+      background: var(--bg);
       border-top: 1px solid rgba(51, 65, 85, 0.4);
       z-index: 40;
     }
@@ -319,13 +356,13 @@
       .start-btn:not(:disabled):hover svg { transform: translateX(4px); }
     }
 
-    /* Short screens (landscape phones) */
+    /* Short screens (landscape phones, or with the keyboard open) */
     @media (max-height: 480px) {
       .topbar { padding-block: 8px; }
       .content { padding-block: 10px; }
       .setup-section { margin-bottom: 14px; }
       .mode-icon { display: none; }
-      .bottom-cta { padding-block: 8px; }
+      .bottom-cta { padding-block: 8px; padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 8px) + 6px); }
       .start-btn { min-height: 44px; }
     }
 
@@ -366,6 +403,19 @@
         <h2 id="msgTitle"></h2>
         <p id="msgBody"></p>
         <button type="button" class="state-btn" id="msgBtn"></button>
+      </div>
+
+      <!-- Past Questions: the past question papers uploaded for this course -->
+      <div id="pastPanel" hidden>
+        <div class="info-card">
+          <h3>Past Questions</h3>
+          <p>Tap a paper to open it in the reader and study it.</p>
+        </div>
+        <div class="section-head">
+          <div class="section-label">Past question papers</div>
+          <div class="section-meta" id="pastCount"></div>
+        </div>
+        <div class="paper-list" id="pastList"></div>
       </div>
 
       <div id="setupForm" hidden>
@@ -437,7 +487,7 @@
       </div>
     </main>
 
-    <footer class="bottom-cta">
+    <footer class="bottom-cta" id="bottomCta">
       <button type="button" class="start-btn" id="startBtn" disabled>
         <span id="startLabel">Start Practice</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -446,6 +496,27 @@
       </button>
     </footer>
   </div>
+
+  <!-- Sizes the page to the real visible screen on phones, so the Start button is never cut off -->
+  <script>
+  (function () {
+    var app = document.querySelector('.app');
+    var vv = window.visualViewport;
+    var card = window.matchMedia('(min-width: 720px) and (min-height: 640px)');
+    function fit() {
+      if (card.matches) { app.style.height = ''; document.body.style.height = ''; return; }
+      if (vv && vv.scale > 1.01) return;                 // ignore while pinch-zoomed
+      var h = (vv ? vv.height : window.innerHeight) + 'px';
+      document.body.style.height = h;
+      app.style.height = h;
+    }
+    if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', function () { setTimeout(fit, 300); });
+    window.addEventListener('pageshow', fit);
+    fit();
+  })();
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -460,7 +531,7 @@
     const CONFIG = {
       SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
       SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
-      tables: { courses: 'courses', questions: 'questions' },
+      tables: { courses: 'courses', questions: 'questions', materials: 'materials' },
       cols: {
         courseId: 'id',
         courseTitle: 'title',
@@ -470,6 +541,7 @@
       },
       countSteps: [10, 20, 30, 50, 100], // selectable sizes; only sizes the course can fill are shown
       nextPage: 'cbt.html',
+      readerPage: 'pdf-reader.html',
       fallbackPage: 'practice.html',
       pollMs: 20000                      // refresh interval used only when realtime isn't connected
     };
@@ -485,14 +557,17 @@
       loading: $('loadingPanel'), msg: $('messagePanel'),
       msgTitle: $('msgTitle'), msgBody: $('msgBody'), msgBtn: $('msgBtn'),
       form: $('setupForm'),
+      past: $('pastPanel'), pastList: $('pastList'), pastCount: $('pastCount'),
       qRow: $('questionCount'), dRow: $('difficulty'), dSection: $('difficultySection'),
       modeGrid: $('modeSelect'), toggle: $('randomizeToggle'),
       avail: $('availableText'),
+      cta: $('bottomCta'),
       start: $('startBtn'), startLabel: $('startLabel')
     };
 
     const state = {
       course: null,
+      group: null,              // every course that shares this course's code
       qCourseCol: null,
       qDiffCol: null,
       counts: { easy: 0, medium: 0, hard: 0, total: 0 },
@@ -503,8 +578,7 @@
       wantMax: false,
       kind: 'generic',          // quick | weak | past | timed | mock | generic
       pace: 60,                 // seconds per question (timed)
-      weakIds: [], weakTable: null, weakChecked: false,
-      pastCol: null, pastType: '', pastChecked: false, pastTotal: 0
+      weakIds: [], weakTable: null, weakChecked: false
     };
 
     let realtimeOn = false;
@@ -532,6 +606,7 @@
     /* ---------- URL params (from practice.html) ---------- */
     const params = new URLSearchParams(location.search);
     const courseIdParam = (params.get('courseId') || '').trim();
+    const courseIdsParam = (params.get('courseIds') || '').split(',').map((s) => s.trim()).filter(Boolean);
     const topicParam = (params.get('course') || params.get('topic') || '').trim();
     const sourceMode = (params.get('mode') || '').trim();   // e.g. "Quick Practice", "Mock Exam"
 
@@ -549,14 +624,17 @@
       if (state.kind === 'quick') { state.count = 10; state.randomize = true; }
       if (state.kind === 'mock') state.randomize = true;
       if (state.kind === 'weak') state.randomize = true;
-      if (state.kind === 'past') { state.randomize = false; state.wantMax = true; }
     })();
+
+    // Past Questions shows papers to open, so there is no Start button on that screen
+    el.cta.hidden = state.kind === 'past';
 
     /* ---------- UI helpers ---------- */
     function show(panel) {
       el.loading.hidden = panel !== 'loading';
       el.msg.hidden = panel !== 'message';
       el.form.hidden = panel !== 'form';
+      el.past.hidden = panel !== 'past';
     }
 
     function showMessage(title, body, btnText, btnAction) {
@@ -628,6 +706,18 @@
       return null;
     }
 
+    // Courses that share one code are shown as a single course, so past questions of all of them belong together
+    async function loadGroup() {
+      if (state.group) return state.group;
+      let list = [state.course];
+      if (courseIdsParam.length > 1) {
+        const { data, error } = await db.from(T.courses).select('*').in(C.courseId, courseIdsParam);
+        if (!error && data && data.length) list = data;
+      }
+      state.group = list;
+      return list;
+    }
+
     // Find which column actually exists (works with enum/text; errors mean "no such column")
     async function detectColumn(table, candidates) {
       for (const col of uniq(candidates)) {
@@ -665,7 +755,6 @@
       if (token !== loadToken) return false;
       state.counts = { total, easy: byDiff[0] || 0, medium: byDiff[1] || 0, hard: byDiff[2] || 0 };
       if (state.kind === 'weak') await loadWeak();
-      if (state.kind === 'past') await loadPast();
       return token === loadToken;
     }
 
@@ -698,24 +787,104 @@
       state.weakIds = keep;
     }
 
-    // Past Questions: needs a tag on the question (is_past_question true, or an exam year)
-    async function loadPast() {
-      if (!state.pastChecked) {
-        state.pastChecked = true;
-        const flag = await detectColumn(T.questions, ['is_past_question', 'past_question', 'is_past']);
-        if (flag) { state.pastCol = flag; state.pastType = 'bool'; }
-        else {
-          const yr = await detectColumn(T.questions, ['exam_year', 'past_year', 'year']);
-          if (yr) { state.pastCol = yr; state.pastType = 'year'; }
-        }
+    /* ---------- Past Questions: papers uploaded in Materials with Type "Past questions" ---------- */
+    const norm = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+    async function fetchPastMaterials() {
+      const pattern = '%past%question%';
+      let res = await db.from(T.materials)
+        .select('id,title,course,category,file_url,file_type,pages,size_bytes,created_at')
+        .ilike('category', pattern)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (res.error) {   // a column is named differently: fall back to reading everything
+        res = await db.from(T.materials).select('*').ilike('category', pattern).limit(500);
       }
-      if (!state.pastCol) { state.pastTotal = 0; return; }
-      let q = db.from(T.questions).select('*', { count: 'exact', head: true })
-        .eq(state.qCourseCol, state.course[C.courseId]);
-      q = state.pastType === 'bool' ? q.eq(state.pastCol, true) : q.not(state.pastCol, 'is', null);
-      const { count, error } = await q;
-      if (error) throw error;
-      state.pastTotal = count || 0;
+      if (res.error) throw res.error;
+      return res.data || [];
+    }
+
+    // A paper belongs to this course when its Course field is the course code or title,
+    // or when the course code appears in the paper's Course field or title.
+    async function loadPastMaterials() {
+      const group = await loadGroup();
+      const codes = uniq(group.map((c) => norm(courseCodeOf(c))).filter(Boolean));
+      const titles = uniq(group.map((c) => norm(courseTitleOf(c))).filter(Boolean));
+      const rows = await fetchPastMaterials();
+      return rows.filter((m) => {
+        const mc = norm(m.course || m.course_code);
+        const mt = norm(m.title || m.name);
+        if (mc && (codes.includes(mc) || titles.includes(mc))) return true;
+        return codes.some((k) => k.length >= 4 && (mc.includes(k) || mt.includes(k)));
+      });
+    }
+
+    const PAPER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>';
+    const ARROW_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
+
+    function formatSize(bytes) {
+      if (!bytes) return '';
+      const mb = bytes / 1048576;
+      return mb >= 1 ? mb.toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    }
+
+    function renderPast(items) {
+      el.pastList.replaceChildren(...items.map((m) => {
+        const url = m.file_url || m.url || m.pdf_url || m.file || '';
+        const isPdf = /\.pdf(\?|#|$)/i.test(url);
+        const a = document.createElement('a');
+        a.className = 'paper-card';
+        a.href = isPdf
+          ? CONFIG.readerPage + '?id=' + encodeURIComponent(m.id) + '&file=' + encodeURIComponent(url)
+          : url;
+        if (!isPdf) { a.target = '_blank'; a.rel = 'noopener'; }
+
+        const icon = document.createElement('div');
+        icon.className = 'paper-icon';
+        icon.innerHTML = PAPER_ICON;
+
+        const body = document.createElement('div');
+        body.className = 'paper-body';
+        const title = document.createElement('div');
+        title.className = 'paper-title';
+        title.textContent = m.title || m.name || 'Past question paper';
+        const meta = document.createElement('div');
+        meta.className = 'paper-meta';
+        const bits = [];
+        if (m.pages) bits.push(m.pages + (m.pages === 1 ? ' page' : ' pages'));
+        const size = formatSize(m.size_bytes);
+        if (size) bits.push(size);
+        meta.textContent = bits.join(' · ') || (isPdf ? 'PDF' : 'Open file');
+        body.append(title, meta);
+
+        const arrow = document.createElement('div');
+        arrow.className = 'paper-arrow';
+        arrow.innerHTML = ARROW_ICON;
+
+        a.append(icon, body, arrow);
+        return a;
+      }));
+      el.pastCount.textContent = items.length + (items.length === 1 ? ' paper' : ' papers');
+    }
+
+    const toQuick = () => {
+      const q = new URLSearchParams(location.search);
+      q.set('mode', 'Quick Practice');
+      location.search = q.toString();
+    };
+
+    async function refreshPast() {
+      const items = await loadPastMaterials();
+      lastRefreshOk = true;
+      setLive(settledStatus());
+      if (!items.length) {
+        showMessage('No past questions yet',
+          'Past questions for this course haven’t been added yet. This page updates automatically when they are.',
+          'Try Quick Practice', toQuick);
+        return;
+      }
+      renderPast(items);
+      show('past');
     }
 
     const availableFor = (diff) => diff === 'mixed' ? state.counts.total : state.counts[diff] || 0;
@@ -724,13 +893,12 @@
     const KIND_INFO = {
       quick: ['Quick Practice', 'A short random set with answers shown instantly. No timer, no pressure. Good for a fast warm-up.'],
       weak:  ['Weak Topics', 'Only the questions you got wrong before, so you can fix your gaps. Answers are shown instantly.'],
-      past:  ['Past Questions', 'Questions from previous examinations, in their original order. Answers are shown instantly.'],
       timed: ['Timed Practice', 'Race the clock. Answers are shown at the end, and the test submits itself when time runs out.'],
       mock:  ['Mock Exam', 'A full simulation of the real examination.']
     };
     const PACES = [{ s: 30, name: 'Fast' }, { s: 45, name: 'Steady' }, { s: 60, name: 'Standard' }, { s: 90, name: 'Relaxed' }];
     const MOCK_SECS = 45;
-    const STEPS = { quick: [5, 10, 15, 20], weak: [10, 20, 30, 50], past: [10, 20, 30, 50, 100] };
+    const STEPS = { quick: [5, 10, 15, 20], weak: [10, 20, 30, 50] };
     const stepsFor = () => STEPS[state.kind] || CONFIG.countSteps;
     const isTimed = () => state.kind === 'timed' || state.kind === 'mock' || (state.kind === 'generic' && state.mode === 'timed');
     const usesDifficulty = () => !!state.qDiffCol && (state.kind === 'timed' || state.kind === 'generic');
@@ -738,7 +906,6 @@
     const totalMinutes = () => Math.max(1, Math.ceil((state.count || 0) * secsPerQ() / 60));
     function poolSize() {
       if (state.kind === 'weak') return state.weakIds.length;
-      if (state.kind === 'past') return state.pastTotal;
       if (state.kind === 'quick' || state.kind === 'mock') return state.counts.total;
       return availableFor(state.difficulty);
     }
@@ -750,7 +917,7 @@
       const steps = stepsFor();
       const sizes = steps.filter((n) => n <= avail);
       const top = steps[steps.length - 1];
-      if (!sizes.includes(avail) && (avail <= top || state.kind === 'past')) sizes.push(avail);
+      if (!sizes.includes(avail) && avail <= top) sizes.push(avail);
       return sizes;
     }
 
@@ -861,7 +1028,6 @@
       const labels = {
         quick: 'Start Quick Practice',
         weak: 'Practise Weak Topics',
-        past: 'Start Past Questions',
         timed: 'Start Timed Test · ' + mins + ' min',
         mock: 'Start Mock Exam · ' + mins + ' min'
       };
@@ -880,6 +1046,8 @@
 
     async function refresh() {
       try {
+        if (state.kind === 'past') { await refreshPast(); return; }
+
         const ok = await loadCounts();
         if (!ok) return;
         lastRefreshOk = true;
@@ -892,16 +1060,9 @@
           );
           return;
         }
-        const toQuick = () => { const q = new URLSearchParams(location.search); q.set('mode', 'Quick Practice'); location.search = q.toString(); };
         if (state.kind === 'weak' && state.weakIds.length === 0) {
           showMessage('No weak topics yet',
             'Answer some questions first. The ones you miss will show up here so you can practise them.',
-            'Try Quick Practice', toQuick);
-          return;
-        }
-        if (state.kind === 'past' && state.pastTotal === 0) {
-          showMessage('No past questions yet',
-            'Past questions for this course haven’t been added yet. This page updates automatically when they are.',
             'Try Quick Practice', toQuick);
           return;
         }
@@ -911,7 +1072,7 @@
         console.error('[practice-setup] refresh failed:', err);
         lastRefreshOk = false;
         setLive(settledStatus());
-        if (el.form.hidden) {
+        if (el.form.hidden && el.past.hidden) {
           showMessage('Couldn’t load questions', (err && err.message ? err.message + ' ' : '') + 'Check your connection and try again.', 'Retry', init);
         }
       }
@@ -925,10 +1086,16 @@
     function subscribe() {
       if (channel) db.removeChannel(channel);
       const id = state.course[C.courseId];
-      channel = db.channel('practice-setup-' + id)
-        .on('postgres_changes',
+      let ch = db.channel('practice-setup-' + id);
+      if (state.kind === 'past') {
+        // new or removed past question papers show up without a reload
+        ch = ch.on('postgres_changes', { event: '*', schema: 'public', table: T.materials }, scheduleRefresh);
+      } else {
+        ch = ch.on('postgres_changes',
           { event: '*', schema: 'public', table: T.questions, filter: `${state.qCourseCol}=eq.${id}` },
-          scheduleRefresh)
+          scheduleRefresh);
+      }
+      channel = ch
         .on('postgres_changes',
           { event: 'UPDATE', schema: 'public', table: T.courses, filter: `${C.courseId}=eq.${id}` },
           (payload) => { state.course = { ...state.course, ...payload.new }; renderCourseHeader(); })
@@ -1015,10 +1182,6 @@
         out.set('weak', '1');
         out.set('ids', ids.join(','));
       }
-      if (state.kind === 'past') {
-        out.set('past', '1');
-        if (state.pastCol) { out.set('pastCol', state.pastCol); out.set('pastType', state.pastType); }
-      }
       if (sourceMode) out.set('source', sourceMode);
       location.href = `${CONFIG.nextPage}?${out.toString()}`;
     });
@@ -1037,7 +1200,7 @@
           return;
         }
         renderCourseHeader();
-        await detectQuestionColumns();
+        if (state.kind !== 'past') await detectQuestionColumns();
         await refresh();
         subscribe();
       } catch (err) {
