@@ -10,7 +10,9 @@
 //
 // Needs in package.json:  "pdf-parse": "1.1.1", "jszip": "3.10.1" and "@vercel/functions": "^2.0.0"
 // Needs the file  api/_extract.js  (reads PDF, PowerPoint .pptx and Word .docx files)
-// Needs in Supabase: run setup.sql once.
+// Needs in Supabase: run setup.sql once, then (for maths + diagrams):
+//   alter table questions add column if not exists image_url text;
+//   alter table questions add column if not exists svg text;
 
 const crypto = require('crypto');
 
@@ -42,7 +44,7 @@ try { waitUntil = require('@vercel/functions').waitUntil; } catch (e) { waitUnti
 const TABLES = {
   support_tickets: { cols: ['status'], search: ['subject', 'email', 'message'], order: 'created_at', del: true },
   courses: { cols: ['title', 'code', 'description'], search: ['title', 'code'], order: 'title', asc: true, del: true },
-  questions: { cols: ['course_id', 'question', 'options', 'correct_index', 'explanation', 'difficulty'], search: ['question'], order: 'created_at', del: true },
+  questions: { cols: ['course_id', 'question', 'options', 'correct_index', 'explanation', 'difficulty', 'image_url', 'svg'], search: ['question'], order: 'created_at', del: true },
   materials: { cols: ['title', 'course', 'topic', 'category', 'material_type', 'file_url', 'page_count', 'size_bytes'], search: ['title', 'course', 'topic'], order: 'created_at', del: true },
   achievements: { cols: ['title', 'slug', 'description', 'icon', 'metric', 'threshold', 'sort_order'], search: ['title', 'slug'], order: 'sort_order', asc: true, del: true },
   discussion_posts: { cols: ['title', 'body', 'is_pinned'], search: ['title', 'body'], order: 'created_at', del: true },
@@ -149,6 +151,16 @@ function background(promise) {
 
 /* ---------- question writing (Gemini) ---------- */
 const normText = function (s) { return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); };
+// Maths-safe key: keeps + - = ^ and so on, so "x+2=5" and "x-2=5" are NOT treated as the same question,
+// and the options "+3" and "-3" are not treated as the same option.
+const normQ = function (s) { return String(s == null ? '' : s).toLowerCase().replace(/\s+/g, '').replace(/[.,;:?!"'`]/g, ''); };
+// Only accepts a small, plain SVG drawing. No scripts, no links, no embedded images.
+const cleanSvg = function (s) {
+  s = String(s == null ? '' : s).trim();
+  if (!/^<svg[\s>]/i.test(s) || s.length > 8000) return null;
+  if (/<script|<foreignObject|<iframe|<image|\son\w+\s*=|javascript:|href\s*=\s*["']?(?!#)/i.test(s)) return null;
+  return s;
+};
 
 function parseJsonArray(text) {
   text = String(text || '').replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
@@ -171,7 +183,8 @@ const QUESTIONS_SCHEMA = {
       correct_index: { type: 'INTEGER' },
       explanation: { type: 'STRING' },
       difficulty: { type: 'STRING', enum: ['easy', 'medium', 'hard'] },
-      source_quote: { type: 'STRING' }
+      source_quote: { type: 'STRING' },
+      svg: { type: 'STRING' }
     },
     required: ['question', 'options', 'correct_index', 'explanation', 'difficulty', 'source_quote']
   }
@@ -179,7 +192,7 @@ const QUESTIONS_SCHEMA = {
 
 async function askGemini(prompt, customBody) {
   const body = customBody || {
-    systemInstruction: { parts: [{ text: 'You write multiple-choice exam questions for university students strictly from the course material you are given. Never use outside knowledge. Reply with a JSON array only, no other text.' }] },
+    systemInstruction: { parts: [{ text: 'You write multiple-choice exam questions for university students strictly from the course material you are given. Never use outside knowledge. Write all mathematics, formulas and chemical equations in LaTeX. Reply with a JSON array only, no other text.' }] },
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: 0.3,
@@ -254,7 +267,7 @@ async function ocrPdfWithGemini(buf) {
   const body = {
     contents: [{ role: 'user', parts: [
       { inlineData: { mimeType: 'application/pdf', data: buf.toString('base64') } },
-      { text: 'Transcribe all the text in this document in reading order, page by page. Write every equation and formula as plain text. Do not summarise, translate or comment. Output the transcription only.' }
+      { text: 'Transcribe all the text in this document in reading order, page by page. Write every equation and formula in LaTeX inside \\( ... \\). Do not summarise, translate or comment. Output the transcription only.' }
     ] }],
     generationConfig: { temperature: 0, maxOutputTokens: 32000 }
   };
@@ -293,9 +306,9 @@ async function insertQuestions(rows) {
   try {
     await sb('/rest/v1/questions', { method: 'POST', body: rows });
   } catch (e) {
-    // If the table has no source_material_id / source_quote / ai_generated columns yet, save without them.
+    // If the table has no source_material_id / source_quote / ai_generated / svg / image_url columns yet, save without them.
     if (/column|schema cache/i.test(e.message)) {
-      await sb('/rest/v1/questions', { method: 'POST', body: rows.map(function (r) { const c = Object.assign({}, r); delete c.source_material_id; delete c.source_quote; delete c.ai_generated; return c; }) });
+      await sb('/rest/v1/questions', { method: 'POST', body: rows.map(function (r) { const c = Object.assign({}, r); delete c.source_material_id; delete c.source_quote; delete c.ai_generated; delete c.svg; delete c.image_url; return c; }) });
     } else throw e;
   }
 }
@@ -342,7 +355,7 @@ async function generateForMaterial(mat, courseId, opts) {
     const haystack = normText(text);
     const existing = {}, stems = [];
     ((await sb('/rest/v1/questions?course_id=eq.' + enc(courseId) + '&select=question&limit=5000')).data || []).forEach(function (q) {
-      existing[normText(q.question)] = 1; stems.push(String(q.question).slice(0, 110));
+      existing[normQ(q.question)] = 1; stems.push(String(q.question).slice(0, 110));
     });
 
     const stats = { saved: 0, rejected: 0, duplicates: 0, apiErrors: 0, lastError: '' };
@@ -354,12 +367,12 @@ async function generateForMaterial(mat, courseId, opts) {
         const options = it && Array.isArray(it.options) ? it.options.map(function (o) { return String(o == null ? '' : o).trim(); }) : [];
         const ok = it && typeof it.question === 'string' && it.question.trim().length > 10 &&
           options.length === 4 && options.every(Boolean) &&
-          new Set(options.map(normText)).size === 4 &&
+          new Set(options.map(normQ)).size === 4 &&
           Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < 4 &&
           typeof it.source_quote === 'string';
         const quote = ok ? normText(it.source_quote) : '';
         if (!ok || quote.length < 15 || haystack.indexOf(quote) < 0) { stats.rejected++; return; }   // the quoted passage must really exist in the file
-        const key = normText(it.question);
+        const key = normQ(it.question);
         if (existing[key]) { stats.duplicates++; return; }
         existing[key] = 1;
         stems.push(it.question.trim().slice(0, 110));
@@ -373,7 +386,8 @@ async function generateForMaterial(mat, courseId, opts) {
           difficulty: ['easy', 'medium', 'hard'].indexOf(it.difficulty) > -1 ? it.difficulty : null,
           source_material_id: matKey,
           source_quote: it.source_quote.trim().slice(0, 400),
-          ai_generated: true
+          ai_generated: true,
+          svg: cleanSvg(it.svg)
         });
       });
       return rows;
@@ -387,10 +401,12 @@ async function generateForMaterial(mat, courseId, opts) {
         'Rules:\n' +
         '- Cover many different facts. Never write two questions about the same fact.\n' +
         '- Each question has exactly 4 options and exactly one correct option.\n' +
-        '- "source_quote" must be copied word for word from the material (15 to 200 characters) and must support the correct answer.\n' +
+        '- "source_quote" must be copied word for word from the material (15 to 200 characters) and must support the correct answer. It must stay plain text copied from the material, never LaTeX.\n' +
         '- Do not mention "the text", "the slide" or "the material" inside a question.\n' +
         '- "difficulty" is one of easy, medium, hard. Mix them. "explanation" is one or two sentences.\n' +
         '- "correct_index" is the position of the correct option, starting at 0.\n' +
+        '- Write all maths, formulas and chemical equations in LaTeX. Inline: \\( ... \\)  On its own line: \\[ ... \\]  Chemistry: \\(\\ce{H2SO4}\\). Never use a single dollar sign for maths. Inside the JSON every backslash must be doubled.\n' +
+        '- Add "svg" only when a question truly needs a diagram you can draw exactly (triangles, number lines, simple angles): a small clean <svg viewBox="0 0 400 300"> with dark strokes, no scripts, no images, under 6000 characters. Otherwise leave "svg" out.\n' +
         (avoid ? '- These questions already exist. Do not repeat or reword them:\n' + avoid + '\n' : '') +
         'Return a JSON array only, in this shape:\n' +
         '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy","source_quote":""}]\n\n' +
@@ -661,6 +677,11 @@ const actions = {
     if (!Object.keys(data).length) throw new HttpError(400, 'Nothing to save.');
     // The student site reads "category", so keep it in step with the material type.
     if (b.table === 'materials' && data.material_type && !data.category) data.category = data.material_type;
+    // Questions: only keep a diagram that is a plain https image link or a clean SVG.
+    if (b.table === 'questions') {
+      if ('svg' in data) data.svg = cleanSvg(data.svg);
+      if ('image_url' in data) data.image_url = /^https:\/\//i.test(String(data.image_url || '')) ? String(data.image_url).trim() : null;
+    }
     async function write(body) {
       if (b.id) {
         if (!isId(String(b.id))) throw new HttpError(400, 'Bad id.');
@@ -677,6 +698,10 @@ const actions = {
       // If the "category" column has not been added in Supabase yet, save without it.
       if (b.table === 'materials' && 'category' in data && /category|schema cache/i.test(e.message)) {
         const rest = Object.assign({}, data); delete rest.category;
+        savedId = await write(rest);
+      } else if (b.table === 'questions' && ('svg' in data || 'image_url' in data) && /svg|image_url|schema cache/i.test(e.message)) {
+        // The image_url / svg columns have not been added in Supabase yet: save the question without them.
+        const rest = Object.assign({}, data); delete rest.svg; delete rest.image_url;
         savedId = await write(rest);
       } else throw e;
     }
@@ -896,9 +921,22 @@ const actions = {
       if (!it || typeof it.question !== 'string' || !it.question.trim()) throw new HttpError(400, n + 'missing "question".');
       if (!Array.isArray(it.options) || it.options.length < 2 || it.options.length > 8 || !it.options.every(function (o) { return typeof o === 'string' && o.trim(); })) throw new HttpError(400, n + '"options" needs 2 to 8 non-empty texts.');
       if (!Number.isInteger(it.correct_index) || it.correct_index < 0 || it.correct_index >= it.options.length) throw new HttpError(400, n + '"correct_index" must point at one of the options (first is 0).');
-      return { course_id: b.course_id, question: it.question.trim(), options: it.options.map(function (o) { return o.trim(); }), correct_index: it.correct_index, explanation: it.explanation || null, difficulty: it.difficulty || null };
+      const row = { course_id: b.course_id, question: it.question.trim(), options: it.options.map(function (o) { return o.trim(); }), correct_index: it.correct_index, explanation: it.explanation || null, difficulty: it.difficulty || null };
+      // Optional diagram: an https image link or a clean SVG. Only sent when given, so older databases keep working.
+      const img = /^https:\/\//i.test(String(it.image_url || '')) ? String(it.image_url).trim() : null;
+      const svg = cleanSvg(it.svg);
+      if (img) row.image_url = img;
+      if (svg) row.svg = svg;
+      return row;
     });
-    await sb('/rest/v1/questions', { method: 'POST', body: rows });
+    try {
+      await sb('/rest/v1/questions', { method: 'POST', body: rows });
+    } catch (e) {
+      // image_url / svg columns not added yet: save the questions without the diagrams
+      if (/svg|image_url|schema cache/i.test(e.message)) {
+        await sb('/rest/v1/questions', { method: 'POST', body: rows.map(function (r) { const c = Object.assign({}, r); delete c.svg; delete c.image_url; return c; }) });
+      } else throw e;
+    }
     return { added: rows.length };
   }
 };
