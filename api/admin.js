@@ -741,6 +741,35 @@ const actions = {
     return { moved: moved, unclear: unclear };
   },
 
+  // Shows, for every file that has written questions, which course those questions are filed under.
+  async question_sources(req) {
+    await requireAuth(req);
+    const courses = (await sb('/rest/v1/courses?select=id,title,code&limit=1000')).data || [];
+    const mats = (await sb('/rest/v1/materials?select=id,title&limit=1000')).data || [];
+    const byMat = {};
+    for (let off = 0; off < 50000; off += 1000) {
+      const rows = (await sb('/rest/v1/questions?select=source_material_id,course_id&source_material_id=not.is.null&order=id.asc&limit=1000&offset=' + off)).data || [];
+      rows.forEach(function (r) { const k = String(r.source_material_id); byMat[k] = byMat[k] || {}; byMat[k][r.course_id] = (byMat[k][r.course_id] || 0) + 1; });
+      if (rows.length < 1000) break;
+    }
+    const label = {}; courses.forEach(function (c) { label[c.id] = (c.code ? c.code + ' - ' : '') + c.title; });
+    return {
+      materials: mats.filter(function (m) { return byMat[String(m.id)]; }).map(function (m) {
+        return { id: m.id, title: m.title, where: Object.keys(byMat[String(m.id)]).map(function (cid) { return { course_id: cid, title: label[cid] || 'A course that no longer exists', count: byMat[String(m.id)][cid] }; }) };
+      }),
+      courses: courses.map(function (c) { return { id: c.id, label: label[c.id] }; })
+    };
+  },
+
+  async move_material_questions(req, res, b) {
+    await requireAuth(req);
+    if (!isId(String(b.material_id)) || !isId(String(b.course_id))) throw new HttpError(400, 'Choose a file and a course.');
+    const f = '&source_material_id=eq.' + enc(String(b.material_id)) + '&course_id=neq.' + enc(String(b.course_id));
+    const n = await safeCount('questions', f);
+    if (n) await sb('/rest/v1/questions?select=id' + f, { method: 'PATCH', body: { course_id: b.course_id } });
+    return { moved: n };
+  },
+
   async notify(req, res, b) {
     await requireAuth(req);
     const title = String(b.title || '').trim().slice(0, 120);
