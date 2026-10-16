@@ -177,8 +177,8 @@ const QUESTIONS_SCHEMA = {
   }
 };
 
-async function askGemini(prompt) {
-  const body = {
+async function askGemini(prompt, customBody) {
+  const body = customBody || {
     systemInstruction: { parts: [{ text: 'You write multiple-choice exam questions for university students strictly from the course material you are given. Never use outside knowledge. Reply with a JSON array only, no other text.' }] },
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
@@ -248,21 +248,40 @@ function shuffleOptions(options, correct) {
   return { options: items.map(function (i) { return i.t; }), correct_index: items.findIndex(function (i) { return i.ok; }) };
 }
 
-// Downloads the file (PDF, .pptx or .docx) and returns its text.
+// Scanned PDFs have no text layer. Gemini can read the pages as images, so it writes the text out for us.
+async function ocrPdfWithGemini(buf) {
+  if (buf.length > 14 * 1024 * 1024) throw new HttpError(400, 'This scanned PDF is over 14 MB, which is too large to read. Split it into smaller parts and upload them separately.');
+  const body = {
+    contents: [{ role: 'user', parts: [
+      { inlineData: { mimeType: 'application/pdf', data: buf.toString('base64') } },
+      { text: 'Transcribe all the text in this document in reading order, page by page. Write every equation and formula as plain text. Do not summarise, translate or comment. Output the transcription only.' }
+    ] }],
+    generationConfig: { temperature: 0, maxOutputTokens: 32000 }
+  };
+  return String(await askGemini('', body) || '');
+}
+
+// Downloads the file (PDF, .pptx or .docx) and returns its text. Scanned PDFs are read with AI (OCR).
 async function loadMaterialText(mat, fallback) {
-  let text = '', problem = '';
-  if (!extractText) problem = 'The file reader is not installed (add "jszip": "3.10.1" to package.json and upload api/_extract.js).';
-  else if (mat && mat.file_url) {
+  let text = '', problem = '', buf = null;
+  if (mat && mat.file_url) {
     try {
       const dl = await fetch(mat.file_url);
-      if (dl.ok) text = (await extractText(Buffer.from(await dl.arrayBuffer()))).text;
+      if (dl.ok) buf = Buffer.from(await dl.arrayBuffer());
       else problem = 'Could not download the file (' + dl.status + ').';
     } catch (e) { problem = (e && e.message) || ''; }
   }
+  if (!extractText) problem = problem || 'The file reader is not installed (add "jszip": "3.10.1" to package.json and upload api/_extract.js).';
+  else if (buf) { try { text = (await extractText(buf)).text; } catch (e) { problem = (e && e.message) || problem; } }
   text = String(text || '');
-  if (text.replace(/\s+/g, '').length < 200 && fallback) text = String(fallback);
-  text = text.replace(/\r/g, '').replace(/[ \t]+/g, ' ');
-  if (text.replace(/\s+/g, '').length < 200) throw new HttpError(400, problem || 'No readable text found in this file. Scanned PDFs and image-only slides cannot be used.');
+  const tooShort = function (t) { return String(t).replace(/\s+/g, '').length < 200; };
+  if (tooShort(text) && fallback) text = String(fallback);
+  if (tooShort(text) && buf && buf.slice(0, 5).toString() === '%PDF-' && GEMINI_KEY) {
+    try { text = await ocrPdfWithGemini(buf); problem = ''; }
+    catch (e) { problem = (e && e.message) || problem; }
+  }
+  text = String(text || '').replace(/\r/g, '').replace(/[ \t]+/g, ' ');
+  if (tooShort(text)) throw new HttpError(400, problem || 'No readable text could be found in this file, even after reading its pages as images.');
   return text.slice(0, 400000);
 }
 
@@ -773,6 +792,44 @@ const actions = {
     const n = await safeCount('questions', f);
     if (n) await sb('/rest/v1/questions?select=id' + f, { method: 'PATCH', body: { course_id: b.course_id } });
     return { moved: n };
+  },
+
+  // Courses that share one code (e.g. several CHM 101 topics) with how many questions each has.
+  async duplicate_courses(req) {
+    await requireAuth(req);
+    const courses = (await sb('/rest/v1/courses?select=id,title,code&limit=1000')).data || [];
+    const groups = {};
+    courses.forEach(function (c) { const k = normText(c.code); if (!k) return; (groups[k] = groups[k] || []).push(c); });
+    const out = [];
+    for (const k of Object.keys(groups)) {
+      if (groups[k].length < 2) continue;
+      const list = [];
+      for (const c of groups[k]) list.push({ id: c.id, title: c.title, questions: await safeCount('questions', '&course_id=eq.' + enc(String(c.id))) });
+      list.sort(function (a, b) { return b.questions - a.questions; });
+      out.push({ code: String(groups[k][0].code).trim(), courses: list });
+    }
+    return { groups: out };
+  },
+
+  // Merges courses that share a code into one: every question moves to the course being kept, the others are removed.
+  async merge_courses(req, res, b) {
+    await requireAuth(req);
+    const ids = Array.isArray(b.ids) ? b.ids.map(String) : [];
+    if (ids.length < 2 || !ids.every(isId) || !isId(String(b.keep)) || ids.indexOf(String(b.keep)) < 0) throw new HttpError(400, 'Choose the courses to merge.');
+    const rows = (await sb('/rest/v1/courses?select=id,code&id=in.(' + ids.map(enc).join(',') + ')')).data || [];
+    const codes = {}; rows.forEach(function (r) { codes[normText(r.code)] = 1; });
+    if (rows.length !== ids.length || Object.keys(codes).length !== 1 || !Object.keys(codes)[0]) throw new HttpError(400, 'Only courses with the same code can be merged.');
+    const keep = String(b.keep), title = String(b.title || '').trim().slice(0, 150);
+    let moved = 0, removed = 0, notRemoved = 0;
+    for (const id of ids.filter(function (x) { return x !== keep; })) {
+      const n = await safeCount('questions', '&course_id=eq.' + enc(id));
+      if (n) await sb('/rest/v1/questions?course_id=eq.' + enc(id), { method: 'PATCH', body: { course_id: b.keep } });
+      moved += n;
+      try { await sb('/rest/v1/courses?id=eq.' + enc(id), { method: 'DELETE' }); removed++; }
+      catch (e) { notRemoved++; }   // something else still points at it: the questions are already moved, so it is just left empty
+    }
+    if (title) await sb('/rest/v1/courses?id=eq.' + enc(keep), { method: 'PATCH', body: { title: title } });
+    return { moved: moved, removed: removed, notRemoved: notRemoved };
   },
 
   // Materials are filed by course code only: a material saved under a course title is switched to that course's code.
