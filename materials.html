@@ -285,7 +285,7 @@
     <div class="search-wrap">
       <label class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="search" id="searchInput" placeholder="Search materials..." autocomplete="off" aria-label="Search materials">
+        <input type="search" id="searchInput" placeholder="Search materials or course code..." autocomplete="off" aria-label="Search materials">
       </label>
     </div>
 
@@ -337,6 +337,7 @@
       /* ================= Config ================= */
       const RECENT_KEY = 'primecbt_recent_materials';
       const CACHE_KEY  = 'primecbt_materials_cache_v2';   // v2: now includes the course field
+      const COURSEMAP_KEY = 'primecbt_course_codes_v1';   // course title -> course code (so old materials still group by code)
       const PAGE_SIZE  = 30;               // cards rendered at a time
       const MIN_REFRESH_MS = 30000;        // don't refetch more often than this on tab focus
       const NARROW_COLUMNS = 'id,title,file_url,category,course,file_type,pages,size_bytes,created_at';
@@ -358,6 +359,7 @@
       let loading = false;
       let lastLoad = 0;
       let realtimeStarted = false;
+      let titleToCode = {};                // normalised course title -> course code
 
       const $ = id => document.getElementById(id);
       const els = {
@@ -390,8 +392,20 @@
       const catNorm = c => String(c || '').trim().toLowerCase();
       const sameCat = (a, b) => catNorm(a) === catNorm(b);
 
-      /* Course grouping: "STS 201", "sts201" and "STS  201" all land in the same course */
-      const courseOf  = m => String(m.course || m.course_code || '').trim();
+      /* ---------- Courses are grouped by COURSE CODE only ----------
+         Every material of CHM 101 sits under one "CHM 101" folder, whatever its title or topic is.
+         "STS 201", "sts201" and "STS-201" all land in the same course.
+         If a material was saved with a course TITLE instead of a code, the title is turned back into its code. */
+      const CODE_RE = /\b([A-Za-z]{2,4})[\s-]?(\d{3})\b/;
+      const normT = s => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      function codeFrom(s) {
+        const m = CODE_RE.exec(String(s == null ? '' : s));
+        return m ? m[1].toUpperCase() + ' ' + m[2] : '';
+      }
+      function courseOf(m) {
+        const c = String(m.course || m.course_code || '').trim();
+        return codeFrom(c) || titleToCode[normT(c)] || codeFrom(titleOf(m)) || c;
+      }
       const courseKey = m => courseOf(m).toLowerCase().replace(/[^a-z0-9]+/g, '') || '__other';
 
       function typeOf(m) {
@@ -554,7 +568,7 @@
 
         filtered = base.filter(m =>
           (!openCourse || courseKey(m) === openCourse) &&
-          (!query || titleOf(m).toLowerCase().includes(query))
+          (!query || (titleOf(m) + ' ' + courseOf(m)).toLowerCase().includes(query))
         );
 
         // Only the first chunk goes into the DOM; the rest is added on demand
@@ -641,6 +655,20 @@
         return client.from('materials').select('*');
       }
 
+      /* Learns which course title belongs to which code, so a material saved under a title still goes into its code folder */
+      async function loadCourseMap() {
+        try {
+          const { data, error } = await client.from('courses').select('title,code');
+          if (error || !data) return false;
+          const map = {};
+          data.forEach(c => { if (c.title && c.code) map[normT(c.title)] = String(c.code).trim(); });
+          const changed = JSON.stringify(map) !== JSON.stringify(titleToCode);
+          titleToCode = map;
+          try { localStorage.setItem(COURSEMAP_KEY, JSON.stringify(map)); } catch {}
+          return changed;
+        } catch { return false; }
+      }
+
       async function loadMaterials(force) {
         if (loading) return;
         if (!force && Date.now() - lastLoad < MIN_REFRESH_MS) return;
@@ -668,6 +696,7 @@
           writeCache(materials);
           setLive(true, 'Live');
           startRealtimeWhenIdle();
+          loadCourseMap().then(changed => { if (changed) { renderCategories(); render(); } });
         } catch (err) {
           setLive(false, 'Offline');
           if (!hadCache) showError('Could not load materials. ' + (err && err.message ? err.message : 'Network error.'));
@@ -771,6 +800,7 @@
 
       /* ================= Start ================= */
       // 1) Paint cached list immediately (no waiting for network)
+      try { titleToCode = JSON.parse(localStorage.getItem(COURSEMAP_KEY)) || {}; } catch { titleToCode = {}; }
       const cached = readCache();
       if (cached) {
         if (cached.mode === 'all') selectMode = 'all';
