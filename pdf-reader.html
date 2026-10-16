@@ -29,6 +29,7 @@
       --emerald: #10b981;
       --amber: #fbbf24;
       --pad: clamp(10px, 3vw, 24px);
+      --bar-h: 64px;
       --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
 
@@ -237,18 +238,30 @@
     .app.light-mode .progress { background: #e2e8f0; }
 
     /* ---------- AI explain ---------- */
-    .explain-pill {
-      position: fixed; right: 14px; bottom: calc(78px + env(safe-area-inset-bottom));
-      z-index: 40; display: flex; align-items: center;
+    /* Permanent button: always on screen, sits just above the bottom bar (its height is measured by the script) */
+    .explain-fab {
+      position: fixed;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: calc(var(--bar-h) + 14px);
+      z-index: 40;
+      display: flex; align-items: center; gap: 8px;
       max-width: calc(100% - 28px);
-      background: linear-gradient(135deg, #10b981, #059669); color: #022c22;
-      border-radius: 999px; box-shadow: 0 8px 24px rgba(16, 185, 129, .35);
-      animation: exIn .35s ease both;
+      padding: 12px 18px 12px 14px;
+      min-height: 46px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #022c22;
+      border: none; border-radius: 999px;
+      font: inherit; font-weight: 700; font-size: 13.5px;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, .35);
+      transition: transform .15s, box-shadow .2s, opacity .2s;
     }
-    .explain-pill button { background: none; border: none; color: inherit; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
-    #explainPillGo { padding: 11px 6px 11px 16px; text-align: left; }
-    #explainPillX { padding: 11px 14px 11px 6px; font-size: 18px; line-height: 1; opacity: .7; }
-    @keyframes exIn { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
+    .explain-fab svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .explain-fab:active { transform: scale(0.96); }
+    .explain-fab:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+    .explain-fab:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    @media (hover: hover) { .explain-fab:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(16, 185, 129, .45); } }
 
     .explain-sheet {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
@@ -275,7 +288,7 @@
     .explain-actions button:disabled { opacity: .5; cursor: not-allowed; }
     @media (min-width: 900px) {
       .explain-sheet { left: auto; right: 24px; bottom: 24px; width: 440px; border: 1px solid var(--border); border-radius: 18px; }
-      .explain-pill { bottom: 88px; right: 32px; }
+      .explain-fab { right: 32px; bottom: calc(var(--bar-h) + 24px); }
     }
     .app.light-mode .explain-sheet { background: #fff; border-color: #cbd5e1; color: #0f172a; }
     .app.light-mode .explain-actions { border-color: #e2e8f0; }
@@ -354,11 +367,14 @@
       </div>
     </footer>
 
-    <!-- AI: floating prompt + explanation panel -->
-    <div class="explain-pill" id="explainPill" hidden>
-      <button type="button" id="explainPillGo">✨ Need more explanation on this page?</button>
-      <button type="button" id="explainPillX" aria-label="Dismiss">×</button>
-    </div>
+    <!-- AI: permanent "Explain this page" button + explanation panel -->
+    <button type="button" class="explain-fab" id="explainFab" disabled aria-label="Explain the page I am on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>
+        <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>
+      </svg>
+      <span id="explainFabLabel">Explain page</span>
+    </button>
 
     <div class="explain-sheet" id="explainSheet" hidden role="dialog" aria-label="Page explanation">
       <div class="explain-head">
@@ -423,13 +439,8 @@
     let slowTimer = null;
 
     /* ---- AI explain state (declared up here so every function can reach it) ---- */
-    const EXPLAIN_DELAY = 25000;          // normal: pill appears after 25s on a page
-    const EXPLAIN_FIRST_DELAY = 800;      // very first time: pill appears almost immediately
-    const EXPLAIN_FIRST_STAY = 10000;     // first pill stays 10s, then hides; normal 25s timing resumes
     const explainCache = new Map();
-    const exDismissed = new Set();
-    let armedPage = 0, explainTimer = null, explainBusy = false, sheetPage = 0;
-    let exFirstShown = false, exHideTimer = null;
+    let explainBusy = false, sheetPage = 0;
 
     /* ================= Helpers ================= */
     const storeGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
@@ -497,6 +508,15 @@
     }
     const pageWidth = () => fitWidth() * zoom;
     const computeSig = () => Math.round(pageWidth()) + '@' + (window.devicePixelRatio || 1);
+
+    /* Keeps the AI button sitting just above the bottom bar, even when the bar wraps onto two rows */
+    const bottomBar = document.querySelector('.bottom-bar');
+    function syncBarHeight() {
+      document.documentElement.style.setProperty('--bar-h', bottomBar.offsetHeight + 'px');
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(syncBarHeight).observe(bottomBar);
+    window.addEventListener('resize', syncBarHeight);
+    syncBarHeight();
 
     /* ================= Supabase (loaded only when needed) ================= */
     let sbPromise = null;
@@ -684,6 +704,7 @@
       buildPages();
       hideState();
       goToPage(currentPage, false);
+      syncExplainFab();                 // the AI button is ready as soon as the document is open
     }
 
     function resetViewer() {
@@ -694,12 +715,9 @@
       pagesEl.innerHTML = '';
       pageEls = []; rendered = {}; wanted = new Set();
       // AI explain: start fresh for the new document
-      clearTimeout(explainTimer);
-      armedPage = 0; sheetPage = 0;
-      exFirstShown = false; clearTimeout(exHideTimer);
-      exDismissed.clear();
-      $('explainPill').hidden = true;
+      sheetPage = 0;
       $('explainSheet').hidden = true;
+      syncExplainFab();
     }
 
     /* ================= Page layout & observers ================= */
@@ -866,7 +884,7 @@
       $('prevPage').disabled = currentPage <= 1;
       $('nextPage').disabled = currentPage >= totalPages;
       $('zoomLabel').textContent = Math.round(zoom * 100) + '%';
-      armExplain();   // AI: (re)start the "need more explanation?" timer for this page
+      syncExplainFab();   // AI: the button always names the page the student is on
     }
 
     function pageAtLine() {
@@ -1002,24 +1020,15 @@
     const exKey = (page, mode) =>
       ((material && (material.id || material.file_url)) || '') + '|' + (material ? material.file_url : '') + '|' + page + '|' + mode;
 
-    function showExplainPill() {
-      if (!pdfDoc || !$('explainSheet').hidden) return;
-      $('explainPill').hidden = false;
-      if (!exFirstShown) {                               // first appearance: auto-hide after 10s
-        exFirstShown = true;
-        clearTimeout(exHideTimer);
-        exHideTimer = setTimeout(hideExplainPill, EXPLAIN_FIRST_STAY);
-      }
-    }
-    function hideExplainPill() { clearTimeout(exHideTimer); $('explainPill').hidden = true; }
-
-    function armExplain() {
-      if (!pdfDoc || currentPage === armedPage) return;
-      armedPage = currentPage;
-      clearTimeout(explainTimer);
-      hideExplainPill();
-      if (exDismissed.has(armedPage) || !$('explainSheet').hidden) return;
-      explainTimer = setTimeout(showExplainPill, exFirstShown ? EXPLAIN_DELAY : EXPLAIN_FIRST_DELAY);
+    // The button is always on screen. It is greyed out only until the document has opened,
+    // and it steps aside while the explanation panel is open.
+    function syncExplainFab() {
+      const fab = $('explainFab');
+      const ready = !!pdfDoc && totalPages > 0;
+      fab.disabled = !ready;
+      fab.hidden = !$('explainSheet').hidden;
+      $('explainFabLabel').textContent = ready ? 'Explain page ' + currentPage : 'Explain page';
+      fab.setAttribute('aria-label', ready ? 'Explain page ' + currentPage : 'Explain this page (available once the document opens)');
     }
 
     // Reads the text of one page. If the page has no real text (scanned PDF), sends a small image instead.
@@ -1112,24 +1121,20 @@
 
     function openExplain() {
       if (!pdfDoc) return;
-      sheetPage = currentPage;                           // capture the page the user is on right now
-      hideExplainPill();
-      clearTimeout(explainTimer);
+      sheetPage = currentPage;                           // capture the page the student is on right now
       $('explainTitle').textContent = 'Page ' + sheetPage + ' — explanation';
       $('explainSheet').hidden = false;
+      syncExplainFab();
       runExplain('explain');
     }
 
     function closeExplain() {
       $('explainSheet').hidden = true;
-      exDismissed.add(sheetPage);
       sheetPage = 0;
-      armedPage = 0;
-      armExplain();                                       // re-arm for whatever page they are on now
+      syncExplainFab();
     }
 
-    $('explainPillGo').addEventListener('click', openExplain);
-    $('explainPillX').addEventListener('click', () => { exDismissed.add(currentPage); hideExplainPill(); });
+    $('explainFab').addEventListener('click', openExplain);
     $('explainClose').addEventListener('click', closeExplain);
     $('exSimpler').addEventListener('click', () => runExplain('simpler'));
     $('exExample').addEventListener('click', () => runExplain('example'));
