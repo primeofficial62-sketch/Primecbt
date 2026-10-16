@@ -9,6 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <style>
     :root {
       --bg: #060b1a;
@@ -154,6 +159,15 @@
       margin-bottom: clamp(14px, 3.5vw, 22px);
       overflow-wrap: anywhere; white-space: pre-line;
     }
+
+    /* Math + figures */
+    .katex { overflow-wrap: normal; font-size: 1.08em; }
+    .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: .6em 0; }
+    .q-figure {
+      margin: 0 0 clamp(14px, 3.5vw, 22px); padding: 10px; border-radius: 12px;
+      background: #f8fafc; display: flex; justify-content: center; overflow: auto;
+    }
+    .q-figure img, .q-figure svg { max-width: 100%; height: auto; max-height: 360px; display: block; }
 
     .options { display: flex; flex-direction: column; gap: clamp(8px, 2.4vw, 12px); }
     .option-btn {
@@ -507,19 +521,67 @@
       return null;
     }
 
-    const QCOLS = 'id,question,options,correct_index,explanation';
+    const QCOLS_BASE = 'id,question,options,correct_index,explanation';
+    let QCOLS = QCOLS_BASE + ',image_url,svg';
+    // If the image_url / svg columns have not been added in Supabase yet, fall back so the page still works.
+    async function withCols(run) {
+      let r = await run(QCOLS);
+      if (r.error && QCOLS !== QCOLS_BASE && /image_url|svg|column/i.test(r.error.message || '')) {
+        QCOLS = QCOLS_BASE;
+        r = await run(QCOLS);
+      }
+      return r;
+    }
+
+    // Turns \( ... \), \[ ... \] and $$ ... $$ into proper maths. Plain "$" is left alone so prices like $50 are safe.
+    function renderMath(root) {
+      if (window.renderMathInElement) {
+        try {
+          window.renderMathInElement(root, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        } catch (e) { /* show the raw text instead */ }
+      } else {
+        window.addEventListener('load', () => renderMath(root), { once: true });
+      }
+    }
+
+    // A diagram for the question: an uploaded image, or an SVG drawing (always cleaned first).
+    function buildFigure(q) {
+      const url = typeof q.image_url === 'string' ? q.image_url.trim() : '';
+      const svg = typeof q.svg === 'string' ? q.svg.trim() : '';
+      let fig = null;
+      if (/^https:\/\//i.test(url)) {
+        fig = document.createElement('div'); fig.className = 'q-figure';
+        const img = document.createElement('img');
+        img.src = url; img.alt = 'Diagram for this question'; img.loading = 'lazy';
+        img.addEventListener('error', () => fig.remove());
+        fig.append(img);
+      } else if (svg && /^<svg[\s>]/i.test(svg) && window.DOMPurify) {
+        const safe = window.DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+        if (safe) { fig = document.createElement('div'); fig.className = 'q-figure'; fig.innerHTML = safe; }
+      }
+      return fig;
+    }
 
     async function fetchQuestions(saved) {
       if (saved) {
-        const { data, error } = await db.from('questions').select(QCOLS).in('id', saved.ids);
+        const { data, error } = await withCols((c) => db.from('questions').select(c).in('id', saved.ids));
         if (error) throw error;
         const byId = new Map((data || []).map((q) => [q.id, q]));
         return saved.ids.map((id) => byId.get(id)).filter(Boolean);
       }
-      let q = db.from('questions').select(QCOLS).eq('course_id', S.course.id).limit(2000);
-      if (difficulty !== 'mixed') q = q.ilike('difficulty', difficulty);
-      if (!randomize) q = q.order('created_at', { ascending: true });
-      const { data, error } = await q;
+      const { data, error } = await withCols((c) => {
+        let q = db.from('questions').select(c).eq('course_id', S.course.id).limit(2000);
+        if (difficulty !== 'mixed') q = q.ilike('difficulty', difficulty);
+        if (!randomize) q = q.order('created_at', { ascending: true });
+        return q;
+      });
       if (error) throw error;
       const rows = (data || []).filter((r) => Array.isArray(r.options) && r.options.length >= 2);
 
@@ -595,7 +657,8 @@
         list.append(b);
       });
 
-      card.append(meta, text, list);
+      const fig = buildFigure(q);
+      if (fig) card.append(meta, fig, text, list); else card.append(meta, text, list);
 
       if (locked) {
         const ok = chosen === q.correct_index;
@@ -624,6 +687,7 @@
       card.append(tracker);
 
       el.content.replaceChildren(card);
+      renderMath(card);
       el.prev.disabled = S.index === 0;
       el.next.textContent = S.index === S.qs.length - 1 ? 'Submit' : 'Next Question';
       el.bar.hidden = false; el.submitTop.hidden = false;
