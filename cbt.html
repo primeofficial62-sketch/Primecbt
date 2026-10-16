@@ -804,6 +804,830 @@
     });
     window.addEventListener('offline', syncOnline);
     syncOnline();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#060b1a">
+  <title>PRIME-CBT — Session</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script>
+    // Android browsers often report a viewport taller than what is really visible, which pushes the
+    // bottom buttons off screen. Measure the visible height and keep it updated.
+    (function () {
+      var root = document.documentElement;
+      function setH() {
+        var vv = window.visualViewport;
+        var h = Math.round(Math.min(vv ? vv.height : Infinity, window.innerHeight || Infinity));
+        if (isFinite(h) && h > 0) root.style.setProperty('--app-h', h + 'px');
+      }
+      setH();
+      window.addEventListener('resize', setH);
+      window.addEventListener('orientationchange', function () { setTimeout(setH, 150); });
+      window.addEventListener('pageshow', setH);
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', setH);
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #060b1a;
+      --surface: #0f172a;
+      --surface-2: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --emerald: #10b981;
+      --emerald-bright: #34d399;
+      --teal: #2dd4bf;
+      --red: #f87171;
+      --amber: #fbbf24;
+      --slate-600: #475569;
+      --slate-700: #334155;
+
+      --pad: clamp(14px, 4.5vw, 28px);
+      --fs-title: clamp(15px, 4vw, 18px);
+      --fs-sub: clamp(11px, 3vw, 12.5px);
+      --fs-q: clamp(15.5px, 4.3vw, 19px);
+      --fs-body: clamp(13.5px, 3.7vw, 15.5px);
+      --fs-small: clamp(11.5px, 3.1vw, 13px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh; min-height: 100dvh; min-height: var(--app-h, 100dvh);
+      overflow: hidden;
+      display: flex; justify-content: center; align-items: stretch;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+    button, a { touch-action: manipulation; }
+    button { font-family: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+
+    /* ---------- Shell ---------- */
+    .app {
+      width: 100%; max-width: 760px;
+      height: 100vh; height: 100dvh; height: var(--app-h, 100dvh);
+      display: flex; flex-direction: column;
+      background: var(--bg);
+      border-left: 1px solid rgba(51, 65, 85, 0.4);
+      border-right: 1px solid rgba(51, 65, 85, 0.4);
+      overflow: hidden;
+    }
+    @media (min-width: 780px) and (min-height: 640px) {
+      body { align-items: center; padding-block: 24px; }
+      .app {
+        height: min(calc(var(--app-h, 100dvh) - 48px), 900px);
+        border: 1px solid rgba(51, 65, 85, 0.8);
+        border-radius: 24px;
+        box-shadow: 0 30px 80px rgba(0,0,0,.5);
+      }
+    }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      display: flex; align-items: center; gap: clamp(8px, 2.5vw, 14px);
+      padding: 12px var(--pad);
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: rgba(15, 23, 42, 0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      flex-shrink: 0; z-index: 10;
+    }
+    .back-btn {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text); cursor: pointer; text-decoration: none;
+      transition: background .2s, border-color .2s;
+    }
+    .topbar-text { min-width: 0; flex: 1; }
+    .topbar-text h1 {
+      font-size: var(--fs-title); font-weight: 700; line-height: 1.2;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .topbar-text p {
+      font-size: var(--fs-sub); color: var(--muted); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .timer {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface-2);
+      font-weight: 700; font-size: var(--fs-small);
+      font-variant-numeric: tabular-nums; flex-shrink: 0;
+    }
+    .timer.warn { color: var(--amber); border-color: rgba(251,191,36,.5); }
+    .timer.danger { color: var(--red); border-color: rgba(248,113,113,.6); animation: pulse 1s ease-in-out infinite; }
+    .submit-top {
+      min-height: 38px; padding: 0 14px; border-radius: 10px; flex-shrink: 0;
+      border: 1px solid var(--emerald); background: rgba(16,185,129,.12);
+      color: var(--emerald-bright); font-weight: 700; font-size: var(--fs-small); cursor: pointer;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+    .offline-banner {
+      flex-shrink: 0; text-align: center;
+      padding: 7px var(--pad);
+      font-size: var(--fs-small); font-weight: 600; line-height: 1.4;
+      color: var(--amber); background: rgba(251,191,36,.1);
+      border-bottom: 1px solid rgba(251,191,36,.35);
+    }
+
+    /* ---------- Content ---------- */
+    .content {
+      flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+      padding: clamp(14px, 4vw, 24px) var(--pad);
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: clamp(14px, 4vw, 24px);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,.3);
+      animation: cardIn .3s ease both;
+    }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .q-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .q-count { font-size: var(--fs-small); font-weight: 600; color: var(--muted); }
+    .flag-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 36px; padding: 0 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface-2);
+      color: var(--muted); font-size: var(--fs-small); font-weight: 600; cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+    .flag-btn svg { width: 14px; height: 14px; }
+    .flag-btn[aria-pressed="true"] { color: var(--amber); border-color: rgba(251,191,36,.5); background: rgba(251,191,36,.1); }
+
+    .question-text {
+      font-size: var(--fs-q); font-weight: 600; line-height: 1.5;
+      margin-bottom: clamp(14px, 3.5vw, 22px);
+      overflow-wrap: anywhere; white-space: pre-line;
+    }
+
+    /* Math + figures */
+    .katex { overflow-wrap: normal; font-size: 1.08em; }
+    .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: .6em 0; }
+    .q-figure {
+      margin: 0 0 clamp(14px, 3.5vw, 22px); padding: 10px; border-radius: 12px;
+      background: #f8fafc; display: flex; justify-content: center; overflow: auto;
+    }
+    .q-figure img, .q-figure svg { max-width: 100%; height: auto; max-height: 360px; display: block; }
+
+    .options { display: flex; flex-direction: column; gap: clamp(8px, 2.4vw, 12px); }
+    .option-btn {
+      display: flex; align-items: flex-start; gap: 12px; width: 100%;
+      min-height: 48px; padding: 12px 14px; text-align: left;
+      border: 1.5px solid var(--border); background: var(--surface-2);
+      border-radius: 12px; cursor: pointer;
+      font-size: var(--fs-body); font-weight: 500; line-height: 1.4;
+      transition: border-color .2s, background .2s, color .2s, transform .15s;
+    }
+    .option-btn .letter {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(148,163,184,.12); color: var(--muted);
+      font-size: 12px; font-weight: 700;
+    }
+    .option-btn .label { flex: 1; min-width: 0; overflow-wrap: anywhere; padding-top: 2px; }
+    .option-btn:active:not(:disabled) { transform: scale(.99); }
+    .option-btn.selected { border-color: var(--emerald-bright); background: rgba(52,211,153,.1); }
+    .option-btn.selected .letter { background: var(--emerald-bright); color: #060b1a; }
+    .option-btn.right { border-color: var(--emerald); background: rgba(16,185,129,.15); color: var(--emerald-bright); }
+    .option-btn.right .letter { background: var(--emerald); color: #022c22; }
+    .option-btn.wrong { border-color: var(--red); background: rgba(248,113,113,.15); color: var(--red); }
+    .option-btn.wrong .letter { background: var(--red); color: #2a0a0a; }
+    .option-btn:disabled { cursor: default; }
+
+    .feedback {
+      margin-top: clamp(14px, 3.5vw, 20px);
+      padding: 14px 16px; border-radius: 12px;
+      font-size: var(--fs-body); line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line;
+      animation: cardIn .3s ease both;
+    }
+    .feedback.ok  { background: rgba(16,185,129,.12); border: 1px solid var(--emerald); color: var(--emerald-bright); }
+    .feedback.bad { background: rgba(248,113,113,.12); border: 1px solid var(--red); color: var(--red); }
+    .feedback strong { display: block; margin-bottom: 4px; }
+
+    /* ---------- Tracker ---------- */
+    .tracker {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px;
+      margin-top: clamp(16px, 4vw, 24px); padding-top: clamp(14px, 3.5vw, 20px);
+      border-top: 1px solid var(--border);
+    }
+    .tracker-btn {
+      height: 40px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--surface-2);
+      color: var(--muted); font-weight: 600; font-size: .9rem; cursor: pointer;
+      position: relative; transition: border-color .2s, background .2s, color .2s;
+    }
+    .tracker-btn.answered { border-color: var(--emerald); color: var(--emerald-bright); background: rgba(16,185,129,.1); }
+    .tracker-btn.t-wrong { border-color: var(--red); color: var(--red); background: rgba(248,113,113,.1); }
+    .tracker-btn.flagged::after {
+      content: ''; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--amber);
+    }
+    .tracker-btn.active {
+      background: var(--emerald-bright); border-color: var(--emerald-bright); color: #060b1a;
+      box-shadow: 0 0 12px rgba(52,211,153,.4);
+    }
+
+    /* ---------- Bottom bar ---------- */
+    .bottom-bar {
+      display: flex; gap: 10px; align-items: center; justify-content: space-between;
+      padding: 12px var(--pad);
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+    .btn {
+      min-height: 46px; padding: 0 clamp(14px, 4vw, 24px);
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text);
+      font-weight: 600; font-size: var(--fs-body); cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+    .btn:active:not(:disabled) { transform: scale(.97); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn.primary {
+      flex: 1; max-width: 260px;
+      background: linear-gradient(135deg, var(--emerald), var(--teal));
+      color: #022c22; border-color: transparent; font-weight: 700;
+    }
+    .btn.ghost { flex: 0 0 auto; }
+
+    @media (hover: hover) {
+      .back-btn:hover { background: var(--slate-700); border-color: var(--slate-600); }
+      .option-btn:hover:not(:disabled):not(.right):not(.wrong) { border-color: var(--emerald-bright); background: rgba(52,211,153,.05); }
+      .btn:hover:not(:disabled):not(.primary) { background: var(--slate-700); border-color: var(--slate-600); }
+      .tracker-btn:not(.active):hover { border-color: var(--slate-600); color: var(--text); }
+    }
+
+    /* ---------- States ---------- */
+    .state-panel {
+      min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 10px; padding: 32px 12px;
+    }
+    .state-panel h2 { font-size: var(--fs-title); }
+    .state-panel p { color: var(--muted); font-size: var(--fs-body); max-width: 40ch; line-height: 1.5; }
+    .state-btn {
+      margin-top: 8px; min-height: 44px; padding: 0 20px; border-radius: 12px;
+      border: 1.5px solid var(--emerald); background: rgba(16,185,129,.12);
+      color: var(--emerald-bright); font-weight: 600; font-size: var(--fs-body);
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+    }
+    .spinner {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--emerald);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Dialog + toast ---------- */
+    dialog {
+      margin: auto; width: min(92vw, 420px);
+      max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 18px; padding: 22px;
+    }
+    dialog::backdrop { background: rgba(2, 6, 23, .7); }
+    dialog h2 { font-size: 1.05rem; margin-bottom: 8px; }
+    dialog p { color: var(--muted); font-size: var(--fs-body); line-height: 1.55; }
+    dialog .row { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+    dialog .row .btn { flex: 1 1 120px; max-width: none; }
+    #dlgError { color: var(--red); margin-top: 10px; font-size: var(--fs-small); }
+
+    .toast {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: max(88px, calc(env(safe-area-inset-bottom) + 76px)); z-index: 1000;
+      max-width: 90vw; padding: 10px 16px; border-radius: 12px;
+      background: var(--surface); color: var(--text); border: 1px solid var(--border);
+      font-size: var(--fs-small); font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,.4);
+    }
+
+    /* ---------- Responsive: small phones ---------- */
+    @media (max-width: 420px) {
+      .topbar { gap: 8px; }
+      .back-btn { width: 36px; height: 36px; }
+      .timer { padding: 5px 8px; gap: 4px; }
+      .timer svg { display: none; }
+      .submit-top { padding: 0 10px; min-height: 36px; }
+      .option-btn { padding: 11px 12px; gap: 10px; }
+    }
+    @media (max-width: 340px) {
+      .option-btn .letter { width: 24px; height: 24px; }
+      .tracker { grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; }
+      .tracker-btn { height: 36px; }
+      .btn { padding: 0 12px; }
+      dialog { padding: 18px; }
+    }
+
+    /* ---------- Responsive: short screens (landscape phones, keyboard open) ---------- */
+    @media (max-height: 480px) {
+      .topbar { padding-block: 6px; padding-top: max(6px, env(safe-area-inset-top)); }
+      .bottom-bar { padding-block: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+      .btn { min-height: 40px; }
+      .tracker { margin-top: 12px; padding-top: 12px; }
+    }
+
+    /* ---------- Responsive: large screens ---------- */
+    @media (min-width: 1100px) {
+      :root {
+        --fs-title: 19px; --fs-sub: 13px; --fs-q: 20px; --fs-body: 16px; --fs-small: 13.5px;
+      }
+      .app { max-width: 860px; }
+      .tracker { grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); }
+      .tracker-btn { height: 44px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a href="practice-setup.html" class="back-btn" id="backLink" aria-label="Leave session">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <div class="topbar-text">
+        <h1 id="cbtTitle">PRIME-CBT</h1>
+        <p id="cbtSubtitle">Loading…</p>
+      </div>
+      <span class="timer" id="timer" hidden role="timer" aria-live="off">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span id="timerText">0:00</span>
+      </span>
+      <button type="button" class="submit-top" id="submitTop" hidden>Submit</button>
+    </header>
+
+    <div class="offline-banner" id="offlineBanner" role="status" hidden>You’re offline. Your answers are kept on this device — reconnect to submit.</div>
+
+    <main class="content" id="content">
+      <div class="state-panel" id="loadingPanel">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading your questions…</p>
+      </div>
+    </main>
+
+    <footer class="bottom-bar" id="bottomBar" hidden>
+      <button type="button" class="btn ghost" id="prevBtn">Previous</button>
+      <button type="button" class="btn primary" id="nextBtn">Next Question</button>
+    </footer>
+  </div>
+
+  <dialog id="submitDialog">
+    <h2>Submit session?</h2>
+    <p id="dlgBody"></p>
+    <p id="dlgError" role="alert" hidden></p>
+    <div class="row">
+      <button type="button" class="btn" id="dlgCancel">Keep going</button>
+      <button type="button" class="btn primary" id="dlgConfirm">Submit</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    /* ============================================================
+       CONFIG — questions come live from your Supabase database.
+       Scoring, saving the attempt and marking questions as "seen"
+       (rotation) are all done on the server by submit_practice_session()
+       from cbt_setup.sql. This page only picks questions and sends answers.
+       ============================================================ */
+    const CONFIG = {
+      SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+      loginPage: 'login.html',
+      setupPage: 'practice-setup.html',
+      resultsPage: 'results.html',
+      secondsPerQuestion: 60,          // timed mode: total time = questions x this
+      resumeWindowMs: 6 * 60 * 60 * 1000
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      back: $('backLink'), title: $('cbtTitle'), sub: $('cbtSubtitle'),
+      offline: $('offlineBanner'), timer: $('timer'), timerText: $('timerText'), submitTop: $('submitTop'),
+      content: $('content'), bar: $('bottomBar'), prev: $('prevBtn'), next: $('nextBtn'),
+      dlg: $('submitDialog'), dlgBody: $('dlgBody'), dlgError: $('dlgError'), dlgCancel: $('dlgCancel'), dlgConfirm: $('dlgConfirm'),
+      toast: $('toast')
+    };
+    const LETTERS = 'ABCDEFGHIJ';
+
+    /* ---------- URL params ---------- */
+    const params = new URLSearchParams(location.search);
+    const courseParam = (params.get('course') || '').trim();
+    const topicParam = (params.get('topic') || '').trim();
+    const wantCount = Math.max(1, parseInt(params.get('count'), 10) || 10);
+    const difficulty = ['easy', 'medium', 'hard', 'mixed'].includes(params.get('difficulty')) ? params.get('difficulty') : 'mixed';
+    const mode = params.get('mode') === 'timed' ? 'timed' : 'practice';
+    const randomize = params.get('randomize') !== 'false';
+    const sessionNonce = params.get('s') || '';
+
+    el.back.href = CONFIG.setupPage + (courseParam ? `?course=${encodeURIComponent(courseParam)}` : topicParam ? `?topic=${encodeURIComponent(topicParam)}` : '');
+
+    /* ---------- state ---------- */
+    const S = {
+      user: null, course: null, qs: [],
+      answers: {},            // question id -> selected index
+      flags: new Set(),       // question ids
+      index: 0, endAt: null, startedAt: Date.now(),
+      submitting: false, done: false,
+      retry: null             // set when a submit failed, so we can retry when the connection returns
+    };
+
+    /* ---------- helpers ---------- */
+    let toastTimer;
+    function toast(msg) {
+      el.toast.textContent = msg; el.toast.hidden = false;
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.toast.hidden = true; }, 3500);
+    }
+    function showMessage(title, body, btnText, action, href) {
+      const wrap = document.createElement('div'); wrap.className = 'state-panel';
+      const h = document.createElement('h2'); h.textContent = title;
+      const p = document.createElement('p'); p.textContent = body;
+      wrap.append(h, p);
+      if (btnText) {
+        const b = href ? document.createElement('a') : document.createElement('button');
+        b.className = 'state-btn'; b.textContent = btnText;
+        if (href) b.href = href; else { b.type = 'button'; b.addEventListener('click', action); }
+        wrap.append(b);
+      }
+      el.content.replaceChildren(wrap);
+      el.bar.hidden = true; el.submitTop.hidden = true; el.timer.hidden = true;
+    }
+    function redirectToLogin() {
+      const next = location.pathname.split('/').pop() + location.search;
+      location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(next)}`);
+    }
+    function shuffle(a) {
+      const arr = a.slice();
+      for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+      return arr;
+    }
+    const optText = (o) => (o && typeof o === 'object') ? (o.text ?? o.label ?? '') : String(o ?? '');
+    const answered = (q) => S.answers[q.id] !== undefined;
+
+    if (!window.supabase) {
+      el.sub.textContent = 'Not connected';
+      showMessage('Couldn’t load the app', 'Check your connection and refresh the page.', 'Refresh', () => location.reload());
+      return;
+    }
+    const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+    /* ---------- resume support (per tab) ---------- */
+    const storeKey = () => `primecbt:session:${S.user.id}:${courseParam || topicParam}:${mode}:${difficulty}:${wantCount}:${randomize}:${sessionNonce}`;
+    function save() {
+      if (S.done || !S.qs.length) return;
+      try {
+        sessionStorage.setItem(storeKey(), JSON.stringify({
+          ids: S.qs.map((q) => q.id), answers: S.answers, flags: [...S.flags],
+          index: S.index, startedAt: S.startedAt, endAt: S.endAt
+        }));
+      } catch (_) {}
+    }
+    function loadSaved() {
+      try {
+        const raw = sessionStorage.getItem(storeKey());
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        if (!d || !Array.isArray(d.ids) || !d.ids.length) return null;
+        if (Date.now() - (d.startedAt || 0) > CONFIG.resumeWindowMs) return null;
+        return d;
+      } catch (_) { return null; }
+    }
+    const clearSaved = () => { try { sessionStorage.removeItem(storeKey()); } catch (_) {} };
+
+    /* ---------- data ---------- */
+    async function resolveCourse() {
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseParam) || /^\d+$/.test(courseParam);
+      if (courseParam && isId) {
+        const { data, error } = await db.from('courses').select('id,title,code').eq('id', courseParam).limit(1);
+        if (error) throw error;
+        return data && data[0] ? data[0] : null;
+      }
+      const t = (courseParam || topicParam).trim();
+      if (!t) return null;
+      // Case-insensitive exact match. LIKE wildcards are escaped so names such as
+      // "Use of English, Part 1" or "100%" match literally instead of breaking the filter.
+      const pattern = t.replace(/[\\%_]/g, '\\$&').replace(/\*/g, '');
+      for (const col of ['title', 'code']) {
+        const { data, error } = await db.from('courses').select('id,title,code').ilike(col, pattern).limit(1);
+        if (error) throw error;
+        if (data && data[0]) return data[0];
+      }
+      return null;
+    }
+
+    const QCOLS_BASE = 'id,question,options,correct_index,explanation';
+    let QCOLS = QCOLS_BASE + ',image_url,svg';
+    // If the image_url / svg columns have not been added in Supabase yet, fall back so the page still works.
+    async function withCols(run) {
+      let r = await run(QCOLS);
+      if (r.error && QCOLS !== QCOLS_BASE && /image_url|svg|column/i.test(r.error.message || '')) {
+        QCOLS = QCOLS_BASE;
+        r = await run(QCOLS);
+      }
+      return r;
+    }
+
+    // Turns \( ... \), \[ ... \] and $$ ... $$ into proper maths. Plain "$" is left alone so prices like $50 are safe.
+    function renderMath(root) {
+      if (window.renderMathInElement) {
+        try {
+          window.renderMathInElement(root, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        } catch (e) { /* show the raw text instead */ }
+      } else {
+        window.addEventListener('load', () => renderMath(root), { once: true });
+      }
+    }
+
+    // A diagram for the question: an uploaded image, or an SVG drawing (always cleaned first).
+    function buildFigure(q) {
+      const url = typeof q.image_url === 'string' ? q.image_url.trim() : '';
+      const svg = typeof q.svg === 'string' ? q.svg.trim() : '';
+      let fig = null;
+      if (/^https:\/\//i.test(url)) {
+        fig = document.createElement('div'); fig.className = 'q-figure';
+        const img = document.createElement('img');
+        img.src = url; img.alt = 'Diagram for this question'; img.loading = 'lazy';
+        img.addEventListener('error', () => fig.remove());
+        fig.append(img);
+      } else if (svg && /^<svg[\s>]/i.test(svg) && window.DOMPurify) {
+        const safe = window.DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+        if (safe) { fig = document.createElement('div'); fig.className = 'q-figure'; fig.innerHTML = safe; }
+      }
+      return fig;
+    }
+
+    async function fetchQuestions(saved) {
+      if (saved) {
+        const { data, error } = await withCols((c) => db.from('questions').select(c).in('id', saved.ids));
+        if (error) throw error;
+        const byId = new Map((data || []).map((q) => [q.id, q]));
+        return saved.ids.map((id) => byId.get(id)).filter(Boolean);
+      }
+      const { data, error } = await withCols((c) => {
+        let q = db.from('questions').select(c).eq('course_id', S.course.id).limit(2000);
+        if (difficulty !== 'mixed') q = q.ilike('difficulty', difficulty);
+        if (!randomize) q = q.order('created_at', { ascending: true });
+        return q;
+      });
+      if (error) throw error;
+      const rows = (data || []).filter((r) => Array.isArray(r.options) && r.options.length >= 2);
+
+      // ---- Rotation ----
+      // Serve questions this user has NOT seen yet for this course. When they run out,
+      // fall back to the ones seen longest ago, so the same questions never repeat early.
+      // (Questions are marked as seen by the server when the session is submitted.)
+      let seenAt = new Map();
+      try {
+        const { data: seenRows } = await db.from('user_seen_questions')
+          .select('question_id,seen_at')
+          .eq('user_id', S.user.id)
+          .eq('course_id', S.course.id)
+          .limit(5000);
+        seenAt = new Map((seenRows || []).map((r) => [r.question_id, r.seen_at]));
+      } catch (_) { /* if the table is unreachable, just behave like before */ }
+
+      const fresh = rows.filter((r) => !seenAt.has(r.id));
+      let picked = (randomize ? shuffle(fresh) : fresh).slice(0, wantCount);
+      if (picked.length < wantCount) {
+        const stale = rows
+          .filter((r) => seenAt.has(r.id))
+          .sort((a, b) => new Date(seenAt.get(a.id)) - new Date(seenAt.get(b.id)));
+        picked = picked.concat(stale.slice(0, wantCount - picked.length));
+      }
+      return randomize ? shuffle(picked) : picked;
+    }
+
+    /* ---------- render ---------- */
+    function renderHeader() {
+      el.title.textContent = S.course.title || 'Practice session';
+      const n = S.qs.length;
+      el.sub.textContent = `${n} ${n === 1 ? 'Question' : 'Questions'} • ${difficulty.toUpperCase()} • ${mode === 'timed' ? 'TIMED' : 'PRACTICE'}`;
+      document.title = `${S.course.title || 'Session'} — PRIME-CBT`;
+    }
+
+    function render(animate = true) {
+      const q = S.qs[S.index];
+      const locked = mode === 'practice' && answered(q);
+      const chosen = S.answers[q.id];
+
+      const card = document.createElement('section');
+      card.className = 'card';
+      if (!animate) card.style.animation = 'none';
+
+      const meta = document.createElement('div'); meta.className = 'q-meta';
+      const count = document.createElement('span'); count.className = 'q-count';
+      count.textContent = `Question ${S.index + 1} of ${S.qs.length}`;
+      const flag = document.createElement('button');
+      flag.type = 'button'; flag.className = 'flag-btn';
+      flag.setAttribute('aria-pressed', String(S.flags.has(q.id)));
+      flag.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>';
+      flag.append(S.flags.has(q.id) ? 'Flagged' : 'Flag');
+      flag.addEventListener('click', toggleFlag);
+      meta.append(count, flag);
+
+      const text = document.createElement('div'); text.className = 'question-text'; text.textContent = q.question;
+
+      const list = document.createElement('div'); list.className = 'options'; list.setAttribute('role', 'radiogroup');
+      q.options.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'option-btn'; b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', String(chosen === i));
+        const l = document.createElement('span'); l.className = 'letter'; l.textContent = LETTERS[i] || String(i + 1);
+        const t = document.createElement('span'); t.className = 'label'; t.textContent = optText(opt);
+        b.append(l, t);
+        if (locked) {
+          b.disabled = true;
+          if (i === q.correct_index) b.classList.add('right');
+          else if (i === chosen) b.classList.add('wrong');
+        } else if (chosen === i) b.classList.add('selected');
+        b.addEventListener('click', () => choose(i));
+        list.append(b);
+      });
+
+      const fig = buildFigure(q);
+      if (fig) card.append(meta, fig, text, list); else card.append(meta, text, list);
+
+      if (locked) {
+        const ok = chosen === q.correct_index;
+        const fb = document.createElement('div'); fb.className = 'feedback ' + (ok ? 'ok' : 'bad');
+        const s = document.createElement('strong');
+        s.textContent = ok ? 'Correct!' : `Incorrect. The correct answer is ${LETTERS[q.correct_index]}. ${optText(q.options[q.correct_index])}`;
+        fb.append(s);
+        if (q.explanation && q.explanation.trim()) fb.append(q.explanation);
+        card.append(fb);
+      }
+
+      const tracker = document.createElement('div'); tracker.className = 'tracker'; tracker.id = 'tracker';
+      S.qs.forEach((x, i) => {
+        const t = document.createElement('button');
+        t.type = 'button'; t.textContent = String(i + 1); t.setAttribute('aria-label', `Go to question ${i + 1}`);
+        t.className = 'tracker-btn';
+        if (answered(x)) {
+          t.classList.add('answered');
+          if (mode === 'practice' && S.answers[x.id] !== x.correct_index) { t.classList.remove('answered'); t.classList.add('t-wrong'); }
+        }
+        if (S.flags.has(x.id)) t.classList.add('flagged');
+        if (i === S.index) t.classList.add('active');
+        t.addEventListener('click', () => go(i));
+        tracker.append(t);
+      });
+      card.append(tracker);
+
+      el.content.replaceChildren(card);
+      renderMath(card);
+      el.prev.disabled = S.index === 0;
+      el.next.textContent = S.index === S.qs.length - 1 ? 'Submit' : 'Next Question';
+      el.bar.hidden = false; el.submitTop.hidden = false;
+    }
+
+    /* ---------- actions ---------- */
+    function choose(i) {
+      const q = S.qs[S.index];
+      if (mode === 'practice' && answered(q)) return;
+      if (mode === 'timed' && S.answers[q.id] === i) delete S.answers[q.id]; // tap again to clear
+      else S.answers[q.id] = i;
+      save(); render(false);
+    }
+    function toggleFlag() {
+      const q = S.qs[S.index];
+      if (S.flags.has(q.id)) S.flags.delete(q.id); else S.flags.add(q.id);
+      save(); render(false);
+    }
+    function go(i) {
+      if (i < 0 || i >= S.qs.length) return;
+      S.index = i; save(); render(true); el.content.scrollTop = 0;
+    }
+    el.prev.addEventListener('click', () => go(S.index - 1));
+    el.next.addEventListener('click', () => { if (S.index < S.qs.length - 1) go(S.index + 1); else openSubmit(); });
+    el.submitTop.addEventListener('click', openSubmit);
+    document.addEventListener('keydown', (e) => {
+      if (!S.qs.length || el.dlg.open) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;   // keep browser shortcuts (Ctrl+C, Cmd+R…) working
+      if (e.key === 'ArrowRight') go(S.index + 1);
+      else if (e.key === 'ArrowLeft') go(S.index - 1);
+      else {
+        const k = e.key.toUpperCase(); let i = LETTERS.indexOf(k);
+        if (i < 0 && /^[1-9]$/.test(e.key)) i = Number(e.key) - 1;
+        if (k.length === 1 && i >= 0 && i < S.qs[S.index].options.length) choose(i);
+      }
+    });
+
+    /* ---------- timer (timed mode) ---------- */
+    let tick = null;
+    let refreshTimer = () => {};
+    function startTimer() {
+      if (mode !== 'timed') return;
+      if (!S.endAt) S.endAt = Date.now() + S.qs.length * CONFIG.secondsPerQuestion * 1000;
+      el.timer.hidden = false;
+      const update = () => {
+        const left = Math.max(0, Math.round((S.endAt - Date.now()) / 1000));
+        const m = Math.floor(left / 60), s = left % 60;
+        el.timerText.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        el.timer.classList.toggle('warn', left <= 120 && left > 60);
+        el.timer.classList.toggle('danger', left <= 60);
+        if (left <= 0 && !S.submitting && !S.done) { clearInterval(tick); toast('Time’s up — submitting your answers.'); submit(true); }
+      };
+      refreshTimer = update;
+      update(); tick = setInterval(update, 500);
+    }
+    // The countdown is based on a fixed end time, so it stays correct when the tab sleeps; refresh the moment it wakes
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshTimer(); });
+
+    /* ---------- submit ---------- */
+    function openSubmit() {
+      if (S.submitting) return;
+      const un = S.qs.filter((q) => !answered(q)).length;
+      const fl = S.flags.size;
+      const parts = [];
+      parts.push(un > 0 ? `You have ${un} unanswered ${un === 1 ? 'question' : 'questions'}.` : 'You’ve answered every question.');
+      if (fl > 0) parts.push(`${fl} ${fl === 1 ? 'question is' : 'questions are'} flagged.`);
+      parts.push('You can’t change your answers after submitting.');
+      el.dlgBody.textContent = parts.join(' ');
+      el.dlgError.hidden = true;
+      el.dlgConfirm.disabled = false; el.dlgConfirm.textContent = 'Submit';
+      if (!el.dlg.open) el.dlg.showModal();
+    }
+    el.dlgCancel.addEventListener('click', () => { S.retry = null; el.dlg.close(); });
+    el.dlgConfirm.addEventListener('click', () => submit(false));
+
+    async function submit(auto) {
+      if (S.submitting || S.done) return;
+      S.submitting = true; S.retry = null;
+      el.dlgConfirm.disabled = true; el.dlgConfirm.textContent = 'Submitting…';
+      if (auto && !el.dlg.open) { el.dlgBody.textContent = 'Saving your answers…'; el.dlgError.hidden = true; el.dlg.showModal(); }
+
+      const payload = S.qs.map((q, i) => ({
+        question_id: q.id, position: i,
+        selected_index: S.answers[q.id] ?? null,
+        flagged: S.flags.has(q.id)
+      }));
+      const { data, error } = await db.rpc('submit_practice_session', {
+        p_course_id: S.course.id,
+        p_mode: mode,
+        p_answers: payload,
+        p_duration_seconds: Math.max(0, Math.round((Date.now() - S.startedAt) / 1000))
+      });
+      S.submitting = false;
+      if (error || !data) {
+        console.error('[cbt] submit failed:', error);
+        S.retry = { auto: !!auto };   // retried automatically when the connection comes back
+        el.dlgError.textContent = navigator.onLine
+          ? 'Couldn’t save your session. Your answers are still here — try again.'
+          : 'You’re offline. Your answers are still here and will be submitted when you reconnect.';
+        el.dlgError.hidden = false;
+        el.dlgConfirm.disabled = false; el.dlgConfirm.textContent = 'Try again';
+        if (auto) el.dlgCancel.hidden = true;
+        return;
+      }
+      S.done = true; clearInterval(tick); clearSaved();
+      location.href = `${CONFIG.resultsPage}?result=${encodeURIComponent(data)}`;
+    }
+
+    /* ---------- connectivity (live) ---------- */
+    const syncOnline = () => { el.offline.hidden = navigator.onLine; };
+    window.addEventListener('online', () => {
+      syncOnline();
+      if (S.retry && !S.submitting && !S.done) { toast('Back online — submitting your answers…'); submit(S.retry.auto); }
+    });
+    window.addEventListener('offline', syncOnline);
+    syncOnline();
 
     /* ---------- boot ---------- */
     async function init() {
