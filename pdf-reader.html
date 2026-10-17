@@ -90,8 +90,9 @@
     }
     .icon-btn:hover, .nav-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); }
     .icon-btn:active, .nav-btn:active { transform: scale(0.94); }
-    .icon-btn.active { color: var(--amber); border-color: rgba(251, 191, 36, .4); background: rgba(251, 191, 36, .1); }
-    .icon-btn.active svg { fill: currentColor; }
+    .icon-btn:disabled { cursor: default; }
+    .icon-btn.done { color: #34d399; border-color: rgba(52, 211, 153, .4); background: rgba(16, 185, 129, .1); }
+    .icon-btn.busy { opacity: .6; cursor: progress; }
     .icon-btn svg, .nav-btn svg { width: 18px; height: 18px; }
     .nav-btn:disabled { opacity: .35; cursor: not-allowed; }
     .nav-btn { color: var(--text); background: var(--surface); }
@@ -231,14 +232,13 @@
     .app.light-mode .icon-btn, .app.light-mode .nav-btn, .app.light-mode .zoom-controls,
     .app.light-mode .page-info input { background: #fff; border-color: #cbd5e1; color: #475569; }
     .app.light-mode .icon-btn:hover, .app.light-mode .nav-btn:hover { background: #f1f5f9; color: #0f172a; }
-    .app.light-mode .icon-btn.active { color: #d97706; background: rgba(251,191,36,.15); }
+    .app.light-mode .icon-btn.done { color: #059669; background: rgba(16,185,129,.12); border-color: rgba(5,150,105,.4); }
     .app.light-mode .page-info input { color: #0f172a; }
     .app.light-mode .page { box-shadow: 0 6px 20px rgba(0, 0, 0, .12); }
     .app.light-mode .state, .app.light-mode .state-hint { color: #64748b; }
     .app.light-mode .progress { background: #e2e8f0; }
 
     /* ---------- AI explain ---------- */
-    /* Permanent button: always on screen, sits just above the bottom bar (its height is measured by the script) */
     .explain-fab {
       position: fixed;
       right: max(14px, env(safe-area-inset-right));
@@ -319,11 +319,9 @@
         </div>
       </div>
       <div class="top-actions">
-        <a class="icon-btn" id="downloadBtn" target="_blank" rel="noopener" aria-label="Open or download original" title="Open / download" hidden>
+        <!-- Download saves the PDF on this device (Downloads section) without leaving this page -->
+        <button type="button" class="icon-btn" id="downloadBtn" aria-label="Download for offline" title="Download" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </a>
-        <button class="icon-btn" id="bookmarkBtn" aria-label="Bookmark" title="Bookmark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
         <button class="icon-btn" id="themeBtn" aria-label="Toggle theme" title="Toggle theme">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
@@ -393,6 +391,73 @@
     <div class="toast" id="toast"></div>
   </div>
 
+  <!-- Offline downloads store (same database as downloads.html, so files show in the Downloads section) -->
+  <script>
+  (function () {
+    var DB_NAME = 'prime-cbt-offline', STORE = 'pdfs';
+    var channel = ('BroadcastChannel' in window) ? new BroadcastChannel('prime-downloads') : null;
+    var listeners = [], dbPromise = null;
+
+    function openDb() {
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise(function (resolve, reject) {
+        if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+        var req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = function () { req.result.createObjectStore(STORE, { keyPath: 'id' }); };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { dbPromise = null; reject(req.error); };
+      });
+      return dbPromise;
+    }
+    function run(mode, fn) {
+      return openDb().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var tx = db.transaction(STORE, mode), out;
+          try { out = fn(tx.objectStore(STORE)); } catch (e) { reject(e); return; }
+          tx.oncomplete = function () { resolve(out && 'result' in out ? out.result : undefined); };
+          tx.onerror = function () { reject(tx.error); };
+          tx.onabort = function () { reject(tx.error || new Error('Transaction aborted')); };
+        });
+      });
+    }
+    function notify() {
+      listeners.forEach(function (fn) { try { fn(); } catch (_) {} });
+      if (channel) channel.postMessage({ type: 'changed' });
+    }
+    if (channel) channel.onmessage = function () { listeners.forEach(function (fn) { try { fn(); } catch (_) {} }); };
+
+    function has(id) { return run('readonly', function (s) { return s.count(id); }).then(function (n) { return n > 0; }); }
+
+    function fetchBlob(url, onProgress) {
+      return fetch(url).then(function (res) {
+        if (!res.ok) throw new Error('Download failed (' + res.status + ')');
+        var total = Number(res.headers.get('content-length')) || 0;
+        if (!res.body || !onProgress || !total) return res.blob();
+        var reader = res.body.getReader(), chunks = [], got = 0;
+        return (function pump() {
+          return reader.read().then(function (r) {
+            if (r.done) return new Blob(chunks, { type: 'application/pdf' });
+            chunks.push(r.value); got += r.value.length;
+            onProgress(Math.min(1, got / total));
+            return pump();
+          });
+        })();
+      });
+    }
+    function save(item, opts) {
+      opts = opts || {};
+      if (!item || !item.id || !item.url) return Promise.reject(new Error('id and url are required'));
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+      return fetchBlob(item.url, opts.onProgress).then(function (blob) {
+        var record = { id: String(item.id), title: item.title || 'Untitled PDF', course: item.course || '',
+                       size: blob.size, downloadedAt: Date.now(), blob: blob };
+        return run('readwrite', function (s) { s.put(record); }).then(function () { notify(); return record; });
+      });
+    }
+    window.PrimeDownloads = { has: has, save: save, onChange: function (fn) { listeners.push(fn); } };
+  })();
+  </script>
+
   <!-- Inline modules are deferred, so this runs right after pdf.js has loaded -->
   <script type="module">
     const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
@@ -408,7 +473,6 @@
     /* ================= Elements & storage keys ================= */
     const $ = id => document.getElementById(id);
     const app = $('app'), viewer = $('viewer'), pagesEl = $('pages');
-    const BOOKMARK_KEY = 'primecbt_bookmarked_materials';
     const THEME_KEY = 'primecbt_reader_theme';
     const progressKey = id => 'primecbt_progress_' + id;
 
@@ -441,6 +505,11 @@
     /* ---- AI explain state (declared up here so every function can reach it) ---- */
     const explainCache = new Map();
     let explainBusy = false, sheetPage = 0;
+
+    /* ---- In-page download state ---- */
+    const DL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    const DL_DONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>';
+    let dlBusy = false;
 
     /* ================= Helpers ================= */
     const storeGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
@@ -544,21 +613,21 @@
     }
 
     /* ================= Material lookup (cached for instant opens) ================= */
-    const COLS = 'id,title,category,file_url,file_type,pages,size_bytes';
+    const COLS = 'id,title,category,course,file_url,file_type,pages,size_bytes';
+    const COLS_SAFE = 'id,title,category,file_url,file_type,pages,size_bytes';   // used if the "course" column is missing
+
+    async function queryMaterial(sb, cols) {
+      if (matId) return sb.from('materials').select(cols).eq('id', matId).maybeSingle();
+      return sb.from('materials').select(cols).eq('file_url', fileParam).maybeSingle();
+    }
 
     async function fetchMaterial() {
+      if (!matId && !fileParam) return undefined;
       const sb = await getSb();
-      if (matId) {
-        const { data, error } = await sb.from('materials').select(COLS).eq('id', matId).maybeSingle();
-        if (error) throw error;
-        return data;
-      }
-      if (fileParam) {
-        const { data, error } = await sb.from('materials').select(COLS).eq('file_url', fileParam).maybeSingle();
-        if (error) throw error;
-        return data;
-      }
-      return undefined;
+      let res = await queryMaterial(sb, COLS);
+      if (res.error) res = await queryMaterial(sb, COLS_SAFE);
+      if (res.error) throw res.error;
+      return res.data;
     }
 
     function cacheRow(row) {
@@ -571,18 +640,20 @@
       return c && c.file_url ? c : null;
     }
 
-    async function revalidate(token) {
+    /* quiet = true: only refresh the details (title, course...), never reload the PDF */
+    async function revalidate(token, quiet) {
       try {
         const row = await fetchMaterial();
         if (token !== loadToken) return;
         if (!row) {
+          if (quiet) return;
           const k = cacheKey(); if (k) { try { localStorage.removeItem(k); } catch {} }
           showState('This material no longer exists.', { back: true });
           return;
         }
         cacheRow(row);
-        const fileChanged = material && row.file_url !== material.file_url;
-        material = { ...material, ...row };
+        const fileChanged = !quiet && material && row.file_url !== material.file_url;
+        material = quiet ? { ...material, ...row, file_url: material.file_url } : { ...material, ...row };
         applyMeta();
         if (fileChanged) { toast('This document was updated — reloading.'); loadMaterial(true); }
       } catch { /* offline or slow: keep showing the cached copy */ }
@@ -595,10 +666,18 @@
       $('progressBar').style.width = '';
 
       try {
-        let row = null, fromCache = false;
+        let row = null, fromCache = false, needsDetails = false;
 
         if (fileParam && /^https?:\/\//i.test(fileParam)) {
-          row = { id: null, title: titleFromUrl(fileParam), file_url: fileParam };
+          // The Materials page passes both the id and the file link.
+          // Keep the id so Download works, and fill in the real title/course in the background.
+          row = (matId && !forceFresh && readCached()) || null;
+          if (row) {
+            fromCache = true;
+          } else {
+            row = { id: matId || null, title: titleFromUrl(fileParam), file_url: fileParam };
+            needsDetails = !!matId;
+          }
         } else if (!matId && !fileParam) {
           showState('No document was selected.', { back: true });
           return;
@@ -619,7 +698,8 @@
 
         // Start the PDF download right away; check the database in parallel
         const opening = openPdf(row.file_url, token);
-        if (fromCache) revalidate(token);
+        if (needsDetails) revalidate(token, true);
+        else if (fromCache) revalidate(token, false);
         await opening;
         if (token !== loadToken) return;
         idle(subscribeRealtime);
@@ -640,9 +720,8 @@
       $('documentTitle').textContent = material.title || 'Document';
       document.title = (material.title || 'Document') + ' — PRIME-CBT';
       $('documentSub').textContent = material.category || '';
-      const dl = $('downloadBtn');
-      if (material.file_url) { dl.href = material.file_url; dl.hidden = false; }
-      syncBookmarkBtn();
+      $('downloadBtn').hidden = !material.file_url;
+      refreshDownloadBtn();
     }
 
     /* ================= PDF loading ================= */
@@ -951,19 +1030,7 @@
       }, 200);
     });
 
-    /* ================= Bookmark / theme / close ================= */
-    function syncBookmarkBtn() {
-      const on = !!(material && material.id && storeGet(BOOKMARK_KEY, []).includes(material.id));
-      $('bookmarkBtn').classList.toggle('active', on);
-    }
-    $('bookmarkBtn').addEventListener('click', () => {
-      if (!material || !material.id) return;
-      let list = storeGet(BOOKMARK_KEY, []);
-      list = list.includes(material.id) ? list.filter(x => x !== material.id) : [...list, material.id];
-      storeSet(BOOKMARK_KEY, list);
-      syncBookmarkBtn();
-    });
-
+    /* ================= Theme / close ================= */
     if (storeGet(THEME_KEY, 'dark') === 'light') app.classList.add('light-mode');
     $('themeBtn').addEventListener('click', () => {
       app.classList.toggle('light-mode');
@@ -1139,6 +1206,46 @@
     $('exSimpler').addEventListener('click', () => runExplain('simpler'));
     $('exExample').addEventListener('click', () => runExplain('example'));
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('explainSheet').hidden) closeExplain(); });
+
+    /* ================= In-page download (saves to the Downloads section) ================= */
+    async function refreshDownloadBtn(pct) {
+      const btn = $('downloadBtn');
+      if (!material || !material.id) return;
+      let done = false;
+      try { done = await PrimeDownloads.has(String(material.id)); } catch {}
+      btn.innerHTML = done ? DL_DONE : DL_ICON;
+      btn.classList.toggle('done', done && !dlBusy);
+      btn.classList.toggle('busy', dlBusy);
+      btn.title = dlBusy
+        ? 'Downloading' + (pct ? ' ' + Math.round(pct * 100) + '%' : '…')
+        : (done ? 'Downloaded' : 'Download');
+    }
+
+    $('downloadBtn').addEventListener('click', async () => {
+      if (dlBusy || !material) return;
+      if (!material.id || !material.file_url) { toast('This file is not available to download.'); return; }
+      try {
+        if (await PrimeDownloads.has(String(material.id))) { toast('Already in your Downloads.'); return; }
+      } catch {}
+
+      dlBusy = true;
+      refreshDownloadBtn(0);
+      toast('Downloading…');
+      try {
+        await PrimeDownloads.save(
+          { id: material.id, title: material.title, course: material.course || material.category || '', url: material.file_url },
+          { onProgress: p => refreshDownloadBtn(p) }
+        );
+        dlBusy = false;
+        toast('Downloaded. Find it in your Downloads.');
+      } catch (err) {
+        dlBusy = false;
+        console.error('download:', err && err.message);
+        toast('Download failed. Check your connection and try again.');
+      }
+      refreshDownloadBtn();
+    });
+    PrimeDownloads.onChange(() => refreshDownloadBtn());
 
     /* ================= Go ================= */
     loadMaterial();
