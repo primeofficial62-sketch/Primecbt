@@ -232,7 +232,19 @@
     }
     .material-arrow { color: var(--muted); display: flex; flex-shrink: 0; }
     .material-arrow svg { width: 18px; height: 18px; }
-
+.level-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    @media (min-width: 640px) { .level-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .level-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      min-height: 110px; padding: 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; color: var(--text); font: inherit; cursor: pointer;
+      transition: transform .2s, border-color .2s;
+    }
+    .level-card:hover { border-color: rgba(16, 185, 129, .4); transform: translateY(-2px); }
+    .level-card:active { transform: scale(0.97); }
+    .level-card b { font-size: 28px; line-height: 1; color: var(--emerald-bright); }
+    .level-card em { font-style: normal; font-size: 13px; font-weight: 600; }
+    .level-card span { font-size: 12px; color: var(--muted); }
     /* ---------- States ---------- */
     .state {
       text-align: center; color: var(--muted); font-size: 14px;
@@ -308,8 +320,8 @@
       <section class="section">
         <div class="section-header">
           <div class="head-left">
-            <button class="clear-btn" id="backCourses" type="button" hidden>&larr; Courses</button>
-            <h2 id="allTitle">Courses</h2>
+       <button class="clear-btn" id="backCourses" type="button" hidden>&larr; Levels</button>
+            <h2 id="allTitle">Levels</h2>
           </div>
           <span class="count" id="countText"></span>
         </div>
@@ -339,6 +351,8 @@
       const CACHE_KEY  = 'primecbt_materials_cache_v2';   // v2: now includes the course field
       const COURSEMAP_KEY = 'primecbt_course_codes_v1';   // course title -> course code (so old materials still group by code)
       const PAGE_SIZE  = 30;               // cards rendered at a time
+      const LEVELS_KEY = 'primecbt_levels_v1';
+      const LEVELS = [100, 200, 300, 400, 500];
       const MIN_REFRESH_MS = 30000;        // don't refetch more often than this on tab focus
       const NARROW_COLUMNS = 'id,title,file_url,category,course,file_type,pages,size_bytes,created_at';
       const KEEP_FIELDS = ['id','title','name','file_url','url','pdf_url','file','category','course','course_code','file_type','pages','size_bytes','created_at'];
@@ -350,7 +364,8 @@
       let materials = [];
       let category = 'all';
       let query = '';
-      let openCourse = '';                 // key of the course that is currently opened ('' = course list)
+      let openLevel = 0;                   // 0 = level boxes
+      let enabledLevels = null;            // null = not loaded yet, show all                 // key of the course that is currently opened ('' = course list)
       let shown = PAGE_SIZE;
       let filtered = [];
       let signature = '';
@@ -407,7 +422,20 @@
         return codeFrom(c) || titleToCode[normT(c)] || codeFrom(titleOf(m)) || c;
       }
       const courseKey = m => courseOf(m).toLowerCase().replace(/[^a-z0-9]+/g, '') || '__other';
+function levelOf(m) {
+        const d = /\d{3}/.exec(courseOf(m));
+        return d ? Number(d[0][0]) * 100 : 0;
+      }
+      const isLevelOn = l => l > 0 && (enabledLevels === null || enabledLevels.includes(l));
 
+      function levelCardHTML(l, n) {
+        return (
+          '<button type="button" class="level-card" data-level="' + l + '">' +
+            '<b>' + l + '</b><em>Level</em>' +
+            '<span>' + n + (n === 1 ? ' material' : ' materials') + '</span>' +
+          '</button>'
+        );
+    }
       function typeOf(m) {
         if (m.file_type) return String(m.file_type).toUpperCase();
         const ext = urlOf(m).split('?')[0].split('#')[0].split('.').pop();
@@ -437,6 +465,8 @@
         const size = formatSize(m.size_bytes);
         if (size) parts.push(size);
         if (!parts.length && categoryOf(m)) parts.push(categoryOf(m));
+        const code = courseOf(m);
+        if (code) parts.unshift(code);
         return parts;
       }
 
@@ -541,37 +571,39 @@
       function render() {
         renderRecent();
 
-        const base = materials.filter(m => category === 'all' || sameCat(categoryOf(m), category));
+        const base = materials.filter(m =>
+          (category === 'all' || sameCat(categoryOf(m), category)) && isLevelOn(levelOf(m))
+        );
 
-        // Course list: shown when nothing is opened and the student is not searching
-        if (!openCourse && !query) {
-          const groups = groupByCourse(base);
+        // Level boxes
+        if (!openLevel && !query) {
+          const levels = LEVELS.filter(isLevelOn);
           filtered = [];
           els.back.hidden = true;
-          els.title.textContent = 'Courses';
-          els.allGrid.innerHTML = groups.map(courseCardHTML).join('');
-          els.count.textContent = groups.length ? groups.length + (groups.length === 1 ? ' course' : ' courses') : '';
+          els.title.textContent = 'Levels';
+          els.allGrid.className = 'level-grid';
+          els.allGrid.innerHTML = levels.map(l => levelCardHTML(l, base.filter(m => levelOf(m) === l).length)).join('');
+          els.count.textContent = '';
           els.moreWrap.hidden = true;
-          if (!groups.length) {
+          if (!levels.length) {
             els.state.hidden = false;
-            els.state.textContent = emptyMessage();
+            els.state.textContent = 'No levels are available right now.';
           } else {
             els.state.hidden = true;
           }
           return;
         }
 
-        // Materials list: inside a course, or search results across all courses
-        const group = openCourse ? groupByCourse(base).filter(g => g.key === openCourse)[0] : null;
-        els.back.hidden = !openCourse;
-        els.title.textContent = openCourse ? (group ? group.label : 'Course') : 'Search results';
+        // PDFs inside a level, or search results
+        els.allGrid.className = 'grid';
+        els.back.hidden = !openLevel;
+        els.title.textContent = openLevel ? openLevel + ' Level' : 'Search results';
 
         filtered = base.filter(m =>
-          (!openCourse || courseKey(m) === openCourse) &&
+          (!openLevel || levelOf(m) === openLevel) &&
           (!query || (titleOf(m) + ' ' + courseOf(m)).toLowerCase().includes(query))
         );
 
-        // Only the first chunk goes into the DOM; the rest is added on demand
         const visible = filtered.slice(0, shown);
         els.allGrid.innerHTML = visible.map(cardHTML).join('');
         els.count.textContent = filtered.length ? filtered.length + (filtered.length === 1 ? ' item' : ' items') : '';
@@ -668,7 +700,18 @@
           return changed;
         } catch { return false; }
       }
-
+async function loadLevels() {
+        try {
+          const { data, error } = await client.from('material_levels').select('level,enabled');
+          if (error || !data) return false;
+          const next = data.filter(r => r.enabled).map(r => Number(r.level)).sort((a, b) => a - b);
+          const changed = JSON.stringify(next) !== JSON.stringify(enabledLevels);
+          enabledLevels = next;
+          if (openLevel && !next.includes(openLevel)) openLevel = 0;
+          try { localStorage.setItem(LEVELS_KEY, JSON.stringify(next)); } catch {}
+          return changed;
+        } catch { return false; }
+      }
       async function loadMaterials(force) {
         if (loading) return;
         if (!force && Date.now() - lastLoad < MIN_REFRESH_MS) return;
@@ -697,6 +740,7 @@
           setLive(true, 'Live');
           startRealtimeWhenIdle();
           loadCourseMap().then(changed => { if (changed) { renderCategories(); render(); } });
+          loadLevels().then(changed => { if (changed) render(); });
         } catch (err) {
           setLive(false, 'Offline');
           if (!hadCache) showError('Could not load materials. ' + (err && err.message ? err.message : 'Network error.'));
@@ -744,31 +788,30 @@
         if (!chip) return;
         category = chip.dataset.category;
         shown = PAGE_SIZE;
-        openCourse = '';          // switching tabs goes back to that tab's course list
+  
         renderCategories();
         render();
       });
 
-      // Open a course (phone back button returns to the course list)
       els.allGrid.addEventListener('click', e => {
-        const card = e.target.closest('.course-card');
+        const card = e.target.closest('.level-card');
         if (!card) return;
-        openCourse = card.dataset.course;
+        openLevel = Number(card.dataset.level);
         shown = PAGE_SIZE;
-        try { history.pushState({ course: openCourse }, ''); } catch {}
+        try { history.pushState({ level: openLevel }, ''); } catch {}
         render();
         window.scrollTo(0, 0);
       });
 
       els.back.addEventListener('click', () => {
-        if (history.state && history.state.course) { history.back(); return; }
-        openCourse = '';
+        if (history.state && history.state.level) { history.back(); return; }
+        openLevel = 0;
         shown = PAGE_SIZE;
         render();
       });
 
       window.addEventListener('popstate', e => {
-        openCourse = (e.state && e.state.course) || '';
+        openLevel = (e.state && e.state.level) || 0;
         shown = PAGE_SIZE;
         render();
       });
@@ -801,6 +844,10 @@
       /* ================= Start ================= */
       // 1) Paint cached list immediately (no waiting for network)
       try { titleToCode = JSON.parse(localStorage.getItem(COURSEMAP_KEY)) || {}; } catch { titleToCode = {}; }
+      try {
+        const lv = JSON.parse(localStorage.getItem(LEVELS_KEY));
+        enabledLevels = Array.isArray(lv) ? lv : null;
+      } catch { enabledLevels = null; }
       const cached = readCache();
       if (cached) {
         if (cached.mode === 'all') selectMode = 'all';
