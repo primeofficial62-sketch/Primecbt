@@ -1283,6 +1283,7 @@
       ],
       row: function (r) { return { title: (r.icon ? r.icon + ' ' : '') + r.title, tag: r.metric + ' ≥ ' + r.threshold, sub: clip(r.description, 100) }; }
     },
+    { id: 'matlevels', label: 'Material levels', group: 'Content', kind: 'levels', icon: 'stairs' },
     { id: 'notifications', label: 'Notifications', group: 'Communication', kind: 'notifications', icon: 'bell' },
     {
       id: 'posts', label: 'Discussions', group: 'Communication', icon: 'chat', kind: 'list', table: 'discussion_posts', noun: 'post', add: false, empty: 'No discussion posts yet.',
@@ -1908,7 +1909,44 @@
     if (busyN && !total && !failed) toast('Questions are already being written in the background.');
     else toast(total + (total === 1 ? ' question' : ' questions') + ' added' + (failed ? ', ' + failed + ' PDF(s) failed' : ''), !!failed && !total);
   }
+/* ================= material levels ================= */
+  async function renderMaterialLevels() {
+    var rows = [], sig = '';
+    $('view').innerHTML = '<div class="card stack"><div class="h3">Material levels</div>' +
+      '<div class="count">Hide a level to remove it from the Materials page. A material\'s level comes from its course code (CHM 101 = 100 level).</div>' +
+      '<div class="rows" id="mlRows"><div class="loading">Loading…</div></div></div>';
 
+    function paint() {
+      $('mlRows').innerHTML = rows.length ? rows.map(function (r, i) {
+        return '<div class="row has-acts"><div class="row-main"><div class="row-title">' + r.level + ' Level' +
+          '<span class="tag ' + (r.enabled ? 'green' : 'red') + '">' + (r.enabled ? 'Visible' : 'Hidden') + '</span></div></div>' +
+          '<div class="row-actions"><button class="btn small" data-t="' + i + '">' + (r.enabled ? 'Hide' : 'Show') + '</button></div></div>';
+      }).join('') : emptyHtml('No levels found. Run the SQL in Supabase first.');
+    }
+    async function pull() {
+      var d = await api('list', { table: 'material_levels', limit: 50 });
+      var next = d.rows.slice().sort(function (a, b) { return a.level - b.level; });
+      var s = JSON.stringify(next);
+      if (s === sig) return;
+      sig = s; rows = next; paint();
+    }
+
+    $('view').addEventListener('click', async function (e) {
+      if (e.target.closest('[data-retry]')) { try { await pull(); } catch (err) { toast(err.message, true); } return; }
+      var b = e.target.closest('[data-t]'); if (!b) return;
+      var r = rows[+b.getAttribute('data-t')];
+      b.disabled = true;
+      try {
+        await api('save', { table: 'material_levels', id: r.id, data: { enabled: !r.enabled } });
+        toast(r.level + ' Level ' + (r.enabled ? 'hidden' : 'visible'));
+        sig = ''; await pull();
+      } catch (err) { b.disabled = false; toast(err.message, true); }
+    });
+
+    try { await pull(); } catch (e) { $('mlRows').innerHTML = emptyHtml(e.message, true); }
+    setTask(pull, 30000);
+  }
+  
   /* ================= navigation ================= */
   var current = '';
 
@@ -1948,6 +1986,7 @@
       if (sec.kind === 'dashboard') await renderDashboard();
       else if (sec.kind === 'students') await renderStudents();
       else if (sec.kind === 'notifications') await renderNotifications();
+      else if (sec.kind === 'levels') await renderMaterialLevels();
       else if (sec.kind === 'security') renderSecurity();
       else await renderList(sec);
     } catch (e) {
