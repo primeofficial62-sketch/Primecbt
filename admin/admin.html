@@ -794,6 +794,69 @@
     return data;
   }
 
+  /* ---------- PDF auto-compress (runs only when a PDF is over the limit) ---------- */
+var PDF_LIMIT = 50 * 1024 * 1024;
+var PDF_TARGET = 47 * 1024 * 1024;
+var PDF_INPUT_MAX = 300 * 1024 * 1024;
+
+async function ensurePdfLib() {
+  if (window.PDFLib) return;
+  await new Promise(function (ok, no) {
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+    s.onload = ok;
+    s.onerror = function () { no(new Error('Compressor did not load. Check your internet')); };
+    document.head.appendChild(s);
+  });
+}
+
+async function compressPdf(file, onProgress) {
+  await ensurePdfLib();
+  if (!window.pdfjsLib) throw new Error('PDF reader did not load');
+  var buf = await file.arrayBuffer();
+  var levels = [{ s: 2, q: 0.7 }, { s: 1.5, q: 0.6 }, { s: 1.2, q: 0.5 }, { s: 1, q: 0.4 }];
+  var best = null;
+  for (var li = 0; li < levels.length; li++) {
+    var L = levels[li];
+    var src = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
+    var out = await PDFLib.PDFDocument.create();
+    var font = await out.embedFont(PDFLib.StandardFonts.Helvetica);
+    for (var p = 1; p <= src.numPages; p++) {
+      onProgress('Compressing PDF… pass ' + (li + 1) + '/' + levels.length + ', page ' + p + '/' + src.numPages);
+      var page = await src.getPage(p);
+      var v1 = page.getViewport({ scale: 1 });
+      var vp = page.getViewport({ scale: L.s });
+      var cv = document.createElement('canvas');
+      cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+      var ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      var blob = await new Promise(function (r) { cv.toBlob(r, 'image/jpeg', L.q); });
+      var img = await out.embedJpg(new Uint8Array(await blob.arrayBuffer()));
+      cv.width = cv.height = 0;
+      var pg = out.addPage([v1.width, v1.height]);
+      pg.drawImage(img, { x: 0, y: 0, width: v1.width, height: v1.height });
+      // invisible text layer so text extraction (question generation) still works
+      if (!page.rotate) {
+        try {
+          var tc = await page.getTextContent();
+          tc.items.forEach(function (it) {
+            var str = (it.str || '').replace(/[^\x20-\x7E]/g, ' ').trim();
+            if (!str) return;
+            try { pg.drawText(str, { x: it.transform[4], y: it.transform[5], size: Math.abs(it.transform[3]) || 10, font: font, opacity: 0 }); } catch (e) {}
+          });
+        } catch (e) {}
+      }
+      page.cleanup();
+    }
+    var bytes = await out.save({ useObjectStreams: true });
+    if (!best || bytes.length < best.length) best = bytes;
+    if (bytes.length <= PDF_TARGET) break;
+  }
+  if (!best || best.length > PDF_LIMIT) throw new Error('Still over 50 MB after compression. Split the PDF');
+  return new File([best], file.name, { type: 'application/pdf' });
+}
+  
   /* ================= file upload ================= */
   var upBusy = false;
   async function uploadFile(file) {
@@ -848,9 +911,10 @@
     inp.addEventListener('change', async function () {
       var f = inp.files && inp.files[0]; if (!f) return;
       var st = $('upStatus');
-      if (f.size > 50 * 1024 * 1024) { st.textContent = 'That file is over 50 MB.'; inp.value = ''; return; }
       var ext = (f.name.split('.').pop() || '').toLowerCase();
-      var isPdf = ext === 'pdf' || f.type === 'application/pdf';
+var isPdf = ext === 'pdf' || f.type === 'application/pdf';
+if (!isPdf && f.size > PDF_LIMIT) { st.textContent = 'That file is over 50 MB.'; inp.value = ''; return; }
+if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB. Split it first.'; inp.value = ''; return; }
       upBusy = true;
 
       // 1. Fill everything we can from the file itself, before any upload
@@ -866,6 +930,18 @@
         if (!$('upStatus')) { upBusy = false; return; }
       }
 
+      if (isPdf && f.size > PDF_LIMIT) {
+  try {
+    f = await compressPdf(f, function (m) { var s = $('upStatus'); if (s) s.textContent = m; });
+    setVal('f_size_bytes', f.size);
+  } catch (e) {
+    console.error('PDF compress failed', e);
+    if ($('upStatus')) $('upStatus').textContent = 'Could not compress: ' + e.message;
+    inp.value = ''; upBusy = false; return;
+  }
+  if (!$('upStatus')) { upBusy = false; return; }
+}
+      
       // 2. Then upload and fill the link
       st.textContent = 'Uploading ' + f.name + '…';
       try {
