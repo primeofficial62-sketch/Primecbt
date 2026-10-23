@@ -65,8 +65,10 @@ const TABLES = {
   schools: { cols: ['name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   departments: { cols: ['school_id', 'name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   levels: { cols: ['name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
-  reviews: { cols: ['status'], search: ['user_name', 'user_email', 'message'], order: 'created_at', del: true }
+  reviews: { cols: ['status'], search: ['user_name', 'user_email', 'message'], order: 'created_at', del: true },
+  material_levels: { cols: ['enabled'], search: [], order: 'level', asc: true, del: false }
 };
+
 
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 
