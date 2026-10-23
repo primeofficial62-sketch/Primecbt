@@ -1,4 +1,7 @@
 {
+  "name": "prime-cbt",
+  "version": "1.0.0",
+  "private": true,
   "dependencies": {
     "pdf-parse": "1.1.1",
     "jszip": "3.10.1",
