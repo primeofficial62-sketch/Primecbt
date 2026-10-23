@@ -38,8 +38,8 @@ const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
 
 // Optional helpers: they load only if installed, so a missing package can never break the whole admin API.
-let extractText = null;
-try { extractText = require('./_extract.js').extractText; } catch (e) { extractText = null; }
+let extractText = null, extractErr = '';
+try { extractText = require('./_extract.js').extractText; } catch (e) { extractText = null; extractErr = (e && e.message) || String(e); }
 let waitUntil = null;
 try { waitUntil = require('@vercel/functions').waitUntil; } catch (e) { waitUntil = null; }
 let PDFLib = null;
@@ -354,7 +354,7 @@ async function loadMaterialText(mat, fallback) {
       else problem = 'Could not download the file (' + dl.status + ').';
     } catch (e) { problem = (e && e.message) || ''; }
   }
-  if (!extractText) problem = problem || 'The file reader is not installed (add "jszip": "3.10.1" to package.json and upload api/_extract.js).';
+  if (!extractText) problem = problem || ('The file reader failed to load: ' + extractErr);
   else if (buf) { try { text = (await extractText(buf)).text; } catch (e) { problem = (e && e.message) || problem; } }
   text = String(text || '');
   const tooShort = function (t) { return String(t).replace(/\s+/g, '').length < 200; };
