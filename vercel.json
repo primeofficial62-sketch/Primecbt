@@ -1,8 +1,5 @@
 {
-  "crons": [
-    { "path": "/api/daily-nudge", "schedule": "0 7 * * *" }
-  ],
   "functions": {
-    "api/study-tools.js": { "maxDuration": 60 }
+    "api/admin.js": { "maxDuration": 300 }
   }
 }
