@@ -10,9 +10,9 @@
 //   GEN_CONCURRENCY              (optional) parallel question-writing calls. Defaults to 5 (use 3 on a free Gemini key).
 //   OCR_CONCURRENCY              (optional) parallel OCR calls for scanned PDFs. Defaults to 6 (use 3 on a free Gemini key).
 //
-// Needs in package.json:  "pdf-parse": "1.1.1", "jszip": "3.10.1", "pdf-lib": "1.17.1" and "@vercel/functions": "^2.0.0"
+// Needs in package.json (project root):  "pdf-parse": "1.1.1", "jszip": "3.10.1", "pdf-lib": "1.17.1", "@vercel/functions": "^2.0.0"
 // Needs in vercel.json:   { "functions": { "api/admin.js": { "maxDuration": 300 } } }
-// Needs the file  api/_extract.js  (reads PDF, PowerPoint .pptx and Word .docx files)
+// The PDF / PowerPoint (.pptx) / Word (.docx) reader is built into this file. No api/_extract.js needed.
 // Needs in Supabase: run setup.sql once, then (for maths + diagrams):
 //   alter table questions add column if not exists image_url text;
 //   alter table questions add column if not exists svg text;
@@ -38,12 +38,77 @@ const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
 
 // Optional helpers: they load only if installed, so a missing package can never break the whole admin API.
-let extractText = null, extractErr = '';
-try { extractText = require('./_extract.js').extractText; } catch (e) { extractText = null; extractErr = (e && e.message) || String(e); }
 let waitUntil = null;
 try { waitUntil = require('@vercel/functions').waitUntil; } catch (e) { waitUntil = null; }
 let PDFLib = null;
 try { PDFLib = require('pdf-lib'); } catch (e) { PDFLib = null; }
+
+/* ---------- file reader: PDF, PowerPoint (.pptx), Word (.docx) ---------- */
+// Built in on purpose, so it can never go missing from the deployment.
+const xmlDecode = function (s) {
+  return s
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, function (m, h) { return String.fromCharCode(parseInt(h, 16)); })
+    .replace(/&#(\d+);/g, function (m, n) { return String.fromCharCode(+n); })
+    .replace(/&amp;/g, '&');
+};
+function xmlText(xml) {
+  return xmlDecode(
+    xml
+      .replace(/<\/a:p>|<\/w:p>/g, '\n')
+      .replace(/<a:br\s*\/>|<w:br\s*\/>/g, '\n')
+      .replace(/<w:tab\s*\/>/g, ' ')
+      .replace(/<[^>]+>/g, '')
+  ).replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function fileNum(name) { const m = name.match(/(\d+)\.xml$/); return m ? parseInt(m[1], 10) : 0; }
+
+async function extractText(buf) {
+  if (!buf || !buf.length) throw new Error('The file is empty.');
+
+  // PDF
+  if (buf.slice(0, 5).toString() === '%PDF-') {
+    let pdfParse;
+    try { pdfParse = require('pdf-parse/lib/pdf-parse.js'); }
+    catch (e) {
+      try { pdfParse = require('pdf-parse'); }
+      catch (e2) { throw new Error('PDF reader failed to load: ' + ((e2 && e2.message) || e2) + ' (add "pdf-parse": "1.1.1" to package.json)'); }
+    }
+    const r = await pdfParse(buf);
+    return { text: r.text || '' };
+  }
+
+  // PPTX / DOCX are zip files (they start with "PK")
+  if (buf[0] === 0x50 && buf[1] === 0x4b) {
+    let JSZip;
+    try { JSZip = require('jszip'); }
+    catch (e) { throw new Error('PowerPoint/Word reader failed to load: ' + ((e && e.message) || e) + ' (add "jszip": "3.10.1" to package.json in the project root)'); }
+    const zip = await JSZip.loadAsync(buf);
+    const names = Object.keys(zip.files);
+
+    // PowerPoint: slide text, then that slide's speaker notes
+    const slides = names
+      .filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); })
+      .sort(function (a, b) { return fileNum(a) - fileNum(b); });
+    if (slides.length) {
+      let out = '';
+      for (const s of slides) {
+        const i = fileNum(s);
+        out += '\n' + xmlText(await zip.file(s).async('string')) + '\n';
+        const notes = zip.file('ppt/notesSlides/notesSlide' + i + '.xml');
+        if (notes) out += xmlText(await notes.async('string')) + '\n';
+      }
+      return { text: out };
+    }
+
+    // Word
+    if (zip.file('word/document.xml')) {
+      return { text: xmlText(await zip.file('word/document.xml').async('string')) };
+    }
+  }
+
+  throw new Error('Unsupported file. Use PDF, PPTX or DOCX. Old .ppt / .doc files must be saved as .pptx / .docx first.');
+}
 
 // Speed + size settings
 const MAX_TEXT = 800000;      // max characters read from one file
@@ -354,8 +419,7 @@ async function loadMaterialText(mat, fallback) {
       else problem = 'Could not download the file (' + dl.status + ').';
     } catch (e) { problem = (e && e.message) || ''; }
   }
-  if (!extractText) problem = problem || ('The file reader failed to load: ' + extractErr);
-  else if (buf) { try { text = (await extractText(buf)).text; } catch (e) { problem = (e && e.message) || problem; } }
+  if (buf) { try { text = (await extractText(buf)).text; } catch (e) { problem = (e && e.message) || problem; } }
   text = String(text || '');
   const tooShort = function (t) { return String(t).replace(/\s+/g, '').length < 200; };
   if (tooShort(text) && fallback) text = String(fallback);
