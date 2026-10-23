@@ -905,7 +905,46 @@ async function compressPdf(file, onProgress) {
     if (text.length < 200) throw new Error('This PDF has no readable text (it may be scanned images)');
     return text.slice(0, 150000);
   }
-
+// Reads SCANNED PDFs in the browser (OCR), so large files never go to the server as images.
+  async function loadTesseract() {
+    if (window.Tesseract) return;
+    await new Promise(function (ok, no) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      s.onload = ok;
+      s.onerror = function () { no(new Error('OCR reader did not load. Check your internet')); };
+      document.head.appendChild(s);
+    });
+  }
+  async function ocrPdfFromUrl(url, onProgress) {
+    if (!window.pdfjsLib) throw new Error('PDF reader did not load. Reload the page');
+    await loadTesseract();
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('Could not open the PDF (' + res.status + ')');
+    var pdf = await pdfjsLib.getDocument({ data: await res.arrayBuffer() }).promise;
+    var worker = await Tesseract.createWorker('eng');
+    var parts = [], len = 0, MAX_CHARS = 120000, MAX_PAGES = 150;
+    try {
+      for (var p = 1; p <= pdf.numPages && p <= MAX_PAGES && len < MAX_CHARS; p++) {
+        onProgress('Scanned PDF: reading page ' + p + ' of ' + Math.min(pdf.numPages, MAX_PAGES) + '… keep this screen open');
+        var page = await pdf.getPage(p);
+        var vp = page.getViewport({ scale: 2 });
+        var cv = document.createElement('canvas');
+        cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        var r = await worker.recognize(cv);
+        var t = (r.data.text || '').replace(/\s+/g, ' ').trim();
+        parts.push(t); len += t.length;
+        cv.width = cv.height = 0; page.cleanup();
+      }
+    } finally { await worker.terminate(); }
+    var text = parts.join('\n').trim();
+    if (text.length < 200) throw new Error('OCR could not read any text from this PDF');
+    return text.slice(0, 150000);
+  }
+  
   function wireUpload() {
     var inp = $('f_upload'); if (!inp) return;
     inp.addEventListener('change', async function () {
@@ -1963,7 +2002,11 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         say(i, 'Reading the PDF…');
         var pdfText = '';
         try { pdfText = await pdfTextFromUrl(mats[i].file_url); }
-        catch (e) { /* scanned PDF or reader problem: the server reads the pages instead */ }
+        catch (e) { /* no text layer: try OCR in the browser */ }
+        if (!pdfText) {
+          try { pdfText = await ocrPdfFromUrl(mats[i].file_url, function (m) { say(i, m); }); }
+          catch (e) { console.error('OCR failed', e); /* falls back to the server, which may refuse files over 14 MB */ }
+        }
         say(i, pdfText ? 'Writing questions. This can take up to a minute…' : 'Scanned PDF: reading the pages with AI, then writing questions. This can take a few minutes…');
         // One request only. (It used to be sent twice, which wasted time and could create duplicates.)
         var r = await api('generate_questions', { material_id: mats[i].id, course_id: course.id, count: QUESTIONS_PER_PDF, text: pdfText, chosen: !!chosen }, 280000);
