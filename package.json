@@ -7,5 +7,6 @@
     "jszip": "3.10.1",
     "pdf-lib": "1.17.1",
     "@vercel/functions": "^2.0.0"
+    "cfb": "1.2.2",
   }
 }
