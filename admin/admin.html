@@ -1999,15 +1999,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     var total = 0, failed = 0, busyN = 0;
     for (var i = 0; i < mats.length; i++) {
       try {
-        say(i, 'Reading the PDF…');
-        var pdfText = '';
-        try { pdfText = await pdfTextFromUrl(mats[i].file_url); }
-        catch (e) { /* no text layer: try OCR in the browser */ }
-        if (!pdfText) {
-          try { pdfText = await ocrPdfFromUrl(mats[i].file_url, function (m) { say(i, m); }); }
-          catch (e) { console.error('OCR failed', e); /* falls back to the server, which may refuse files over 14 MB */ }
-        }
-        say(i, pdfText ? 'Writing questions. This can take up to a minute…' : 'Scanned PDF: reading the pages with AI, then writing questions. This can take a few minutes…');
+        var pdfText = '';   // the server reads the file itself (text, or fast AI OCR for scans of any size)
+        say(i, 'Reading the file and writing questions. Large or scanned PDFs can take a few minutes…');
         // One request only. (It used to be sent twice, which wasted time and could create duplicates.)
         var r = await api('generate_questions', { material_id: mats[i].id, course_id: course.id, count: QUESTIONS_PER_PDF, text: pdfText, chosen: !!chosen }, 280000);
         if (r.busy) { busyN++; say(i, 'Already being written in the background. Check Questions again in a few minutes.'); continue; }
