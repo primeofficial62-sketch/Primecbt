@@ -7,8 +7,11 @@
 //   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
 //   GEMINI_MODEL                 (optional) force one Gemini model first. Otherwise the newest available one is used.
 //   QUESTIONS_PER_PDF            (optional) questions to write for every file. Defaults to 100.
+//   GEN_CONCURRENCY              (optional) parallel question-writing calls. Defaults to 5 (use 3 on a free Gemini key).
+//   OCR_CONCURRENCY              (optional) parallel OCR calls for scanned PDFs. Defaults to 6 (use 3 on a free Gemini key).
 //
-// Needs in package.json:  "pdf-parse": "1.1.1", "jszip": "3.10.1" and "@vercel/functions": "^2.0.0"
+// Needs in package.json:  "pdf-parse": "1.1.1", "jszip": "3.10.1", "pdf-lib": "1.17.1" and "@vercel/functions": "^2.0.0"
+// Needs in vercel.json:   { "functions": { "api/admin.js": { "maxDuration": 300 } } }
 // Needs the file  api/_extract.js  (reads PDF, PowerPoint .pptx and Word .docx files)
 // Needs in Supabase: run setup.sql once, then (for maths + diagrams):
 //   alter table questions add column if not exists image_url text;
@@ -39,6 +42,15 @@ let extractText = null;
 try { extractText = require('./_extract.js').extractText; } catch (e) { extractText = null; }
 let waitUntil = null;
 try { waitUntil = require('@vercel/functions').waitUntil; } catch (e) { waitUntil = null; }
+let PDFLib = null;
+try { PDFLib = require('pdf-lib'); } catch (e) { PDFLib = null; }
+
+// Speed + size settings
+const MAX_TEXT = 800000;      // max characters read from one file
+const GEN_CONCURRENCY = Math.min(Math.max(parseInt(process.env.GEN_CONCURRENCY, 10) || 5, 1), 10);
+const OCR_CONCURRENCY = Math.min(Math.max(parseInt(process.env.OCR_CONCURRENCY, 10) || 6, 1), 12);
+const OCR_PAGES = 12;                    // pages per OCR request
+const OCR_MAX_BYTES = 10 * 1024 * 1024;  // max size of one OCR piece
 
 // What the panel may touch. columns = fields it may write. search = fields the search box looks in.
 const TABLES = {
@@ -190,6 +202,28 @@ const QUESTIONS_SCHEMA = {
   }
 };
 
+// One Gemini request. Asks for low "thinking" (much faster); if a model rejects that setting, it is switched off for good.
+let thinkingOk = true;
+async function geminiCall(model, body) {
+  const send = function (bd) {
+    return fetch('https://generativelanguage.googleapis.com/v1beta/models/' + enc(model) + ':generateContent', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+      body: JSON.stringify(bd)
+    });
+  };
+  let bd = body;
+  if (thinkingOk) bd = Object.assign({}, body, { generationConfig: Object.assign({}, body.generationConfig, { thinkingConfig: { thinkingLevel: 'low' } }) });
+  let res = await send(bd);
+  let data = await res.json().catch(function () { return {}; });
+  if (res.status === 400 && thinkingOk && /thinking/i.test((data.error && data.error.message) || '')) {
+    thinkingOk = false;
+    res = await send(body);
+    data = await res.json().catch(function () { return {}; });
+  }
+  return { res: res, data: data };
+}
+
 async function askGemini(prompt, customBody) {
   const body = customBody || {
     systemInstruction: { parts: [{ text: 'You write multiple-choice exam questions for university students strictly from the course material you are given. Never use outside knowledge. Write all mathematics, formulas and chemical equations in LaTeX. Reply with a JSON array only, no other text.' }] },
@@ -207,12 +241,7 @@ async function askGemini(prompt, customBody) {
     for (const model of GEMINI_MODELS) {
       if (tried[model]) continue;
       tried[model] = 1;
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + enc(model) + ':generateContent', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json().catch(function () { return {}; });
+      const r = await geminiCall(model, body), res = r.res, data = r.data;
       if (res.ok) {
         const cand = (data.candidates || [])[0];
         if (!cand) {
@@ -262,16 +291,55 @@ function shuffleOptions(options, correct) {
 }
 
 // Scanned PDFs have no text layer. Gemini can read the pages as images, so it writes the text out for us.
-async function ocrPdfWithGemini(buf) {
-  if (buf.length > 14 * 1024 * 1024) throw new HttpError(400, 'This scanned PDF is over 14 MB, which is too large to read. Split it into smaller parts and upload them separately.');
+// One OCR request for one small PDF piece.
+async function ocrPiece(bytes) {
+  const data = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length).toString('base64');
   const body = {
     contents: [{ role: 'user', parts: [
-      { inlineData: { mimeType: 'application/pdf', data: buf.toString('base64') } },
+      { inlineData: { mimeType: 'application/pdf', data: data } },
       { text: 'Transcribe all the text in this document in reading order, page by page. Write every equation and formula in LaTeX inside \\( ... \\). Do not summarise, translate or comment. Output the transcription only.' }
     ] }],
-    generationConfig: { temperature: 0, maxOutputTokens: 32000 }
+    generationConfig: { temperature: 0, maxOutputTokens: 24000 }
   };
   return String(await askGemini('', body) || '');
+}
+
+// Scanned PDF of ANY size: cut into small page groups and read them in parallel.
+async function ocrPdfWithGemini(buf) {
+  let src = null;
+  if (PDFLib) { try { src = await PDFLib.PDFDocument.load(buf, { ignoreEncryption: true, updateMetadata: false }); } catch (e) { src = null; } }
+  if (!src) {
+    if (buf.length > 14 * 1024 * 1024) throw new HttpError(400, 'Large scanned PDFs need the "pdf-lib" package. Add "pdf-lib": "1.17.1" to package.json and redeploy.');
+    return ocrPiece(new Uint8Array(buf));
+  }
+  const total = src.getPageCount(), ranges = [];
+  for (let i = 0; i < total; i += OCR_PAGES) ranges.push([i, Math.min(i + OCR_PAGES, total)]);
+  const results = new Array(ranges.length).fill('');
+  let next = 0, chars = 0, lastErr = '';
+
+  async function piece(from, to) {
+    const doc = await PDFLib.PDFDocument.create();
+    const idx = []; for (let k = from; k < to; k++) idx.push(k);
+    (await doc.copyPages(src, idx)).forEach(function (p) { doc.addPage(p); });
+    const bytes = await doc.save({ useObjectStreams: false });
+    if (bytes.length > OCR_MAX_BYTES) {
+      if (to - from <= 1) return '';   // one enormous page: skip it
+      const mid = from + Math.ceil((to - from) / 2);
+      return (await piece(from, mid)) + '\n' + (await piece(mid, to));
+    }
+    try { return await ocrPiece(bytes); } catch (e) { return await ocrPiece(bytes); }   // one retry
+  }
+  async function worker() {
+    while (next < ranges.length && chars < MAX_TEXT) {
+      const i = next++;
+      try { results[i] = await piece(ranges[i][0], ranges[i][1]); chars += results[i].length; }
+      catch (e) { lastErr = (e && e.message) || 'OCR failed'; if (/not valid/i.test(lastErr)) next = ranges.length; }
+    }
+  }
+  await Promise.all(Array.from({ length: OCR_CONCURRENCY }, worker));
+  const text = results.join('\n');
+  if (!text.replace(/\s+/g, '').length && lastErr) throw new HttpError(502, lastErr);
+  return text;
 }
 
 // Downloads the file (PDF, .pptx or .docx) and returns its text. Scanned PDFs are read with AI (OCR).
@@ -295,7 +363,7 @@ async function loadMaterialText(mat, fallback) {
   }
   text = String(text || '').replace(/\r/g, '').replace(/[ \t]+/g, ' ');
   if (tooShort(text)) throw new HttpError(400, problem || 'No readable text could be found in this file, even after reading its pages as images.');
-  return text.slice(0, 400000);
+  return text.slice(0, MAX_TEXT);
 }
 
 async function setStatus(matId, patch) {
@@ -428,11 +496,12 @@ async function generateForMaterial(mat, courseId, opts) {
           }
         }
       }
-      await Promise.all([worker(), worker(), worker()]);
+      await Promise.all(Array.from({ length: GEN_CONCURRENCY }, worker));
     }
 
-    // Pass 1: split the file into parts and write about 15 questions per part (asking for a few extra, since weak ones are thrown away).
-    const parts = Math.min(Math.max(Math.ceil(need / 15), 1), 10);
+    // Pass 1: split the file into parts and write about 10 to 15 questions per part (asking for a few extra, since weak ones are thrown away).
+    // Long files get more parts so every part stays small and fast.
+    const parts = Math.min(Math.max(Math.ceil(need / 10), Math.ceil(text.length / 70000), 1), 16);
     const chunks = splitText(text, parts);
     await pass(chunks, Math.min(Math.max(Math.ceil(need / parts * 1.35), 5), 30));
 
@@ -767,7 +836,7 @@ const actions = {
     if (recentlyProcessing(mat)) return busy;
     if (!tryLock(key)) return busy;
     try {
-      const out = await generateForMaterial(mat, courseId, { text: String(b.text || '').slice(0, 400000) });
+      const out = await generateForMaterial(mat, courseId, { text: String(b.text || '').slice(0, MAX_TEXT) });
       return { saved: out.saved, rejected: out.rejected, duplicates: out.duplicates, total: out.total, already: !!out.already, course_title: out.course_title };
     } finally { unlock(key); }
   },
