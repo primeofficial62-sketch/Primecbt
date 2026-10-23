@@ -63,7 +63,39 @@ function xmlText(xml) {
 }
 function fileNum(name) { const m = name.match(/(\d+)\.xml$/); return m ? parseInt(m[1], 10) : 0; }
 
+// Old PowerPoint (.ppt): reads the text records inside the binary file
+function pptText(buf) {
+  let CFB;
+  try { CFB = require('cfb'); }
+  catch (e) { throw new Error('The .ppt reader failed to load: ' + ((e && e.message) || e) + ' (add "cfb": "1.2.2" to package.json)'); }
+  const cf = CFB.read(buf, { type: 'buffer' });
+  const entry = CFB.find(cf, 'PowerPoint Document');
+  if (!entry || !entry.content) throw new Error('This is not a PowerPoint .ppt file. Save it as .pptx and upload again.');
+  const d = Buffer.from(entry.content);
+  const seen = {}, out = [];
+  function add(t) {
+    t = t.replace(/\r\n?/g, '\n').replace(/[\u000b\u2028]/g, '\n').replace(/[\u0000-\u0008\u000c\u000e-\u001f]/g, '').trim();
+    if (t && !seen[t]) { seen[t] = 1; out.push(t); }
+  }
+  function walk(start, end) {
+    let p = start;
+    while (p + 8 <= end) {
+      const verInst = d.readUInt16LE(p), type = d.readUInt16LE(p + 2), len = d.readUInt32LE(p + 4);
+      const body = p + 8, next = body + len;
+      if (next > end) break;
+      if ((verInst & 0xF) === 0xF) walk(body, next);                                  // container: look inside
+      else if (type === 0x0FA0) add(d.slice(body, next).toString('utf16le'));        // text (unicode)
+      else if (type === 0x0FA8) add(d.slice(body, next).toString('latin1'));         // text (plain)
+      p = next;
+    }
+  }
+  walk(0, d.length);
+  return out.join('\n\n');
+}
+
 async function extractText(buf) {
+    // Old PowerPoint .ppt (binary format starts with D0 CF 11 E0)
+  if (buf[0] === 0xD0 && buf[1] === 0xCF && buf[2] === 0x11 && buf[3] === 0xE0) return { text: pptText(buf) };
   if (!buf || !buf.length) throw new Error('The file is empty.');
 
   // PDF
@@ -204,7 +236,7 @@ async function requireAuth(req) {
 const clean = function (s) { return String(s == null ? '' : s).replace(/[,()*%\\"']/g, ' ').trim().slice(0, 80); };
 const isId = function (s) { return typeof s === 'string' && /^[0-9a-zA-Z_-]{1,64}$/.test(s); };
 // A file the question writer can read: PDF, PowerPoint (.pptx) or Word (.docx).
-const isPdfUrl = function (u) { return /\.(pdf|pptx|docx)(\?|#|$)/i.test(String(u || '')); };
+const isPdfUrl = function (u) { return /\.(pdf|pptx?|docx)(\?|#|$)/i.test(String(u || '')); };
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 function tableOf(name) {
   if (!Object.prototype.hasOwnProperty.call(TABLES, name)) throw new HttpError(400, 'Unknown section.');
