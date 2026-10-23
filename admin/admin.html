@@ -1938,7 +1938,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
   var genBusy = false;
 
   function normName(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
-  function isPdfMaterial(m) { return /\.(pdf|pptx|docx)(\?|#|$)/i.test(m.file_url || '') || /^(pdf|slides)$/i.test(m.material_type || ''); }
+  function isPdfMaterial(m) { return /\.(pdf|pptx?|docx)(\?|#|$)/i.test(m.file_url || '') || /^(pdf|slides)$/i.test(m.material_type || ''); }
   function sameCourse(c, text) {
     var t = normName(text), title = normName(c.title), code = normName(c.code);
     if (!t) return false;
