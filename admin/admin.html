@@ -2169,6 +2169,28 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     setTimeout(function () { try { $('pinIn').focus(); } catch (e) {} }, 60);
   }
 
+    // API Keys section (added just before Settings)
+  SECTIONS.splice(SECTIONS.length - 1, 0, {
+    id: 'apikeys', label: 'API Keys', group: 'Security', icon: 'lock', kind: 'list', table: 'api_keys', noun: 'API key', search: false,
+    empty: 'No API keys yet. Add your first Gemini key.',
+    fields: [
+      { key: 'label', label: 'Label', type: 'text', ph: 'e.g. Key 1' },
+      { key: 'key', label: 'Gemini API key', type: 'text', required: true, ph: 'AIza…', hint: 'Use a key from a different Google Cloud project each time.' },
+      { key: 'enabled', label: 'Enabled', type: 'bool', def: true }
+    ],
+    row: function (r) {
+      var cooling = r.exhausted_until && new Date(r.exhausted_until) > new Date();
+      return {
+        title: r.label || 'API key',
+        tag: !r.enabled ? 'Disabled' : cooling ? 'Limit hit' : 'Active',
+        tagClass: !r.enabled ? 'red' : cooling ? 'amber' : 'green',
+        sub: String(r.key || '').slice(0, 6) + '••••' + String(r.key || '').slice(-4),
+        sub2: (r.uses || 0) + ' uses' + (cooling ? '  back ' + fmtDate(r.exhausted_until) : '')
+      };
+    }
+  });
+
+
   init();
 })();
 </script>
