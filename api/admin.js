@@ -16,6 +16,7 @@
 // Needs in package.json (project root):  "pdf-parse": "1.1.1", "jszip": "3.10.1", "pdf-lib": "1.17.1", "@vercel/functions": "^2.0.0"
 // Needs in vercel.json:   { "functions": { "api/admin.js": { "maxDuration": 300 } } }
 // The PDF / PowerPoint (.pptx) / Word (.docx) reader is built into this file. No api/_extract.js needed.
+// Pictures (PNG / JPG / WEBP / GIF) and scanned PDFs are read with Gemini vision (equations come out as LaTeX).
 // Needs in Supabase: run setup.sql once, then (for maths + diagrams):
 //   alter table questions add column if not exists image_url text;
 //   alter table questions add column if not exists svg text;
@@ -96,10 +97,21 @@ function pptText(buf) {
   return out.join('\n\n');
 }
 
+// Pictures are read by Gemini vision, so we only need to recognise them by their first bytes.
+function imageMime(buf) {
+  if (!buf || buf.length < 12) return null;
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return 'image/png';
+  if (buf[0] === 0xFF && buf[1] === 0xD8) return 'image/jpeg';
+  if (buf.slice(0, 4).toString() === 'GIF8') return 'image/gif';
+  if (buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP') return 'image/webp';
+  return null;
+}
+
 async function extractText(buf) {
-    // Old PowerPoint .ppt (binary format starts with D0 CF 11 E0)
-  if (buf[0] === 0xD0 && buf[1] === 0xCF && buf[2] === 0x11 && buf[3] === 0xE0) return { text: pptText(buf) };
   if (!buf || !buf.length) throw new Error('The file is empty.');
+
+  // Old PowerPoint .ppt (binary format starts with D0 CF 11 E0)
+  if (buf[0] === 0xD0 && buf[1] === 0xCF && buf[2] === 0x11 && buf[3] === 0xE0) return { text: pptText(buf) };
 
   // PDF
   if (buf.slice(0, 5).toString() === '%PDF-') {
@@ -142,7 +154,7 @@ async function extractText(buf) {
     }
   }
 
-  throw new Error('Unsupported file. Use PDF, PPTX or DOCX. Old .ppt / .doc files must be saved as .pptx / .docx first.');
+  throw new Error('Unsupported file. Use PDF, PPTX, DOCX or a picture. Old .doc files must be saved as .docx first.');
 }
 
 // Speed + size settings
@@ -239,8 +251,8 @@ async function requireAuth(req) {
 /* ---------- helpers ---------- */
 const clean = function (s) { return String(s == null ? '' : s).replace(/[,()*%\\"']/g, ' ').trim().slice(0, 80); };
 const isId = function (s) { return typeof s === 'string' && /^[0-9a-zA-Z_-]{1,64}$/.test(s); };
-// A file the question writer can read: PDF, PowerPoint (.pptx) or Word (.docx).
-const isPdfUrl = function (u) { return /\.(pdf|pptx?|docx)(\?|#|$)/i.test(String(u || '')); };
+// A file the question writer can read: PDF, PowerPoint (.pptx), Word (.docx) or a picture (PNG, JPG, WEBP, GIF).
+const isPdfUrl = function (u) { return /\.(pdf|pptx?|docx|png|jpe?g|webp|gif)(\?|#|$)/i.test(String(u || '')); };
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 function tableOf(name) {
   if (!Object.prototype.hasOwnProperty.call(TABLES, name)) throw new HttpError(400, 'Unknown section.');
@@ -445,13 +457,13 @@ function shuffleOptions(options, correct) {
   return { options: items.map(function (i) { return i.t; }), correct_index: items.findIndex(function (i) { return i.ok; }) };
 }
 
-// Scanned PDFs have no text layer. Gemini can read the pages as images, so it writes the text out for us.
-// One OCR request for one small PDF piece.
-async function ocrPiece(bytes) {
+// Scanned PDFs and pictures have no text layer. Gemini reads them as images, so it writes the text out for us.
+// One OCR request for one small PDF piece or one picture.
+async function ocrPiece(bytes, mime) {
   const data = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length).toString('base64');
   const body = {
     contents: [{ role: 'user', parts: [
-      { inlineData: { mimeType: 'application/pdf', data: data } },
+      { inlineData: { mimeType: mime || 'application/pdf', data: data } },
       { text: 'Transcribe all the text in this document in reading order, page by page. Write every equation and formula in LaTeX inside \\( ... \\). Do not summarise, translate or comment. Output the transcription only.' }
     ] }],
     generationConfig: { temperature: 0, maxOutputTokens: 24000 }
@@ -497,9 +509,10 @@ async function ocrPdfWithGemini(buf) {
   return text;
 }
 
-// Downloads the file (PDF, .pptx or .docx) and returns its text. Scanned PDFs are read with AI (OCR).
+// Downloads the file (PDF, .pptx, .docx or picture) and returns its text. Scans and pictures are read with AI (OCR).
+// "fallback" is text the admin page already read in the browser; it is used only if the server cannot read the file.
 async function loadMaterialText(mat, fallback) {
-  let text = '', problem = '', buf = null;
+  let text = '', problem = '', buf = null, usedFallback = false;
   if (mat && mat.file_url) {
     try {
       const dl = await fetch(mat.file_url);
@@ -509,14 +522,25 @@ async function loadMaterialText(mat, fallback) {
   }
   if (buf) { try { text = (await extractText(buf)).text; } catch (e) { problem = (e && e.message) || problem; } }
   text = String(text || '');
-  const tooShort = function (t) { return String(t).replace(/\s+/g, '').length < 200; };
-  if (tooShort(text) && fallback) text = String(fallback);
-  if (tooShort(text) && buf && buf.slice(0, 5).toString() === '%PDF-' && (await hasKeys())) {
-    try { text = await ocrPdfWithGemini(buf); problem = ''; }
-    catch (e) { problem = (e && e.message) || problem; }
+  const tooShort = function (t, min) { return String(t).replace(/\s+/g, '').length < (min || 200); };
+
+  // A picture, or a PDF with no text layer: read it with Gemini vision (equations come out as LaTeX)
+  if (tooShort(text) && buf && (await hasKeys())) {
+    const mime = imageMime(buf);
+    try {
+      if (buf.slice(0, 5).toString() === '%PDF-') { text = await ocrPdfWithGemini(buf); problem = ''; }
+      else if (mime) {
+        if (buf.length > 14 * 1024 * 1024) throw new HttpError(400, 'This picture is too large to read. Use a smaller one.');
+        text = await ocrPiece(new Uint8Array(buf), mime); problem = '';
+      }
+    } catch (e) { problem = (e && e.message) || problem; }
   }
+
+  // Last resort: text the admin page read in the browser
+  if (tooShort(text) && fallback && !tooShort(fallback, 80)) { text = String(fallback); usedFallback = true; }
+
   text = String(text || '').replace(/\r/g, '').replace(/[ \t]+/g, ' ');
-  if (tooShort(text)) throw new HttpError(400, problem || 'No readable text could be found in this file, even after reading its pages as images.');
+  if (tooShort(text, usedFallback ? 80 : 200)) throw new HttpError(400, problem || 'No readable text could be found in this file, even after reading its pages as images.');
   return text.slice(0, MAX_TEXT);
 }
 
@@ -682,6 +706,26 @@ async function generateForMaterial(mat, courseId, opts) {
   }
 }
 
+/* ---------- fix old questions: plain-text maths -> LaTeX ---------- */
+// Finds equations written as plain text (x^2, sqrt(3), 1/2, H2SO4 ...) in questions that have no LaTeX yet.
+const HAS_LATEX = /\\\(|\\\[|\$/;
+const MATHY = /(\^|\u221a|\u222b|\u2211|\u03c0|\u2264|\u2265|\u2248|\u2192|\u21cc|\bsqrt\b|\bfrac\b|\b(?:sin|cos|tan|log|ln|lim)\b|[0-9a-z)]\s*[=<>]\s*[-0-9a-z(]|\d\s*\/\s*\d|\b[A-Z][a-z]?\d|\bd[xy]\s*\/\s*d[xy]\b)/;
+function needsMathFix(r) {
+  if (!r || typeof r.question !== 'string' || !Array.isArray(r.options) || !r.options.every(function (o) { return typeof o === 'string'; })) return false;
+  const all = [r.question, r.explanation || ''].concat(r.options).join('\n');
+  if (HAS_LATEX.test(all)) return false;
+  return MATHY.test(all);
+}
+// Safety check: the rewrite must keep (almost) all the ordinary words of the original, so the meaning cannot drift.
+function wordsKept(a, b) {
+  const words = String(a || '').toLowerCase().match(/[a-z]{4,}/g) || [];
+  if (!words.length) return true;
+  const low = String(b || '').toLowerCase();
+  let kept = 0;
+  words.forEach(function (w) { if (low.indexOf(w) > -1) kept++; });
+  return kept / words.length >= 0.8;
+}
+
 /* ---------- automatic runs ---------- */
 // Picks the course a material belongs to. Several courses can share one code (e.g. three "CHM 101" courses),
 // so when the code is not enough the words of the file name are compared with each course title.
@@ -720,7 +764,7 @@ async function autoGenerate(matId) {
     if (!mat || !isPdfUrl(mat.file_url) || mat.qgen_status === 'done' || recentlyProcessing(mat)) return null;
     const picked = await courseForMaterial(mat);
     if (picked.ambiguous) {
-      await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'Several courses share the code "' + (mat.course || '') + '". Open Courses and tap "Questions from PDFs" on the exact course.' });
+      await setStatus(mat.id, { qgen_status: 'failed', qgen_error: 'Several courses share the code "' + (mat.course || '') + '". Open Questions and use "Questions from PDFs" on the exact course.' });
       return null;
     }
     if (!picked.course) {
@@ -937,7 +981,7 @@ const actions = {
     }
     // A readable file was added: write its questions automatically in the background.
     if (b.table === 'materials' && savedId != null && isPdfUrl(data.file_url)) background(autoGenerate(savedId));
-    return { ok: true };
+    return { ok: true, id: savedId };
   },
 
   async remove(req, res, b) {
@@ -988,9 +1032,9 @@ const actions = {
     let courseId = b.course_id;
     if (picked.course) courseId = picked.course.id;
     else if (picked.ambiguous) {
-      // Several courses share this code. Only an explicit choice (the "Questions from PDFs" button on a course) decides.
+      // Several courses share this code. Only an explicit choice (the "Questions from PDFs" button) decides.
       const chosen = b.chosen ? picked.ambiguous.filter(function (c) { return String(c.id) === String(b.course_id); })[0] : null;
-      if (!chosen) throw new HttpError(409, 'Several courses share the code "' + (mat.course || '') + '" (' + picked.ambiguous.map(function (c) { return c.title; }).join(', ') + '). Open Courses and tap "Questions from PDFs" on the exact course.');
+      if (!chosen) throw new HttpError(409, 'Several courses share the code "' + (mat.course || '') + '" (' + picked.ambiguous.map(function (c) { return c.title; }).join(', ') + '). Open Questions and use "Questions from PDFs" on the exact course.');
       courseId = chosen.id;
     }
     const busy = { saved: 0, rejected: 0, duplicates: 0, total: 0, busy: true };
@@ -1000,6 +1044,85 @@ const actions = {
       const out = await generateForMaterial(mat, courseId, { text: String(b.text || '').slice(0, MAX_TEXT) });
       return { saved: out.saved, rejected: out.rejected, duplicates: out.duplicates, total: out.total, already: !!out.already, course_title: out.course_title };
     } finally { unlock(key); }
+  },
+
+  // Rewrites OLD questions that show maths as plain text (x^2, sqrt(3), H2SO4 ...) in LaTeX, a few at a time.
+  // The admin page calls this again and again with the returned "next_after" until "done" is true.
+  // Options keep their order, so the correct answer stays correct. Nothing is changed unless the ordinary words survive.
+  async fix_math(req, res, b) {
+    await requireAuth(req);
+    if (!(await hasKeys())) throw new HttpError(500, 'No Gemini API key found. Open the API Keys section in this panel and add one.');
+    const ids = Array.isArray(b.course_ids) ? b.course_ids.map(String).filter(isId).slice(0, 200) : [];
+    const limit = Math.min(Math.max(parseInt(b.limit, 10) || 12, 1), 20);
+    let cursor = b.after ? String(b.after) : '';
+    if (cursor && !isId(cursor)) throw new HttpError(400, 'Bad position.');
+    const filter = ids.length ? '&course_id=in.(' + ids.map(enc).join(',') + ')' : '';
+
+    // collect up to `limit` questions that still show maths as plain text
+    const batch = [];
+    let scanned = 0, done = false, filled = false;
+    for (let guard = 0; guard < 10 && !filled && !done; guard++) {
+      const rows = (await sb('/rest/v1/questions?select=id,question,options,explanation&order=id.asc&limit=100' + (cursor ? '&id=gt.' + enc(cursor) : '') + filter)).data || [];
+      if (!rows.length) { done = true; break; }
+      for (const r of rows) {
+        cursor = String(r.id); scanned++;
+        if (needsMathFix(r)) { batch.push(r); if (batch.length >= limit) { filled = true; break; } }
+      }
+      if (!filled && rows.length < 100) done = true;
+    }
+    if (!batch.length) return { scanned: scanned, changed: 0, rejected: 0, next_after: cursor, done: done };
+
+    const payload = batch.map(function (r) { return { id: String(r.id), question: r.question, options: r.options, explanation: r.explanation || '' }; });
+    const prompt =
+      'Below are exam questions as a JSON array. Some write mathematics, formulas or chemical equations as plain text (for example x^2, sqrt(3), 1/2, H2SO4).\n' +
+      'Rewrite ONLY those mathematical parts in LaTeX: inline \\( ... \\), on its own line \\[ ... \\], chemistry \\(\\ce{H2SO4}\\). Never use a single dollar sign.\n' +
+      'Rules: keep every ordinary word, the meaning, the number of options and their ORDER exactly the same. Do not solve, correct, shorten or reword anything. ' +
+      'If an item needs no LaTeX, return it unchanged. Return ALL the items with the same "id". Inside the JSON every backslash must be doubled.\n\n' +
+      JSON.stringify(payload);
+    const body = {
+      systemInstruction: { parts: [{ text: 'You are a careful LaTeX typesetter for university exam questions. Reply with a JSON array only, no other text.' }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0,
+        maxOutputTokens: 16000,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'ARRAY',
+          items: {
+            type: 'OBJECT',
+            properties: { id: { type: 'STRING' }, question: { type: 'STRING' }, options: { type: 'ARRAY', items: { type: 'STRING' } }, explanation: { type: 'STRING' } },
+            required: ['id', 'question', 'options', 'explanation']
+          }
+        }
+      }
+    };
+    const out = parseJsonArray(await askGemini('', body));
+    if (!out) throw new HttpError(502, 'The maths fixer returned an unreadable answer. Try again.');
+    const byId = {};
+    out.forEach(function (it) { if (it && it.id != null) byId[String(it.id)] = it; });
+
+    let changed = 0, rejected = 0;
+    for (const r of batch) {
+      const it = byId[String(r.id)];
+      const okShape = it && typeof it.question === 'string' && it.question.trim() &&
+        Array.isArray(it.options) && it.options.length === r.options.length &&
+        it.options.every(function (o) { return typeof o === 'string' && o.trim(); });
+      if (!okShape) { rejected++; continue; }
+      const expl = String(it.explanation || '').trim();
+      const same = it.question.trim() === String(r.question).trim() &&
+        it.options.every(function (o, i) { return o.trim() === String(r.options[i]).trim(); }) &&
+        (!expl || expl === String(r.explanation || '').trim());
+      if (same) continue;
+      const kept = wordsKept(r.question, it.question) &&
+        r.options.every(function (o, i) { return wordsKept(o, it.options[i]); }) &&
+        (!r.explanation || !expl || wordsKept(r.explanation, expl));
+      if (!kept) { rejected++; continue; }
+      const patch = { question: it.question.trim(), options: it.options.map(function (o) { return o.trim(); }) };
+      if (expl && r.explanation) patch.explanation = expl;
+      await sb('/rest/v1/questions?id=eq.' + enc(String(r.id)), { method: 'PATCH', body: patch });
+      changed++;
+    }
+    return { scanned: scanned, changed: changed, rejected: rejected, next_after: cursor, done: done };
   },
 
   // Moves questions that were filed under the wrong course (e.g. another course with the same code) to the right one.
