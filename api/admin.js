@@ -413,7 +413,7 @@ async function askGemini(prompt, customBody) {
       throw new HttpError(502, lastMsg);
     }
     // every model said "quota" or "busy": wait for the per-minute limit to reset, then go round again
-    if (lastStatus === 429 || lastStatus === 503) { await sleep(8000 * (round + 1)); continue; }
+    if (lastStatus === 503 || (lastStatus === 429 && round < 1)) { await sleep(8000); continue; }
     break;
   }
   throw new HttpError(502, lastMsg || 'The question writer is not available. Check your Gemini keys and quota in Google AI Studio.');
