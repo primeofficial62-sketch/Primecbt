@@ -3,12 +3,15 @@
 //   SUPABASE_URL                 e.g. https://xuofkjjhupgmrphzgyun.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY    Supabase > Settings > API Keys > secret / service_role key
 //   ADMIN_SESSION_SECRET         any long random text (40+ characters)
-//   GEMINI_API_KEY               needed for question writing (free key at aistudio.google.com)
+//   GEMINI_API_KEY               (optional now) last-resort fallback key. Your main keys live in Admin > API Keys.
 //   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
 //   GEMINI_MODEL                 (optional) force one Gemini model first. Otherwise the newest available one is used.
 //   QUESTIONS_PER_PDF            (optional) questions to write for every file. Defaults to 100.
 //   GEN_CONCURRENCY              (optional) parallel question-writing calls. Defaults to 5 (use 3 on a free Gemini key).
 //   OCR_CONCURRENCY              (optional) parallel OCR calls for scanned PDFs. Defaults to 6 (use 3 on a free Gemini key).
+//
+// API KEY ROTATION: keys are stored in the Supabase table "api_keys" (add them in Admin > API Keys).
+// When one key hits its limit, the same request is retried on the next key straight away.
 //
 // Needs in package.json (project root):  "pdf-parse": "1.1.1", "jszip": "3.10.1", "pdf-lib": "1.17.1", "@vercel/functions": "^2.0.0"
 // Needs in vercel.json:   { "functions": { "api/admin.js": { "maxDuration": 300 } } }
@@ -163,7 +166,8 @@ const TABLES = {
   departments: { cols: ['school_id', 'name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   levels: { cols: ['name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   reviews: { cols: ['status'], search: ['user_name', 'user_email', 'message'], order: 'created_at', del: true },
-  material_levels: { cols: ['enabled'], search: [], order: 'level', asc: true, del: false }
+  material_levels: { cols: ['enabled'], search: [], order: 'level', asc: true, del: false },
+  api_keys: { cols: ['label', 'key', 'enabled'], search: ['label'], order: 'created_at', asc: true, del: true }
 };
 
 
@@ -301,26 +305,78 @@ const QUESTIONS_SCHEMA = {
   }
 };
 
+/* ---------- API key rotation ---------- */
+// Keys live in the Supabase table "api_keys" (Admin > API Keys). The Vercel GEMINI_API_KEY is only a last-resort fallback.
+// When a key hits its limit it is parked and the SAME request is retried on the next key straight away.
+const keyCool = {};   // "keyId|model" -> time (ms) when that key can be used again for that model
+
+function nextPacificMidnight() {
+  const now = new Date();
+  const la = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  const next = new Date(la); next.setHours(24, 0, 0, 0);
+  return now.getTime() + (next - la);
+}
+function coolUntil(msg) {
+  if (/PerDay|per day/i.test(msg)) return nextPacificMidnight();
+  const m = String(msg).match(/retry in (?:(\d+)h)?(?:(\d+)m)?(?:([\d.]+)s)?/i);
+  const secs = m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 60;
+  return Date.now() + Math.max(secs, 5) * 1000;
+}
+async function getKeys() {
+  let rows = [];
+  try { rows = (await sb('/rest/v1/api_keys?select=id,key,uses&enabled=eq.true&provider=eq.gemini&order=created_at.asc')).data || []; }
+  catch (e) { rows = []; }   // table not created yet: fall back to the Vercel key
+  const list = rows.map(function (r) { return { id: String(r.id), key: r.key, uses: r.uses || 0, db: true }; });
+  if (GEMINI_KEY && !list.some(function (k) { return k.key === GEMINI_KEY; })) list.push({ id: 'env', key: GEMINI_KEY, uses: 0, db: false });
+  return list;
+}
+async function hasKeys() { return (await getKeys()).length > 0; }
+
 // One Gemini request. Asks for low "thinking" (much faster); if a model rejects that setting, it is switched off for good.
 let thinkingOk = true;
 async function geminiCall(model, body) {
-  const send = function (bd) {
+  const keys = await getKeys();
+  if (!keys.length) return { res: { ok: false, status: 401 }, data: { error: { message: 'No API key. Add one in the API Keys section.' } } };
+  const send = function (bd, key) {
     return fetch('https://generativelanguage.googleapis.com/v1beta/models/' + enc(model) + ':generateContent', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify(bd)
     });
   };
-  let bd = body;
-  if (thinkingOk) bd = Object.assign({}, body, { generationConfig: Object.assign({}, body.generationConfig, { thinkingConfig: { thinkingLevel: 'low' } }) });
-  let res = await send(bd);
-  let data = await res.json().catch(function () { return {}; });
-  if (res.status === 400 && thinkingOk && /thinking/i.test((data.error && data.error.message) || '')) {
-    thinkingOk = false;
-    res = await send(body);
-    data = await res.json().catch(function () { return {}; });
+  let last = null;
+  for (const k of keys) {
+    const ck = k.id + '|' + model;
+    if (keyCool[ck] && keyCool[ck] > Date.now()) continue;   // this key is at its limit for this model: skip it
+    let bd = body;
+    if (thinkingOk) bd = Object.assign({}, body, { generationConfig: Object.assign({}, body.generationConfig, { thinkingConfig: { thinkingLevel: 'low' } }) });
+    let res = await send(bd, k.key);
+    let data = await res.json().catch(function () { return {}; });
+    if (res.status === 400 && thinkingOk && /thinking/i.test((data.error && data.error.message) || '')) {
+      thinkingOk = false;
+      res = await send(body, k.key);
+      data = await res.json().catch(function () { return {}; });
+    }
+    if (res.ok) {
+      if (k.db) { try { await sb('/rest/v1/api_keys?id=eq.' + enc(k.id), { method: 'PATCH', body: { uses: k.uses + 1, last_used: new Date().toISOString(), exhausted_until: null } }); } catch (e) { /* ignore */ } }
+      return { res: res, data: data };
+    }
+    last = { res: res, data: data };
+    const msg = JSON.stringify(data.error || {});
+    if (res.status === 429) {                                  // limit hit: park this key, use the next one straight away
+      const until = coolUntil(msg);
+      keyCool[ck] = until;
+      if (k.db) { try { await sb('/rest/v1/api_keys?id=eq.' + enc(k.id), { method: 'PATCH', body: { exhausted_until: new Date(until).toISOString(), last_error: msg.slice(0, 300) } }); } catch (e) { /* ignore */ } }
+      continue;
+    }
+    if ((res.status === 400 || res.status === 401 || res.status === 403) && /api key/i.test(msg)) {   // bad or revoked key
+      keyCool[ck] = Date.now() + 3600000;
+      if (k.db) { try { await sb('/rest/v1/api_keys?id=eq.' + enc(k.id), { method: 'PATCH', body: { enabled: false, last_error: msg.slice(0, 300) } }); } catch (e) { /* ignore */ } }
+      continue;
+    }
+    return last;   // any other error: let the model fallback in askGemini handle it
   }
-  return { res: res, data: data };
+  return last || { res: { ok: false, status: 429 }, data: { error: { message: 'All API keys are at their limit for this model.' } } };
 }
 
 async function askGemini(prompt, customBody) {
@@ -351,7 +407,7 @@ async function askGemini(prompt, customBody) {
       }
       lastStatus = res.status;
       lastMsg = (data && data.error && data.error.message) || 'The question writer is not available.';
-      if (res.status === 401 || (res.status === 400 && /api key/i.test(lastMsg))) throw new HttpError(500, 'The GEMINI_API_KEY in Vercel is not valid.');
+      if (res.status === 401 || (res.status === 400 && /api key/i.test(lastMsg))) throw new HttpError(500, 'Your Gemini API keys are not valid or missing. Add a working key in API Keys.');
       // model missing (404), not allowed (403), quota used up (429) or busy (503): try the next model
       if (res.status === 403 || res.status === 404 || res.status === 429 || res.status === 503) continue;
       throw new HttpError(502, lastMsg);
@@ -360,7 +416,7 @@ async function askGemini(prompt, customBody) {
     if (lastStatus === 429 || lastStatus === 503) { await sleep(8000 * (round + 1)); continue; }
     break;
   }
-  throw new HttpError(502, lastMsg || 'The question writer is not available. Check your Gemini key and quota in Google AI Studio.');
+  throw new HttpError(502, lastMsg || 'The question writer is not available. Check your Gemini keys and quota in Google AI Studio.');
 }
 
 // Splits long text into n parts, cutting at a line break where possible.
@@ -455,7 +511,7 @@ async function loadMaterialText(mat, fallback) {
   text = String(text || '');
   const tooShort = function (t) { return String(t).replace(/\s+/g, '').length < 200; };
   if (tooShort(text) && fallback) text = String(fallback);
-  if (tooShort(text) && buf && buf.slice(0, 5).toString() === '%PDF-' && GEMINI_KEY) {
+  if (tooShort(text) && buf && buf.slice(0, 5).toString() === '%PDF-' && (await hasKeys())) {
     try { text = await ocrPdfWithGemini(buf); problem = ''; }
     catch (e) { problem = (e && e.message) || problem; }
   }
@@ -590,7 +646,7 @@ async function generateForMaterial(mat, courseId, opts) {
             if (rows.length) { await insertQuestions(rows); stats.saved += rows.length; }
           } catch (e) {
             stats.apiErrors++; stats.lastError = e.message || 'Unknown error';
-            if (/not valid/i.test(stats.lastError)) next = chunks.length;   // a bad key will fail every call: stop now
+            if (/not valid/i.test(stats.lastError)) next = chunks.length;   // bad keys will fail every call: stop now
           }
         }
       }
@@ -658,7 +714,7 @@ async function courseForMaterial(mat) {
 
 async function autoGenerate(matId) {
   const key = String(matId);
-  if (!GEMINI_KEY || !tryLock(key)) return null;
+  if (!(await hasKeys()) || !tryLock(key)) return null;
   try {
     const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(matId) + '&select=*')).data || [])[0];
     if (!mat || !isPdfUrl(mat.file_url) || mat.qgen_status === 'done' || recentlyProcessing(mat)) return null;
@@ -680,7 +736,7 @@ async function autoGenerate(matId) {
 
 // Picks up any file that has no questions yet (or a stuck / half-finished run). One file at a time.
 async function sweep() {
-  if (!GEMINI_KEY) return;
+  if (!(await hasKeys())) return;
   let rows;
   try {
     rows = (await sb('/rest/v1/materials?select=id,file_url,qgen_status,qgen_started_at&or=(qgen_status.is.null,qgen_status.eq.partial,qgen_status.eq.processing)&limit=25')).data || [];
@@ -842,6 +898,11 @@ const actions = {
     const t = tableOf(b.table);
     const data = pick(b.data, t.cols);
     if (!Object.keys(data).length) throw new HttpError(400, 'Nothing to save.');
+    // API keys: trim spaces so a pasted key never has hidden characters.
+    if (b.table === 'api_keys' && 'key' in data) {
+      data.key = String(data.key || '').trim();
+      if (!data.key) throw new HttpError(400, 'Paste the API key.');
+    }
     // The student site reads "category", so keep it in step with the material type.
     if (b.table === 'materials' && data.material_type && !data.category) data.category = data.material_type;
     // Questions: only keep a diagram that is a plain https image link or a clean SVG.
@@ -870,6 +931,8 @@ const actions = {
         // The image_url / svg columns have not been added in Supabase yet: save the question without them.
         const rest = Object.assign({}, data); delete rest.svg; delete rest.image_url;
         savedId = await write(rest);
+      } else if (b.table === 'api_keys' && /duplicate|unique/i.test(e.message)) {
+        throw new HttpError(400, 'This API key is already saved.');
       } else throw e;
     }
     // A readable file was added: write its questions automatically in the background.
@@ -915,7 +978,7 @@ const actions = {
   // so if a run is already in progress this answers "busy" (not an error) instead of starting a second one.
   async generate_questions(req, res, b) {
     await requireAuth(req);
-    if (!GEMINI_KEY) throw new HttpError(500, 'Add GEMINI_API_KEY in Vercel > Settings > Environment Variables, then redeploy.');
+    if (!(await hasKeys())) throw new HttpError(500, 'No Gemini API key found. Open the API Keys section in this panel and add one.');
     if (!isId(String(b.course_id)) || !isId(String(b.material_id))) throw new HttpError(400, 'Missing course or material.');
     const mat = ((await sb('/rest/v1/materials?id=eq.' + enc(b.material_id) + '&select=*')).data || [])[0];
     if (!mat) throw new HttpError(400, 'Material not found.');
