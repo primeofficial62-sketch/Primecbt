@@ -102,6 +102,11 @@ svg{display:block}
 .nav-item span{max-width:100%;white-space:nowrap}
 .nav-item.active{color:var(--em);font-weight:600}
 .nav-item.active .solid{fill:currentColor}
+button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
+.more-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 4px;background:none;border:none;border-top:1px solid var(--bd);color:var(--tx);font-size:1rem;font-weight:500;text-align:left;cursor:pointer}
+.more-row::after{content:'›';color:#8FA6E8;font-size:1.4rem}
+#moreLogout{color:#f87171}
+#moreLogout::after{content:''}
 
 /* Desktop sidebar (kept from the old layout) */
 .site-menu{display:none}
@@ -307,8 +312,8 @@ svg{display:block}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 14l2 2 4-4"/></svg><span>Practice</span></a>
       <a href="progress.html" class="nav-item">
         <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/></svg><span>Progress</span></a>
-      <a href="profile.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg><span>Profile</span></a>
+      <button type="button" class="nav-item" id="moreBtn" aria-haspopup="dialog">
+  <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span>More</span></button>
     </nav>
   </div>
 
@@ -332,14 +337,16 @@ svg{display:block}
   </nav>
 
   <!-- Focus session (existing timer, opened from Study tools) -->
-  <div class="sheet-backdrop" id="focusSheet">
-    <div class="sheet" role="dialog" aria-modal="true" aria-label="Focus session">
-      <div class="sheet-head"><b>Focus session</b><button type="button" class="link-btn" id="focusClose">Close</button></div>
-      <div class="chip-row" id="durChips" style="justify-content:center">
-        <button type="button" class="chip" data-min="15">15m</button>
-        <button type="button" class="chip active" data-min="25">25m</button>
-        <button type="button" class="chip" data-min="45">45m</button>
-      </div>
+<div class="sheet-backdrop" id="moreSheet">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="More">
+    <div class="sheet-head"><b>More</b><button type="button" class="link-btn" id="moreClose">Close</button></div>
+    <a href="profile.html" class="more-row">Profile</a>
+    <a href="community.html" class="more-row">Community</a>
+    <a href="ai-assistant.html" class="more-row">AI Assistant</a>
+    <button type="button" class="more-row" id="moreSupport">Support &amp; Review</button>
+    <button type="button" class="more-row" id="moreLogout">Log out</button>
+  </div>
+</div>
       <div class="timer-ring">
         <svg width="150" height="150" viewBox="0 0 150 150"><circle cx="75" cy="75" r="64" fill="none" stroke="#29364C" stroke-width="8"/><circle id="ringFg" cx="75" cy="75" r="64" fill="none" stroke="#31D3A2" stroke-width="8" stroke-linecap="round"/></svg>
         <div class="timer-time" id="timerTime">25:00</div>
@@ -382,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ----- Bottom nav: highlight the current route -----
   const here = (location.pathname.split('/').pop() || 'home.html').toLowerCase();
-  document.querySelectorAll('.nav-item').forEach((a) => {
+  document.querySelectorAll('a.nav-item').forEach((a) => {
     const on = a.getAttribute('href').toLowerCase() === here;
     a.classList.toggle('active', on);
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -409,6 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
   $('focusClose').addEventListener('click', () => focusSheet.classList.remove('open'));
   focusSheet.addEventListener('click', (e) => { if (e.target === focusSheet) focusSheet.classList.remove('open'); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { focusSheet.classList.remove('open'); sheet.classList.remove('open'); } });
+  const moreSheet = $('moreSheet');
+$('moreBtn').addEventListener('click', () => moreSheet.classList.add('open'));
+$('moreClose').addEventListener('click', () => moreSheet.classList.remove('open'));
+moreSheet.addEventListener('click', (e) => { if (e.target === moreSheet) moreSheet.classList.remove('open'); });
+$('moreSupport').addEventListener('click', () => { moreSheet.classList.remove('open'); openSupport(); });
+$('moreLogout').addEventListener('click', () => $('logoutBtn').click());
 
   // ----- Support & Review -----
   let rating = 0, category = 'review';
