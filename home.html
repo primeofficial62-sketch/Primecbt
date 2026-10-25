@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----- Sheets -----
-  const focusSheet = $('focusSheet'), sheet = $('supportSheet');
+    const focusSheet = $('focusSheet') || document.createElement('div'), sheet = $('supportSheet');
   $('focusOpen').addEventListener('click', () => focusSheet.classList.add('open'));
   $('focusClose').addEventListener('click', () => focusSheet.classList.remove('open'));
   focusSheet.addEventListener('click', (e) => { if (e.target === focusSheet) focusSheet.classList.remove('open'); });
@@ -740,7 +740,7 @@ if (moreSheet && $('moreBtn')) {
     setTimeout(() => initPresence(user), 1500);
     $('appRoot').classList.add('ready');
   }
-  loadUser();
+    loadUser().catch((e) => { console.error(e); $('appRoot').classList.add('ready'); });
 
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshIdentity(); });
   window.addEventListener('pageshow', (e) => { if (e.persisted) refreshIdentity(); });
