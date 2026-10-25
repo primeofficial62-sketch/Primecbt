@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070D1C">
+  <title>PRIME-CBT — Progress</title>
+  <link rel="icon" type="image/png" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+  <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070D1C;
+      --card: #10192B;
+      --surface: #182337;
+      --muted-surface: #0D1525;
+      --text: #F4F6FC;
+      --text-2: #9BA8BE;
+      --border: #29364C;
+      --emerald: #31D3A2;
+      --emerald-bg: rgba(49, 211, 162, 0.12);
+      --amber: #FBBF24;
+      --amber-bg: rgba(251, 191, 36, 0.12);
+      --red: #F87171;
+      --red-bg: rgba(248, 113, 113, 0.12);
+      --radius: 1rem;
+      --pad: clamp(1rem, 4vw, 2rem);
+      --nav-h: 4.25rem;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    html { font-size: clamp(14px, 13px + 0.35vw, 18px); -webkit-text-size-adjust: 100%; background: var(--bg); }
+    body { background: var(--bg); color: var(--text); min-height: 100dvh; display: flex; justify-content: center; overflow-x: hidden; }
+    .app { width: 100%; max-width: 70rem; min-height: 100dvh; display: flex; flex-direction: column; }
+    @media (min-width: 70rem) { .app { border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+
+    /* Header */
+    .topbar {
+      position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 0.75rem;
+      padding: max(0.75rem, env(safe-area-inset-top)) max(var(--pad), env(safe-area-inset-right)) 0.75rem max(var(--pad), env(safe-area-inset-left));
+      border-bottom: 1px solid var(--border); background: rgba(7, 13, 28, 0.92);
+      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    }
+    .back-btn, .icon-btn {
+      width: 2.75rem; height: 2.75rem; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--card); color: var(--text); text-decoration: none; flex-shrink: 0;
+      border: 1px solid var(--border); cursor: pointer;
+    }
+    .back-btn:hover, .icon-btn:hover { background: var(--surface); }
+    .back-btn svg, .icon-btn svg { width: 1.25rem; height: 1.25rem; }
+    .topbar-text { flex: 1; min-width: 0; }
+    .topbar-text h1 { font-size: 1.1rem; font-weight: 700; }
+    .topbar-text p { font-size: 0.8rem; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Content */
+    .content {
+      flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+      align-content: start; align-items: start; gap: clamp(1rem, 3vw, 1.5rem);
+      padding: 1rem max(var(--pad), env(safe-area-inset-right)) calc(var(--nav-h) + env(safe-area-inset-bottom) + 1.5rem) max(var(--pad), env(safe-area-inset-left));
+    }
+    .content > * { min-width: 0; }
+    .full { grid-column: 1 / -1; }
+
+    .status {
+      background: var(--red-bg); border: 1px solid rgba(248, 113, 113, 0.35); color: #cbd5e1; border-radius: 0.75rem;
+      padding: 0.75rem 1rem; font-size: 0.85rem; line-height: 1.45; display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 0.75rem; overflow-wrap: anywhere;
+    }
+    .status[hidden] { display: none; }
+    .status strong { color: var(--red); }
+    .status button { flex-shrink: 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.35rem 0.7rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+
+    /* Overall accuracy */
+    .progress-hero { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: clamp(1rem, 3vw, 1.5rem); display: flex; flex-direction: column; gap: 0.85rem; transition: opacity 0.3s; }
+    .progress-hero.is-loading { opacity: 0.55; }
+    .hero-label { font-size: 0.72rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
+    .hero-top { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .hero-score { font-size: 2.6rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+    .hero-score span { font-size: 1.5rem; color: var(--text-2); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--emerald-bg); color: var(--emerald); font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 1.25rem; border: 1px solid rgba(49, 211, 162, 0.25); }
+    .hero-badge.down { background: var(--red-bg); color: var(--red); border-color: rgba(248, 113, 113, 0.25); }
+    .hero-badge.flat { background: var(--surface); color: var(--text-2); border-color: var(--border); }
+    .hero-badge[hidden], .chart-note[hidden] { display: none; }
+    .chart-caption { font-size: 0.7rem; color: var(--text-2); }
+
+    .mini-chart { display: flex; justify-content: space-between; align-items: flex-end; height: clamp(5rem, 22vw, 8rem); border-bottom: 1px solid var(--border); gap: clamp(0.3rem, 2vw, 0.75rem); }
+    .bar { flex: 1; min-width: 0; background: var(--border); border-radius: 4px 4px 0 0; transition: height 0.5s ease; }
+    .bar.empty { background: var(--surface); }
+    .bar.active { background: var(--emerald); }
+    .chart-labels { display: flex; justify-content: space-between; gap: clamp(0.3rem, 2vw, 0.75rem); font-size: 0.7rem; color: var(--text-2); font-weight: 500; }
+    .chart-labels span { flex: 1; text-align: center; min-width: 0; }
+    .chart-note { font-size: 0.75rem; color: var(--text-2); }
+
+    /* Stats: 2 columns, equal heights */
+    .stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 0.75rem; }
+    @media (min-width: 48rem) { .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.4rem; min-width: 0; }
+    .stat-label { font-size: 0.68rem; color: var(--text-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 1.35rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat-value.emerald { color: var(--emerald); }
+
+    /* Sections */
+    .section { display: flex; flex-direction: column; gap: 0.75rem; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .section-header h2 { font-size: 1rem; font-weight: 700; }
+    .see-all-btn { font-size: 0.85rem; font-weight: 600; color: var(--emerald); text-decoration: none; padding: 0.5rem 0; min-height: 44px; display: inline-flex; align-items: center; }
+    .course-list, .focus-list { display: flex; flex-direction: column; gap: 0.65rem; }
+    .course-card, .focus-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+    .course-top { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+    .course-top > div { min-width: 0; flex: 1; }
+    .course-top h3, .focus-info h3 { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .course-top p, .focus-info p { font-size: 0.78rem; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .score { font-size: 0.85rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 0.4rem; flex-shrink: 0; min-width: 3rem; text-align: center; }
+    .score.emerald { background: var(--emerald-bg); color: var(--emerald); border: 1px solid rgba(49, 211, 162, 0.25); }
+    .score.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251, 191, 36, 0.25); }
+    .score.red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.25); }
+    .score.none { background: var(--surface); color: var(--text-2); border: 1px solid var(--border); font-weight: 600; font-size: 0.75rem; }
+    .progress-track { width: 100%; height: 0.45rem; background: var(--muted-surface); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+    .progress-fill.emerald { background: var(--emerald); }
+    .progress-fill.amber { background: var(--amber); }
+    .progress-fill.red { background: var(--red); }
+
+    .focus-card { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.9rem 1rem; }
+    .focus-info { min-width: 0; flex: 1; }
+    .focus-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+    .practice-btn { background: var(--emerald-bg); border: 1px solid rgba(49, 211, 162, 0.3); color: var(--emerald); font-size: 0.8rem; font-weight: 600; padding: 0.55rem 0.85rem; min-height: 40px; display: inline-flex; align-items: center; border-radius: 0.6rem; text-decoration: none; white-space: nowrap; }
+    .practice-btn:hover { background: rgba(49, 211, 162, 0.2); }
+    .empty-state { background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center; color: var(--text-2); font-size: 0.88rem; line-height: 1.5; }
+    .empty-state a { color: var(--emerald); font-weight: 600; text-decoration: none; }
+
+    /* Options menu */
+    .menu-dropdown { position: absolute; top: calc(100% - 0.25rem); right: max(var(--pad), env(safe-area-inset-right)); background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.5rem; width: min(15rem, calc(100vw - 2rem)); display: none; flex-direction: column; gap: 0.2rem; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); z-index: 100; }
+    .menu-dropdown.active { display: flex; }
+    .menu-title { font-size: 0.68rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.4rem 0.75rem 0.2rem; }
+    .menu-divider { height: 1px; background: var(--border); margin: 0.3rem 0; }
+    .menu-dropdown button { width: 100%; min-height: 2.75rem; padding: 0.55rem 0.75rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-align: left; border: none; background: transparent; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+    .menu-dropdown button:hover { background: var(--surface); }
+    .menu-dropdown button.selected { color: var(--emerald); font-weight: 600; }
+    .menu-dropdown button.selected::after { content: '✓'; }
+
+    /* Bottom navigation */
+    .bottom-nav {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; margin: 0 auto; max-width: 70rem;
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      background: rgba(13, 21, 37, 0.96); border-top: 1px solid var(--border);
+      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+      padding: 0.35rem max(0.25rem, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(0.25rem, env(safe-area-inset-left));
+    }
+    .bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; min-height: 3.5rem; min-width: 0; color: var(--text-2); text-decoration: none; font-size: 0.68rem; font-weight: 500; border-radius: 0.75rem; }
+    .bottom-nav a svg { width: 1.4rem; height: 1.4rem; flex-shrink: 0; }
+    .bottom-nav a span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bottom-nav a.active { color: var(--emerald); font-weight: 600; }
+
+    .back-btn:focus-visible, .icon-btn:focus-visible, .menu-dropdown button:focus-visible, .practice-btn:focus-visible, .see-all-btn:focus-visible, .status button:focus-visible, .bottom-nav a:focus-visible { outline: 2px solid var(--emerald); outline-offset: 2px; }
+
+    .animate-fade-up { animation: fadeUp 0.4s ease both; }
+    .delay-1 { animation-delay: 0.05s; } .delay-2 { animation-delay: 0.1s; } .delay-3 { animation-delay: 0.15s; } .delay-4 { animation-delay: 0.2s; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 340px) {
+      .hero-score { font-size: 2.2rem; }
+      .stat-value { font-size: 1.15rem; }
+      .focus-card { flex-direction: column; align-items: stretch; }
+      .focus-right { justify-content: space-between; }
+      .bottom-nav a { font-size: 0.62rem; }
+    }
+    @media (max-height: 480px) and (orientation: landscape) { .topbar { position: static; } }
+    @media (min-width: 1800px) { html { font-size: 20px; } }
+    @media (prefers-reduced-motion: reduce) { .animate-fade-up { animation: none; } * { transition: none !important; } }
+
+    @media print {
+      :root { --bg: #fff; --card: #fff; --surface: #f1f5f9; --muted-surface: #f1f5f9; --text: #0f172a; --text-2: #475569; --border: #cbd5e1; }
+      html, body, .app { background: #fff !important; }
+      .topbar .back-btn, .topbar .icon-btn, .menu-dropdown, .status, .practice-btn, .see-all-btn, .bottom-nav { display: none !important; }
+      .topbar { position: static; background: #fff; }
+      .content { padding-bottom: 1rem; }
+      .animate-fade-up { animation: none; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a href="home.html" class="back-btn" aria-label="Back to Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <div class="topbar-text">
+        <h1>Progress</h1>
+        <p id="rangeSubtitle">Your performance overview</p>
+      </div>
+      <button class="icon-btn" id="optionsBtn" type="button" aria-label="Analytics options" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>
+      <div class="menu-dropdown" id="optionsMenu">
+        <div class="menu-title">Time range</div>
+        <button type="button" data-range="all" class="selected">All time</button>
+        <button type="button" data-range="90">Last 90 days</button>
+        <button type="button" data-range="30">Last 30 days</button>
+        <button type="button" data-range="7">Last 7 days</button>
+        <div class="menu-divider"></div>
+        <button type="button" id="exportBtn">Export report (PDF)</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="status full" id="statusBanner" role="alert" hidden>
+        <span id="statusText"></span>
+        <button type="button" id="statusRetry">Retry</button>
+      </div>
+
+      <section class="progress-hero full animate-fade-up delay-1 is-loading" id="hero">
+        <p class="hero-label" id="heroLabel">Overall Accuracy</p>
+        <div class="hero-top">
+          <div class="hero-score" id="heroScore">–</div>
+          <div class="hero-badge" id="heroBadge" hidden></div>
+        </div>
+        <p class="chart-caption">Daily accuracy · last 7 days</p>
+        <div class="mini-chart" id="miniChart" role="img" aria-label="Daily accuracy over the last 7 days"></div>
+        <div class="chart-labels" id="chartLabels"></div>
+        <p class="chart-note" id="chartNote" hidden>No tests taken in the last 7 days.</p>
+      </section>
+
+      <section class="stats-grid full animate-fade-up delay-2">
+        <div class="stat-card"><p class="stat-label">Questions Answered</p><p class="stat-value" id="statQuestions">–</p></div>
+        <div class="stat-card"><p class="stat-label">Study Time</p><p class="stat-value" id="statTime">–</p></div>
+        <div class="stat-card"><p class="stat-label">Exams Completed</p><p class="stat-value" id="statExams">–</p></div>
+        <div class="stat-card"><p class="stat-label">Current Streak</p><p class="stat-value emerald" id="statStreak">–</p></div>
+      </section>
+
+      <section class="section animate-fade-up delay-3">
+        <div class="section-header">
+          <h2>Course Performance</h2>
+          <a href="study-activity.html" class="see-all-btn">See all</a>
+        </div>
+        <div class="course-list" id="courseList"></div>
+      </section>
+
+      <section class="section animate-fade-up delay-4">
+        <div class="section-header"><h2>Focus Areas</h2></div>
+        <div class="focus-list" id="focusList"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <a href="home.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="materials.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M20 17v4H6.5A2.5 2.5 0 0 1 4 18.5"/></svg>
+        <span>Materials</span>
+      </a>
+      <a href="practice-setup.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+        <span>Practice</span>
+      </a>
+      <a href="progress.html" class="active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
+        <span>Progress</span>
+      </a>
+      <a href="profile.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    /* ====== CONFIG (unchanged) ====== */
+    const SUPABASE_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
+    const T = { profiles: 'profiles', results: 'test_results' };
+    const WEAK_BELOW = 70;
+    /* ================================= */
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmt = (n) => Number(n || 0).toLocaleString();
+    const pct = (c, t) => (t > 0 ? Math.round((c / t) * 100) : null);
+    const tier = (p) => (p >= 70 ? 'emerald' : p >= 50 ? 'amber' : 'red');
+    const sumOf = (rows, f) => rows.reduce((s, r) => s + Number(r[f] || 0), 0);
+    const dayKey = (d) => {
+      const x = new Date(d);
+      return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+    };
+
+    const RANGE_LABELS = { all: 'All time', '90': 'Last 90 days', '30': 'Last 30 days', '7': 'Last 7 days' };
+
+    let sb = null, uid = null, channel = null, refreshTimer = null;
+    let allRows = [];
+    let streak = 0;
+    let range = 'all';
+    try { range = localStorage.getItem('progressRange') || 'all'; } catch (e) {}
+    if (!RANGE_LABELS[range]) range = 'all';
+
+    function showStatus(message) {
+      $('statusText').innerHTML = '<strong>Problem:</strong> ' + esc(message);
+      $('statusBanner').hidden = false;
+      $('hero').classList.remove('is-loading');
+    }
+    function clearStatus() { $('statusBanner').hidden = true; }
+
+    function formatDuration(seconds) {
+      if (seconds > 0 && seconds < 60) return '<1m';
+      const m = Math.floor(seconds / 60);
+      const h = Math.floor(m / 60);
+      if (h > 0) return h + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+      return m + 'm';
+    }
+
+    function filteredRows() {
+      if (range === 'all') return allRows;
+      const cutoff = Date.now() - Number(range) * 86400000;
+      return allRows.filter((r) => new Date(r.created_at).getTime() >= cutoff);
+    }
+
+    function groupBy(rows, keyFn, labelFn) {
+      const map = new Map();
+      rows.forEach((r) => {
+        const key = keyFn(r);
+        if (!key) return;
+        if (!map.has(key)) map.set(key, { key, label: labelFn(r), c: 0, t: 0, last: 0 });
+        const g = map.get(key);
+        g.c += Number(r.score || 0);
+        g.t += Number(r.total_questions || 0);
+        g.last = Math.max(g.last, new Date(r.created_at).getTime() || 0);
+      });
+      return [...map.values()];
+    }
+
+    function renderChart() {
+      // Always the last 7 days, independent of the range filter
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        days.push(d);
+      }
+      const byDay = {};
+      allRows.forEach((r) => {
+        const k = dayKey(r.created_at);
+        byDay[k] = byDay[k] || { c: 0, t: 0 };
+        byDay[k].c += Number(r.score || 0);
+        byDay[k].t += Number(r.total_questions || 0);
+      });
+
+      let anyData = false;
+      $('miniChart').innerHTML = days.map((d, i) => {
+        const g = byDay[dayKey(d)];
+        const p = g ? pct(g.c, g.t) : null;
+        const label = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        if (p == null) return `<div class="bar empty" style="height:3%" title="${esc(label)}: no tests"></div>`;
+        anyData = true;
+        const active = i === 6 ? ' active' : '';
+        return `<div class="bar${active}" style="height:${Math.max(p, 4)}%" title="${esc(label)}: ${p}%"></div>`;
+      }).join('');
+
+      $('chartLabels').innerHTML = days.map((d) =>
+        `<span>${esc(d.toLocaleDateString(undefined, { weekday: 'short' }))}</span>`).join('');
+      $('chartNote').hidden = anyData;
+
+      // Week over week change, in percentage points (only when both weeks have data)
+      const weekStart = days[0].getTime();
+      const prevStart = weekStart - 7 * 86400000;
+      const thisW = allRows.filter((r) => new Date(r.created_at).getTime() >= weekStart);
+      const prevW = allRows.filter((r) => {
+        const t = new Date(r.created_at).getTime();
+        return t >= prevStart && t < weekStart;
+      });
+      const a = pct(sumOf(thisW, 'score'), sumOf(thisW, 'total_questions'));
+      const b = pct(sumOf(prevW, 'score'), sumOf(prevW, 'total_questions'));
+      const badge = $('heroBadge');
+      if (a != null && b != null) {
+        const diff = a - b;
+        badge.className = 'hero-badge' + (diff < 0 ? ' down' : diff === 0 ? ' flat' : '');
+        badge.textContent = diff === 0 ? 'No change vs last week'
+          : (diff > 0 ? '▲ +' : '▼ −') + Math.abs(diff) + ' pts vs last week';
+        badge.title = 'Change in accuracy, in percentage points: this 7 days (' + a + '%) vs the previous 7 days (' + b + '%)';
+        badge.hidden = false;
+      } else {
+        badge.hidden = true;
+      }
+    }
+
+    function renderCourses(rows) {
+      const list = $('courseList');
+      const courses = groupBy(rows, (r) => r.course_code, (r) => ({ code: r.course_code, title: r.course_title }))
+        .sort((x, y) => y.last - x.last)
+        .slice(0, 6);
+
+      if (!courses.length) {
+        list.innerHTML = `<div class="empty-state">No course results yet.<br><a href="practice-setup.html">Start a practice session</a> to see your performance here.</div>`;
+        return;
+      }
+
+      list.innerHTML = courses.map((g) => {
+        const p = pct(g.c, g.t);
+        const t = p == null ? 'none' : tier(p);
+        const badge = p == null ? 'Not yet assessed' : p + '%';
+        const fill = p == null ? '' : `<div class="progress-fill ${t}" style="width:${p}%"></div>`;
+        return `
+          <div class="course-card">
+            <div class="course-top">
+              <div>
+                <h3>${esc(g.label.code)}</h3>
+                ${g.label.title ? `<p>${esc(g.label.title)}</p>` : ''}
+              </div>
+              <span class="score ${t}">${badge}</span>
+            </div>
+            <div class="progress-track">${fill}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderFocus(rows) {
+      const list = $('focusList');
+      const hasTopics = rows.some((r) => r.topic);
+      const groups = hasTopics
+        ? groupBy(rows, (r) => r.topic && (r.course_code + '|' + r.topic), (r) => ({ name: r.topic, course: r.course_code }))
+        : groupBy(rows, (r) => r.course_code, (r) => ({ name: r.course_title || r.course_code, course: r.course_code }));
+
+      const weak = groups
+        .map((g) => ({ ...g, p: pct(g.c, g.t) }))
+        .filter((g) => g.p != null && g.p < WEAK_BELOW)
+        .sort((x, y) => x.p - y.p)
+        .slice(0, 4);
+
+      if (!weak.length) {
+        list.innerHTML = rows.length
+          ? `<div class="empty-state">Nothing below ${WEAK_BELOW}% right now. Keep it up!</div>`
+          : `<div class="empty-state">Your weakest areas will appear here once you complete some tests.</div>`;
+        return;
+      }
+
+      list.innerHTML = weak.map((g) => `
+        <div class="focus-card">
+          <div class="focus-info">
+            <h3>${esc(g.label.name)}</h3>
+            <p>Below ${WEAK_BELOW}% · ${fmt(g.t)} question${g.t === 1 ? '' : 's'} attempted</p>
+          </div>
+          <div class="focus-right">
+            <span class="score ${tier(g.p)}">${g.p}%</span>
+            <a href="practice-setup.html${g.label.course ? '?course=' + encodeURIComponent(g.label.course) : ''}" class="practice-btn">Practice</a>
+          </div>
+        </div>`).join('');
+    }
+
+    function render() {
+      const rows = filteredRows();
+
+      $('rangeSubtitle').textContent = range === 'all' ? 'Your performance overview' : RANGE_LABELS[range];
+      $('heroLabel').textContent = 'Overall Accuracy' + (range === 'all' ? '' : ' · ' + RANGE_LABELS[range]);
+
+      const correct = sumOf(rows, 'score');
+      const total = sumOf(rows, 'total_questions');
+      const acc = pct(correct, total);
+      $('heroScore').innerHTML = acc == null ? '–' : acc + '<span>%</span>';
+
+      $('statQuestions').textContent = fmt(total);
+      const secs = sumOf(rows, 'duration_seconds');
+      $('statTime').textContent = secs > 0 ? formatDuration(secs) : '–';
+      $('statExams').textContent = fmt(rows.filter((r) => r.mode === 'exam').length);
+      $('statStreak').textContent = streak + (streak === 1 ? ' day' : ' days');
+
+      renderChart();
+      renderCourses(rows);
+      renderFocus(rows);
+
+      document.querySelectorAll('#optionsMenu [data-range]').forEach((b) =>
+        b.classList.toggle('selected', b.dataset.range === range));
+
+      $('hero').classList.remove('is-loading');
+    }
+
+    async function loadAll() {
+      if (!sb || !uid) return;
+
+      const results = await Promise.allSettled([
+        sb.from(T.results).select('*').eq('user_id', uid).order('created_at', { ascending: true }),
+        sb.from(T.profiles).select('*').eq('id', uid).maybeSingle()
+      ]);
+
+      const labels = [T.results, T.profiles];
+      const errors = [];
+      const data = results.map((r, i) => {
+        if (r.status === 'rejected') { errors.push(`${labels[i]}: ${(r.reason && r.reason.message) || r.reason}`); return null; }
+        if (r.value.error) { errors.push(`${labels[i]}: ${r.value.error.message}`); return null; }
+        return r.value;
+      });
+
+      allRows = (data[0] && data[0].data) || [];
+      streak = Number(((data[1] && data[1].data) || {}).streak || 0);
+
+      render();
+
+      if (errors.length) { console.error('[progress] load errors:', errors); showStatus(errors.join(' | ')); }
+      else clearStatus();
+    }
+
+    function scheduleRefresh() {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(loadAll, 150);
+    }
+
+    function subscribeRealtime() {
+      try {
+        channel = sb.channel('progress-' + uid)
+          .on('postgres_changes', { event: '*', schema: 'public', table: T.results, filter: `user_id=eq.${uid}` }, scheduleRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: T.profiles, filter: `id=eq.${uid}` }, scheduleRefresh)
+          .subscribe((status, err) => {
+            if (status === 'CHANNEL_ERROR') console.error('[progress] realtime error:', err);
+          });
+      } catch (e) {
+        console.error('[progress] realtime failed to start:', e);
+      }
+    }
+
+    async function init() {
+      if (!window.supabase || !window.supabase.createClient) {
+        showStatus('The Supabase library did not load. Check your internet connection and reload.');
+        return;
+      }
+      try {
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { data, error } = await sb.auth.getSession();
+        if (error) throw error;
+        if (!data.session) { window.location.href = 'auth.html'; return; }
+        uid = data.session.user.id;
+
+        await loadAll();
+        subscribeRealtime();
+
+        sb.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_OUT') window.location.href = 'auth.html';
+        });
+      } catch (e) {
+        console.error('[progress] init error:', e);
+        showStatus((e && e.message) || 'Something went wrong while loading your progress.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const optionsBtn = $('optionsBtn');
+      const optionsMenu = $('optionsMenu');
+
+      const setMenu = (open) => {
+        optionsMenu.classList.toggle('active', open);
+        optionsBtn.setAttribute('aria-expanded', String(open));
+      };
+
+      optionsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setMenu(!optionsMenu.classList.contains('active'));
+      });
+      document.addEventListener('click', (e) => {
+        if (!optionsMenu.contains(e.target) && e.target !== optionsBtn) setMenu(false);
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+
+      optionsMenu.querySelectorAll('[data-range]').forEach((b) => {
+        b.addEventListener('click', () => {
+          range = b.dataset.range;
+          try { localStorage.setItem('progressRange', range); } catch (e) {}
+          render();
+          setMenu(false);
+        });
+      });
+
+      $('exportBtn').addEventListener('click', () => { setMenu(false); window.print(); });
+      $('statusRetry').addEventListener('click', () => { if (sb && uid) loadAll(); else window.location.reload(); });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) loadAll(); });
+
+      init();
+    });
+  </script>
+</body>
+</html>
