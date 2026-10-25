@@ -389,11 +389,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ----- Bottom nav: highlight the current route -----
   const here = (location.pathname.split('/').pop() || 'home.html').toLowerCase();
-  document.querySelectorAll('a.nav-item').forEach((a) => {
-    const on = a.getAttribute('href').toLowerCase() === here;
-    a.classList.toggle('active', on);
-    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-  });
+  document.querySelectorAll('.nav-item').forEach((a) => {
+  const href = a.getAttribute('href');
+  if (!href) return;
+  const on = href.toLowerCase() === here;
+  a.classList.toggle('active', on);
+  if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+});
 
   $('continuePracticeBtn').addEventListener('click', () => { window.location.href = 'practice.html'; });
   $('logoutBtn').addEventListener('click', async () => {
@@ -417,11 +419,13 @@ document.addEventListener('DOMContentLoaded', () => {
   focusSheet.addEventListener('click', (e) => { if (e.target === focusSheet) focusSheet.classList.remove('open'); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { focusSheet.classList.remove('open'); sheet.classList.remove('open'); } });
   const moreSheet = $('moreSheet');
-$('moreBtn').addEventListener('click', () => moreSheet.classList.add('open'));
-$('moreClose').addEventListener('click', () => moreSheet.classList.remove('open'));
-moreSheet.addEventListener('click', (e) => { if (e.target === moreSheet) moreSheet.classList.remove('open'); });
-$('moreSupport').addEventListener('click', () => { moreSheet.classList.remove('open'); openSupport(); });
-$('moreLogout').addEventListener('click', () => $('logoutBtn').click());
+if (moreSheet && $('moreBtn')) {
+  $('moreBtn').addEventListener('click', () => moreSheet.classList.add('open'));
+  $('moreClose').addEventListener('click', () => moreSheet.classList.remove('open'));
+  moreSheet.addEventListener('click', (e) => { if (e.target === moreSheet) moreSheet.classList.remove('open'); });
+  $('moreSupport').addEventListener('click', () => { moreSheet.classList.remove('open'); openSupport(); });
+  $('moreLogout').addEventListener('click', () => $('logoutBtn').click());
+}
 
   // ----- Support & Review -----
   let rating = 0, category = 'review';
