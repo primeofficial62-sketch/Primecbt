@@ -553,6 +553,17 @@ button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
     document.addEventListener('DOMContentLoaded', () => {
       const optionsBtn = $('optionsBtn');
       const optionsMenu = $('optionsMenu');
+      const norm = (v) => String(v || '').toLowerCase().replace(/\/$/, '').replace(/\.html$/, '');
+const here = norm(location.pathname.split('/').pop()) || 'home';
+
+document.querySelectorAll('.nav-item[href], .back-btn[href]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    if (norm(a.getAttribute('href')) === here) return;
+    window.location.replace(a.getAttribute('href'));
+  });
+});
 
       const setMenu = (open) => {
         optionsMenu.classList.toggle('active', open);
