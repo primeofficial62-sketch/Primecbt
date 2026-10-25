@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#060b1a">
   <title>Settings — PRIME-CBT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -34,13 +37,14 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Everything is in rem, so the page scales fluidly with the screen */
+    /* Everything is in rem, so the page scales fluidly with the screen.
+       16px base matches the rest of the site. */
     html {
-      font-size: clamp(14px, 13px + 0.35vw, 18px);
+      font-size: clamp(16px, 15px + 0.35vw, 18px);
       -webkit-text-size-adjust: 100%;
       background: var(--bg-dark);
     }
@@ -56,6 +60,9 @@
     }
 
     [hidden] { display: none !important; }
+
+    /* Font Awesome icons need their own font family */
+    .fas, .fa-solid { font-family: "Font Awesome 6 Free" !important; font-weight: 900; }
 
     .app {
       width: 100%;
@@ -123,7 +130,7 @@
       color: var(--text-secondary);
       border-radius: 0.75rem;
       padding: 0.75rem 1rem;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       line-height: 1.45;
       overflow-wrap: anywhere;
     }
@@ -140,7 +147,7 @@
 
     .section-title {
       color: var(--text-subtle);
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       margin: 1.25rem 0 0.5rem 0.5rem;
@@ -179,21 +186,21 @@
     .settings-item.static:hover { background: none; }
 
     .item-text { min-width: 0; }
-    .item-title { font-size: 0.98rem; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
-    .item-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+    .item-title { font-size: 1rem; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
+    .item-desc { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
 
     .chevron { color: var(--text-subtle); font-size: 0.85rem; flex-shrink: 0; }
 
     .value-label {
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       display: flex;
       align-items: center;
       gap: 0.4rem;
       flex-shrink: 0;
     }
 
-    .app-version { text-align: center; color: var(--text-disabled); font-size: 0.8rem; margin-top: 1.75rem; }
+    .app-version { text-align: center; color: var(--text-disabled); font-size: 0.85rem; margin-top: 1.75rem; }
 
     :focus-visible { outline: 2px solid var(--emerald-400); outline-offset: 2px; }
 
@@ -229,7 +236,7 @@
     .view-body { width: 100%; max-width: 36rem; margin: 0 auto; padding-top: 1.25rem; }
 
     .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .form-group label { display: block; font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.4rem; }
 
     .form-input {
       width: 100%;
@@ -244,14 +251,14 @@
     .form-input:focus { outline: none; border-color: var(--emerald-400); }
     .form-input:disabled { opacity: 0.6; }
 
-    .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4; }
+    .hint { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4; }
 
     .note {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 0.7rem;
       padding: 0.8rem 1rem;
-      font-size: 0.88rem;
+      font-size: 0.95rem;
       line-height: 1.5;
       color: var(--text-secondary);
       margin-bottom: 1rem;
@@ -264,7 +271,7 @@
       min-height: 3rem;
       padding: 0.8rem;
       font: inherit;
-      font-size: 0.98rem;
+      font-size: 1rem;
       font-weight: 700;
       border: none;
       border-radius: 0.6rem;
@@ -301,7 +308,7 @@
 
     .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
     .qr-wrap img { width: min(14rem, 70vw); height: auto; background: #fff; padding: 0.5rem; border-radius: 0.6rem; }
-    .secret { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; word-break: break-all; text-align: center; color: var(--text-secondary); }
+    .secret { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; word-break: break-all; text-align: center; color: var(--text-secondary); }
 
     /* ---------- Toast ---------- */
     .toast {
@@ -319,7 +326,7 @@
       left: 50%;
       transform: translateX(-50%);
       font-weight: 700;
-      font-size: 0.88rem;
+      font-size: 0.92rem;
       opacity: 0;
       transition: opacity 0.3s, visibility 0.3s;
       overflow-wrap: anywhere;
