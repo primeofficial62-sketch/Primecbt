@@ -96,12 +96,18 @@ svg{display:block}
 .tip p{font-size:.88rem;line-height:1.5;color:var(--mut);margin-top:4px}
 
 /* Bottom navigation (below 1024px) */
-.bottom-nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--bd);padding:8px 4px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);flex-shrink:0;z-index:20}
+.bottom-nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border:1px solid var(--bd);border-radius:22px;margin:6px 12px calc(env(safe-area-inset-bottom,0px) + 14px);padding:6px 4px;box-shadow:0 8px 24px rgba(0,0,0,.35);flex-shrink:0;z-index:20}
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;min-width:0;color:#7C8DB3;font-size:.72rem;font-weight:500;border-radius:12px}
 .nav-item svg{width:26px;height:26px}
 .nav-item span{max-width:100%;white-space:nowrap}
 .nav-item.active{color:var(--em);font-weight:600}
 .nav-item.active .solid{fill:currentColor}
+.more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.more-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:96px;padding:14px 8px;background:var(--dim);border:1px solid var(--bd);border-radius:18px;color:var(--tx);font-family:inherit;font-size:.92rem;font-weight:600;text-align:center;text-decoration:none;cursor:pointer}
+.more-tile:active{background:var(--surf)}
+.more-tile svg{width:26px;height:26px;color:var(--em)}
+.more-tile.danger{grid-column:1/-1;flex-direction:row;min-height:56px;color:#f87171}
+.more-tile.danger svg{color:#f87171}
 button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
 .more-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 4px;background:none;border:none;border-top:1px solid var(--bd);color:var(--tx);font-size:1rem;font-weight:500;text-align:left;cursor:pointer}
 .more-row::after{content:'\203A';color:#8FA6E8;font-size:1.4rem}
@@ -126,7 +132,7 @@ button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
 .notif-popup-title{font-size:.9rem;font-weight:700}
 .notif-popup-text{font-size:.78rem;color:var(--mut);margin-top:2px}
 .notif-popup-close{background:none;border:none;color:var(--mut);font-size:16px;padding:6px}
-.toast{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);z-index:210;background:var(--card);border:1px solid var(--em);font-size:.85rem;font-weight:600;padding:14px 16px;border-radius:14px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .3s,transform .3s}
+.toast{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 104px);z-index:210;background:var(--card);border:1px solid var(--em);font-size:.85rem;font-weight:600;padding:14px 16px;border-radius:14px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .3s,transform .3s}
 .toast.show{opacity:1;transform:none}
 .sheet-backdrop{position:absolute;inset:0;z-index:300;background:rgba(7,13,28,.82);display:none;align-items:flex-end;justify-content:center}
 .sheet-backdrop.open{display:flex}
@@ -335,14 +341,21 @@ button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
     <button type="button" class="menu-link menu-logout" id="logoutBtn">Log out</button>
   </nav>
 
-  <div class="sheet-backdrop" id="moreSheet">
+    <div class="sheet-backdrop" id="moreSheet">
     <div class="sheet" role="dialog" aria-modal="true" aria-label="More">
       <div class="sheet-head"><b>More</b><button type="button" class="link-btn" id="moreClose">Close</button></div>
-      <a href="profile.html" class="more-row">Profile</a>
-      <a href="community.html" class="more-row">Community</a>
-      <a href="ai-assistant.html" class="more-row">AI Assistant</a>
-      <button type="button" class="more-row" id="moreSupport">Support &amp; Review</button>
-      <button type="button" class="more-row" id="moreLogout">Log out</button>
+      <div class="more-grid">
+        <a href="profile.html" class="more-tile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Profile</a>
+        <a href="community.html" class="more-tile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Community</a>
+        <a href="ai-assistant.html" class="more-tile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V4H8M2 14h2M20 14h2M9 13v2M15 13v2"/></svg>AI Assistant</a>
+        <button type="button" class="more-tile" id="moreSupport">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Support &amp; Review</button>
+        <button type="button" class="more-tile danger" id="moreLogout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
+      </div>
     </div>
   </div>
 
