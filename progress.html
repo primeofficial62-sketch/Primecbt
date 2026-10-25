@@ -34,7 +34,7 @@
     button { font: inherit; color: inherit; cursor: pointer; }
     svg { display: block; }
     html { font-size: 16px; -webkit-text-size-adjust: 100%; background: var(--bg); }
-    body { background: var(--bg); color: var(--text); height: 100dvh; display: flex; justify-content: center; overflow: hidden; }
+    body { background: var(--bg); color: var(--text); height: var(--app-h, 100dvh); display: flex; justify-content: center; overflow: hidden; }
     .app { width: 100%; max-width: 720px; height: 100%; position: relative; overflow: hidden; display: flex; flex-direction: column; }
     .app { border-inline: 1px solid rgba(41, 54, 76, 0.5); }
 
@@ -289,6 +289,11 @@ button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
     const T = { profiles: 'profiles', results: 'test_results' };
     const WEAK_BELOW = 70;
     /* ================================= */
+
+    const setAppH = () => document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
+    setAppH();
+    window.addEventListener('resize', setAppH);
+    window.addEventListener('orientationchange', setAppH);
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
