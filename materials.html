@@ -502,8 +502,10 @@ function levelOf(m) {
         return o;
       }
 
-      function sortNewestFirst(list) {
-        return list.slice().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+      /* A to Z by title: ignores upper/lower case and puts numbers in natural order (MTS 106 before MTS 1010) */
+      function sortAZ(list) {
+        return list.slice().sort((a, b) =>
+          titleOf(a).trim().localeCompare(titleOf(b).trim(), undefined, { numeric: true, sensitivity: 'base' }));
       }
 
       /* ================= Cache (instant repeat visits) ================= */
@@ -643,7 +645,7 @@ function levelOf(m) {
       }
 
       function applyData(list) {
-        const next = sortNewestFirst(list.map(slim));
+        const next = sortAZ(list.map(slim));
         const sig = JSON.stringify(next);
         if (sig === signature) return false;   // nothing changed: skip re-render, no flicker
         signature = sig;
@@ -680,7 +682,7 @@ function levelOf(m) {
 
       async function fetchRows() {
         if (selectMode === 'narrow') {
-          const res = await client.from('materials').select(NARROW_COLUMNS).order('created_at', { ascending: false });
+          const res = await client.from('materials').select(NARROW_COLUMNS).order('title', { ascending: true });
           if (!res.error) return res;
           selectMode = 'all';   // a column is named differently: use select('*') from now on
         }
