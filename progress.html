@@ -28,7 +28,7 @@
       --red-bg: rgba(248, 113, 113, 0.12);
       --radius: 20px;
       --pad: 20px;
-          }
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
     html { font-size: 16px; -webkit-text-size-adjust: 100%; background: var(--bg); }
     body { background: var(--bg); color: var(--text); height: 100dvh; display: flex; justify-content: center; overflow: hidden; }
@@ -173,7 +173,7 @@ button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
       .focus-right { justify-content: space-between; }
     }
     @media (max-height: 480px) and (orientation: landscape) { .nav-item { min-height: 44px; flex-direction: row; justify-content: center; } .nav-item svg { width: 20px; height: 20px; } }
-        @media (prefers-reduced-motion: reduce) { .animate-fade-up { animation: none; } * { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .animate-fade-up { animation: none; } * { transition: none !important; } }
 
     @media print {
       :root { --bg: #fff; --card: #fff; --surface: #f1f5f9; --muted-surface: #f1f5f9; --text: #0f172a; --text-2: #475569; --border: #cbd5e1; }
@@ -593,16 +593,9 @@ button.nav-item{background:none;border:none;font-family:inherit;cursor:pointer}
         });
       }
 
-      // Tab-style navigation: replace this page in history instead of stacking it,
-      // so Back from Practice/Materials goes to Home, not back to Progress.
-      document.querySelectorAll('.nav-item[href], .back-btn[href]').forEach((a) => {
-        a.addEventListener('click', (e) => {
-          if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-          e.preventDefault();
-          if (norm(a.getAttribute('href')) === here) return;
-          window.location.replace(a.getAttribute('href'));
-        });
-      });
+      // Back always returns to Home on this tab page
+      history.pushState({ tab: true }, '', location.href);
+      window.addEventListener('popstate', () => { window.location.replace('home.html'); });
 
       // More sheet
       const moreSheet = $('moreSheet');
