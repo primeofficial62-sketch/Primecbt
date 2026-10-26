@@ -801,6 +801,19 @@
     document.getElementById('skipBtn').addEventListener('click', () => {
       window.location.href = 'auth.html?mode=register';
     });
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js")
+      .catch((error) => {
+        console.error(
+          "Service worker registration failed:",
+          error
+        );
+      });
+  });
+}
+
   </script>
 
 </body>
