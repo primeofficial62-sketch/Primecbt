@@ -1,6 +1,6 @@
 {
   "functions": {
     "api/admin.js": { "maxDuration": 300 }
-  }
-{ "crons": [{ "path": "/api/email?action=daily", "schedule": "0 6 * * *" }] }
+  },
+  "crons": [{ "path": "/api/email?action=daily", "schedule": "0 6 * * *" }]
 }
