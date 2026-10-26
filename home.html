@@ -737,23 +737,28 @@ document.addEventListener('DOMContentLoaded', () => {
   let identityBusy = false;
   async function refreshIdentity() {
     if (identityBusy) return;
-    identityBusy = true;
+        identityBusy = true;
     try {
       const { data: u } = await supabaseClient.auth.getUser();
-          const user = session.user;
-    // Email system: mark activity + send first-login welcome (once)
-    fetch('/api/email?action=ping', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + session.access_token }
-    }).catch(() => {});
-    paintIdentity(user, {});
-
-  async function loadUser() {
+      const user = u && u.user;
+      if (!user) return;
+      let p = {};
+      try { const r = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle(); p = (r && r.data) || {}; } catch (e) {}
+      paintIdentity(user, p);
+    } catch (e) {}
+    identityBusy = false;
+  }
+    
+    async function loadUser() {
     let session = null;
     try { const res = await supabaseClient.auth.getSession(); session = res.data && res.data.session; } catch (e) {}
     if (!session) { window.location.replace('auth.html?mode=login'); return; }
     if (needsProfileSetup(session.user)) { window.location.replace('profile-setup.html'); return; }
     const user = session.user;
+    fetch('/api/email?action=ping', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + session.access_token }
+    }).catch(() => {});
     paintIdentity(user, {});
     refreshIdentity();
     initTip(); initExam(user); initFocus(user); startNotifications(user);
