@@ -740,14 +740,13 @@ document.addEventListener('DOMContentLoaded', () => {
     identityBusy = true;
     try {
       const { data: u } = await supabaseClient.auth.getUser();
-      const user = u && u.user;
-      if (!user) return;
-      let p = {};
-      try { const r = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle(); p = (r && r.data) || {}; } catch (e) {}
-      paintIdentity(user, p);
-    } catch (e) {}
-    identityBusy = false;
-  }
+          const user = session.user;
+    // Email system: mark activity + send first-login welcome (once)
+    fetch('/api/email?action=ping', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + session.access_token }
+    }).catch(() => {});
+    paintIdentity(user, {});
 
   async function loadUser() {
     let session = null;
