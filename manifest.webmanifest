@@ -9,14 +9,12 @@
   "display": "standalone",
   "background_color": "#080808",
   "theme_color": "#FF6B2C",
-  
-"icons": [
-  {
-    "src": "/prime-cbt-icon.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "any"
-  }
-]
-
+  "icons": [
+    {
+      "src": "/Screenshot_20261026-095452.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
 }
