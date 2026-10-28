@@ -772,32 +772,37 @@ document.addEventListener('DOMContentLoaded', () => {
   supabaseClient.auth.onAuthStateChange((event) => { if (event === 'USER_UPDATED') refreshIdentity(); });
 });
 </script>
-<script>
+ 
+   <script>
 (async function () {
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-
-  // Only for logged-in users
-  let session = null;
-  try { session = (await supabase.auth.getSession()).data.session; } catch (e) {}
-  if (!session) return;
-
-  // Already allowed: quietly keep the subscription fresh
-  if (Notification.permission === 'granted') { enablePush(supabase); return; }
-  // Blocked by the user: do nothing
-  if (Notification.permission !== 'default') return;
-
-  const bell = document.createElement('button');
-  bell.setAttribute('aria-label', 'Turn on notifications');
-  bell.innerHTML = '🔔';
-  bell.style.cssText = 'position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;border:0;background:#111;color:#fff;font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,.3);z-index:9999;cursor:pointer';
-
-  bell.onclick = async () => {
-    try { await enablePush(supabase); } catch (e) { console.error(e); }
-    bell.remove();
+  const say = (m) => {
+    const d = document.createElement('div');
+    d.textContent = 'Bell debug: ' + m;
+    d.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;padding:10px;background:#c00;color:#fff;font-size:13px;border-radius:8px;z-index:99999';
+    document.body.appendChild(d);
   };
 
+  if (!('Notification' in window)) return say('Notification not supported here (on iPhone, open from Home Screen icon)');
+  if (!('serviceWorker' in navigator)) return say('Service worker not supported');
+  if (typeof supabase === 'undefined') return say('supabase is not defined where this script runs');
+  if (typeof enablePush === 'undefined') return say('enablePush is not defined, push.js not loaded before this script');
+
+  let session = null;
+  try { session = (await supabase.auth.getSession()).data.session; } catch (e) { return say('getSession failed: ' + e.message); }
+  if (!session) return say('Not logged in');
+
+  if (Notification.permission === 'granted') return say('Permission already granted, no bell needed');
+  if (Notification.permission === 'denied') return say('Notifications are blocked for this site');
+
+  const bell = document.createElement('button');
+  bell.innerHTML = '🔔';
+  bell.style.cssText = 'position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;border:0;background:#111;color:#fff;font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,.3);z-index:9999';
+  bell.onclick = async () => {
+    try { await enablePush(supabase); bell.remove(); } catch (e) { say('enablePush error: ' + e.message); }
+  };
   document.body.appendChild(bell);
 })();
 </script>
+
 </body>
 </html>
