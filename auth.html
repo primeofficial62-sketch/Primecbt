@@ -631,6 +631,52 @@
       </p>
     </div>
 
+    <div class="panel" id="panel-forgot">
+  <h2 class="headline sm">Reset your<br><span class="accent">password.</span></h2>
+  <p class="subtext">Enter the email you signed up with and we'll send you a 6-digit code.</p>
+  <form class="form" id="forgotForm" style="margin-top:22px" novalidate>
+    <div class="field">
+      <label class="field-label" for="forgotEmail">Email</label>
+      <input type="email" id="forgotEmail" name="email" placeholder="you@example.com" required autocomplete="email">
+      <span class="field-error" role="alert">Enter a valid email address</span>
+    </div>
+    <button type="submit" class="cta" id="forgotBtn">
+      <span class="spinner" aria-hidden="true"></span>
+      <span class="cta-text">Send code →</span>
+    </button>
+  </form>
+  <p class="switch-line"><a href="#" data-switch="login">Back to Log In</a></p>
+</div>
+
+<div class="panel" id="panel-reset">
+  <h2 class="headline sm">Create a new<br><span class="accent">password.</span></h2>
+  <p class="subtext" id="resetSubtext">Enter the 6-digit code we sent to your email, then choose a new password.</p>
+  <form class="form" id="resetForm" style="margin-top:22px" novalidate>
+    <div class="otp-wrap">
+      <div class="otp-row" id="resetOtpRow" role="group" aria-label="Reset code"></div>
+      <span class="field-error" id="resetOtpError" role="alert" style="display:none;margin-top:10px">That code is incorrect or expired</span>
+    </div>
+    <div class="field">
+      <label class="field-label" for="resetPw">New password</label>
+      <div class="pw-wrap">
+        <input type="password" name="password" placeholder="At least 6 characters" required id="resetPw" minlength="6" autocomplete="new-password">
+        <button type="button" class="pw-toggle" data-target="resetPw" aria-label="Show password" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/><path class="slash" d="M3 3l18 18"/>
+          </svg>
+        </button>
+      </div>
+      <span class="field-error" role="alert">Password must be at least 6 characters</span>
+    </div>
+    <button type="submit" class="cta" id="resetBtn">
+      <span class="spinner" aria-hidden="true"></span>
+      <span class="cta-text">Reset password</span>
+    </button>
+  </form>
+  <p class="switch-line" style="margin-top:18px">Didn't get it? <a href="#" id="resendResetLink">Resend code</a></p>
+  <p class="switch-line" style="margin-top:12px"><a href="#" data-switch="login">Back to Log In</a></p>
+</div>
+    
     <!-- ==================== LOGIN ==================== -->
     <div class="panel" id="panel-login">
       <form class="form" id="loginForm" novalidate>
@@ -659,7 +705,7 @@
             <span class="box"></span>
             Remember me
           </label>
-          <a href="#" class="link-sm">Forgot password?</a>
+          <a href="#" class="link-sm" id="forgotLink">Forgot password?</a>
         </div>
 
         <button type="submit" class="cta" id="loginBtn" style="margin-top:6px">
@@ -723,6 +769,8 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   const panelRegister = document.getElementById('panel-register');
   const panelLogin = document.getElementById('panel-login');
   const panelVerify = document.getElementById('panel-verify');
+  const panelForgot = document.getElementById('panel-forgot');
+  const panelReset = document.getElementById('panel-reset');
   const headlineRegister = document.getElementById('headlineRegister');
   const headlineLogin = document.getElementById('headlineLogin');
   
@@ -730,15 +778,16 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     // The verify panel has no headline/switcher tab of its own — it just
     // replaces whichever panel is showing, keeping the switcher on
     // whatever it was last set to.
-    if (mode === 'verify') {
-      panelRegister.classList.remove('active');
-      panelLogin.classList.remove('active');
-      panelVerify.classList.add('active');
-      return;
-    }
+    const special = { verify: panelVerify, forgot: panelForgot, reset: panelReset };
+if (special[mode]) {
+  panelRegister.classList.remove('active');
+  panelLogin.classList.remove('active');
+  Object.values(special).forEach(p => p.classList.toggle('active', p === special[mode]));
+  return;
+}
 
-    panelVerify.classList.remove('active');
-    switcher.dataset.mode = mode;
+Object.values(special).forEach(p => p.classList.remove('active'));
+switcher.dataset.mode = mode;
     
     switchBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.mode === mode);
@@ -1123,6 +1172,142 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     }
   });
 
+  // ========== FORGOT PASSWORD ==========
+let resetEmail = null;
+let resetVerified = false;
+let resetCooldown = false;
+let resetOtpInputs = [];
+const resetOtpRow = document.getElementById('resetOtpRow');
+const resetOtpError = document.getElementById('resetOtpError');
+const forgotEmailInput = document.getElementById('forgotEmail');
+const resetPwInput = document.getElementById('resetPw');
+
+function getResetCode() { return resetOtpInputs.map(i => i.value).join(''); }
+
+function buildResetOtp() {
+  resetOtpRow.innerHTML = '';
+  resetOtpRow.classList.remove('error');
+  resetOtpError.style.display = 'none';
+  resetOtpInputs = [];
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.inputMode = 'numeric';
+    inp.maxLength = 1;
+    inp.autocomplete = i === 0 ? 'one-time-code' : 'off';
+    inp.setAttribute('aria-label', `Digit ${i + 1}`);
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+      resetOtpRow.classList.remove('error');
+      resetOtpError.style.display = 'none';
+      if (inp.value && i < CODE_LENGTH - 1) resetOtpInputs[i + 1].focus();
+      else if (inp.value && getResetCode().length === CODE_LENGTH) resetPwInput.focus();
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !inp.value && i > 0) resetOtpInputs[i - 1].focus();
+    });
+    inp.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, CODE_LENGTH);
+      digits.split('').forEach((d, k) => { resetOtpInputs[k].value = d; });
+      if (digits.length === CODE_LENGTH) resetPwInput.focus();
+      else resetOtpInputs[Math.min(digits.length, CODE_LENGTH - 1)].focus();
+    });
+    resetOtpRow.appendChild(inp);
+    resetOtpInputs.push(inp);
+  }
+  resetOtpInputs[0].focus();
+}
+
+document.getElementById('forgotLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  const typed = document.getElementById('loginEmail').value.trim();
+  if (typed) forgotEmailInput.value = typed;
+  setMode('forgot');
+  forgotEmailInput.focus();
+});
+
+document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('forgotBtn');
+  if (btn.classList.contains('loading')) return;
+  const email = forgotEmailInput.value.trim();
+  const valid = /^\S+@\S+\.\S+$/.test(email);
+  setFieldError(forgotEmailInput, !valid);
+  if (!valid) { forgotEmailInput.focus(); return; }
+
+  setLoading(btn, true);
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+  setLoading(btn, false);
+  if (error) { showToast(error.message, 'error'); return; }
+
+  resetEmail = email;
+  resetVerified = false;
+  resetPwInput.value = '';
+  document.getElementById('resetSubtext').textContent =
+    `Enter the ${CODE_LENGTH}-digit code we sent to ${email}, then choose a new password.`;
+  setMode('reset');
+  buildResetOtp();
+  showToast('If that email has an account, a code is on its way.', 'success');
+});
+
+document.getElementById('resetForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('resetBtn');
+  if (btn.classList.contains('loading') || !resetEmail) return;
+
+  const code = getResetCode();
+  const password = resetPwInput.value;
+  if (!resetVerified && code.length !== CODE_LENGTH) {
+    resetOtpRow.classList.add('error');
+    resetOtpError.textContent = `Enter the ${CODE_LENGTH}-digit code`;
+    resetOtpError.style.display = 'block';
+    resetOtpInputs[Math.max(0, code.length)].focus();
+    return;
+  }
+  setFieldError(resetPwInput, password.length < 6);
+  if (password.length < 6) { resetPwInput.focus(); return; }
+
+  setLoading(btn, true);
+  if (!resetVerified) {
+    const { error: otpErr } = await supabaseClient.auth.verifyOtp({
+      email: resetEmail, token: code, type: 'recovery'
+    });
+    if (otpErr) {
+      setLoading(btn, false);
+      resetOtpRow.classList.add('error');
+      resetOtpError.textContent = 'That code is incorrect or expired';
+      resetOtpError.style.display = 'block';
+      resetOtpInputs.forEach(i => { i.value = ''; });
+      resetOtpInputs[0].focus();
+      return;
+    }
+    resetVerified = true;
+  }
+
+  const { error: updErr } = await supabaseClient.auth.updateUser({ password });
+  setLoading(btn, false);
+  if (updErr) { showToast(updErr.message, 'error'); return; }
+
+  markReturningUser();
+  clearProgress();
+  showToast('Password updated! Logging you in…', 'success');
+  setTimeout(() => { window.location.href = 'home.html'; }, 1200);
+});
+
+document.getElementById('resendResetLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (!resetEmail || resetCooldown) {
+    if (resetCooldown) showToast('Please wait a minute before requesting another code.', 'error');
+    return;
+  }
+  resetCooldown = true;
+  setTimeout(() => { resetCooldown = false; }, 60000);
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(resetEmail);
+  if (error) { resetCooldown = false; showToast(error.message, 'error'); }
+  else { resetVerified = false; showToast('New code sent!', 'success'); buildResetOtp(); }
+});
+  
   // ========== RESTORE PROGRESS ==========
   (function restoreProgress() {
     const p = loadProgress();
