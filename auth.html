@@ -185,6 +185,18 @@
     .step-line { width: 44px; height: 2px; background: var(--inactive); transition: background .25s ease; }
     .step-line.done { background: var(--emerald); }
 
+    /* ========== VERIFICATION CODE ========== */
+    .otp-row { display: flex; gap: 10px; justify-content: center; }
+    .otp-row input {
+      width: 100%; max-width: 56px; min-width: 0; height: 62px;
+      text-align: center; font-family: inherit; font-size: 24px; font-weight: 600;
+      color: var(--text); background: var(--field);
+      border: 1px solid var(--border); border-radius: 14px; outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .otp-row input:focus { border-color: var(--emerald); box-shadow: 0 0 0 3px var(--ring); }
+    .otp-row.error input { border-color: var(--red); }
+
     /* ========== FORM ========== */
     .form { display: flex; flex-direction: column; gap: 18px; }
     .field { display: flex; flex-direction: column; gap: 8px; }
@@ -595,23 +607,27 @@
       </p>
     </div>
 
-    <!-- ==================== CHECK EMAIL (LINK) ==================== -->
+    <!-- ==================== VERIFY CODE ==================== -->
     <div class="panel" id="panel-verify">
-      <h2 class="headline sm">Check your<br><span class="accent">email.</span></h2>
-      <p class="subtext" id="verifySubtext">We sent a confirmation link to your email.</p>
+      <h2 class="headline sm">Enter your<br><span class="accent">code.</span></h2>
+      <p class="subtext" id="verifySubtext">We sent a verification code to your email.</p>
 
-      <div class="info-card">
-        <p class="subtext">
-          Click the link in that email to confirm your account, then come back here and log in.
-        </p>
-      </div>
+      <form id="verifyForm" novalidate style="margin-top:26px">
+        <div class="otp-row" id="otpRow" role="group" aria-label="Verification code"></div>
+        <span class="field-error" id="otpError" role="alert" style="display:none;margin-top:10px">That code is incorrect or expired</span>
+
+        <button type="submit" class="cta" id="verifyBtn" style="margin-top:22px">
+          <span class="spinner" aria-hidden="true"></span>
+          <span class="cta-text">Verify account</span>
+        </button>
+      </form>
 
       <p class="switch-line" style="margin-top:18px">
-        Didn't get it? <a href="#" id="resendCodeLink">Resend email</a>
+        Didn't get it? <a href="#" id="resendCodeLink">Resend code</a>
       </p>
 
       <p class="switch-line" style="margin-top:12px">
-        Already confirmed? <a href="#" data-switch="login">Log In</a>
+        <a href="#" data-switch="login">Back to Log In</a>
       </p>
     </div>
 
@@ -837,7 +853,6 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
         email: email,
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth.html?mode=login`,
           data: {
             full_name: fullname,
             school: school,
@@ -866,9 +881,10 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       } else {
         // Email confirmation is required — show the "check your email" panel
         pendingVerifyEmail = email;
-        document.getElementById('verifySubtext').textContent = `We sent a confirmation link to ${email}.`;
+        document.getElementById('verifySubtext').textContent = `We sent a ${CODE_LENGTH}-digit code to ${email}.`;
         setMode('verify');
-        showToast('Check your email to confirm your account!', 'success');
+        buildOtpInputs();
+        showToast('Check your email for your code!', 'success');
       }
       return;
     }
@@ -962,10 +978,96 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     }, 1000);
   });
   
-  // ========== RESEND CONFIRMATION LINK ==========
+  // ========== EMAIL VERIFICATION CODE ==========
+  // Must match Supabase Dashboard > Authentication > Email > "Email OTP Length"
+  // (Supabase's minimum is 6).
+  const CODE_LENGTH = 6;
+  const otpRow = document.getElementById('otpRow');
+  const otpError = document.getElementById('otpError');
+  let otpInputs = [];
+
+  function buildOtpInputs() {
+    otpRow.innerHTML = '';
+    otpRow.classList.remove('error');
+    otpError.style.display = 'none';
+    otpInputs = [];
+    for (let i = 0; i < CODE_LENGTH; i++) {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.inputMode = 'numeric';
+      inp.maxLength = 1;
+      inp.autocomplete = i === 0 ? 'one-time-code' : 'off';
+      inp.setAttribute('aria-label', `Digit ${i + 1}`);
+      inp.addEventListener('input', () => {
+        inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+        otpRow.classList.remove('error');
+        otpError.style.display = 'none';
+        if (inp.value && i < CODE_LENGTH - 1) otpInputs[i + 1].focus();
+        if (getCode().length === CODE_LENGTH) verifyForm.requestSubmit();
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !inp.value && i > 0) otpInputs[i - 1].focus();
+      });
+      inp.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, CODE_LENGTH);
+        digits.split('').forEach((d, k) => { otpInputs[k].value = d; });
+        otpInputs[Math.min(digits.length, CODE_LENGTH - 1)].focus();
+        if (digits.length === CODE_LENGTH) verifyForm.requestSubmit();
+      });
+      otpRow.appendChild(inp);
+      otpInputs.push(inp);
+    }
+    otpInputs[0].focus();
+  }
+
+  function getCode() { return otpInputs.map(i => i.value).join(''); }
+
+  const verifyForm = document.getElementById('verifyForm');
+  verifyForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('verifyBtn');
+    if (btn.classList.contains('loading') || !pendingVerifyEmail) return;
+
+    const code = getCode();
+    if (code.length !== CODE_LENGTH) {
+      otpRow.classList.add('error');
+      otpError.textContent = `Enter the ${CODE_LENGTH}-digit code`;
+      otpError.style.display = 'block';
+      return;
+    }
+
+    setLoading(btn, true);
+    const { error } = await supabaseClient.auth.verifyOtp({
+      email: pendingVerifyEmail,
+      token: code,
+      type: 'signup'
+    });
+    setLoading(btn, false);
+
+    if (error) {
+      otpRow.classList.add('error');
+      otpError.textContent = 'That code is incorrect or expired';
+      otpError.style.display = 'block';
+      otpInputs.forEach(i => { i.value = ''; });
+      otpInputs[0].focus();
+      return;
+    }
+
+    // verifyOtp signs the user in, so go straight to the app
+    markReturningUser();
+    showToast('Account verified!', 'success');
+    setTimeout(() => { window.location.href = 'home.html'; }, 1000);
+  });
+
+  // ========== RESEND CODE ==========
+  let resendCooldown = false;
   document.getElementById('resendCodeLink').addEventListener('click', async (e) => {
     e.preventDefault();
-    if (!pendingVerifyEmail) return;
+    if (!pendingVerifyEmail || resendCooldown) return;
+
+    resendCooldown = true;
+    setTimeout(() => { resendCooldown = false; }, 30000);
 
     const { error } = await supabaseClient.auth.resend({
       type: 'signup',
@@ -973,9 +1075,11 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     });
 
     if (error) {
+      resendCooldown = false;
       showToast(error.message, 'error');
     } else {
-      showToast('Confirmation email resent!', 'success');
+      showToast('New code sent!', 'success');
+      buildOtpInputs();
     }
   });
 
