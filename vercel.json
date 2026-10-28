@@ -1,12 +1,5 @@
 {
   "cleanUrls": true,
-  "redirects": [
-    { "source": "/home", "destination": "/", "permanent": true },
-    { "source": "/home.html", "destination": "/", "permanent": true }
-  ],
-  "rewrites": [
-    { "source": "/", "destination": "/home.html" }
-  ],
   "functions": {
     "api/admin.js": { "maxDuration": 300 }
   },
