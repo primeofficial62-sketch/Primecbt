@@ -789,6 +789,7 @@
       return '<div class="fld"><label for="f_upload">' + esc(cur ? 'Attached file' : f.label) + '</label>' + curHtml +
         '<input type="file" id="f_upload" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,image/*"><div class="hint" id="upStatus">' + esc(upHint) + '</div></div>';
     }
+    if (f.type === 'hidden') return '<input type="hidden" id="' + id + '" value="' + esc(v) + '">';
     if (f.type === 'mcq') return mcqHtml(row);
     if (f.type === 'bool') return '<div class="fld check"><input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '><label for="' + id + '" style="margin:0">' + esc(f.label) + '</label></div>';
     if (f.type === 'static') return '<div class="fld"><label>' + esc(f.label) + '</label><div class="static">' + esc(v) + '</div></div>';
@@ -842,6 +843,7 @@
       var val = f.type === 'bool' ? el.checked : el.value.trim();
       if (f.required && val === '') throw new Error('Please fill in "' + f.label + '".');
       if (f.type === 'number') val = val === '' ? null : Number(val);
+      if (f.type === 'hidden' && val === '') val = null;
       data[f.key] = val;
     }
     return data;
@@ -908,6 +910,11 @@ async function compressPdf(file, onProgress) {
   }
   if (!best || best.length > PDF_LIMIT) throw new Error('Still over 50 MB after compression. Split the PDF');
   return new File([best], file.name, { type: 'application/pdf' });
+}
+  async function hashFile(file) {
+  var buf = await file.arrayBuffer();
+  var digest = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(digest)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
 }
   
   /* ================= file upload ================= */
@@ -1007,6 +1014,22 @@ async function compressPdf(file, onProgress) {
 var isPdf = ext === 'pdf' || f.type === 'application/pdf';
 if (!isPdf && f.size > PDF_LIMIT) { st.textContent = 'That file is over 50 MB.'; inp.value = ''; return; }
 if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB. Split it first.'; inp.value = ''; return; }
+            st.textContent = 'Checking for duplicates…';
+      var fileHash = '';
+      try {
+        fileHash = await hashFile(f);
+        var same = $('f_file_hash') && $('f_file_hash').value === fileHash;
+        if (!same) {
+          var dupRows = (await api('list', { table: 'materials', filters: { file_hash: fileHash }, limit: 1 })).rows;
+          if (dupRows && dupRows.length) {
+            st.textContent = 'Rejected: this file is already uploaded as "' + (dupRows[0].title || 'another material') + '". Nothing was uploaded.';
+            toast('Duplicate file rejected', true);
+            inp.value = '';
+            return;
+          }
+        }
+      } catch (e) { console.error('Duplicate check failed', e); }
+      
       upBusy = true;
 
       // 1. Fill everything we can from the file itself, before any upload
@@ -1040,6 +1063,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         var url = await uploadFile(f);
         if (!$('upStatus')) { upBusy = false; return; }
         $('f_file_url').value = url;
+        if ($('f_file_hash')) $('f_file_hash').value = fileHash;
         if ($('curFileName')) $('curFileName').textContent = f.name;
         if ($('curFileLink')) $('curFileLink').href = url;
         $('upStatus').textContent = 'Uploaded: ' + f.name;
@@ -1479,7 +1503,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         { key: 'material_type', label: 'Type', type: 'select', required: true, opts: [['PDF','PDF'], ['Past questions','Past questions'], ['Notes','Notes'], ['Slides','Slides'], ['Image','Image'], ['Video','Video']] },
         { key: 'file_url', label: 'File link', type: 'text', required: true, ph: 'https://…', hint: 'Filled in automatically after you upload. You can also paste a link instead.' },
         { key: 'page_count', label: 'Pages', type: 'number' },
-        { key: 'size_bytes', label: 'File size in bytes', type: 'number' }
+        { key: 'size_bytes', label: 'File size in bytes', type: 'number' },
+{ key: 'file_hash', type: 'hidden' }
       ],
       row: function (r) { return { title: r.title, tag: r.material_type || '', sub: [r.course, r.topic].filter(Boolean).join(', ') }; }
     },
