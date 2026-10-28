@@ -1492,7 +1492,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         if (!ok) return;
         try { var r = await api('normalize_material_courses', {}, 60000); toast(r.changed ? 'Updated ' + r.changed + ' materials' : 'Every material already uses a course code'); if (done) done(); }
         catch (e) { toast(e.message, true); }
-      } }],
+      } },
+      { label: 'Duplicates', icon: 'search', run: function (done) { findDuplicates(done); } }],
       actions: [{ label: 'Make questions', run: function (r) { generateForMaterialRow(r); } }],
       filter: { key: 'course', label: 'All courses', courseText: true },
       sort: function (r) { return r.title || ''; },
