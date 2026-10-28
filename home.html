@@ -772,5 +772,32 @@ document.addEventListener('DOMContentLoaded', () => {
   supabaseClient.auth.onAuthStateChange((event) => { if (event === 'USER_UPDATED') refreshIdentity(); });
 });
 </script>
+<script>
+(async function () {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+  // Only for logged-in users
+  let session = null;
+  try { session = (await supabase.auth.getSession()).data.session; } catch (e) {}
+  if (!session) return;
+
+  // Already allowed: quietly keep the subscription fresh
+  if (Notification.permission === 'granted') { enablePush(supabase); return; }
+  // Blocked by the user: do nothing
+  if (Notification.permission !== 'default') return;
+
+  const bell = document.createElement('button');
+  bell.setAttribute('aria-label', 'Turn on notifications');
+  bell.innerHTML = '🔔';
+  bell.style.cssText = 'position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;border:0;background:#111;color:#fff;font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,.3);z-index:9999;cursor:pointer';
+
+  bell.onclick = async () => {
+    try { await enablePush(supabase); } catch (e) { console.error(e); }
+    bell.remove();
+  };
+
+  document.body.appendChild(bell);
+})();
+</script>
 </body>
 </html>
