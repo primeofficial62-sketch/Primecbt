@@ -768,6 +768,43 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   
   // ========== MULTI-STEP REGISTER ==========
   let currentStep = 0;
+
+  // ========== SAVE PROGRESS ==========
+  // Saves name, email, school etc. (never the password) plus the "enter code"
+  // screen, so a refresh or accidental close doesn't lose the user's place.
+  const PROGRESS_KEY = 'auth_progress_v1';
+  const PROGRESS_TTL = 60 * 60 * 1000; // 1 hour, same as the default code expiry
+
+  function loadProgress() {
+    try {
+      const p = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+      if (p && Date.now() - p.t < PROGRESS_TTL) return p;
+    } catch {}
+    return null;
+  }
+  function saveProgress(patch) {
+    try {
+      const p = Object.assign(loadProgress() || {}, patch, { t: Date.now() });
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+    } catch {}
+  }
+  function clearProgress() {
+    try { localStorage.removeItem(PROGRESS_KEY); } catch {}
+  }
+  function saveFormFields() {
+    const f1 = document.getElementById('regForm1');
+    const f2 = document.getElementById('regForm2');
+    saveProgress({ fields: {
+      fullname: f1.fullname.value, email: f1.email.value,
+      school: f2.school.value, department: f2.department.value,
+      level: f2.level.value, matric: f2.matric.value
+    }});
+  }
+  ['regForm1', 'regForm2'].forEach(id => {
+    const f = document.getElementById(id);
+    f.addEventListener('input', saveFormFields);
+    f.addEventListener('change', saveFormFields);
+  });
   const regSteps = document.querySelectorAll('.reg-step');
   const stepDots = document.querySelectorAll('.step-dot');
   const stepLines = document.querySelectorAll('.step-line');
@@ -874,6 +911,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       markReturningUser();
 
       if (data.session) {
+        clearProgress();
         showToast('Account created successfully!', 'success');
         setTimeout(() => {
           window.location.href = 'home.html';
@@ -881,6 +919,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       } else {
         // Email confirmation is required — show the "check your email" panel
         pendingVerifyEmail = email;
+        saveProgress({ verifyEmail: email });
         document.getElementById('verifySubtext').textContent = `We sent a ${CODE_LENGTH}-digit code to ${email}.`;
         setMode('verify');
         buildOtpInputs();
@@ -1056,6 +1095,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
 
     // verifyOtp signs the user in, so go straight to the app
     markReturningUser();
+    clearProgress();
     showToast('Account verified!', 'success');
     setTimeout(() => { window.location.href = 'home.html'; }, 1000);
   });
@@ -1082,6 +1122,35 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       buildOtpInputs();
     }
   });
+
+  // ========== RESTORE PROGRESS ==========
+  (function restoreProgress() {
+    const p = loadProgress();
+    if (!p) return;
+
+    const v = p.fields || {};
+    const f1 = document.getElementById('regForm1');
+    const f2 = document.getElementById('regForm2');
+    if (v.fullname)   f1.fullname.value = v.fullname;
+    if (v.email)      f1.email.value = v.email;
+    if (v.school)     f2.school.value = v.school;
+    if (v.department) f2.department.value = v.department;
+    if (v.level)      f2.level.value = v.level;
+    if (v.matric)     f2.matric.value = v.matric;
+
+    if (modeParam === 'login') return;
+
+    if (p.verifyEmail) {
+      // They had already signed up and were on the "enter code" screen
+      pendingVerifyEmail = p.verifyEmail;
+      document.getElementById('verifySubtext').textContent =
+        `We sent a ${CODE_LENGTH}-digit code to ${p.verifyEmail}.`;
+      setMode('verify');
+      buildOtpInputs();
+    } else if (v.fullname || v.email) {
+      showToast('Welcome back! Re-enter your password to continue.', 'success');
+    }
+  })();
 
   // ========== BACK BUTTON ==========
   document.getElementById('backBtn').addEventListener('click', () => {
