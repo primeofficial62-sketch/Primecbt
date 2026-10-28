@@ -1,4 +1,4 @@
-const VAPID_PUBLIC_KEY = 'PASTE_YOUR_VAPID_PUBLIC_KEY_HERE';
+const VAPID_PUBLIC_KEY = 'BDQyW8OkY6IMg7Vd_e8Jj9A-U5vKD8qmfvj-PGmrpUMIhdF7uvhhAdt-BR_jsSO1cYJMfJMeIs4m6kKl4vKq1SQ';
 
 function urlB64ToUint8Array(b64) {
   const pad = '='.repeat((4 - (b64.length % 4)) % 4);
@@ -40,24 +40,42 @@ async function enablePush(sb) {
   return true;
 }
 
-// Small floating bell
-window.addEventListener('load', async () => {
-  try {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-    if (typeof supabase === 'undefined' || !supabase.auth) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    if (Notification.permission === 'granted') { enablePush(supabase).catch(() => {}); return; }
-    if (Notification.permission !== 'default') return;
+// Floating bell: shows only to users who haven't subscribed yet
+(function () {
+  async function run() {
+    try {
+      if (document.getElementById('push-bell')) return;
+      if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      if (typeof supabase === 'undefined' || !supabase.auth) return;
+      if (Notification.permission === 'denied') return;
 
-    const bell = document.createElement('button');
-    bell.innerHTML = '🔔';
-    bell.setAttribute('aria-label', 'Turn on notifications');
-    bell.style.cssText = 'position:fixed;bottom:90px;right:20px;width:44px;height:44px;border-radius:50%;border:0;background:#111;color:#fff;font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,.3);z-index:9999';
-    bell.onclick = async () => {
-      try { await enablePush(supabase); bell.remove(); }
-      catch (e) { alert('Notifications: ' + e.message); }
-    };
-    document.body.appendChild(bell);
-  } catch (e) { console.error(e); }
-});
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Already allowed on this device: no bell, just make sure it's saved to the account
+      if (Notification.permission === 'granted') {
+        if (session) enablePush(supabase).catch(() => {});
+        return;
+      }
+
+      // Not decided yet: show the bell
+      const bell = document.createElement('button');
+      bell.id = 'push-bell';
+      bell.innerHTML = '🔔';
+      bell.setAttribute('aria-label', 'Turn on notifications');
+      bell.style.cssText = 'position:fixed;bottom:90px;right:20px;width:44px;height:44px;border-radius:50%;border:0;background:#111;color:#fff;font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,.3);z-index:9999';
+      bell.onclick = async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (!s) { alert('Please log in first to turn on notifications.'); return; }
+        try { await enablePush(supabase); bell.remove(); }
+        catch (e) { alert('Notifications: ' + e.message); }
+      };
+      document.body.appendChild(bell);
+    } catch (e) { console.error(e); }
+  }
+
+  if (document.readyState === 'complete') run();
+  else window.addEventListener('load', run);
+
+  // If someone logs in later, re-check so their device gets saved
+  try { supabase.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN') run(); }); } catch (e) {}
+})();
