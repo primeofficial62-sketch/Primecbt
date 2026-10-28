@@ -1,52 +1,27 @@
+// PRIME-CBT service worker: Web Push handlers.
+// If you already have a sw.js, copy these two listeners into it instead of replacing it.
 
-const CACHE_NAME = "prime-cbt-v1";
-
-const APP_FILES = [
-  "/",
-  "/manifest.webmanifest"
-];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_FILES))
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) {}
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'PRIME-CBT', {
+      body: d.body || '',
+      tag: d.tag,
+      data: { url: d.url || '/' },
+    })
   );
-
-  self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
-  );
-
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-
-  const url = new URL(event.request.url);
-
-  if (url.origin !== self.location.origin) return;
-
-  event.respondWith(
-    fetch(event.request).catch(async () => {
-      const cached = await caches.match(event.request);
-      if (cached) return cached;
-
-      if (event.request.mode === "navigate") {
-        const home = await caches.match("/");
-        if (home) return home;
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) { c.navigate(url); return c.focus(); }
       }
-
-      return Response.error();
+      return clients.openWindow(url);
     })
   );
 });
