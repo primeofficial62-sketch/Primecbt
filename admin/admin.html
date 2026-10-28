@@ -2305,6 +2305,131 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     };
   }
 
+    /* ---------- find and delete duplicate files ---------- */
+  async function findDuplicates(done) {
+    var rows;
+    try { rows = (await allMaterials()).filter(function (r) { return r.file_url; }); }
+    catch (e) { toast(e.message, true); return; }
+    var cancelled = false;
+    openSheet('Duplicate files', '<div class="count" id="dupTxt">Scanning 0 of ' + rows.length + '… keep this screen open</div>', '<button class="btn" id="dupClose">Close</button>');
+    sheetCleanup = function () { cancelled = true; };
+    $('dupClose').onclick = function () { closeSheet(); };
+
+    function hashBuf(buf) {
+      return crypto.subtle.digest('SHA-256', buf).then(function (d) {
+        return Array.from(new Uint8Array(d)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    var byHash = {}, failed = 0, scanned = 0, next = 0;
+    async function worker() {
+      while (!cancelled && next < rows.length) {
+        var r = rows[next++];
+        try {
+          var h = r.file_hash;
+          if (!h) {
+            var res = await fetch(r.file_url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            h = await hashBuf(await res.arrayBuffer());
+          }
+          r._hash = h;
+          (byHash[h] = byHash[h] || []).push(r);
+        } catch (e) { failed++; }
+        scanned++;
+        var t = $('dupTxt');
+        if (t) t.textContent = 'Scanning ' + scanned + ' of ' + rows.length + '… keep this screen open';
+      }
+    }
+    await Promise.all([worker(), worker(), worker()]);
+    if (cancelled || !$('sheetBody')) return;
+
+    // In every set, keep the copy that already has a saved fingerprint, otherwise the oldest.
+    var all = Object.keys(byHash).map(function (k) { return byHash[k]; });
+    all.forEach(function (g) {
+      g.sort(function (a, b) {
+        if (!!a.file_hash !== !!b.file_hash) return a.file_hash ? -1 : 1;
+        return String(a.created_at).localeCompare(String(b.created_at));
+      });
+    });
+    var groups = all.filter(function (g) { return g.length > 1; });
+
+    // Save fingerprints (one per set) so the upload check can catch these files later.
+    var toSave = all.map(function (g) { return g[0]; }).filter(function (r) { return !r.file_hash; });
+    (async function () {
+      var i = 0;
+      async function w() {
+        while (i < toSave.length) {
+          var r = toSave[i++];
+          try { await api('save', { table: 'materials', id: r.id, data: { file_hash: r._hash } }); } catch (e) {}
+        }
+      }
+      await Promise.all([w(), w(), w(), w()]);
+    })();
+
+    function mb(n) { return n ? (n / 1048576).toFixed(1) + ' MB' : ''; }
+    function meta(r) {
+      return [r.course, r.topic, r.material_type, mb(r.size_bytes), r.page_count ? r.page_count + ' pages' : '',
+        r.created_at ? 'uploaded ' + new Date(r.created_at).toLocaleDateString() : ''].filter(Boolean).join(' · ');
+    }
+    var extra = groups.reduce(function (n, g) { return n + g.length - 1; }, 0);
+    var note = 'Scanned ' + rows.length + ' files' + (failed ? ' (' + failed + ' could not be read)' : '') + '.';
+    if (!groups.length) { $('sheetBody').innerHTML = '<div class="count">' + note + ' No duplicates found.</div>'; return; }
+
+    var html = '<div class="count">' + note + ' Found ' + groups.length + ' sets of identical files, ' + extra + ' extra copies. The oldest copy in each set is kept.</div>';
+    groups.forEach(function (g) {
+      html += '<div style="border:1px solid var(--line);border-radius:12px;overflow:hidden">';
+      g.forEach(function (r, ri) {
+        html += '<div class="row" data-row="' + esc(r.id) + '" style="border:0' + (ri ? ';border-top:1px solid var(--line)' : '') + '">' +
+          '<div class="row-main"><div class="row-title">' + esc(r.title || 'Untitled') + '<span class="tag">' + (ri ? 'Duplicate' : 'Keep') + '</span></div>' +
+          '<div class="row-sub">' + esc(meta(r)) + '</div></div>' +
+          '<div class="row-actions"><a class="btn small" href="' + esc(r.file_url) + '" target="_blank" rel="noopener">Open</a>' +
+          (ri ? '<button class="btn small danger" data-dd="' + esc(r.id) + '">Delete</button>' : '') + '</div></div>';
+      });
+      html += '</div>';
+    });
+    $('sheetBody').innerHTML = html;
+    $('sheetFoot').innerHTML = '<button class="btn" id="dupClose2">Close</button><button class="btn danger-solid" id="dupAll">Delete all ' + extra + ' duplicates</button>';
+    $('dupClose2').onclick = function () { closeSheet(); };
+
+    var dupIds = [];
+    groups.forEach(function (g) { g.slice(1).forEach(function (r) { dupIds.push(r.id); }); });
+    function gone(id) {
+      var el = $('sheetBody') && $('sheetBody').querySelector('[data-row="' + id + '"]');
+      if (el) { var p = el.parentNode; el.remove(); if (p && !p.querySelector('[data-dd]')) p.remove(); }
+      dupIds = dupIds.filter(function (x) { return x !== id; });
+    }
+    function refreshBtn() {
+      var b = $('dupAll'); if (!b) return;
+      if (!dupIds.length) b.remove(); else b.textContent = 'Delete all ' + dupIds.length + ' duplicates';
+    }
+
+    $('sheetBody').addEventListener('click', async function (e) {
+      var b = e.target.closest('[data-dd]'); if (!b) return;
+      var id = b.getAttribute('data-dd');
+      var ok = await confirmBox({ title: 'Delete this duplicate?', text: 'The copy marked Keep stays. This cannot be undone.', yes: 'Delete', danger: true });
+      if (!ok) return;
+      try {
+        await api('remove', { table: 'materials', id: id });
+        delete lookups.materials; gone(id); refreshBtn();
+        toast('Duplicate deleted'); if (done) done();
+      } catch (err) { toast(err.message, true); }
+    });
+
+    $('dupAll').onclick = async function () {
+      var ok = await confirmBox({ title: 'Delete ' + dupIds.length + ' duplicates?', text: 'The oldest copy in every set is kept. This cannot be undone.', yes: 'Delete all', danger: true });
+      if (!ok) return;
+      var btn = $('dupAll'); btn.disabled = true;
+      var ids = dupIds.slice(), removed = 0, bad = 0;
+      for (var i = 0; i < ids.length; i++) {
+        btn.textContent = 'Deleting ' + (i + 1) + ' of ' + ids.length + '…';
+        try { await api('remove', { table: 'materials', id: ids[i] }); removed++; gone(ids[i]); } catch (err) { bad++; }
+      }
+      delete lookups.materials;
+      btn.disabled = false; refreshBtn();
+      toast('Deleted ' + removed + ' duplicates' + (bad ? ', ' + bad + ' failed' : ''), !!bad);
+      if (done) done();
+    };
+  }
+  
   /* ---------- fix old questions: plain-text maths -> proper maths ---------- */
   async function fixOldMath(done) {
     var ids;
