@@ -22,6 +22,15 @@
 //   alter table questions add column if not exists svg text;
 
 const crypto = require('crypto');
+const { AsyncLocalStorage } = require('async_hooks');
+
+// Time budget for one question-writing run. Vercel stops a function at 300 s, so a run stops starting
+// new work after 4 minutes, saves what it has, and the next run writes only what is still missing.
+const runCtx = new AsyncLocalStorage();
+const RUN_BUDGET_MS = 240000;
+const timeLeft = function () { const c = runCtx.getStore(); return c ? c.deadline - Date.now() : Infinity; };
+const deadModel = {};   // a model that answered "not found" is skipped for 6 hours
+let lastSweep = 0;      // the automatic sweep starts at most once every 2 minutes
 
 const URL_ = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -349,11 +358,15 @@ let thinkingOk = true;
 async function geminiCall(model, body) {
   const keys = await getKeys();
   if (!keys.length) return { res: { ok: false, status: 401 }, data: { error: { message: 'No API key. Add one in the API Keys section.' } } };
+  // Every request has a time limit, so one slow answer can never use up the whole 5 minutes.
   const send = function (bd, key) {
     return fetch('https://generativelanguage.googleapis.com/v1beta/models/' + enc(model) + ':generateContent', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify(bd)
+      body: JSON.stringify(bd),
+      signal: AbortSignal.timeout(Math.min(75000, Math.max(timeLeft(), 5000)))
+    }).catch(function () {
+      return { ok: false, status: 503, json: async function () { return { error: { message: 'The question writer took too long to answer.' } }; } };
     });
   };
   let last = null;
@@ -406,8 +419,9 @@ async function askGemini(prompt, customBody) {
   for (let round = 0; round < 3; round++) {
     const tried = {};
     for (const model of GEMINI_MODELS) {
-      if (tried[model]) continue;
+      if (tried[model] || (deadModel[model] && deadModel[model] > Date.now())) continue;   // skip models Google says do not exist
       tried[model] = 1;
+      if (timeLeft() < 15000) throw new HttpError(504, 'Ran out of time on this run. It will carry on automatically.');
       const r = await geminiCall(model, body), res = r.res, data = r.data;
       if (res.ok) {
         const cand = (data.candidates || [])[0];
@@ -421,6 +435,7 @@ async function askGemini(prompt, customBody) {
       lastMsg = (data && data.error && data.error.message) || 'The question writer is not available.';
       if (res.status === 401 || (res.status === 400 && /api key/i.test(lastMsg))) throw new HttpError(500, 'Your Gemini API keys are not valid or missing. Add a working key in API Keys.');
       // model missing (404), not allowed (403), quota used up (429) or busy (503): try the next model
+      if (res.status === 404) deadModel[model] = Date.now() + 6 * 3600000;
       if (res.status === 403 || res.status === 404 || res.status === 429 || res.status === 503) continue;
       throw new HttpError(502, lastMsg);
     }
@@ -497,7 +512,8 @@ async function ocrPdfWithGemini(buf) {
     try { return await ocrPiece(bytes); } catch (e) { return await ocrPiece(bytes); }   // one retry
   }
   async function worker() {
-    while (next < ranges.length && chars < MAX_TEXT) {
+    // stop starting new pieces when the time budget is nearly used up
+    while (next < ranges.length && chars < MAX_TEXT && timeLeft() > 90000) {
       const i = next++;
       try { results[i] = await piece(ranges[i][0], ranges[i][1]); chars += results[i].length; }
       catch (e) { lastErr = (e && e.message) || 'OCR failed'; if (/not valid/i.test(lastErr)) next = ranges.length; }
@@ -577,7 +593,12 @@ function recentlyProcessing(mat) {
 }
 
 // Writes questions for ONE material until it has `target` questions saved. Safe to run again: it only writes what is missing.
-async function generateForMaterial(mat, courseId, opts) {
+// Each run has a time budget (RUN_BUDGET_MS). When it is used up the run saves what it has and the file is marked "partial",
+// so the next run carries on with only the missing questions instead of being killed by Vercel's 5-minute limit.
+function generateForMaterial(mat, courseId, opts) {
+  return runCtx.run({ deadline: Date.now() + RUN_BUDGET_MS }, function () { return generateForMaterialInner(mat, courseId, opts); });
+}
+async function generateForMaterialInner(mat, courseId, opts) {
   opts = opts || {};
   const target = opts.target || TARGET;
   const matKey = String(mat.id);
@@ -662,7 +683,8 @@ async function generateForMaterial(mat, courseId, opts) {
     async function pass(chunks, perChunk) {
       let next = 0;
       async function worker() {
-        while (next < chunks.length && stats.saved < need) {
+        // stop starting new calls when the time budget is nearly used up
+        while (next < chunks.length && stats.saved < need && timeLeft() > 20000) {
           const i = next++;
           try {
             const items = parseJsonArray(await askGemini(buildPrompt(chunks[i], perChunk)));
@@ -683,16 +705,19 @@ async function generateForMaterial(mat, courseId, opts) {
     const chunks = splitText(text, parts);
     await pass(chunks, Math.min(Math.max(Math.ceil(need / parts * 1.35), 5), 30));
 
-    // Pass 2: top up whatever is still missing.
+    // Pass 2: top up whatever is still missing (only if there is enough time left).
     const missing = need - stats.saved;
-    if (missing >= 3 && stats.lastError.indexOf('not valid') < 0) {
+    if (missing >= 3 && stats.lastError.indexOf('not valid') < 0 && timeLeft() > 60000) {
       await pass(chunks, Math.min(Math.max(Math.ceil(missing / parts * 1.6), 3), 25));
     }
 
     const total = have + stats.saved;
     let status = 'done', note = null;
     if (total < target * 0.9) {
-      if (stats.apiErrors > 0) { status = 'partial'; note = stats.lastError; }          // will be retried automatically later
+      if (stats.apiErrors > 0 || timeLeft() < 20000) {
+        status = 'partial';   // will be retried automatically later
+        note = timeLeft() < 20000 ? 'Time limit reached. The rest will be written automatically.' : stats.lastError;
+      }
       else { note = 'This file only supports about ' + total + ' good questions.'; }      // nothing more to get from it
     }
     await setStatus(mat.id, { qgen_status: status, qgen_count: total, qgen_error: note });
@@ -865,7 +890,8 @@ const actions = {
 
   async stats(req) {
     await requireAuth(req);
-    background(sweep());   // automatically writes questions for any file that still has none
+    // automatically writes questions for any file that still has none (at most once every 2 minutes)
+    if (Date.now() - lastSweep > 120000) { lastSweep = Date.now(); background(sweep()); }
     const since = new Date(Date.now() - 5 * 60000).toISOString();
     const r = await Promise.all([
       safeCount('profiles', '&last_seen=gte.' + enc(since)), safeCount('profiles'), safeCount('test_results'), safeCount('questions'),
