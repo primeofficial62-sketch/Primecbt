@@ -370,6 +370,37 @@
   <div class="genchip" id="genChip" hidden><i class="spin"></i><span class="t" id="genChipT"></span></div>
   <div class="toast" id="toast" role="status"></div>
 
+<button id="rvReqBtn" onclick="sendReviewRequest()">📣 Ask all users for a review</button>
+
+<script>
+async function sendReviewRequest() {
+  if (!confirm('Email ALL opted-in users asking for a review?')) return;
+  const key = prompt('Admin key:');
+  if (!key) return;
+  const subject = prompt('Email subject (leave empty for default):') || '';
+  const intro = prompt('Message (leave empty for default):') || '';
+  const btn = document.getElementById('rvReqBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const r = await fetch('https://xuofkjjhupgmrphzgyun.supabase.co/rest/v1/rpc/admin_send_review_request', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+        Authorization: 'Bearer sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh'
+      },
+      body: JSON.stringify({ p_key: key, p_subject: subject, p_intro: intro })
+    });
+    const d = await r.json();
+    alert(d.ok ? 'Sent! Emails are going out now.'
+      : d.error === 'wrong_key' ? 'Wrong admin key.'
+      : d.error === 'sent_recently' ? 'Already sent in the last 10 minutes.'
+      : 'Failed.');
+  } catch { alert('Network error.'); }
+  btn.disabled = false; btn.textContent = '📣 Ask all users for a review';
+}
+</script>
+
 <script>
 (function () {
   'use strict';
