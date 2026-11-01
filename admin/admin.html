@@ -1417,6 +1417,10 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         if (!ok) return;
         try { await api('remove', { table: sec.table, id: r.id }); delete lookups[sec.table]; toast('Deleted'); load(true); } catch (err) { toast(err.message, true); }
         return;
+            });
+    try { await loadHist(); } catch (e) { $('nHist').innerHTML = emptyHtml(e.message, true); }
+    setTask(loadHist, 30000);
+    }
       }
       var act = e.target.closest('[data-act]');
       if (act) { sec.actions[+act.getAttribute('data-act')].run(st.rows[+act.getAttribute('data-i')], done); return; }
