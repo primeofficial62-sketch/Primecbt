@@ -1920,6 +1920,76 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     setTask(loadHist, 30000);
   }
 
+  <div id="bc-card" style="background:#111827;color:#f9fafb;border-radius:12px;padding:16px;margin:12px 0;font-family:Arial,sans-serif">
+  <h3 style="margin:0 0 10px">Send message to users</h3>
+  <input id="bc-key" type="password" placeholder="Admin key" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;box-sizing:border-box">
+  <input id="bc-title" placeholder="Title (use {name} for first name)" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;box-sizing:border-box">
+  <textarea id="bc-body" rows="4" placeholder="Message" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;box-sizing:border-box"></textarea>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <input id="bc-dept" placeholder="Department (blank = all)" style="flex:1;padding:10px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;min-width:0">
+    <input id="bc-level" placeholder="Level e.g. 200" style="flex:1;padding:10px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;min-width:0">
+  </div>
+  <label style="display:block;margin-bottom:10px"><input id="bc-email" type="checkbox" checked> Also send by email</label>
+  <div style="display:flex;gap:8px">
+    <button onclick="bcPreview()" style="flex:1;padding:10px;border-radius:8px;border:0;background:#374151;color:#fff">Preview count</button>
+    <button onclick="bcSend()" style="flex:1;padding:10px;border-radius:8px;border:0;background:#1d4ed8;color:#fff;font-weight:600">Send</button>
+  </div>
+  <p id="bc-msg" style="margin:10px 0 0;font-size:14px"></p>
+
+  <h3 style="margin:18px 0 8px">Email status</h3>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button onclick="bcStatus()" style="flex:1;padding:10px;border-radius:8px;border:0;background:#374151;color:#fff">Refresh</button>
+    <button onclick="bcRetry()" style="flex:1;padding:10px;border-radius:8px;border:0;background:#374151;color:#fff">Retry failed</button>
+  </div>
+  <div id="bc-status" style="font-size:13px;line-height:1.5"></div>
+</div>
+
+<script>
+const BC_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
+const BC_ANON = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
+const bcEl = id => document.getElementById(id);
+const bcEsc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function bcRpc(fn, args) {
+  const r = await fetch(`${BC_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { apikey: BC_ANON, Authorization: `Bearer ${BC_ANON}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args)
+  });
+  return r.json();
+}
+const bcSay = (t, ok = true) => { const m = bcEl('bc-msg'); m.textContent = t; m.style.color = ok ? '#86efac' : '#fca5a5'; };
+const bcErr = { wrong_key: 'Wrong admin key.', sent_recently: 'Same message was sent in the last 5 minutes.', title_and_message_required: 'Title and message are required.' };
+
+async function bcPreview() {
+  const d = await bcRpc('admin_broadcast_preview', { p_key: bcEl('bc-key').value, p_department: bcEl('bc-dept').value || null, p_level: bcEl('bc-level').value || null });
+  if (!d.ok) return bcSay(bcErr[d.error] || 'Failed', false);
+  bcSay(`${d.recipients} users will get it in-app. ${d.will_get_email} can receive email.`);
+}
+async function bcSend() {
+  const title = bcEl('bc-title').value.trim(), body = bcEl('bc-body').value.trim();
+  if (!title || !body) return bcSay('Title and message are required.', false);
+  const withEmail = bcEl('bc-email').checked;
+  if (!confirm(`Send to the selected users${withEmail ? ' (app + email)' : ' (app only)'}?`)) return;
+  const d = await bcRpc('admin_broadcast', { p_key: bcEl('bc-key').value, p_title: title, p_body: body, p_send_email: withEmail, p_department: bcEl('bc-dept').value || null, p_level: bcEl('bc-level').value || null });
+  if (!d.ok) return bcSay(bcErr[d.error] || 'Failed', false);
+  bcSay(`Sent to ${d.recipients} users${d.email ? ' (emails go out within a minute)' : ''}.`);
+  bcEl('bc-title').value = ''; bcEl('bc-body').value = '';
+}
+async function bcStatus() {
+  const d = await bcRpc('admin_email_status', { p_key: bcEl('bc-key').value, p_limit: 30 });
+  if (!d.ok) return bcSay(bcErr[d.error] || 'Failed', false);
+  const line = o => Object.entries(o).map(([k, v]) => `${k}: ${v}`).join(' · ') || 'none';
+  bcEl('bc-status').innerHTML =
+    `<b>Today:</b> ${bcEsc(line(d.today))}<br><b>All time:</b> ${bcEsc(line(d.totals))}<hr style="border-color:#374151">` +
+    d.recent.map(r => `${r.status === 'sent' ? '✅' : r.status === 'failed' ? '❌' : '⏳'} ${bcEsc(r.full_name || 'User')} — ${bcEsc(r.title)}${r.error ? `<br><small style="color:#fca5a5">${bcEsc(r.error)}</small>` : ''}`).join('<br>');
+}
+async function bcRetry() {
+  const d = await bcRpc('admin_retry_failed_emails', { p_key: bcEl('bc-key').value });
+  if (!d.ok) return bcSay(bcErr[d.error] || 'Failed', false);
+  bcSay(`${d.requeued} failed emails requeued.`); bcStatus();
+}
+</script>
+  
   /* ================= settings ================= */
   function renderSecurity() {
     $('view').innerHTML = '<div class="split"><div class="card stack"><div class="h3">Change your PIN</div>' +
