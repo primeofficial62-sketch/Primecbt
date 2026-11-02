@@ -286,6 +286,12 @@
     .explain-body .ex-h:first-child { margin-top: 2px; }
     .explain-body code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-size: .92em; }
     .explain-body .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+    .explain-body em { font-style: italic; }
+    .explain-body .ex-table { overflow-x: auto; margin: 10px 0; border: 1px solid var(--border); border-radius: 10px; }
+    .explain-body table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .explain-body th { background: #047857; color: #fff; text-align: left; padding: 8px 10px; font-weight: 600; }
+    .explain-body td { padding: 8px 10px; border-top: 1px solid var(--border); vertical-align: top; }
+    .explain-body tbody tr:nth-child(even) { background: rgba(255, 255, 255, .04); }
     .explain-actions { display: flex; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
     .explain-actions button {
       padding: 9px 14px; border-radius: 10px; font: inherit; font-size: 13px; font-weight: 600;
@@ -303,6 +309,9 @@
     .app.light-mode .explain-actions button { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
     .app.light-mode .explain-actions button.primary { background: #059669; color: #fff; border-color: #059669; }
     .app.light-mode .explain-body code { background: #f1f5f9; }
+    .app.light-mode .explain-body .ex-table { border-color: #cbd5e1; }
+    .app.light-mode .explain-body td { border-color: #e2e8f0; }
+    .app.light-mode .explain-body tbody tr:nth-child(even) { background: #f8fafc; }
 
     /* ---------- Small screens ---------- */
     @media (max-width: 480px) {
@@ -1163,22 +1172,47 @@
       } catch { /* if KaTeX can't load, the plain LaTeX stays readable */ }
     }
 
-    // Turns the AI's markdown (## headings, bullets, 1. lists, **bold**, `code`, maths) into safe HTML
+    // Turns the AI's markdown (## headings, bullets, 1. lists, tables, **bold**, *italics*, `code`, maths) into safe HTML
     function fmtExplain(t) {
       const maths = [];
-      const held = String(t).replace(/\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/g, m => { maths.push(m); return '\u0000' + (maths.length - 1) + '\u0000'; });
+      const held = String(t)
+        .replace(/^\s*```.*$/gm, '')   // drop code-fence lines, keep the text inside
+        .replace(/\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/g, m => { maths.push(m); return '\u0000' + (maths.length - 1) + '\u0000'; });
       const esc = x => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const inline = x => esc(x).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
+      const inline = x => esc(x)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?![*\w])/g, '$1<em>$2</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      const cells = r => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => inline(c.trim()));
+      const isSep = l => l.includes('|') && l.includes('-') && /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(l);
+
       const out = [];
       let list = null, para = [];
       const flushPara = () => { if (para.length) { out.push('<p>' + para.join('<br>') + '</p>'); para = []; } };
       const flushList = () => {
         if (list) { out.push('<' + list.tag + '>' + list.items.map(i => '<li>' + i + '</li>').join('') + '</' + list.tag + '>'); list = null; }
       };
-      for (const raw of held.split('\n')) {
-        const line = raw.trimEnd();
+
+      const lines = held.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trimEnd();
         let m;
         if (!line.trim()) { flushPara(); flushList(); continue; }
+
+        // Table: a header row followed by a |---|---| separator row
+        if (line.includes('|') && i + 1 < lines.length && isSep(lines[i + 1])) {
+          flushPara(); flushList();
+          const head = cells(line);
+          i += 2;
+          const rows = [];
+          while (i < lines.length && lines[i].trim() && lines[i].includes('|')) { rows.push(cells(lines[i])); i++; }
+          i--;
+          out.push('<div class="ex-table"><table><thead><tr>' + head.map(h => '<th>' + h + '</th>').join('') +
+            '</tr></thead><tbody>' + rows.map(r => '<tr>' + r.map(c => '<td>' + c + '</td>').join('') + '</tr>').join('') +
+            '</tbody></table></div>');
+          continue;
+        }
+
         if ((m = line.match(/^\s*#{1,4}\s+(.*)$/))) { flushPara(); flushList(); out.push('<h4 class="ex-h">' + inline(m[1]) + '</h4>'); continue; }
         if ((m = line.match(/^\s*[-*•]\s+(.*)$/))) {
           flushPara();
