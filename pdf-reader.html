@@ -1210,10 +1210,10 @@
         .forEach(([id, m]) => $(id).classList.toggle('active', m === mode));
     }
 
-    function showAnswer(text) {
+    function showAnswer(text, keepScroll) {
       const body = $('explainBody');
       body.innerHTML = fmtExplain(text);
-      body.scrollTop = 0;
+      if (!keepScroll) body.scrollTop = 0;
       renderMath(body);
     }
 
@@ -1255,6 +1255,66 @@
       }
     }
 
+    /* More details streams: the words appear as the AI writes them, so the first lines show within seconds */
+    let paintPending = false, paintLatest = '';
+    function paintStream(partial) {
+      paintLatest = partial;
+      if (paintPending) return;
+      paintPending = true;
+      requestAnimationFrame(() => {
+        paintPending = false;
+        const body = $('explainBody');
+        body.innerHTML = fmtExplain(paintLatest);
+      });
+    }
+
+    async function streamDetails(tok, payload, onPartial) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 100000);
+      try {
+        let resp;
+        try {
+          resp = await fetch(SUPABASE_URL + '/functions/v1/explain-details', {
+            method: 'POST',
+            signal: ctrl.signal,
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok, 'apikey': SUPABASE_ANON_KEY },
+            body: JSON.stringify(payload)
+          });
+        } catch (err) {
+          if (err && err.name === 'AbortError') throw new Error('This is taking too long. Check your connection and try again.');
+          throw new Error('Network error. Check your connection and try again.');
+        }
+
+        const type = resp.headers.get('content-type') || '';
+        if (!resp.ok || type.includes('application/json')) {      // errors and already-saved answers come as JSON
+          let data = null;
+          try { data = await resp.json(); } catch {}
+          if (resp.status === 401) throw new Error('Your session expired. Please log in again.');
+          if (data && data.answer) return data.answer;
+          throw new Error((data && (data.error || data.message)) || ('Server error ' + resp.status + '. Please try again.'));
+        }
+
+        if (!resp.body || !resp.body.getReader) {                  // very old browser: wait for the whole text
+          const all = await resp.text();
+          if (!all.trim()) throw new Error('No answer came back. Please try again.');
+          return all;
+        }
+        const reader = resp.body.getReader();
+        const dec = new TextDecoder();
+        let acc = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          acc += dec.decode(value, { stream: true });
+          onPartial(acc);
+        }
+        if (!acc.trim()) throw new Error('No answer came back. Please try again.');
+        return acc;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     async function runExplain(mode) {
       if (!pdfDoc || !material || !sheetPage) return;
       const n = sheetPage;
@@ -1267,29 +1327,23 @@
       const myReq = ++exReq;            // a newer request (or closing the panel) makes this one stale
       setExBusy(true);
       const wait = mode === 'more'
-        ? 'Writing a detailed explanation of page ' + n + '… this can take up to 30 seconds.'
+        ? 'Writing the detailed explanation for page ' + n + '…'
         : 'Reading page ' + n + '…';
       $('explainBody').innerHTML = '<div style="margin:8px 0 12px;color:var(--muted)">' + wait + '</div><div class="progress indeterminate"><div></div></div>';
 
       try {
-        const payload = await getPagePayload(n);
-        const tok = await authToken();
+        const [payload, tok] = await Promise.all([getPagePayload(n), authToken()]);
         const materialKey = String(material.id || material.file_url);
         let text;
 
         if (mode === 'more') {
-          const { resp, data } = await postJson(SUPABASE_URL + '/functions/v1/explain-details', tok, {
+          text = await streamDetails(tok, {
             material_key: materialKey,
             page: n,
             course: material.course || material.category || '',
             base_explanation: explainCache.get(exKey(n, 'explain')) || '',
             ...payload
-          }, 100000, { apikey: SUPABASE_ANON_KEY });
-          if (resp.status === 401) throw new Error('Your session expired. Please log in again.');
-          if (!resp.ok || !data || !data.answer) {
-            throw new Error((data && (data.error || data.message)) || ('Server error ' + resp.status + '. Please try again.'));
-          }
-          text = data.answer;
+          }, partial => { if (myReq === exReq) paintStream(partial); });
         } else {
           const { resp, data } = await postJson('/api/explain', tok, {
             material_key: materialKey,
@@ -1308,7 +1362,7 @@
 
         explainCache.set(ck, text);       // keep it even if the panel was closed, so reopening is instant
         if (myReq !== exReq) return;
-        showAnswer(text);
+        showAnswer(text, mode === 'more');   // keep the reading position after a streamed answer
       } catch (err) {
         if (myReq === exReq) showExError(err.message);
       } finally {
