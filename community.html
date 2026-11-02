@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
-:root{--bg:#070D1C;--surface:#10192B;--surface-2:#182337;--dim:#0D1525;--border:#29364C;--text:#F4F6FC;--muted-2:#9BA8BE;--muted-3:#6F7F9B;--muted-4:#3A4A63;--emerald:#31D3A2;--emerald-bright:#31D3A2;--on-em:#04120D;--red:#f87171;--amber:#fbbf24;--pad:clamp(12px,3.5vw,20px)}
+:root{--bg:#070D1C;--surface:#10192B;--surface-2:#182337;--dim:#0D1525;--border:#29364C;--text:#F4F6FC;--muted-2:#9BA8BE;--muted-3:#6F7F9B;--muted-4:#3A4A63;--nav-muted:#7C8BB5;--emerald:#31D3A2;--emerald-bright:#31D3A2;--on-em:#04120D;--red:#f87171;--amber:#fbbf24;--pad:clamp(12px,3.5vw,20px)}
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;width:100%;margin:0}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:0;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow:hidden}
@@ -25,7 +25,7 @@ button{font-family:inherit}
   .pane-list{border-right:1px solid var(--border)}
   .pane-chat{display:flex}
   .chat-back{display:none!important}
-  .bottom-nav{display:none!important}
+  .app .bottom-nav{display:none!important}
 }
 
 /* Top bar */
@@ -82,14 +82,29 @@ button{font-family:inherit}
 .general-card{border-color:rgba(49,211,162,.4)}
 .general-icon{background:rgba(49,211,162,.12);border-color:var(--emerald);color:var(--emerald)}
 
-/* Bottom navigation (Community listing only, below 820px) */
-.bottom-nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--border);padding:8px 4px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);flex-shrink:0}
-.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;min-width:0;color:#7C8DB3;font-size:.72rem;font-weight:500;border-radius:12px;text-decoration:none}
-.nav-item svg{width:26px;height:26px}
-.nav-item span{max-width:100%;white-space:nowrap}
-.nav-item.active{color:var(--emerald);font-weight:600}
-.nav-item.active .solid{fill:currentColor}
-@media (max-height:480px){.nav-item{min-height:44px;flex-direction:row;justify-content:center}.nav-item svg{width:20px;height:20px}}
+/* Bottom navigation: floating pill, identical to Home (below 820px) */
+.app .bottom-nav{
+  display:grid;grid-template-columns:repeat(5,1fr);align-items:stretch;
+  position:relative;width:auto;height:auto;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  margin:0 12px calc(env(safe-area-inset-bottom,0px) + 12px);
+  padding:8px 4px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  flex-shrink:0
+}
+.app .bottom-nav .nav-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  min-height:52px;padding:4px 2px;background:none;border:none;border-radius:16px;
+  color:var(--nav-muted);text-decoration:none;font-size:.75rem;font-weight:500;line-height:1.2;
+  -webkit-tap-highlight-color:transparent
+}
+.app .bottom-nav .nav-item svg{width:26px;height:26px;flex-shrink:0}
+.app .bottom-nav .nav-item span{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app .bottom-nav .nav-item.active{color:var(--emerald);font-weight:600}
+.app .bottom-nav .nav-item.active .solid{fill:currentColor}
+@media (max-height:480px){.app .bottom-nav .nav-item{min-height:44px;flex-direction:row;justify-content:center}.app .bottom-nav .nav-item svg{width:20px;height:20px}}
 
 /* Chat pane */
 .chat-placeholder{flex:1;display:none;align-items:center;justify-content:center;text-align:center;color:var(--muted-3);padding:24px;font-size:.95rem;line-height:1.5}
@@ -175,13 +190,13 @@ button{font-family:inherit}
       </section>
     </div>
 
-    <!-- Five-item bottom navigation (same as Home) -->
+    <!-- Bottom navigation: same items and look as Home (Home, Materials, Practice, Progress, More) -->
     <nav class="bottom-nav" aria-label="Main">
       <a href="home.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path class="solid" d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg><span>Home</span></a>
       <a href="materials.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 5a1 1 0 011-1h5a4 4 0 014 4v12a3 3 0 00-3-3H3a1 1 0 01-1-1zM22 5a1 1 0 00-1-1h-5a4 4 0 00-4 4v12a3 3 0 013-3h6a1 1 0 001-1z"/></svg><span>Materials</span></a>
       <a href="practice.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 14l2 2 4-4"/></svg><span>Practice</span></a>
       <a href="progress.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/></svg><span>Progress</span></a>
-      <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg><span>Profile</span></a>
+      <a href="profile.html" class="nav-item" id="navMore"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>More</span></a>
     </nav>
   </section>
 
@@ -246,10 +261,10 @@ button{font-family:inherit}
 
   function showError(text) { errorBanner.textContent = text; errorBanner.hidden = !text; }
 
-  // Bottom nav: highlight the current route (Community itself is not one of the five)
+  // Bottom nav: highlight the current route. Community lives under "More", so More is highlighted here.
   const here = (location.pathname.split('/').pop() || '').toLowerCase();
   document.querySelectorAll('.nav-item').forEach((a) => {
-    const on = a.getAttribute('href').toLowerCase() === here;
+    const on = a.getAttribute('href').toLowerCase() === here || a.id === 'navMore';
     a.classList.toggle('active', on);
     if (on) a.setAttribute('aria-current', 'page');
   });
