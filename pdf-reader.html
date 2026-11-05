@@ -590,6 +590,29 @@
       } catch { return 'Document'; }
     }
 
+    /* ================= PowerPoint / Word / Excel support ================= */
+    const OFFICE_EXT = ['ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx'];
+    function isOfficeFile(m) {
+      let ext = '';
+      try { ext = new URL(m.file_url, location.href).pathname.split('.').pop().toLowerCase(); } catch {}
+      const t = String(m.file_type || '').toLowerCase();
+      return OFFICE_EXT.includes(ext) || OFFICE_EXT.includes(t) ||
+        /powerpoint|presentation|msword|wordprocessing|spreadsheet|excel/.test(t);
+    }
+
+    async function openOffice(url, token) {
+      resetViewer();
+      hideState();
+      bottomBar.hidden = true;          // page/zoom buttons only work for PDFs
+      $('explainFab').hidden = true;    // "Explain page" only works for PDFs
+      const f = document.createElement('iframe');
+      f.className = 'office-frame';
+      f.src = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(url);
+      f.allowFullscreen = true;
+      f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+      viewer.appendChild(f);
+    }
+
     function fitWidth() {
       const cs = getComputedStyle(viewer);
       const avail = viewer.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -716,8 +739,8 @@
         material = row;
         applyMeta();
 
-        // Start the PDF download right away; check the database in parallel
-        const opening = openPdf(row.file_url, token);
+        // Start the download right away; check the database in parallel
+        const opening = isOfficeFile(row) ? openOffice(row.file_url, token) : openPdf(row.file_url, token);
         if (needsDetails) revalidate(token, true);
         else if (fromCache) revalidate(token, false);
         await opening;
@@ -808,6 +831,8 @@
 
     function resetViewer() {
       cancelAllRenders();
+      bottomBar.hidden = false;
+      viewer.querySelectorAll('.office-frame').forEach(e => e.remove());
       if (pdfDoc) { try { pdfDoc.destroy(); } catch {} pdfDoc = null; }
       if (nearIO) nearIO.disconnect();
       if (farIO) farIO.disconnect();
