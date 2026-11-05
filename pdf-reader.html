@@ -649,6 +649,28 @@
       viewer.appendChild(f);
     }
 
+    /* PowerPoint (.ppt / .pptx): convert to PDF through the Supabase "convert-to-pdf" function,
+       then open it like any other PDF. Every slide becomes a page, so page tracking and the AI work slide by slide.
+       The PDF is saved in storage after the first conversion, so later opens are instant.
+       If the conversion fails for any reason, it falls back to the old Office viewer. */
+    async function openAny(row, token) {
+      const isPpt = /\.pptx?(\?|#|$)/i.test(row.file_url);
+      if (isOfficeFile(row) && isPpt) {
+        try {
+          showState('Preparing slides…', { progress: true });
+          const sb = await getSb();
+          const { data, error } = await sb.functions.invoke('convert-to-pdf', { body: { file_url: row.file_url } });
+          if (token !== loadToken) return;
+          if (error || !data || !data.pdf_url) throw new Error((data && data.error) || (error && error.message) || 'Conversion failed');
+          return await openPdf(data.pdf_url, token);
+        } catch (e) {
+          console.error('ppt convert:', e && e.message);
+          if (token !== loadToken) return;
+        }
+      }
+      return isOfficeFile(row) ? openOffice(row.file_url, token) : openPdf(row.file_url, token);
+    }
+
     function fitWidth() {
       const cs = getComputedStyle(viewer);
       const avail = viewer.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -775,8 +797,9 @@
         material = row;
         applyMeta();
 
-        // Start the download right away; check the database in parallel
-        const opening = isOfficeFile(row) ? openOffice(row.file_url, token) : openPdf(row.file_url, token);
+        // Start the download right away; check the database in parallel.
+        // PowerPoint files are converted to PDF first (see openAny) so every slide is a real page.
+        const opening = openAny(row, token);
         if (needsDetails) revalidate(token, true);
         else if (fromCache) revalidate(token, false);
         await opening;
