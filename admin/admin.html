@@ -963,6 +963,8 @@ async function compressPdf(file, onProgress) {
     }
     return d.publicUrl;
   }
+
+  
   /* ---------- PDF autofill ---------- */
   if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -978,7 +980,52 @@ async function compressPdf(file, onProgress) {
     setVal('f_page_count', pdf.numPages);
     setVal('f_size_bytes', f.size);
   }
+  /* ---------- PowerPoint to PDF ---------- */
+  var CONVERT_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co/functions/v1/convert-to-pdf';
+  var CONVERT_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
+  async function convertToPdf(fileUrl) {
+    var res = await fetch(CONVERT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: CONVERT_KEY, Authorization: 'Bearer ' + CONVERT_KEY },
+      body: JSON.stringify({ file_url: fileUrl })
+    });
+    var d = {};
+    try { d = await res.json(); } catch (e) {}
+    if (!res.ok || !d.pdf_url) throw new Error(d.error || 'Conversion failed (' + res.status + ')');
+    try { var pdf = await pdfjsLib.getDocument({ url: d.pdf_url }).promise; d.pages = pdf.numPages; } catch (e) {}
+    return d;
+  }
 
+  async function convertExistingPpts(done) {
+    var rows;
+    try { rows = (await allMaterials()).filter(function (m) { return /\.pptx?(\?|#|$)/i.test(m.file_url || ''); }); }
+    catch (e) { toast(e.message, true); return; }
+    if (!rows.length) { toast('No PowerPoint materials left. Everything is already PDF.'); return; }
+    var ok = await confirmBox({ title: 'Convert ' + rows.length + ' PowerPoint file(s) to PDF?', text: 'Each material is switched to its PDF. The original PowerPoint stays in storage. It takes about a minute per file, so keep this screen open.', yes: 'Convert now' });
+    if (!ok) return;
+    var stop = false;
+    openSheet('Converting PowerPoints', '<div class="count" id="cvTxt">Starting…</div><div class="stack" id="cvLog"></div>', '<button class="btn" id="cvClose">Stop and close</button>');
+    sheetCleanup = function () { stop = true; };
+    $('cvClose').onclick = function () { closeSheet(); };
+    var good = 0, bad = 0;
+    for (var i = 0; i < rows.length && !stop; i++) {
+      var m = rows[i];
+      if ($('cvTxt')) $('cvTxt').textContent = 'Converting ' + (i + 1) + ' of ' + rows.length + ': ' + clip(m.title || 'file', 40) + '…';
+      try {
+        var d = await convertToPdf(m.file_url);
+        await api('save', { table: 'materials', id: m.id, data: { file_url: d.pdf_url, material_type: 'PDF', size_bytes: d.size || undefined, page_count: d.pages || undefined } });
+        good++;
+      } catch (e) {
+        bad++;
+        if ($('cvLog')) $('cvLog').insertAdjacentHTML('beforeend', '<div class="row"><div class="row-main"><div class="row-title">' + esc(m.title || 'file') + '</div><div class="row-sub">' + esc(e.message) + '</div></div></div>');
+        if (e.status === 401) break;
+      }
+    }
+    if ($('cvTxt')) $('cvTxt').textContent = 'Finished. ' + good + ' converted' + (bad ? ', ' + bad + ' failed' : '') + '.';
+    toast(good + ' converted to PDF' + (bad ? ', ' + bad + ' failed' : ''), !!bad && !good, 6000);
+    if (done) done();
+  }
+  
   // Reads the text of a PDF that is already uploaded, so questions can be written from it.
   async function pdfTextFromUrl(url) {
     if (!window.pdfjsLib) throw new Error('PDF reader did not load. Reload the page');
@@ -1091,14 +1138,18 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       // 2. Then upload and fill the link
       st.textContent = 'Uploading ' + f.name + '…';
       try {
-        var url = await uploadFile(f);
-        if (!$('upStatus')) { upBusy = false; return; }
-        $('f_file_url').value = url;
-        if ($('f_file_hash')) $('f_file_hash').value = fileHash;
-        if ($('curFileName')) $('curFileName').textContent = f.name;
-        if ($('curFileLink')) $('curFileLink').href = url;
-        $('upStatus').textContent = 'Uploaded: ' + f.name;
-      } catch (e) {
+                var url = await uploadFile(f);
+        if (/^(ppt|pptx)$/.test(ext)) {
+          var us = $('upStatus'); if (us) us.textContent = 'Converting to PDF… this can take up to a minute';
+          try {
+            var conv = await convertToPdf(url);
+            url = conv.pdf_url;
+            f = new File([f], f.name.replace(/\.pptx?$/i, '.pdf'), { type: 'application/pdf' });
+            setVal('f_size_bytes', conv.size);
+            setVal('f_page_count', conv.pages);
+            if ($('f_material_type')) $('f_material_type').value = 'PDF';
+          } catch (ce) { toast('Could not convert to PDF: ' + ce.message + '. The PowerPoint was saved as it is.', true, 7000); }
+        }
         var hintMsg = /unknown action/i.test(e.message) ? ' Your server file api/admin.js has no "upload_url" action yet.' : '';
         if ($('upStatus')) $('upStatus').textContent = 'Fields filled, but the upload failed: ' + e.message + '.' + hintMsg;
         toast(e.message, true);
@@ -1524,7 +1575,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         try { var r = await api('normalize_material_courses', {}, 60000); toast(r.changed ? 'Updated ' + r.changed + ' materials' : 'Every material already uses a course code'); if (done) done(); }
         catch (e) { toast(e.message, true); }
       } },
-      { label: 'Duplicates', icon: 'search', run: function (done) { findDuplicates(done); } }],
+      { label: 'Duplicates', icon: 'search', run: function (done) { findDuplicates(done); } },
+{ label: 'Convert PPT to PDF', icon: 'refresh', run: function (done) { convertExistingPpts(done); } }],
       actions: [{ label: 'Make questions', run: function (r) { generateForMaterialRow(r); } }],
       filter: { key: 'course', label: 'All courses', courseText: true },
       sort: function (r) { return r.title || ''; },
