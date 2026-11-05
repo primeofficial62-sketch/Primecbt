@@ -1472,7 +1472,8 @@
             ...payload
           }, partial => { if (myReq === exReq) paintStream(partial); });
         } else {
-          const { resp, data } = await postJson('/api/explain', tok, {
+          // Short explanation / Simpler / Example now run on the Supabase "explain-page" function
+          const { resp, data } = await postJson(SUPABASE_URL + '/functions/v1/explain-page', tok, {
             material_key: materialKey,
             file_url: material.file_url,
             title: material.title,
@@ -1480,9 +1481,10 @@
             page: n,
             mode,
             ...payload
-          }, 60000);
+          }, 60000, { apikey: SUPABASE_ANON_KEY });
+          if (resp.status === 401) throw new Error('Your session expired. Please log in again.');
           if (!resp.ok || !data || !data.explanation) {
-            throw new Error((data && data.error) || ('Server error ' + resp.status + '. Please try again.'));
+            throw new Error((data && (data.error || data.message)) || ('Server error ' + resp.status + '. Please try again.'));
           }
           text = data.explanation;
         }
