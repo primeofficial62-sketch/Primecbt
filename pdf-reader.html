@@ -396,6 +396,8 @@
     <div class="explain-sheet" id="explainSheet" hidden role="dialog" aria-label="Page explanation">
       <div class="explain-head">
         <div class="explain-title" id="explainTitle">Page 1</div>
+        <input type="number" id="exSlide" min="1" value="1" hidden inputmode="numeric" aria-label="Slide number" title="Slide number"
+               style="width:64px;height:36px;margin-left:auto;text-align:center;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:10px;font:inherit;font-size:16px">
         <button class="icon-btn" id="explainClose" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
@@ -521,6 +523,7 @@
     let nearIO = null, farIO = null;
     let currentLoadTask = null;
     let slowTimer = null;
+    let officeMode = false, officeSlides = null, officePromise = null;
 
     /* ---- AI explain state (declared up here so every function can reach it) ---- */
     const explainCache = new Map();
@@ -600,11 +603,44 @@
         /powerpoint|presentation|msword|wordprocessing|spreadsheet|excel/.test(t);
     }
 
+    /* Reads the text of every slide in a .pptx so the AI can explain it */
+    function loadJSZip() {
+      if (window.JSZip) return Promise.resolve();
+      return loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
+    }
+    async function extractPptx(url) {
+      await loadJSZip();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Could not read the file (' + res.status + ').');
+      const zip = await JSZip.loadAsync(await res.arrayBuffer());
+      const names = Object.keys(zip.files)
+        .map(n => ({ n, m: n.match(/^ppt\/slides\/slide(\d+)\.xml$/) }))
+        .filter(x => x.m)
+        .sort((a, b) => +a.m[1] - +b.m[1]);
+      if (!names.length) throw new Error('No slides found.');
+      const dec = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+      const slides = [];
+      for (const x of names) {
+        const xml = await zip.files[x.n].async('string');
+        const paras = xml.split('</a:p>').map(p => {
+          const parts = [...p.matchAll(/<a:t[^>]*>([^<]*)<\/a:t>/g)].map(m => dec(m[1]));
+          return parts.join('').trim();
+        }).filter(Boolean);
+        slides.push(paras.join('\n'));
+      }
+      return slides;
+    }
+
     async function openOffice(url, token) {
       resetViewer();
       hideState();
       bottomBar.hidden = true;          // page/zoom buttons only work for PDFs
-      $('explainFab').hidden = true;    // "Explain page" only works for PDFs
+      officeMode = true;
+      officeSlides = null;
+      officePromise = /\.pptx(\?|$)/i.test(url) || /pptx|presentationml/i.test(String(material && material.file_type || ''))
+        ? extractPptx(url).then(s => (officeSlides = s)).catch(e => { console.error('pptx text:', e && e.message); return null; })
+        : Promise.resolve(null);
+      syncExplainFab();
       const f = document.createElement('iframe');
       f.className = 'office-frame';
       f.src = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(url);
@@ -831,6 +867,7 @@
 
     function resetViewer() {
       cancelAllRenders();
+      officeMode = false; officeSlides = null; officePromise = null;
       bottomBar.hidden = false;
       viewer.querySelectorAll('.office-frame').forEach(e => e.remove());
       if (pdfDoc) { try { pdfDoc.destroy(); } catch {} pdfDoc = null; }
@@ -1137,15 +1174,23 @@
     // and it steps aside while the explanation panel is open.
     function syncExplainFab() {
       const fab = $('explainFab');
-      const ready = !!pdfDoc && totalPages > 0;
+      const ready = (!!pdfDoc && totalPages > 0) || officeMode;
       fab.disabled = !ready;
       fab.hidden = !$('explainSheet').hidden;
-      $('explainFabLabel').textContent = ready ? 'Explain page ' + currentPage : 'Explain page';
+      $('explainFabLabel').textContent = officeMode ? 'Explain slide' : (ready ? 'Explain page ' + currentPage : 'Explain page');
       fab.setAttribute('aria-label', ready ? 'Explain page ' + currentPage : 'Explain this page (available once the document opens)');
     }
 
     // Reads the text of one page. If the page has no real text (scanned PDF), sends a small image instead.
     async function getPagePayload(n) {
+      if (officeMode) {
+        await officePromise;
+        if (!officeSlides) throw new Error('AI explanations work on PDF and .pptx files. Please re-upload this one as .pptx or PDF.');
+        if (n > officeSlides.length) throw new Error('This presentation has only ' + officeSlides.length + ' slides.');
+        const t = officeSlides[n - 1];
+        if (!t || t.length < 15) throw new Error('Slide ' + n + ' has no readable text (it may be only a picture). Try another slide.');
+        return { text: t.slice(0, 12000) };
+      }
       const page = await pdfDoc.getPage(n);
       const tc = await page.getTextContent();
       const text = tc.items.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim();
@@ -1375,7 +1420,7 @@
     }
 
     async function runExplain(mode) {
-      if (!pdfDoc || !material || !sheetPage) return;
+      if ((!pdfDoc && !officeMode) || !material || !sheetPage) return;
       const n = sheetPage;
       const ck = exKey(n, mode);
       setExMode(mode);
@@ -1430,8 +1475,15 @@
     }
 
     function openExplain() {
-      if (!pdfDoc) return;
-      sheetPage = currentPage;                           // capture the page the student is on right now
+      if (!pdfDoc && !officeMode) return;
+      const slideInput = $('exSlide');
+      if (officeMode) {                                  // slides: the student picks the slide number
+        slideInput.hidden = false;
+        sheetPage = Math.max(1, parseInt(slideInput.value, 10) || 1);
+      } else {
+        slideInput.hidden = true;
+        sheetPage = currentPage;                         // capture the page the student is on right now
+      }
       $('explainSheet').hidden = false;
       syncExplainFab();
       runExplain('explain');
@@ -1445,6 +1497,11 @@
       syncExplainFab();
     }
 
+    $('exSlide').addEventListener('change', e => {
+      sheetPage = Math.max(1, parseInt(e.target.value, 10) || 1);
+      e.target.value = sheetPage;
+      runExplain('explain');
+    });
     $('explainFab').addEventListener('click', openExplain);
     $('explainClose').addEventListener('click', closeExplain);
     $('exMore').addEventListener('click', () => runExplain('more'));
