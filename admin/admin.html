@@ -1150,6 +1150,11 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
             if ($('f_material_type')) $('f_material_type').value = 'PDF';
           } catch (ce) { toast('Could not convert to PDF: ' + ce.message + '. The PowerPoint was saved as it is.', true, 7000); }
         }
+                setVal('f_file_url', url);
+        setVal('f_file_hash', fileHash);
+        if ($('upStatus')) $('upStatus').textContent = 'Uploaded: ' + f.name + '. File link filled in.';
+        toast('File uploaded');
+      } catch (e) {
         var hintMsg = /unknown action/i.test(e.message) ? ' Your server file api/admin.js has no "upload_url" action yet.' : '';
         if ($('upStatus')) $('upStatus').textContent = 'Fields filled, but the upload failed: ' + e.message + '.' + hintMsg;
         toast(e.message, true);
