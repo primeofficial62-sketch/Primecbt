@@ -1,3 +1,10 @@
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+
+// Required by some Chrome versions to offer "install app".
+// It doesn't intercept or cache anything, so the site behaves as before.
+self.addEventListener('fetch', () => {});
+
 self.addEventListener('push', (e) => {
   const d = e.data ? e.data.json() : {};
   e.waitUntil(self.registration.showNotification(d.title || 'Notification', {
