@@ -37,6 +37,27 @@
     href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
+ <script>
+(function () {
+  try {
+    var h = location.hash + location.search;
+    if (/access_token|refresh_token|code=|error/.test(h)) return;
+    if (sessionStorage.getItem('pc_redirected')) return;
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (/^sb-.*-auth-token$/.test(k)) {
+        var v = JSON.parse(localStorage.getItem(k) || '{}');
+        if (v && v.refresh_token) {
+          sessionStorage.setItem('pc_redirected', '1');
+          location.replace('home.html');
+          return;
+        }
+      }
+    }
+  } catch (e) {}
+})();
+ </script>
+ 
 </head>
 
   <style>
