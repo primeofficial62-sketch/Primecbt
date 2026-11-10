@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PRIME-CBT — Course topics</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="profile-gate.js"></script>
+<style>
+:root{--bg:#060b1a;--s:#0f172a;--s2:#1e293b;--bd:#334155;--tx:#f1f5f9;--mu:#94a3b8;--em:#34d399}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);min-height:100dvh}
+a{color:inherit;text-decoration:none}[hidden]{display:none!important}
+.wrap{max-width:720px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px max(40px,env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;padding:6px 0 18px}
+.back{width:42px;height:42px;border-radius:12px;background:rgba(30,41,59,.6);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.back svg{width:20px;height:20px}
+h1{font-size:1.35rem;line-height:1.25;overflow-wrap:anywhere}.meta{font-size:.82rem;color:var(--mu);margin-top:3px}
+.work{font-size:.76rem;color:var(--em);margin-top:3px;display:flex;align-items:center;gap:6px}
+.work i{width:10px;height:10px;border-radius:50%;border:2px solid rgba(52,211,153,.3);border-top-color:var(--em);animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.all{display:flex;align-items:center;justify-content:center;gap:8px;height:54px;border-radius:16px;background:linear-gradient(135deg,#10b981,#059669);color:#022c22;font-weight:700;margin-bottom:8px;box-shadow:0 6px 20px rgba(16,185,129,.25)}
+.hint{font-size:.78rem;color:var(--mu);text-align:center;margin-bottom:20px}
+.search{width:100%;height:46px;border-radius:14px;background:var(--s);border:1px solid var(--bd);padding:0 14px;color:var(--tx);font-size:16px;margin-bottom:14px;outline:none}
+.search:focus{border-color:var(--em)}
+.row{display:flex;align-items:center;gap:12px;padding:14px;background:var(--s);border:1px solid var(--bd);border-radius:16px}
+.row+.row{margin-top:8px}.row:active{border-color:rgba(16,185,129,.5)}
+.row b{flex:1;min-width:0;font-size:.95rem;font-weight:600;overflow-wrap:anywhere}
+.row small{display:block;font-size:.74rem;color:var(--mu);font-weight:400;margin-top:2px}
+.go{font-size:.8rem;font-weight:700;color:var(--em);flex-shrink:0}
+.msg{text-align:center;color:var(--mu);font-size:.92rem;line-height:1.5;padding:50px 10px}.msg a{color:var(--em)}
+.skel{height:58px;border-radius:16px;background:linear-gradient(90deg,var(--s) 25%,var(--s2) 50%,var(--s) 75%);background-size:200% 100%;animation:sh 1.4s infinite;margin-bottom:8px}
+@keyframes sh{to{background-position:-200% 0}}
+</style></head><body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="materials.html" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <div style="min-width:0"><h1 id="title">Course</h1><div class="meta" id="meta"></div><div class="work" id="work" hidden><i></i><span id="workText"></span></div></div>
+  </div>
+  <div id="body"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const sb = window.supabase.createClient("https://xuofkjjhupgmrphzgyun.supabase.co", "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh");
+  const $ = (id) => document.getElementById(id), enc = encodeURIComponent;
+  const course = (new URLSearchParams(location.search).get('course') || '').trim();
+  const body = $('body');
+  let shell = null;   // { hint, search, list } once the topic list is on screen
+
+  const msg = (t, linkText, href) => {
+    shell = null; body.replaceChildren();
+    const d = document.createElement('div'); d.className = 'msg'; d.textContent = t + ' ';
+    if (linkText) { const a = document.createElement('a'); a.href = href; a.textContent = linkText; d.append(a); }
+    body.append(d);
+  };
+  if (!course) { msg('No course selected.', 'Back to Materials', 'materials.html'); return; }
+  $('title').textContent = course; document.title = course + ' — PRIME-CBT';
+  const { data: s } = await sb.auth.getSession();
+  if (!s.session) { location.replace('auth.html?mode=login'); return; }
+  if (typeof needsProfileSetup === 'function' && needsProfileSetup(s.session.user)) { location.replace('profile-setup.html'); return; }
+
+  const key = course.toUpperCase();
+
+  /* ═════════ Topic extraction (runs by itself in the background) ═════════ */
+  const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const TRIED_KEY = 'primecbt_topics_tried_v1';
+  const MAX_ATTEMPTS = 3, MAX_TOPICS = 60;
+  const STOP = /^(contents?|table of contents|references?|bibliography|index|preface|foreword|acknowledg\w*|introduction|summary|conclusions?|objectives?|review questions?|exercises?|answers?|appendix.*|further reading|abstract|glossary)$/i;
+  const keyOf = (t) => t.toLowerCase().replace(/&/g, ' and ').replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim()
+    .split(' ').map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w)).join(' ');
+  const clean = (t) => t.replace(/\s+/g, ' ').replace(/^\s*((chapter|topic|unit|module|lesson|section)\s*)?([0-9]+(\.[0-9]+)*|[ivxl]+)[.):\-\s]+/i, '').replace(/[.:\s]+$/, '').trim();
+  const ok = (t) => t.length >= 4 && t.length <= 80 && /[a-z]/i.test(t) && !STOP.test(t) && !/^\d+$/.test(t) && !/\.{4,}/.test(t);
+  const readJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (_) { return d; } };
+  const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} };
+
+  let pdfReady = null;
+  function loadPdfJs() {
+    if (window.pdfjsLib) { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; return Promise.resolve(); }
+    if (pdfReady) return pdfReady;
+    pdfReady = new Promise((res, rej) => {
+      const el = document.createElement('script'); el.src = PDFJS;
+      el.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; res(); };
+      el.onerror = () => rej(new Error('PDF reader failed to load'));
+      document.head.appendChild(el);
+    });
+    return pdfReady;
+  }
+  async function fromOutline(pdf) {
+    const ol = await pdf.getOutline(); const out = [];
+    (function walk(items, d) { (items || []).forEach((i) => { if (d <= 1) out.push(i.title || ''); if (d < 1) walk(i.items, d + 1); }); })(ol, 0);
+    return out;
+  }
+  async function fromHeadings(pdf) {
+    const lines = [], sizes = [];
+    for (let p = 1; p <= Math.min(pdf.numPages, 250); p++) {
+      const tc = await (await pdf.getPage(p)).getTextContent(), rows = new Map();
+      tc.items.forEach((it) => { if (!it.str.trim()) return; const y = Math.round(it.transform[5]); const r = rows.get(y) || { t: '', s: 0 }; r.t += it.str + ' '; r.s = Math.max(r.s, it.height || 0); rows.set(y, r); });
+      rows.forEach((r) => { lines.push(r); sizes.push(r.s); });
+    }
+    sizes.sort((a, b) => a - b); const bodySize = sizes[Math.floor(sizes.length / 2)] || 10;
+    return lines.filter((l) => l.s >= bodySize * 1.25 || /^(chapter|topic|unit|module|lesson)\s+\w+/i.test(l.t.trim())).map((l) => l.t);
+  }
+  async function extract(url) {
+    await loadPdfJs();
+    const pdf = await pdfjsLib.getDocument({ url }).promise;
+    try {
+      let raw = await fromOutline(pdf);
+      if (raw.map(clean).filter(ok).length < 3) raw = await fromHeadings(pdf);
+      const seen = new Set(), out = [];
+      raw.map(clean).filter(ok).forEach((t) => { const k = keyOf(t); if (k && !seen.has(k)) { seen.add(k); out.push(t); } });
+      return out.slice(0, MAX_TOPICS);
+    } finally { try { pdf.destroy(); } catch (_) {} }
+  }
+
+  // Supabase returns at most 1000 rows per request, so page through.
+  async function fetchAll(build) {
+    const out = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await build().range(from, from + 999);
+      if (error) throw error;
+      out.push(...data);
+      if (data.length < 1000) break;
+    }
+    return out;
+  }
+
+  /* ═════════ Topic list: one entry per topic, duplicates merged ═════════ */
+  const topicMap = new Map();   // topic_key -> { topic, material_count }
+  const addTopic = (t, n) => {
+    const k = keyOf(t); if (!k) return;
+    const e = topicMap.get(k);
+    if (e) e.material_count += n; else topicMap.set(k, { topic: t, material_count: n });
+  };
+  const sortedTopics = () => [...topicMap.values()].sort((a, b) => a.topic.localeCompare(b.topic));
+  let pdfs = 0, working = false, workLabel = '';
+
+  function setWork() {
+    $('work').hidden = !working;
+    $('workText').textContent = workLabel;
+  }
+  function render() {
+    const topics = sortedTopics();
+    $('meta').textContent = (topics.length ? topics.length + ' topics · ' : '') + pdfs + (pdfs === 1 ? ' PDF' : ' PDFs');
+    setWork();
+    if (!topics.length) {
+      if (working) msg('Finding topics in this course’s PDFs. This only takes a moment the first time.');
+      else msg('Topics for this course are not ready yet.', 'See the PDFs', 'materials.html?course=' + enc(course));
+      return;
+    }
+    if (!shell) {
+      body.replaceChildren();
+      const all = document.createElement('a'); all.className = 'all'; all.href = 'practice.html?subject=' + enc(course);
+      all.textContent = 'Practice the whole course';
+      const hint = document.createElement('div'); hint.className = 'hint';
+      const search = document.createElement('input'); search.className = 'search'; search.type = 'search'; search.placeholder = 'Search topics'; search.setAttribute('aria-label', 'Search topics');
+      const list = document.createElement('div');
+      body.append(all, hint, search, list);
+      search.addEventListener('input', render);
+      shell = { hint, search, list };
+    }
+    shell.hint.textContent = 'Mixes questions from all ' + topics.length + ' topics';
+    const q = shell.search.value.trim().toLowerCase(); shell.list.replaceChildren();
+    const rows = topics.filter((x) => x.topic.toLowerCase().includes(q));
+    if (!rows.length) { const d = document.createElement('div'); d.className = 'msg'; d.textContent = 'No topic matches your search.'; shell.list.append(d); return; }
+    rows.forEach((x) => {
+      const a = document.createElement('a'); a.className = 'row'; a.href = 'practice.html?subject=' + enc(course) + '&topic=' + enc(x.topic);
+      const b = document.createElement('b'); b.textContent = x.topic;
+      if (x.material_count > 1) { const sm = document.createElement('small'); sm.textContent = 'Covered in ' + x.material_count + ' PDFs'; b.append(sm); }
+      const g = document.createElement('span'); g.className = 'go'; g.textContent = 'Practice →';
+      a.append(b, g); shell.list.append(a);
+    });
+  }
+
+  /* ═════════ Load what is already saved, show it at once ═════════ */
+  let mats = [], done = new Set();
+  try {
+    const [t, m] = await Promise.all([
+      sb.from('course_topics').select('topic, material_count').eq('course_key', key),
+      sb.from('materials').select('id, title, file_url').eq('course', course).order('created_at')
+    ]);
+    if (t.error || m.error) throw (t.error || m.error);
+    (t.data || []).forEach((x) => addTopic(x.topic, x.material_count || 1));
+    mats = m.data || []; pdfs = mats.length;
+    const have = await fetchAll(() => sb.from('material_topics').select('material_id').eq('course_key', key));
+    done = new Set(have.map((r) => String(r.material_id)));
+  } catch (e) {
+    console.error('course-topics:', e);
+    msg("Couldn't load topics. Check your connection and refresh."); return;
+  }
+
+  // PDFs of this course that have no topics yet (and have not already failed 3 times).
+  const tried = readJSON(TRIED_KEY, {});
+  const todo = mats.filter((m) => m.file_url && !done.has(String(m.id)) && (!tried[m.id] || (!tried[m.id].ok && tried[m.id].n < MAX_ATTEMPTS)));
+  working = todo.length > 0;
+  workLabel = working ? 'Finding new topics…' : '';
+  render();
+
+  /* ═════════ Extract the missing ones, save them, show them as they arrive ═════════ */
+  for (let i = 0; i < todo.length; i++) {
+    const m = todo[i];
+    workLabel = 'Finding new topics… ' + (i + 1) + ' of ' + todo.length; setWork();
+    let topics;
+    try { topics = await extract(m.file_url); }
+    catch (e) {
+      console.error('extract:', m.title, e);
+      const t = tried[m.id] || { n: 0 }; t.n++; t.ok = false; tried[m.id] = t; writeJSON(TRIED_KEY, tried);
+      continue;
+    }
+    if (topics.length) {
+      const rows = topics.map((t) => ({ material_id: String(m.id), course, course_key: key, topic: t, topic_key: keyOf(t) }));
+      const { error } = await sb.from('material_topics').upsert(rows, { onConflict: 'material_id,topic_key', ignoreDuplicates: true });
+      if (error) console.warn('Topics could not be saved (they still show this visit):', error.message);
+      else { tried[m.id] = { n: 0, ok: true }; writeJSON(TRIED_KEY, tried); }
+      topics.forEach((t) => addTopic(t, 1));   // duplicates across PDFs merge into one entry
+    } else { tried[m.id] = { n: 0, ok: true }; writeJSON(TRIED_KEY, tried); }
+    render();
+  }
+  working = false; workLabel = ''; render();
+});
+</script></body></html>
