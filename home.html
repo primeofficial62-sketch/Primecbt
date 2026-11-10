@@ -218,6 +218,24 @@ button.nav-item{background:none;border:none;font-family:inherit}
 .sec-head h3{font-size:1.1rem}
 .cd-card{padding:18px;border-color:#2A4058;background:radial-gradient(90% 120% at 100% 0%,rgba(49,211,162,.13),transparent 60%),radial-gradient(120% 90% at 0% 0%,rgba(255,255,255,.06),transparent 55%),var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 18px 40px -18px rgba(49,211,162,.28)}
 
+/* Countdown background image: replace the url(...) in --cd-img with your own photo, e.g. url('countdown.jpg') */
+.cd-card{--cd-img:url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20400%20260%27%3E%3Cdefs%3E%3ClinearGradient%20id=%27g%27%20x1=%270%27%20y1=%270%27%20x2=%270%27%20y2=%271%27%3E%3Cstop%20offset=%270%27%20stop-color=%27%2331D3A2%27%20stop-opacity=%27.2%27/%3E%3Cstop%20offset=%271%27%20stop-color=%27%23070D1D%27%20stop-opacity=%270%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width=%27400%27%20height=%27260%27%20fill=%27url%28%23g%29%27/%3E%3Ccircle%20cx=%27300%27%20cy=%2762%27%20r=%2740%27%20fill=%27%2331D3A2%27%20opacity=%27.12%27/%3E%3Ccircle%20cx=%27300%27%20cy=%2762%27%20r=%2722%27%20fill=%27%23DDF7EE%27%20opacity=%27.85%27/%3E%3Cpath%20d=%27M0%20200%20L70%20120%20L120%20165%20L190%2085%20L260%20170%20L320%20120%20L400%20190%20L400%20260%20L0%20260Z%27%20fill=%27%23183253%27/%3E%3Cpath%20d=%27M190%2085%20L175%20108%20L190%20101%20L204%20110Z%27%20fill=%27%23F1F5FF%27%20opacity=%27.55%27/%3E%3Cpath%20d=%27M0%20225%20L60%20170%20L130%20210%20L200%20140%20L270%20215%20L340%20165%20L400%20210%20L400%20260%20L0%20260Z%27%20fill=%27%23112440%27/%3E%3Cpath%20d=%27M0%20250%20L90%20205%20L170%20240%20L260%20195%20L330%20235%20L400%20215%20L400%20260%20L0%20260Z%27%20fill=%27%230B1630%27/%3E%3C/svg%3E");position:relative;overflow:hidden}
+.cd-card::after{content:"";position:absolute;top:0;right:0;bottom:0;width:64%;background:var(--cd-img) right center/cover no-repeat;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 60%);mask-image:linear-gradient(90deg,transparent 0,#000 60%);pointer-events:none;z-index:0}
+.cd-card>*{position:relative;z-index:1}
+
+/* Study streak card */
+.streak{width:100%;text-align:left;display:flex;flex-direction:column;gap:14px;padding:14px 16px}
+.streak-top{display:flex;align-items:center;gap:12px}
+.streak-txt{flex:1;min-width:0}
+.streak-txt b{display:block;font-size:.95rem;font-weight:600}
+.streak-txt span{display:block;font-size:.78rem;color:var(--mut);margin-top:2px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:.7rem;color:var(--mut2)}
+.day i{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--bd);display:block}
+.day.on i{background:var(--em);border-color:var(--em);box-shadow:0 0 10px rgba(49,211,162,.4)}
+.day.today{color:var(--tx)}
+.day.today i{border-color:var(--em)}
+
 @media (max-width:360px){
   .topbar{padding-inline:14px}.content{padding-inline:14px;gap:14px}
   .hello h1{font-size:1.45rem}.learn h2{font-size:1.2rem}
@@ -304,7 +322,17 @@ button.nav-item{background:none;border:none;font-family:inherit}
         </div>
       </section>
 
-      <!-- Continue learning -->
+      <!-- Study streak (reads the focus-session minutes already saved on this device) -->
+  <button type="button" class="card streak" id="streakCard" aria-label="Open focus session">
+    <div class="streak-top">
+      <span class="cd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 01-10 0c0-2 1-3 2-4 .3 1.2 1 2 2 2 0-3-.5-5 1-8z"/></svg></span>
+      <div class="streak-txt"><b id="stkDays">No streak yet</b><span id="stkToday">Start a focus session today</span></div>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+    </div>
+    <div class="week" id="stkWeek"></div>
+  </button>
+
+  <!-- Continue learning -->
       <a href="practice.html" class="card learn" id="learnCard">
         <div class="learn-row">
           <div style="min-width:0">
@@ -320,17 +348,6 @@ button.nav-item{background:none;border:none;font-family:inherit}
           <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
         </div>
       </a>
-
-      <!-- Quick access -->
-      <section>
-        <div class="sec-head"><h3>Quick Access</h3></div>
-        <div class="qa">
-          <a href="materials.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Materials</a>
-          <a href="practice.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>Practice</a>
-          <a href="progress.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10M10 21V4M16 21v-8M22 21H2"/></svg>Progress</a>
-          <a href="my-study-plan.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="17" rx="3"/><path d="M8 2v4M16 2v4M4 10h16M9 16l2 2 4-4"/></svg>Study Plan</a>
-        </div>
-      </section>
 
       <!-- Recent activity -->
       <section>
@@ -880,6 +897,38 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('pageshow', (e) => { if (e.persisted) refreshIdentity(); });
   supabaseClient.auth.onAuthStateChange((event) => { if (event === 'USER_UPDATED') refreshIdentity(); });
 });
+</script>
+<script>
+(function () {
+  try {
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    var ds = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+    var draw = function (uid) {
+      var data = {};
+      try { data = JSON.parse(localStorage.getItem('pcbt_focus_' + uid)) || {}; } catch (e) {}
+      var n = 0, d = new Date();
+      if (!(data[ds(d)] > 0)) d.setDate(d.getDate() - 1);
+      while (data[ds(d)] > 0) { n++; d.setDate(d.getDate() - 1); }
+      var today = data[ds(new Date())] || 0;
+      document.getElementById('stkDays').textContent = n ? n + (n === 1 ? ' day streak' : ' day streak') : 'No streak yet';
+      document.getElementById('stkToday').textContent = today > 0 ? today + ' min focused today' : 'Start a focus session today';
+      var now = new Date(), mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+      var labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], html = '';
+      for (var i = 0; i < 7; i++) {
+        var x = new Date(mon); x.setDate(mon.getDate() + i); var k = ds(x);
+        html += '<div class="day' + (data[k] > 0 ? ' on' : '') + (k === ds(now) ? ' today' : '') + '"><i></i>' + labels[i] + '</div>';
+      }
+      document.getElementById('stkWeek').innerHTML = html;
+    };
+    document.getElementById('streakCard').addEventListener('click', function () { document.getElementById('focusOpen').click(); });
+    supabaseClient.auth.getSession().then(function (r) {
+      var sess = r.data && r.data.session; if (!sess) return;
+      var uid = sess.user.id; draw(uid);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) draw(uid); });
+      document.getElementById('focusClose').addEventListener('click', function () { setTimeout(function () { draw(uid); }, 50); });
+    });
+  } catch (e) {}
+})();
 </script>
 <script src="/push.js"></script>
 <script src="/install-prompt.js" defer></script>
