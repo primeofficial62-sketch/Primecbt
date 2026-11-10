@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#060b1a">
+<title>PRIME-CBT — Session</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script>
+(function(){var r=document.documentElement;function s(){var v=window.visualViewport,h=Math.round(Math.min(v?v.height:Infinity,window.innerHeight||Infinity));if(isFinite(h)&&h>0)r.style.setProperty('--app-h',h+'px')}
+s();addEventListener('resize',s);addEventListener('orientationchange',function(){setTimeout(s,150)});addEventListener('pageshow',s);if(window.visualViewport)visualViewport.addEventListener('resize',s)})();
+</script>
+<style>
+:root{--bg:#060b1a;--surface:#0f172a;--surface-2:#1e293b;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--emerald:#10b981;--em2:#34d399;--teal:#2dd4bf;--red:#f87171;--amber:#fbbf24;--pad:clamp(14px,4.5vw,28px);--fs-title:clamp(15px,4vw,18px);--fs-sub:clamp(11px,3vw,12.5px);--fs-q:clamp(16px,4.4vw,19px);--fs-body:clamp(13.5px,3.7vw,15.5px);--fs-small:clamp(11.5px,3.1vw,13px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{background:radial-gradient(110% 50% at 100% 0,rgba(52,211,153,.10),transparent 60%),var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:var(--app-h,100dvh);overflow:hidden;display:flex;justify-content:center;padding-inline:env(safe-area-inset-left) env(safe-area-inset-right)}
+button,a{touch-action:manipulation}button{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--em2);outline-offset:2px}
+.app{width:100%;max-width:760px;height:var(--app-h,100dvh);display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:780px) and (min-height:640px){body{align-items:center;padding-block:24px}.app{height:min(calc(var(--app-h,100dvh) - 48px),900px);border:1px solid rgba(51,65,85,.8);border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.5);background:var(--bg)}}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px var(--pad) 10px;padding-top:max(12px,env(safe-area-inset-top));flex-shrink:0}
+.back-btn{width:40px;height:40px;flex-shrink:0;border-radius:12px;background:rgba(30,41,59,.7);border:1px solid var(--border);display:grid;place-items:center;color:var(--text);text-decoration:none}
+.tt{min-width:0;flex:1}.tt h1{font-size:var(--fs-title);font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt p{font-size:var(--fs-sub);color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.timer{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;border:1px solid rgba(52,211,153,.4);background:rgba(16,185,129,.1);color:var(--em2);font-weight:700;font-size:var(--fs-small);font-variant-numeric:tabular-nums;flex-shrink:0}
+.timer.warn{color:var(--amber);border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.08)}
+.timer.danger{color:var(--red);border-color:rgba(248,113,113,.6);background:rgba(248,113,113,.08);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55}}
+.submit-top{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--emerald);background:rgba(16,185,129,.12);color:var(--em2);font-weight:700;font-size:var(--fs-small);cursor:pointer;flex-shrink:0}
+.prog{height:4px;margin:0 var(--pad);border-radius:4px;background:rgba(51,65,85,.6);overflow:hidden;flex-shrink:0}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--emerald),var(--teal));transition:width .3s}
+.offline{flex-shrink:0;text-align:center;padding:7px var(--pad);font-size:var(--fs-small);font-weight:600;color:var(--amber);background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.35)}
+.content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:clamp(14px,4vw,22px) var(--pad)}
+.card{background:linear-gradient(150deg,rgba(52,211,153,.07),var(--surface) 45%);border:1px solid rgba(52,211,153,.16);border-radius:20px;padding:clamp(14px,4vw,22px);box-shadow:0 12px 30px -8px rgba(0,0,0,.45);animation:in .3s ease both}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.qm{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.qc{font-size:var(--fs-small);font-weight:700;color:var(--em2);background:rgba(16,185,129,.12);padding:5px 11px;border-radius:999px}
+.flag{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border);background:rgba(30,41,59,.7);color:var(--muted);font-size:var(--fs-small);font-weight:600;cursor:pointer}
+.flag svg{width:14px;height:14px}.flag[aria-pressed=true]{color:var(--amber);border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.1)}
+.qt{font-size:var(--fs-q);font-weight:600;line-height:1.5;margin-bottom:clamp(14px,3.5vw,20px);overflow-wrap:anywhere;white-space:pre-line}
+.katex{overflow-wrap:normal;font-size:1.08em}.katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0;margin:.6em 0}
+.fig{margin:0 0 clamp(14px,3.5vw,20px);padding:10px;border-radius:14px;background:#f8fafc;display:flex;justify-content:center;overflow:auto}
+.fig img,.fig svg{max-width:100%;height:auto;max-height:340px;display:block}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;min-height:52px;padding:12px 14px;text-align:left;border:1.5px solid var(--border);background:rgba(30,41,59,.65);border-radius:14px;cursor:pointer;font-size:var(--fs-body);font-weight:500;line-height:1.4;transition:.15s}
+.opt .l{flex-shrink:0;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(148,163,184,.14);color:var(--muted);font-size:12px;font-weight:700}
+.opt .t{flex:1;min-width:0;overflow-wrap:anywhere;padding-top:3px}
+.opt:active:not(:disabled){transform:scale(.99)}
+.opt.sel{border-color:var(--em2);background:rgba(52,211,153,.1)}.opt.sel .l{background:var(--em2);color:#060b1a}
+.opt.right{border-color:var(--emerald);background:rgba(16,185,129,.16);color:var(--em2)}.opt.right .l{background:var(--emerald);color:#022c22}
+.opt.wrong{border-color:var(--red);background:rgba(248,113,113,.14);color:var(--red)}.opt.wrong .l{background:var(--red);color:#2a0a0a}
+.opt:disabled{cursor:default}
+.fb{margin-top:16px;padding:14px 16px;border-radius:14px;font-size:var(--fs-body);line-height:1.55;overflow-wrap:anywhere;white-space:pre-line;animation:in .3s ease both}
+.fb.ok{background:rgba(16,185,129,.12);border:1px solid var(--emerald);color:var(--em2)}.fb.bad{background:rgba(248,113,113,.12);border:1px solid var(--red);color:var(--red)}
+.fb strong{display:block;margin-bottom:4px}
+.tracker{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.tb{height:40px;border-radius:12px;border:1.5px solid var(--border);background:rgba(30,41,59,.65);color:var(--muted);font-weight:600;font-size:.9rem;cursor:pointer;position:relative}
+.tb.a{border-color:var(--emerald);color:var(--em2);background:rgba(16,185,129,.1)}.tb.w{border-color:var(--red);color:var(--red);background:rgba(248,113,113,.1)}
+.tb.f::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.tb.on{background:var(--em2);border-color:var(--em2);color:#060b1a;box-shadow:0 0 12px rgba(52,211,153,.4)}
+.bar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px var(--pad);padding-bottom:max(16px,env(safe-area-inset-bottom));border-top:1px solid rgba(51,65,85,.7);background:rgba(15,23,42,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-shrink:0}
+.btn{min-height:48px;padding:0 clamp(16px,4vw,24px);border-radius:14px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-weight:600;font-size:var(--fs-body);cursor:pointer}
+.btn:active:not(:disabled){transform:scale(.97)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{flex:1;max-width:280px;background:linear-gradient(135deg,var(--emerald),var(--teal));color:#022c22;border-color:transparent;font-weight:700}
+@media(hover:hover){.opt:hover:not(:disabled):not(.right):not(.wrong){border-color:var(--em2);background:rgba(52,211,153,.06)}.btn:hover:not(:disabled):not(.primary){background:#334155}}
+.state{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:32px 12px}
+.state h2{font-size:var(--fs-title)}.state p{color:var(--muted);font-size:var(--fs-body);max-width:40ch;line-height:1.5}
+.sbtn{margin-top:8px;min-height:44px;padding:0 20px;border-radius:14px;border:1.5px solid var(--emerald);background:rgba(16,185,129,.12);color:var(--em2);font-weight:600;font-size:var(--fs-body);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.spin{width:30px;height:30px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--emerald);animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+dialog{margin:auto;width:min(92vw,420px);max-height:calc(100dvh - 32px);overflow-y:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:20px;padding:22px}
+dialog::backdrop{background:rgba(2,6,23,.7)}dialog h2{font-size:1.05rem;margin-bottom:8px}dialog p{color:var(--muted);font-size:var(--fs-body);line-height:1.55}
+dialog .row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}dialog .row .btn{flex:1 1 120px;max-width:none}
+#dlgErr{color:var(--red);margin-top:10px;font-size:var(--fs-small)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(88px,calc(env(safe-area-inset-bottom) + 76px));z-index:1000;max-width:90vw;padding:10px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--border);font-size:var(--fs-small);font-weight:600;box-shadow:0 10px 25px rgba(0,0,0,.4)}
+@media(max-width:420px){.timer svg{display:none}.back-btn{width:36px;height:36px}}
+@media(max-height:480px){.topbar{padding-block:6px}.bar{padding-block:6px}.btn{min-height:40px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a href="practice-setup.html" class="back-btn" id="backLink" aria-label="Leave session"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <div class="tt"><h1 id="cbtTitle">PRIME-CBT</h1><p id="cbtSub">Loading…</p></div>
+    <span class="timer" id="timer" hidden role="timer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span id="timerText">0:00</span></span>
+    <button type="button" class="submit-top" id="submitTop" hidden>Submit</button>
+  </header>
+  <div class="prog" id="progWrap" hidden><i id="progBar"></i></div>
+  <div class="offline" id="offline" role="status" hidden>You’re offline. Your answers are kept on this device — reconnect to submit.</div>
+  <main class="content" id="content"><div class="state"><div class="spin"></div><p>Loading your questions…</p></div></main>
+  <footer class="bar" id="bottomBar" hidden>
+    <button type="button" class="btn" id="prevBtn">Previous</button>
+    <button type="button" class="btn primary" id="nextBtn">Next Question</button>
+  </footer>
+</div>
+<dialog id="dlg"><h2>Submit session?</h2><p id="dlgBody"></p><p id="dlgErr" role="alert" hidden></p>
+  <div class="row"><button type="button" class="btn" id="dlgCancel">Keep going</button><button type="button" class="btn primary" id="dlgOk">Submit</button></div></dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+'use strict';
+const CONFIG = {
+  SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
+  loginPage: 'login.html', setupPage: 'practice-setup.html', resultsPage: 'results.html',
+  defaultSecsPerQ: 60, resumeWindowMs: 6 * 3600 * 1000
+};
+const $ = (id) => document.getElementById(id);
+const el = { back:$('backLink'), title:$('cbtTitle'), sub:$('cbtSub'), offline:$('offline'), timer:$('timer'), timerText:$('timerText'),
+  submitTop:$('submitTop'), content:$('content'), bar:$('bottomBar'), prev:$('prevBtn'), next:$('nextBtn'), progWrap:$('progWrap'), progBar:$('progBar'),
+  dlg:$('dlg'), dlgBody:$('dlgBody'), dlgErr:$('dlgErr'), dlgCancel:$('dlgCancel'), dlgOk:$('dlgOk'), toast:$('toast') };
+const LETTERS = 'ABCDEFGHIJ';
+
+/* ---- URL params (sent by practice-setup.html) ---- */
+const P = new URLSearchParams(location.search);
+const courseParam = (P.get('courseId') || P.get('course') || '').trim();
+const topicParam = (P.get('topic') || '').trim();
+const courseIds = (P.get('courseIds') || '').split(',').map(s => s.trim()).filter(Boolean);
+const idsParam = (P.get('ids') || '').split(',').map(s => s.trim()).filter(Boolean);   // exact question list (topic / weak practice)
+const topicName = (P.get('topicName') || '').trim();
+const kind = P.get('kind') || '';
+const wantCount = Math.max(1, parseInt(P.get('count'), 10) || 10);
+const difficulty = ['easy','medium','hard','mixed'].includes(P.get('difficulty')) ? P.get('difficulty') : 'mixed';
+const mode = P.get('mode') === 'timed' ? 'timed' : 'practice';
+const instant = mode === 'practice' && P.get('feedback') !== 'end';
+const randomize = P.get('randomize') !== 'false';
+const nonce = P.get('s') || '';
+const minutesParam = parseInt(P.get('minutes'), 10) || 0;
+const secsPerQ = parseInt(P.get('secsPerQ'), 10) || CONFIG.defaultSecsPerQ;
+
+// Back goes to the setup page of the SAME course / topic (not a blank setup page)
+(() => {
+  const b = new URLSearchParams();
+  ['courseId','courseIds','course','topicKey','topicName'].forEach(k => { if (P.get(k)) b.set(k, P.get(k)); });
+  if (!b.has('course') && courseParam) b.set('course', courseParam);
+  b.set('mode', P.get('source') || (kind === 'topic' ? 'Topic Practice' : 'Practice'));
+  el.back.href = CONFIG.setupPage + '?' + b.toString();
+})();
+
+const S = { user:null, course:null, qs:[], answers:{}, flags:new Set(), index:0, endAt:null, startedAt:Date.now(), submitting:false, done:false, retry:null };
+
+let tT; const toast = (m) => { el.toast.textContent = m; el.toast.hidden = false; clearTimeout(tT); tT = setTimeout(() => { el.toast.hidden = true; }, 3500); };
+function showMessage(title, body, btnText, action, href) {
+  const w = document.createElement('div'); w.className = 'state';
+  const h = document.createElement('h2'); h.textContent = title;
+  const p = document.createElement('p'); p.textContent = body; w.append(h, p);
+  if (btnText) { const b = document.createElement(href ? 'a' : 'button'); b.className = 'sbtn'; b.textContent = btnText; if (href) b.href = href; else { b.type = 'button'; b.addEventListener('click', action); } w.append(b); }
+  el.content.replaceChildren(w); el.bar.hidden = el.submitTop.hidden = el.timer.hidden = el.progWrap.hidden = true;
+}
+const redirectToLogin = () => location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(location.pathname.split('/').pop() + location.search)}`);
+const shuffle = (a) => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
+const optText = (o) => (o && typeof o === 'object') ? (o.text ?? o.label ?? '') : String(o ?? '');
+const answered = (q) => S.answers[q.id] !== undefined;
+
+if (!window.supabase) { el.sub.textContent = 'Not connected'; showMessage('Couldn’t load the app', 'Check your connection and refresh the page.', 'Refresh', () => location.reload()); return; }
+const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+/* ---- resume (per tab) ---- */
+const storeKey = () => `primecbt:session:${S.user.id}:${courseParam || topicParam}:${mode}:${difficulty}:${wantCount}:${randomize}:${idsParam.length}:${idsParam[0] || ''}:${nonce}`;
+function save() { if (S.done || !S.qs.length) return; try { sessionStorage.setItem(storeKey(), JSON.stringify({ ids:S.qs.map(q => q.id), answers:S.answers, flags:[...S.flags], index:S.index, startedAt:S.startedAt, endAt:S.endAt })); } catch (_) {} }
+function loadSaved() { try { const d = JSON.parse(sessionStorage.getItem(storeKey()) || 'null'); if (!d || !Array.isArray(d.ids) || !d.ids.length || Date.now() - (d.startedAt || 0) > CONFIG.resumeWindowMs) return null; return d; } catch (_) { return null; } }
+const clearSaved = () => { try { sessionStorage.removeItem(storeKey()); } catch (_) {} };
+
+/* ---- data ---- */
+async function resolveCourse() {
+  const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseParam) || /^\d+$/.test(courseParam);
+  if (courseParam && isId) { const { data, error } = await db.from('courses').select('id,title,code').eq('id', courseParam).limit(1); if (error) throw error; return data && data[0] || null; }
+  const t = (courseParam || topicParam).trim(); if (!t) return null;
+  const pat = t.replace(/[\\%_]/g, '\\$&').replace(/\*/g, '');
+  for (const col of ['title', 'code']) { const { data, error } = await db.from('courses').select('id,title,code').ilike(col, pat).limit(1); if (error) throw error; if (data && data[0]) return data[0]; }
+  return null;
+}
+const QBASE = 'id,question,options,correct_index,explanation';
+let QCOLS = QBASE + ',image_url,svg';
+async function withCols(run) { let r = await run(QCOLS); if (r.error && QCOLS !== QBASE && /image_url|svg|column/i.test(r.error.message || '')) { QCOLS = QBASE; r = await run(QCOLS); } return r; }
+const valid = (r) => Array.isArray(r.options) && r.options.length >= 2;
+
+async function fetchByIds(ids) {
+  const rows = [];
+  for (let i = 0; i < ids.length; i += 100) {            // chunks keep the request URL short
+    const { data, error } = await withCols((c) => db.from('questions').select(c).in('id', ids.slice(i, i + 100)));
+    if (error) throw error; rows.push(...(data || []));
+  }
+  const byId = new Map(rows.map(q => [q.id, q]));
+  return ids.map(id => byId.get(id)).filter(q => q && valid(q));
+}
+
+async function fetchQuestions(saved) {
+  if (saved) return fetchByIds(saved.ids);
+  if (idsParam.length) { const list = await fetchByIds(idsParam); return randomize ? shuffle(list) : list; }
+
+  const cids = courseIds.length ? courseIds : [S.course.id];   // courses sharing one code are practised together
+  const { data, error } = await withCols((c) => {
+    let q = db.from('questions').select(c).in('course_id', cids).limit(2000);
+    if (difficulty !== 'mixed') q = q.ilike('difficulty', difficulty);
+    if (!randomize) q = q.order('created_at', { ascending: true });
+    return q;
+  });
+  if (error) throw error;
+  const rows = (data || []).filter(valid);
+
+  // Rotation: unseen questions first, then the ones seen longest ago
+  let seenAt = new Map();
+  try {
+    const { data: s } = await db.from('user_seen_questions').select('question_id,seen_at').eq('user_id', S.user.id).in('course_id', cids).limit(5000);
+    seenAt = new Map((s || []).map(r => [r.question_id, r.seen_at]));
+  } catch (_) {}
+  const fresh = rows.filter(r => !seenAt.has(r.id));
+  let picked = (randomize ? shuffle(fresh) : fresh).slice(0, wantCount);
+  if (picked.length < wantCount) picked = picked.concat(rows.filter(r => seenAt.has(r.id)).sort((a, b) => new Date(seenAt.get(a.id)) - new Date(seenAt.get(b.id))).slice(0, wantCount - picked.length));
+  return randomize ? shuffle(picked) : picked;
+}
+
+function renderMath(root) {
+  if (window.renderMathInElement) { try { window.renderMathInElement(root, { delimiters:[{left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}], throwOnError:false }); } catch (_) {} }
+  else addEventListener('load', () => renderMath(root), { once:true });
+}
+function buildFigure(q) {
+  const url = typeof q.image_url === 'string' ? q.image_url.trim() : '', svg = typeof q.svg === 'string' ? q.svg.trim() : '';
+  let f = null;
+  if (/^https:\/\//i.test(url)) { f = document.createElement('div'); f.className = 'fig'; const im = document.createElement('img'); im.src = url; im.alt = 'Diagram for this question'; im.loading = 'lazy'; im.addEventListener('error', () => f.remove()); f.append(im); }
+  else if (svg && /^<svg[\s>]/i.test(svg) && window.DOMPurify) { const safe = window.DOMPurify.sanitize(svg, { USE_PROFILES:{ svg:true, svgFilters:true } }); if (safe) { f = document.createElement('div'); f.className = 'fig'; f.innerHTML = safe; } }
+  return f;
+}
+
+/* ---- render ---- */
+function renderHeader() {
+  el.title.textContent = topicName || S.course.title || 'Practice session';
+  const n = S.qs.length, label = kind === 'mock' ? 'MOCK EXAM' : kind === 'topic' ? 'TOPIC' : mode === 'timed' ? 'TIMED' : 'PRACTICE';
+  el.sub.textContent = [topicName ? S.course.title : '', `${n} ${n === 1 ? 'Question' : 'Questions'}`, label].filter(Boolean).join(' • ');
+  document.title = `${topicName || S.course.title || 'Session'} — PRIME-CBT`;
+}
+function render(animate = true) {
+  const q = S.qs[S.index], locked = instant && answered(q), chosen = S.answers[q.id];
+  const card = document.createElement('section'); card.className = 'card'; if (!animate) card.style.animation = 'none';
+  const meta = document.createElement('div'); meta.className = 'qm';
+  const count = document.createElement('span'); count.className = 'qc'; count.textContent = `Question ${S.index + 1} of ${S.qs.length}`;
+  const flag = document.createElement('button'); flag.type = 'button'; flag.className = 'flag'; flag.setAttribute('aria-pressed', String(S.flags.has(q.id)));
+  flag.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>';
+  flag.append(S.flags.has(q.id) ? 'Flagged' : 'Flag'); flag.addEventListener('click', toggleFlag); meta.append(count, flag);
+  const text = document.createElement('div'); text.className = 'qt'; text.textContent = q.question;
+  const list = document.createElement('div'); list.className = 'opts'; list.setAttribute('role', 'radiogroup');
+  q.options.forEach((opt, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(chosen === i));
+    const l = document.createElement('span'); l.className = 'l'; l.textContent = LETTERS[i] || String(i + 1);
+    const t = document.createElement('span'); t.className = 't'; t.textContent = optText(opt); b.append(l, t);
+    if (locked) { b.disabled = true; if (i === q.correct_index) b.classList.add('right'); else if (i === chosen) b.classList.add('wrong'); }
+    else if (chosen === i) b.classList.add('sel');
+    b.addEventListener('click', () => choose(i)); list.append(b);
+  });
+  const fig = buildFigure(q); fig ? card.append(meta, fig, text, list) : card.append(meta, text, list);
+  if (locked) {
+    const ok = chosen === q.correct_index, fb = document.createElement('div'); fb.className = 'fb ' + (ok ? 'ok' : 'bad');
+    const s = document.createElement('strong'); s.textContent = ok ? 'Correct!' : `Incorrect. The correct answer is ${LETTERS[q.correct_index]}. ${optText(q.options[q.correct_index])}`; fb.append(s);
+    if (q.explanation && q.explanation.trim()) fb.append(q.explanation); card.append(fb);
+  }
+  const tr = document.createElement('div'); tr.className = 'tracker';
+  S.qs.forEach((x, i) => {
+    const t = document.createElement('button'); t.type = 'button'; t.textContent = String(i + 1); t.setAttribute('aria-label', `Go to question ${i + 1}`); t.className = 'tb';
+    if (answered(x)) t.classList.add(instant && S.answers[x.id] !== x.correct_index ? 'w' : 'a');
+    if (S.flags.has(x.id)) t.classList.add('f'); if (i === S.index) t.classList.add('on');
+    t.addEventListener('click', () => go(i)); tr.append(t);
+  });
+  card.append(tr); el.content.replaceChildren(card); renderMath(card);
+  el.prev.disabled = S.index === 0; el.next.textContent = S.index === S.qs.length - 1 ? 'Submit' : 'Next Question';
+  el.progBar.style.width = (S.qs.filter(answered).length / S.qs.length * 100) + '%';
+  el.bar.hidden = el.submitTop.hidden = el.progWrap.hidden = false;
+}
+
+/* ---- actions ---- */
+function choose(i) {
+  const q = S.qs[S.index]; if (instant && answered(q)) return;
+  if (!instant && S.answers[q.id] === i) delete S.answers[q.id]; else S.answers[q.id] = i;   // exam style: tap again to clear
+  save(); render(false);
+}
+function toggleFlag() { const q = S.qs[S.index]; S.flags.has(q.id) ? S.flags.delete(q.id) : S.flags.add(q.id); save(); render(false); }
+function go(i) { if (i < 0 || i >= S.qs.length) return; S.index = i; save(); render(true); el.content.scrollTop = 0; }
+el.prev.addEventListener('click', () => go(S.index - 1));
+el.next.addEventListener('click', () => S.index < S.qs.length - 1 ? go(S.index + 1) : openSubmit());
+el.submitTop.addEventListener('click', openSubmit);
+document.addEventListener('keydown', (e) => {
+  if (!S.qs.length || el.dlg.open || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'ArrowRight') go(S.index + 1); else if (e.key === 'ArrowLeft') go(S.index - 1);
+  else { const k = e.key.toUpperCase(); let i = LETTERS.indexOf(k); if (i < 0 && /^[1-9]$/.test(e.key)) i = Number(e.key) - 1; if (k.length === 1 && i >= 0 && i < S.qs[S.index].options.length) choose(i); }
+});
+
+/* ---- timer ---- */
+let tick = null, refreshTimer = () => {};
+const totalSecs = () => minutesParam ? minutesParam * 60 : S.qs.length * secsPerQ;   // uses the time chosen on the setup page
+function startTimer() {
+  if (mode !== 'timed') return;
+  if (!S.endAt) S.endAt = Date.now() + totalSecs() * 1000;
+  el.timer.hidden = false;
+  const update = () => {
+    const left = Math.max(0, Math.round((S.endAt - Date.now()) / 1000));
+    el.timerText.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    el.timer.classList.toggle('warn', left <= 120 && left > 60); el.timer.classList.toggle('danger', left <= 60);
+    if (left <= 0 && !S.submitting && !S.done) { clearInterval(tick); toast('Time’s up — submitting your answers.'); submit(true); }
+  };
+  refreshTimer = update; update(); tick = setInterval(update, 500);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshTimer(); });
+
+/* ---- submit ---- */
+function openSubmit() {
+  if (S.submitting) return;
+  const un = S.qs.filter(q => !answered(q)).length, fl = S.flags.size, parts = [];
+  parts.push(un > 0 ? `You have ${un} unanswered ${un === 1 ? 'question' : 'questions'}.` : 'You’ve answered every question.');
+  if (fl > 0) parts.push(`${fl} ${fl === 1 ? 'question is' : 'questions are'} flagged.`);
+  parts.push('You can’t change your answers after submitting.');
+  el.dlgBody.textContent = parts.join(' '); el.dlgErr.hidden = true; el.dlgOk.disabled = false; el.dlgOk.textContent = 'Submit'; el.dlgCancel.hidden = false;
+  if (!el.dlg.open) el.dlg.showModal();
+}
+el.dlgCancel.addEventListener('click', () => { S.retry = null; el.dlg.close(); });
+el.dlgOk.addEventListener('click', () => submit(false));
+async function submit(auto) {
+  if (S.submitting || S.done) return;
+  S.submitting = true; S.retry = null; el.dlgOk.disabled = true; el.dlgOk.textContent = 'Submitting…';
+  if (auto && !el.dlg.open) { el.dlgBody.textContent = 'Saving your answers…'; el.dlgErr.hidden = true; el.dlg.showModal(); }
+  const payload = S.qs.map((q, i) => ({ question_id:q.id, position:i, selected_index:S.answers[q.id] ?? null, flagged:S.flags.has(q.id) }));
+  const { data, error } = await db.rpc('submit_practice_session', { p_course_id:S.course.id, p_mode:mode, p_answers:payload, p_duration_seconds:Math.max(0, Math.round((Date.now() - S.startedAt) / 1000)) });
+  S.submitting = false;
+  if (error || !data) {
+    console.error('[cbt] submit failed:', error); S.retry = { auto:!!auto };
+    el.dlgErr.textContent = navigator.onLine ? 'Couldn’t save your session. Your answers are still here — try again.' : 'You’re offline. Your answers are still here and will be submitted when you reconnect.';
+    el.dlgErr.hidden = false; el.dlgOk.disabled = false; el.dlgOk.textContent = 'Try again'; if (auto) el.dlgCancel.hidden = true; return;
+  }
+  S.done = true; clearInterval(tick); clearSaved();
+  location.href = `${CONFIG.resultsPage}?result=${encodeURIComponent(data)}`;
+}
+
+/* ---- connectivity ---- */
+const syncOnline = () => { el.offline.hidden = navigator.onLine; };
+addEventListener('online', () => { syncOnline(); if (S.retry && !S.submitting && !S.done) { toast('Back online — submitting your answers…'); submit(S.retry.auto); } });
+addEventListener('offline', syncOnline); syncOnline();
+
+/* ---- boot ---- */
+async function init() {
+  try {
+    const { data: { session } } = await db.auth.getSession(); if (!session) return redirectToLogin();
+    const { data: { user }, error: ue } = await db.auth.getUser(); if (ue || !user) return redirectToLogin();
+    S.user = user; db.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') redirectToLogin(); });
+    if (!courseParam && !topicParam) { el.sub.textContent = 'No course selected'; return showMessage('No course selected', 'Choose a course and set up your session first.', 'Set up a session', null, CONFIG.setupPage); }
+    S.course = await resolveCourse();
+    if (!S.course) { el.sub.textContent = 'Course not found'; return showMessage('Course not found', 'We couldn’t find that course.', 'Set up a session', null, CONFIG.setupPage); }
+    const saved = loadSaved();
+    S.qs = await fetchQuestions(saved);
+    if (!S.qs.length) { el.title.textContent = S.course.title || 'Practice session'; el.sub.textContent = 'No questions available'; return showMessage('No questions available', 'There aren’t any questions for these settings. Go back and adjust them.', 'Back to setup', null, el.back.href); }
+    if (saved) {
+      const ids = new Set(S.qs.map(q => q.id));
+      Object.keys(saved.answers || {}).forEach(k => { if (ids.has(k)) S.answers[k] = saved.answers[k]; });
+      (saved.flags || []).forEach(k => { if (ids.has(k)) S.flags.add(k); });
+      S.index = Math.min(Math.max(0, saved.index || 0), S.qs.length - 1);
+      S.startedAt = saved.startedAt || Date.now();
+      S.endAt = saved.endAt ? Math.min(saved.endAt, S.startedAt + totalSecs() * 1000 + 60000) : null;   // a resumed test never gets extra time
+      toast('Resumed your session');
+    }
+    renderHeader(); startTimer(); render(false); save();
+  } catch (err) {
+    console.error('[cbt] init failed:', err); el.sub.textContent = 'Connection problem';
+    showMessage('Couldn’t load your questions', 'Check your connection and try again.', 'Retry', () => location.reload());
+  }
+}
+init();
+})();
+</script>
+</body>
+</html>
