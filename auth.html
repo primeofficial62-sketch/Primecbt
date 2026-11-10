@@ -978,12 +978,30 @@ switcher.dataset.mode = mode;
       }
 
       // Email already registered (e.g. via Google): Supabase fakes success
-      // and sends NO code. Detect it and guide the user instead.
+      // and sends NO code. Instead of a dead end, send a reset code and take
+      // the user to the "set password" screen, pre-filled with the password
+      // they just typed.
       if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
         clearProgress();
-        document.getElementById('loginEmail').value = email;
-        setMode('login');
-        showToast('This email already has an account. Use "Continue with Google", or tap "Forgot password" to set a password.', 'error', 7000);
+        setLoading(stepNext, true);
+        const { error: rErr } = await supabaseClient.auth.resetPasswordForEmail(email);
+        setLoading(stepNext, false);
+
+        if (rErr) {
+          document.getElementById('loginEmail').value = email;
+          setMode('login');
+          showToast('This email already has an account. Use "Continue with Google", or tap "Forgot password".', 'error', 7000);
+          return;
+        }
+
+        resetEmail = email;
+        resetVerified = false;
+        resetPwInput.value = password;
+        document.getElementById('resetSubtext').textContent =
+          `This email already has an account. Enter the ${CODE_LENGTH}-digit code we sent to ${email} to set your password.`;
+        setMode('reset');
+        buildResetOtp();
+        showToast('Account exists. We sent a code to set your password.', 'success', 6000);
         return;
       }
 
