@@ -2675,15 +2675,14 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     setTask(pull, 30000);
   }
   
-  /* ================= maintenance mode ================= */
+ /* ================= maintenance mode ================= */
   var MM_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co/rest/v1/rpc/';
   var MM_APIKEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
-  var mmKey = '';
   async function mmRpc(fn, body) {
     var r = await fetch(MM_URL + fn, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: MM_APIKEY, Authorization: 'Bearer ' + MM_APIKEY },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body || {})
     });
     var d = {};
     try { d = await r.json(); } catch (e) {}
@@ -2698,34 +2697,28 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       '<div class="fld"><label for="mmEm">Allowed emails (one per line)</label><textarea id="mmEm" rows="4"></textarea></div>' +
       '<button class="btn primary" id="mmSave">Save</button><div class="count" id="mmSt"></div></div>';
     var st = function (t) { if ($('mmSt')) $('mmSt').textContent = t; };
-    function needKey() {
-      if (!mmKey) mmKey = prompt('Admin key:') || '';
-      return mmKey;
-    }
     async function load() {
-      if (!needKey()) return st('Admin key needed. Open this page again to retry.');
       try {
-        var d = await mmRpc('admin_get_site_settings', { p_key: mmKey });
-        if (!d.ok) { mmKey = ''; return st(d.error === 'wrong_key' ? 'Wrong admin key. Open this page again to retry.' : 'Failed to load.'); }
+        var d = await mmRpc('site_settings_get');
+        if (!d.ok) return st('Failed to load.');
         $('mmOn').checked = !!d.maintenance_mode;
         $('mmMsg').value = d.message || '';
         $('mmEm').value = (d.allowed_emails || []).join('\n');
       } catch (e) { st(e.message); }
     }
     $('mmSave').onclick = async function () {
-      if (!needKey()) return;
       var on = $('mmOn').checked;
       if (on && !confirm('Turn ON maintenance? All non-allowed users will be blocked.')) return;
       var emails = $('mmEm').value.split('\n').map(function (e) { return e.trim().toLowerCase(); }).filter(Boolean);
       try {
-        var d = await mmRpc('admin_set_site_settings', { p_key: mmKey, p_enabled: on, p_message: $('mmMsg').value, p_emails: emails });
-        if (!d.ok) { mmKey = ''; st(d.error === 'wrong_key' ? 'Wrong admin key.' : 'Failed.'); return; }
+        var d = await mmRpc('site_settings_set', { p_enabled: on, p_message: $('mmMsg').value, p_emails: emails });
+        if (!d.ok) return st('Failed.');
         st('Saved. Live for everyone.'); toast('Maintenance ' + (on ? 'ON' : 'OFF'));
       } catch (e) { st(e.message); }
     };
     load();
   }
-
+  
   /* ================= navigation ================= */
   var current = '';
 
