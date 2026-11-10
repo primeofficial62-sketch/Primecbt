@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070D1C">
+  <link rel="icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+  <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
   <title>PRIME-CBT — Downloads</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,16 +14,22 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     :root {
-      --bg-deep: #060b1a;
-      --card-bg: #0f172a;
-      --card-bg-alt: #1e293b;
-      --border-color: #334155;
-      --text-main: #f1f5f9;
+      /* PRIME-CBT design-system values */
+      --bg-deep: #070D1C;
+      --card-bg: #10192B;
+      --card-bg-alt: #17233A;
+      --border-color: #2A3850;
+      --text-main: #F4F6FC;
       --text-muted-1: #cbd5e1;
-      --text-muted-2: #94a3b8;
-      --text-muted-3: #64748b;
-      --emerald-prime: #34d399;
-      --emerald-dark: #10b981;
+      --text-muted-2: #9BA8BE;
+      --text-muted-3: #6F7F99;
+      --emerald-prime: #31D3A2;
+      --emerald-dark: #31D3A2;
+      --emerald-hover: #4BE0B5;
+      --on-emerald: #070D1C;
+      --ring: rgba(49, 211, 162, 0.2);
+      --line: rgba(49, 211, 162, 0.22);
+      --card: linear-gradient(160deg, #15233C 0%, #0D1627 100%);
       --red-prime: #f87171;
       --ease: cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -35,6 +45,8 @@
 
     body {
       background-color: var(--bg-deep);
+      background-image: radial-gradient(760px 420px at 50% -90px, rgba(49, 211, 162, 0.13), transparent 70%);
+      background-repeat: no-repeat;
       color: var(--text-main);
       font-family: 'Inter', sans-serif;
       margin: 0;
@@ -231,6 +243,22 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; }
     }
+
+    /* ---- PRIME-CBT upgrade additions ---- */
+    .topbar { background: rgba(7, 13, 28, 0.88); }
+    .topbar-text h1 { font-family: 'Lora', serif; }
+    .back-btn, .icon-btn { width: 44px; height: 44px; border-radius: 50%; }
+    .action-icon-btn { width: 44px; height: 44px; border-radius: 50%; }
+    @media (max-width: 360px) { .action-icon-btn { width: 44px; height: 44px; } }
+    .downloads-overview, .download-card { background: var(--card); border-color: var(--line); border-radius: 20px; }
+    .downloads-overview:hover, .download-card:hover { border-color: rgba(49, 211, 162, 0.45); background: var(--card); }
+    .empty-downloads a { min-height: 54px; display: inline-flex; align-items: center; padding: 0 28px; border-radius: 999px; color: var(--on-emerald); box-shadow: 0 8px 24px rgba(49, 211, 162, 0.28); }
+    .empty-downloads a:hover { background: var(--emerald-hover); }
+    .toast { border-color: var(--red-prime); }
+    /* loading skeleton for the storage badge */
+    .storage-badge.loading { color: transparent; min-width: 84px; border-color: transparent; background: linear-gradient(90deg, var(--card-bg) 25%, var(--card-bg-alt) 50%, var(--card-bg) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .storage-badge.loading { animation: none; } }
   </style>
 </head>
 <body>
@@ -254,14 +282,14 @@
     </div>
 
     <div class="content">
-      <div class="banner" id="errorBanner" hidden></div>
+      <div class="banner" id="errorBanner" role="alert" hidden></div>
 
       <div class="downloads-overview">
         <div class="downloads-overview-info">
           <h2>Device Storage</h2>
-          <p id="downloadCountText">Checking your downloads...</p>
+          <p id="downloadCountText" aria-live="polite">Checking your downloads...</p>
         </div>
-        <div class="storage-badge" id="storageSizeBadge">—</div>
+        <div class="storage-badge loading" id="storageSizeBadge">—</div>
       </div>
 
       <div class="download-list" id="downloadListContainer"></div>
@@ -413,6 +441,7 @@
     if (!window.PrimeDownloads) {
       banner.textContent = 'Offline downloads could not start in this browser.';
       banner.hidden = false;
+      sizeBadge.classList.remove('loading');
       return;
     }
 
@@ -465,6 +494,7 @@
       clearBtn.disabled = n === 0;
       countText.textContent = n + (n === 1 ? ' file' : ' files') + ' stored offline';
       sizeBadge.textContent = fmtBytes(total) + ' used';
+      sizeBadge.classList.remove('loading');
 
       for (const it of items) {
         const card = el('div', 'download-card');
@@ -547,7 +577,7 @@
     document.addEventListener('visibilitychange', () => {   // back to this tab
       if (document.visibilityState === 'visible') refresh();
     });
-    setInterval(() => { if (document.visibilityState === 'visible') render(); }, 60000); // keep "today / yesterday" accurate
+    setInterval(() => { if (document.visibilityState === 'visible' && !listEl.contains(document.activeElement)) render(); }, 60000); // keep "today / yesterday" accurate
 
     refresh();
   });
