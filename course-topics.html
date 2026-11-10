@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PRIME-CBT — Course topics</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="profile-gate.js"></script>
+<style>
+:root{--bg:#060b1a;--s:#0f172a;--s2:#1e293b;--bd:#334155;--tx:#f1f5f9;--mu:#94a3b8;--em:#34d399}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);min-height:100dvh}
+a{color:inherit;text-decoration:none}[hidden]{display:none!important}
+.wrap{max-width:720px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px max(40px,env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;padding:6px 0 18px}
+.back{width:42px;height:42px;border-radius:12px;background:rgba(30,41,59,.6);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.back svg{width:20px;height:20px}
+h1{font-size:1.35rem;line-height:1.25;overflow-wrap:anywhere}.meta{font-size:.82rem;color:var(--mu);margin-top:3px}
+.all{display:flex;align-items:center;justify-content:center;gap:8px;height:54px;border-radius:16px;background:linear-gradient(135deg,#10b981,#059669);color:#022c22;font-weight:700;margin-bottom:8px;box-shadow:0 6px 20px rgba(16,185,129,.25)}
+.hint{font-size:.78rem;color:var(--mu);text-align:center;margin-bottom:20px}
+.search{width:100%;height:46px;border-radius:14px;background:var(--s);border:1px solid var(--bd);padding:0 14px;color:var(--tx);font-size:16px;margin-bottom:14px;outline:none}
+.search:focus{border-color:var(--em)}
+.row{display:flex;align-items:center;gap:12px;padding:14px;background:var(--s);border:1px solid var(--bd);border-radius:16px}
+.row+.row{margin-top:8px}.row:active{border-color:rgba(16,185,129,.5)}
+.row b{flex:1;min-width:0;font-size:.95rem;font-weight:600;overflow-wrap:anywhere}
+.row small{display:block;font-size:.74rem;color:var(--mu);font-weight:400;margin-top:2px}
+.go{font-size:.8rem;font-weight:700;color:var(--em);flex-shrink:0}
+.msg{text-align:center;color:var(--mu);font-size:.92rem;line-height:1.5;padding:50px 10px}.msg a{color:var(--em)}
+.skel{height:58px;border-radius:16px;background:linear-gradient(90deg,var(--s) 25%,var(--s2) 50%,var(--s) 75%);background-size:200% 100%;animation:sh 1.4s infinite;margin-bottom:8px}
+@keyframes sh{to{background-position:-200% 0}}
+</style></head><body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="materials.html" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <div style="min-width:0"><h1 id="title">Course</h1><div class="meta" id="meta"></div></div>
+  </div>
+  <div id="body"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const sb = window.supabase.createClient("https://xuofkjjhupgmrphzgyun.supabase.co", "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh");
+  const $ = (id) => document.getElementById(id), enc = encodeURIComponent;
+  const course = (new URLSearchParams(location.search).get('course') || '').trim();
+  const body = $('body');
+  const msg = (t, linkText, href) => { body.replaceChildren(); const d = document.createElement('div'); d.className = 'msg'; d.textContent = t + ' ';
+    if (linkText) { const a = document.createElement('a'); a.href = href; a.textContent = linkText; d.append(a); } body.append(d); };
+  if (!course) { msg('No course selected.', 'Back to Materials', 'materials.html'); return; }
+  $('title').textContent = course; document.title = course + ' — PRIME-CBT';
+  const { data: s } = await sb.auth.getSession();
+  if (!s.session) { location.replace('auth.html?mode=login'); return; }
+  if (typeof needsProfileSetup === 'function' && needsProfileSetup(s.session.user)) { location.replace('profile-setup.html'); return; }
+
+  const key = course.toUpperCase();
+  const [t, m] = await Promise.all([
+    sb.from('course_topics').select('topic, material_count').eq('course_key', key).order('topic'),
+    sb.from('materials').select('id', { count: 'exact', head: true }).eq('course', course)
+  ]);
+  if (t.error) { msg("Couldn't load topics. Check your connection and refresh."); return; }
+  const topics = t.data || [], pdfs = m.count || 0;
+  $('meta').textContent = (topics.length ? topics.length + ' topics · ' : '') + pdfs + (pdfs === 1 ? ' PDF' : ' PDFs');
+  if (!topics.length) { msg('Topics for this course are not ready yet.', 'See the PDFs', 'materials.html?course=' + enc(course)); return; }
+
+  body.replaceChildren();
+  const all = document.createElement('a'); all.className = 'all'; all.href = 'practice.html?subject=' + enc(course);
+  all.textContent = 'Practice the whole course';
+  const hint = document.createElement('div'); hint.className = 'hint'; hint.textContent = 'Mixes questions from all ' + topics.length + ' topics';
+  const search = document.createElement('input'); search.className = 'search'; search.type = 'search'; search.placeholder = 'Search topics'; search.setAttribute('aria-label', 'Search topics');
+  const list = document.createElement('div');
+  body.append(all, hint, search, list);
+  const draw = () => {
+    const q = search.value.trim().toLowerCase(); list.replaceChildren();
+    const rows = topics.filter((x) => x.topic.toLowerCase().includes(q));
+    if (!rows.length) { const d = document.createElement('div'); d.className = 'msg'; d.textContent = 'No topic matches your search.'; list.append(d); return; }
+    rows.forEach((x) => {
+      const a = document.createElement('a'); a.className = 'row'; a.href = 'practice.html?subject=' + enc(course) + '&topic=' + enc(x.topic);
+      const b = document.createElement('b'); b.textContent = x.topic;
+      if (x.material_count > 1) { const sm = document.createElement('small'); sm.textContent = 'Covered in ' + x.material_count + ' PDFs'; b.append(sm); }
+      const g = document.createElement('span'); g.className = 'go'; g.textContent = 'Practice →';
+      a.append(b, g); list.append(a);
+    });
+  };
+  search.addEventListener('input', draw); draw();
+});
+</script></body></html>
