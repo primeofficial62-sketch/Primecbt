@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070D1D">
   <title>PRIME-CBT — Materials</title>
 <link rel="icon" type="image/png" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
@@ -11,28 +12,33 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Lora removed (not used on this page); fewer font weights = faster -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Inter for body text, Lora for headings (same as the home page) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
   <!-- Warm up the page people open next -->
   <link rel="prefetch" href="pdf-reader.html">
 
   <style>
     :root {
-      --bg: #060b1a;
-      --surface: #0f172a;
-      --surface-2: #1e293b;
-      --border: #334155;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --muted-light: #cbd5e1;
-      --emerald: #10b981;
-      --emerald-bright: #34d399;
-      --teal: #2dd4bf;
+      --bg: #070D1D;
+      --surface: #10182B;
+      --surface-2: #1A2540;
+      --border: #273852;
+      --text: #F1F5FF;
+      --muted: #97A6CF;
+      --muted-light: #C3CEEA;
+      --emerald: #31D3A2;
+      --emerald-bright: #31D3A2;
+      --teal: #31D3A2;
       --red: #f87171;
       --blue: #60a5fa;
       --amber: #fbbf24;
+      --em-soft: rgba(49, 211, 162, .14);
+      --on-em: #06101A;
+      --nav-h: 72px;
       --pad: clamp(14px, 4vw, 32px);
+      --serif: 'Lora', Georgia, serif;
       --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --glass: radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.055), transparent 55%), linear-gradient(160deg, #121C32, #0F1729);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -48,6 +54,17 @@
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
+
+    /* Soft ambient glow behind the page (fixed, so scrolling stays cheap) */
+    body::before {
+      content: "";
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(120% 40% at 100% 0%, rgba(70,110,210,.18), transparent 60%),
+        radial-gradient(80% 35% at 0% 45%, rgba(49,211,162,.09), transparent 70%);
+    }
+
+    :focus-visible { outline: 2px solid var(--emerald); outline-offset: 2px; }
 
     .app {
       width: 100%;
@@ -69,49 +86,51 @@
       padding: 12px var(--pad);
       padding-top: max(12px, env(safe-area-inset-top));
       /* Solid background instead of backdrop-filter blur: blur is very slow on mid/low-end phones */
-      background: rgba(6, 11, 26, 0.97);
+      background: rgba(7, 13, 29, 0.95);
+      border-bottom: 1px solid rgba(255,255,255,.07);
     }
 
     .back-btn, .icon-btn {
       width: 42px;
       height: 42px;
       flex-shrink: 0;
-      border-radius: 12px;
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--muted-light);
+      color: var(--text);
       text-decoration: none;
       transition: background-color .2s, color .2s, transform .15s;
     }
-    .back-btn:hover, .icon-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); }
+    .back-btn:hover, .icon-btn:hover { background: var(--em-soft); }
     .back-btn:active, .icon-btn:active { transform: scale(0.94); }
     .back-btn svg, .icon-btn svg { width: 20px; height: 20px; }
 
-    .topbar-text { flex: 1; min-width: 0; text-align: center; }
-    .topbar-text h1 { font-size: clamp(16px, 2.2vw, 20px); font-weight: 700; line-height: 1.2; }
+    .topbar-text { flex: 1; min-width: 0; text-align: left; }
+    .topbar-text h1 { font-family: var(--serif); font-size: 1.4rem; font-weight: 600; line-height: 1.15; }
     .topbar-text p {
-      font-size: 12px; color: var(--muted);
+      font-size: 12px; color: var(--muted); margin-top: 2px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     /* ---------- Search + categories ---------- */
-    .search-wrap { padding: 8px var(--pad); }
+    .search-wrap { padding: 14px var(--pad) 8px; }
 
     .search-box {
       display: flex;
       align-items: center;
       gap: 10px;
-      height: 46px;
-      padding: 0 14px;
-      background: var(--surface);
+      height: 48px;
+      padding: 0 16px;
+      background: var(--glass);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      transition: border-color .2s;
+      border-radius: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+      transition: border-color .2s, box-shadow .2s;
     }
-    .search-box:focus-within { border-color: var(--emerald); }
+    .search-box:focus-within { border-color: var(--emerald); box-shadow: 0 0 0 3px rgba(49,211,162,.14); }
     .search-box svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
     .search-box input {
       flex: 1; min-width: 0;
@@ -120,12 +139,12 @@
       font: inherit;
       font-size: 16px; /* prevents iOS zoom on focus */
     }
-    .search-box input::placeholder { color: var(--muted); }
+    .search-box input::placeholder { color: #7F8CAC; }
 
     .categories {
       display: flex;
       gap: 8px;
-      padding: 4px var(--pad) 12px;
+      padding: 6px var(--pad) 12px;
       overflow-x: auto;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
@@ -135,11 +154,11 @@
     .cat-chip {
       flex-shrink: 0;
       min-height: 38px;
-      padding: 8px 16px;
+      padding: 8px 18px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 999px;
-      color: var(--muted-light);
+      color: var(--muted);
       font: inherit;
       font-size: 13px;
       font-weight: 500;
@@ -150,29 +169,26 @@
     .cat-chip.active {
       background: var(--emerald);
       border-color: var(--emerald);
-      color: #022c22;
+      color: var(--on-em);
       font-weight: 600;
     }
 
     /* ---------- Content ---------- */
     .content {
-      padding: 8px var(--pad) calc(40px + env(safe-area-inset-bottom));
+      padding: 8px var(--pad) calc(var(--nav-h) + 44px + env(safe-area-inset-bottom));
     }
 
-    .section { margin-bottom: 28px; }
+    .section { margin-bottom: 26px; }
     .section[hidden] { display: none; }
 
     .section-header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 12px; gap: 12px;
     }
-    .section-header h2 {
-      font-size: 13px; font-weight: 600; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .05em;
-    }
+    .section-header h2 { font-family: var(--serif); font-size: 1.15rem; font-weight: 600; color: var(--text); }
     .count { font-size: 12px; color: var(--muted); }
     .clear-btn {
-      background: none; border: none; color: var(--emerald-bright);
+      background: none; border: none; color: var(--emerald);
       font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0;
     }
     .clear-btn[hidden] { display: none; }
@@ -192,74 +208,96 @@
       gap: 14px;
       min-width: 0;
       padding: 14px 16px;
-      background: var(--surface);
+      background: var(--glass);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 18px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -16px rgba(0,0,0,.7);
       color: var(--text);
       text-decoration: none;
       transition: transform .2s, border-color .2s;
       /* Browser skips layout/paint for cards that are off-screen */
       content-visibility: auto;
-      contain-intrinsic-size: auto 74px;
+      contain-intrinsic-size: auto 76px;
     }
-    .material-card:hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, .4); }
+    .material-card:hover { border-color: rgba(49, 211, 162, .4); }
     .material-card:active { transform: scale(0.99); }
 
     /* Course card is a button, so reset the button look */
     .course-card { width: 100%; text-align: left; font: inherit; cursor: pointer; }
 
     .file-icon {
-      width: 44px; height: 44px; flex-shrink: 0;
-      border-radius: 12px;
+      width: 46px; height: 46px; flex-shrink: 0;
+      border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
+      background: var(--em-soft);
+      border: 1px solid rgba(49,211,162,.28);
+      color: var(--emerald);
     }
     .file-icon svg { width: 22px; height: 22px; }
-    .file-icon.pdf  { background: rgba(248, 113, 113, .12); color: var(--red); }
-    .file-icon.note { background: rgba(16, 185, 129, .12);  color: var(--emerald-bright); }
-    .file-icon.guide{ background: rgba(45, 212, 191, .12);  color: var(--teal); }
-    .file-icon.doc  { background: rgba(96, 165, 250, .12);  color: var(--blue); }
-    .file-icon.pq   { background: rgba(251, 191, 36, .12);  color: var(--amber); }
+    /* One accent for every file type so the list stays calm */
+    .file-icon.pdf, .file-icon.note, .file-icon.guide, .file-icon.doc, .file-icon.pq { background: var(--em-soft); color: var(--emerald); }
 
     .material-body { flex: 1; min-width: 0; }
     .material-title {
-      font-size: 14px; font-weight: 600; line-height: 1.35; margin-bottom: 4px;
+      font-size: 14.5px; font-weight: 600; line-height: 1.35; margin-bottom: 4px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
       word-break: break-word;
     }
     .material-meta {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
       font-size: 12px; color: var(--muted);
     }
+    .material-meta span + span::before { content: "\2022"; margin-right: 8px; opacity: .5; }
     .material-arrow { color: var(--muted); display: flex; flex-shrink: 0; }
     .material-arrow svg { width: 18px; height: 18px; }
-.level-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    @media (min-width: 640px) { .level-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+    /* Level rows: same markup as before (b / em / span), styled as list rows like the other cards */
+    .level-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 640px)  { .level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+    @media (min-width: 1000px) { .level-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
     .level-card {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-      min-height: 110px; padding: 16px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 18px; color: var(--text); font: inherit; cursor: pointer;
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      grid-template-areas: "ico title chev" "ico sub chev";
+      column-gap: 14px; row-gap: 2px; align-items: center;
+      width: 100%; text-align: left; padding: 14px 16px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -16px rgba(0,0,0,.7);
+      color: var(--text); font: inherit; cursor: pointer;
       transition: transform .2s, border-color .2s;
     }
-    .level-card:hover { border-color: rgba(16, 185, 129, .4); transform: translateY(-2px); }
-    .level-card:active { transform: scale(0.97); }
-    .level-card b { font-size: 28px; line-height: 1; color: var(--emerald-bright); }
-    .level-card em { font-style: normal; font-size: 13px; font-weight: 600; }
-    .level-card span { font-size: 12px; color: var(--muted); }
+    .level-card:hover { border-color: rgba(49, 211, 162, .4); }
+    .level-card:active { transform: scale(0.98); }
+    .level-card b {
+      grid-area: ico; width: 46px; height: 46px; border-radius: 14px; font-size: 0;
+      background: var(--em-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2331D3A2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z'/%3E%3C/svg%3E") center / 22px no-repeat;
+      border: 1px solid rgba(49,211,162,.28);
+    }
+    .level-card::before { content: attr(data-level) " Level"; grid-area: title; font-size: 14.5px; font-weight: 600; align-self: end; }
+    .level-card em { display: none; }
+    .level-card span { grid-area: sub; font-size: 12px; color: var(--muted); align-self: start; }
+    .level-card::after { content: "\203A"; grid-area: chev; font-size: 24px; line-height: 1; color: var(--muted); }
+
+    /* "Can't find a material?" card */
+    .help-card { margin-top: 4px; border-color: rgba(49,211,162,.3); background: radial-gradient(90% 120% at 100% 0%, rgba(49,211,162,.12), transparent 60%), var(--glass); }
+
     /* ---------- States ---------- */
     .state {
       text-align: center; color: var(--muted); font-size: 14px;
-      padding: 40px 16px;
+      padding: 36px 16px;
     }
     .state button, .more-btn {
       margin-top: 12px; padding: 10px 18px;
-      background: var(--emerald); color: #022c22; border: none; border-radius: 10px;
+      background: var(--emerald); color: var(--on-em); border: none; border-radius: 12px;
       font: inherit; font-weight: 600; cursor: pointer;
     }
     .more-wrap { text-align: center; padding: 8px 0 0; }
     .more-wrap[hidden] { display: none; }
 
     .skeleton {
-      height: 74px; border-radius: 16px;
+      height: 76px; border-radius: 18px;
       background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
@@ -267,10 +305,41 @@
     @keyframes shimmer { to { background-position: -200% 0; } }
 
     .live-dot {
-      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-      background: var(--muted); margin-right: 6px; vertical-align: middle;
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: #7F8CAC; margin-right: 6px; vertical-align: middle;
     }
-    .live-dot.on { background: var(--emerald-bright); box-shadow: 0 0 0 3px rgba(52, 211, 153, .2); }
+    .live-dot.on { background: var(--emerald); box-shadow: 0 0 0 3px rgba(49, 211, 162, .2); }
+
+    /* ---------- Floating bottom navigation (same as the home page) ---------- */
+    .bottom-nav {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      width: calc(100% - 28px); max-width: 692px;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); z-index: 40;
+      height: var(--nav-h); display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+      padding: 6px; border-radius: 26px;
+      background: linear-gradient(180deg, rgba(18,28,50,.78), rgba(10,16,32,.86));
+      border: 1px solid var(--border);
+      backdrop-filter: blur(22px) saturate(140%); -webkit-backdrop-filter: blur(22px) saturate(140%);
+      box-shadow: 0 14px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      height: 100%; min-width: 0; background: none; border: none; color: #7F8CAC;
+      font: inherit; font-size: .68rem; font-weight: 500; border-radius: 20px; position: relative; text-decoration: none;
+    }
+    .nav-item svg { width: 24px; height: 24px; }
+    .nav-item.active { color: var(--emerald); font-weight: 600; background: radial-gradient(70% 90% at 50% 0%, rgba(49,211,162,.16), rgba(49,211,162,.03)); }
+    .nav-item.active::before { content: ""; position: absolute; top: 0; left: 30%; right: 30%; height: 2px; border-radius: 0 0 4px 4px; background: var(--emerald); box-shadow: 0 0 12px rgba(49,211,162,.5); }
+    .nav-item.active svg { filter: drop-shadow(0 0 6px rgba(49,211,162,.5)); }
+
+    .sheet-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(3,7,16,.82); display: none; align-items: flex-end; justify-content: center; }
+    .sheet-backdrop.open { display: flex; }
+    .sheet { width: 100%; max-width: 720px; background: var(--surface); border: 1px solid var(--border); border-radius: 24px 24px 0 0; padding: 20px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); }
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .sheet-head b { font-family: var(--serif); font-size: 1.1rem; }
+    .more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .more-tile { display: flex; align-items: center; gap: 10px; padding: 14px; background: #0D1424; border: 1px solid var(--border); border-radius: 16px; color: var(--text); text-decoration: none; font-size: .9rem; font-weight: 600; }
+    .more-tile svg { width: 22px; height: 22px; color: var(--emerald); flex-shrink: 0; }
 
     @media (prefers-reduced-motion: reduce) {
       * { animation: none !important; transition: none !important; }
@@ -281,7 +350,7 @@
   <div class="app">
     <header class="topbar">
       <a href="home.html" class="back-btn" aria-label="Back to Home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <div class="topbar-text">
         <h1>Materials</h1>
@@ -333,7 +402,34 @@
         </div>
         <div class="state" id="stateBox" hidden></div>
       </section>
+
+      <a href="home.html#support" class="material-card course-card help-card">
+        <div class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <div class="material-body"><div class="material-title">Can't find a material?</div><div class="material-meta"><span>Tell us the course code you need</span></div></div>
+        <div class="material-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </a>
     </main>
+
+    <!-- Floating bottom navigation -->
+    <nav class="bottom-nav" aria-label="Main">
+      <a href="home.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg><span>Home</span></a>
+      <a href="materials.html" class="nav-item active" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 5a1 1 0 011-1h5a4 4 0 014 4v12a3 3 0 00-3-3H3a1 1 0 01-1-1zM22 5a1 1 0 00-1-1h-5a4 4 0 00-4 4v12a3 3 0 013-3h6a1 1 0 001-1z"/></svg><span>Materials</span></a>
+      <a href="practice.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 14l2 2 4-4"/></svg><span>Practice</span></a>
+      <a href="progress.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/></svg><span>Progress</span></a>
+      <button type="button" class="nav-item" id="moreBtnNav" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span>More</span></button>
+    </nav>
+
+    <div class="sheet-backdrop" id="moreSheet">
+      <div class="sheet" role="dialog" aria-modal="true" aria-label="More">
+        <div class="sheet-head"><b>More</b><button type="button" class="clear-btn" id="moreClose">Close</button></div>
+        <div class="more-grid">
+          <a href="profile.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Profile</a>
+          <a href="community.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Community</a>
+          <a href="ai-assistant.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V4H8M9 13v2M15 13v2"/></svg>AI Assistant</a>
+          <a href="home.html#support" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Support</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- No blocking <script src> here: the Supabase library is loaded in the background (see below) -->
@@ -858,6 +954,17 @@ async function loadLevels() {
       }
       // 2) Fetch fresh data in the background
       loadMaterials(true);
+    })();
+  </script>
+
+  <!-- New: opens the "More" sheet from the bottom nav (separate from the page script above) -->
+  <script>
+    (function () {
+      var sheet = document.getElementById('moreSheet');
+      document.getElementById('moreBtnNav').addEventListener('click', function () { sheet.classList.add('open'); });
+      document.getElementById('moreClose').addEventListener('click', function () { sheet.classList.remove('open'); });
+      sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.classList.remove('open'); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') sheet.classList.remove('open'); });
     })();
   </script>
 </body>
