@@ -4,20 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070D1C">
+  <link rel="icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+  <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
   <title>PRIME-CBT — Answer Review</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060b1a;
-      --card-bg: #0f172a;
-      --card-hover: #1e293b;
-      --border: #334155;
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-      --emerald: #10b981;
-      --emerald-bright: #34d399;
+      --bg: #070D1C;
+      --card-bg: #10192B;
+      --card-hover: #17233A;
+      --border: #2A3850;
+      --text-main: #F4F6FC;
+      --text-muted: #9BA8BE;
+      --emerald: #27B98D;
+      --emerald-bright: #31D3A2;
+      /* PRIME-CBT design-system tokens */
+      --surface: #10192B;
+      --surface-2: #17233A;
+      --field: #0B1324;
+      --inactive: #344256;
+      --placeholder: #6F7F99;
+      --emerald-hover: #4BE0B5;
+      --emerald-press: #27B98D;
+      --on-emerald: #070D1C;
+      --ring: rgba(49, 211, 162, 0.2);
+      --card: linear-gradient(160deg, #15233C 0%, #0D1627 100%);
+      --line: rgba(49, 211, 162, 0.22);
       --red-bright: #f87171;
       --amber-bright: #fbbf24;
 
@@ -34,6 +49,8 @@
 
     body {
       background: var(--bg);
+      background-image: radial-gradient(760px 420px at 50% -90px, rgba(49, 211, 162, 0.13), transparent 70%);
+      background-repeat: no-repeat;
       color: var(--text-main);
       font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -52,7 +69,7 @@
     /* ---------- Shell ---------- */
     .app {
       width: 100%;
-      max-width: 720px;
+      max-width: 560px;
       height: 100vh;
       height: 100dvh;
       display: flex;
@@ -62,7 +79,7 @@
       border-right: 1px solid rgba(51, 65, 85, 0.4);
       overflow: hidden;
     }
-    @media (min-width: 740px) and (min-height: 640px) {
+    @media (min-width: 580px) and (min-height: 640px) {
       body { align-items: center; padding-block: 24px; }
       .app {
         height: min(100dvh - 48px, 880px);
@@ -80,14 +97,14 @@
       padding: 12px var(--pad);
       padding-top: max(12px, env(safe-area-inset-top));
       border-bottom: 1px solid var(--border);
-      background: rgba(6, 11, 26, 0.95);
+      background: rgba(7, 13, 28, 0.88);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       flex-shrink: 0;
       z-index: 10;
     }
     .back-btn {
-      width: 40px; height: 40px; flex-shrink: 0;
+      width: 44px; height: 44px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       border-radius: 50%;
       background: var(--card-bg);
@@ -100,7 +117,7 @@
     .back-btn:active { transform: scale(0.92); }
     .back-btn svg { width: 20px; height: 20px; }
     .topbar-title { min-width: 0; flex: 1; }
-    .topbar-title h1 { font-size: var(--fs-title); font-weight: 700; line-height: 1.2; }
+    .topbar-title h1 { font-family: 'Lora', serif; font-size: var(--fs-title); font-weight: 700; line-height: 1.2; }
     .topbar-title p {
       font-size: var(--fs-sub); color: var(--text-muted); margin-top: 1px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -111,7 +128,7 @@
       display: flex; gap: 8px;
       padding: 10px var(--pad);
       border-bottom: 1px solid var(--border);
-      background: rgba(6, 11, 26, 0.95);
+      background: rgba(7, 13, 28, 0.88);
       overflow-x: auto;
       flex-shrink: 0;
       scrollbar-width: none;
@@ -120,11 +137,11 @@
     .filters::-webkit-scrollbar { display: none; }
     .filter-chip {
       flex-shrink: 0;
-      min-height: 36px;
+      min-height: 44px;
       background: var(--card-bg);
       border: 1px solid var(--border);
-      padding: 6px 14px;
-      border-radius: 20px;
+      padding: 6px 16px;
+      border-radius: 999px;
       font-size: clamp(12.5px, 3.4vw, 14px);
       font-weight: 500;
       color: var(--text-muted);
@@ -134,7 +151,7 @@
     }
     .filter-chip .n { opacity: .75; font-weight: 600; margin-left: 4px; }
     .filter-chip.active {
-      background: var(--emerald-bright); color: #060b1a;
+      background: var(--emerald-bright); color: var(--on-emerald);
       border-color: var(--emerald-bright); font-weight: 600;
     }
 
@@ -150,8 +167,9 @@
 
     .review-card {
       background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
+      background-image: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
       padding: clamp(14px, 4vw, 24px);
       display: flex; flex-direction: column; gap: clamp(12px, 3vw, 16px);
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
@@ -203,9 +221,9 @@
     /* ---------- Explain with AI ---------- */
     .ai-btn {
       align-self: flex-start;
-      min-height: 40px;
-      padding: 8px 16px;
-      border-radius: 10px;
+      min-height: 44px;
+      padding: 8px 20px;
+      border-radius: 999px;
       border: 1.5px solid var(--emerald);
       background: rgba(16, 185, 129, 0.12);
       color: var(--emerald-bright);
@@ -226,9 +244,10 @@
     .state-panel h2 { font-size: var(--fs-title); }
     .state-panel p { color: var(--text-muted); font-size: var(--fs-body); max-width: 38ch; line-height: 1.5; }
     .state-btn {
-      margin-top: 8px; padding: 11px 20px; min-height: 44px;
-      border-radius: 12px; border: 1.5px solid var(--emerald);
-      background: rgba(16,185,129,.12); color: var(--emerald-bright);
+      margin-top: 8px; padding: 11px 26px; min-height: 54px;
+      border-radius: 999px; border: 1.5px solid var(--emerald-bright);
+      background: var(--emerald-bright); color: var(--on-emerald);
+      box-shadow: 0 6px 18px rgba(49, 211, 162, 0.28);
       font-weight: 600; font-size: var(--fs-body); cursor: pointer; text-decoration: none;
       display: inline-flex; align-items: center;
     }
@@ -239,13 +258,23 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Shimmer skeleton (design-system loading style) */
+    .sk {
+      display: block; height: 14px; width: 100%; border-radius: 8px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+    .sk-wrap { display: flex; flex-direction: column; gap: 10px; width: min(100%, 320px); margin-top: 6px; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
     /* ---------- Bottom bar ---------- */
     .bottom-bar {
       display: flex; justify-content: space-between; align-items: center; gap: 10px;
       padding: 12px var(--pad);
       padding-bottom: max(12px, env(safe-area-inset-bottom));
       border-top: 1px solid var(--border);
-      background: rgba(6, 11, 26, 0.95);
+      background: rgba(7, 13, 28, 0.88);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       flex-shrink: 0;
@@ -255,8 +284,8 @@
       min-height: 44px; min-width: 88px;
       background: var(--card-bg);
       border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: 10px;
+      padding: 8px 18px;
+      border-radius: 999px;
       font-size: var(--fs-body); font-weight: 600;
       color: var(--text-main);
       cursor: pointer;
@@ -271,6 +300,14 @@
       .back-btn:hover { background: var(--card-hover); border-color: #475569; }
       .filter-chip:not(.active):hover { background: var(--card-hover); color: var(--text-main); }
       .nav-btn:hover:not(:disabled) { background: var(--card-hover); border-color: var(--emerald-bright); color: var(--emerald-bright); }
+    }
+
+    /* Phones: lighter, shorter animations */
+    @media (max-width: 640px) {
+      .review-card { animation-duration: .2s; }
+    }
+    @media (hover: hover) {
+      .review-card:hover { border-color: rgba(49, 211, 162, 0.45); }
     }
 
     /* Short screens (landscape phones) */
@@ -307,6 +344,7 @@
       <div class="state-panel" id="loadingPanel">
         <div class="spinner" aria-hidden="true"></div>
         <p>Loading your answers…</p>
+        <div class="sk-wrap" aria-hidden="true"><span class="sk"></span><span class="sk" style="width:80%"></span><span class="sk" style="width:60%"></span></div>
       </div>
     </main>
 
@@ -336,7 +374,7 @@
     const CONFIG = {
       SUPABASE_URL: 'https://xuofkjjhupgmrphzgyun.supabase.co',
       SUPABASE_ANON_KEY: 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh',
-      loginPage: 'login.html',
+      loginPage: 'auth.html', // there is no login.html; auth.html handles login
       resultsPage: 'results.html',
       tables: { sessions: 'cbt_sessions', answers: 'cbt_session_answers', courses: 'courses' }
     };
@@ -352,7 +390,7 @@
 
     if (!window.supabase) {
       el.sub.textContent = 'Not connected';
-      showMessage('Couldn’t load the app', 'Check your connection and refresh the page.', 'Refresh', () => location.reload());
+      showMessage('Couldn’t load the app', 'Check your connection and refresh the page.', 'Refresh', () => location.reload(), undefined, true);
       return;
     }
     const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -365,11 +403,12 @@
     /* ---------- helpers ---------- */
     function redirectToLogin() {
       const next = location.pathname.split('/').pop() + location.search;
-      location.replace(`${CONFIG.loginPage}?next=${encodeURIComponent(next)}`);
+      location.replace(`${CONFIG.loginPage}?mode=login&next=${encodeURIComponent(next)}`);
     }
-    function showMessage(title, body, btnText, action, href) {
+    function showMessage(title, body, btnText, action, href, isError) {
       const wrap = document.createElement('div');
       wrap.className = 'state-panel';
+      if (isError) wrap.setAttribute('role', 'alert');
       const h = document.createElement('h2'); h.textContent = title;
       const p = document.createElement('p'); p.textContent = body;
       wrap.append(h, p);
@@ -589,7 +628,8 @@
       document.title = `${c.title || 'Answer Review'} — PRIME-CBT Review`;
     }
 
-    db.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') redirectToLogin(); });
+    // After logout, go to auth.html?mode=login WITHOUT next
+    db.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') location.replace(`${CONFIG.loginPage}?mode=login`); });
 
     /* ---------- boot ---------- */
     async function init() {
@@ -618,7 +658,7 @@
       } catch (err) {
         console.error('[review] init failed:', err);
         el.sub.textContent = 'Connection problem';
-        showMessage('Couldn’t load your answers', 'Check your connection and try again.', 'Retry', () => init());
+        showMessage('Couldn’t load your answers', 'Check your connection and try again.', 'Retry', () => init(), undefined, true);
       }
     }
     init();
