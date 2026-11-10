@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PRIME-CBT — Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060b1a;--card:#0f172a;--card-hover:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--submuted:#64748b;--primary:#34d399;--teal:#2dd4bf;--blue:#60a5fa;--purple:#a78bfa;--amber:#fbbf24;--red:#f87171;--border:#334155;--radius:16px;--pad:clamp(14px,4vw,32px)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(120% 60% at 100% 0,rgba(52,211,153,.10),transparent 60%),var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{cursor:pointer;color:inherit;background:none;border:0}
+svg{width:20px;height:20px;flex:none}
+.wrap{max-width:720px;margin:0 auto;padding:0 var(--pad) 40px}
+.top{position:sticky;top:0;z-index:5;padding:calc(env(safe-area-inset-top,0px) + 14px) var(--pad) 12px;background:linear-gradient(var(--bg) 70%,transparent);max-width:720px;margin:0 auto}
+.row{display:flex;align-items:center;gap:12px}
+.ib{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(15,23,42,.8);border:1px solid var(--border)}
+.ttl{flex:1;min-width:0}.ttl h1{font-size:22px;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl p{font-size:13px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--submuted)}.dot.on{background:var(--primary);box-shadow:0 0 8px var(--primary)}
+.search{display:none;margin-top:12px}.search.open{display:block}
+.search input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px;outline:none}
+.search input:focus{border-color:var(--primary)}
+.sec{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:22px 2px 10px;display:flex;justify-content:space-between}
+.list{display:grid;gap:10px}
+.card{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--radius);background:linear-gradient(145deg,rgba(52,211,153,.07),var(--card) 55%);border:1px solid rgba(52,211,153,.16);transition:.15s}
+.card:active,.card:hover{background:var(--card-hover);border-color:rgba(52,211,153,.4)}
+.ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(52,211,153,.12);color:var(--primary);flex:none}
+.ico.blue{background:rgba(96,165,250,.12);color:var(--blue)}.ico.purple{background:rgba(167,139,250,.12);color:var(--purple)}.ico.teal{background:rgba(45,212,191,.12);color:var(--teal)}.ico.red{background:rgba(248,113,113,.12);color:var(--red)}.ico.amber{background:rgba(251,191,36,.12);color:var(--amber)}
+.bd{flex:1;min-width:0}.bd b{display:block;font-size:15px;font-weight:600;line-height:1.3}
+.bd span{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
+.ar{color:var(--submuted)}
+.hero{padding:18px;border-radius:20px;background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(15,23,42,.9) 70%);border:1px solid rgba(52,211,153,.3)}
+.hero h2{font-size:18px}.hero p{font-size:13px;color:var(--muted);margin:4px 0 14px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;width:100%;padding:14px;border-radius:14px;font-weight:700;font-size:15px;color:#04130d;background:linear-gradient(135deg,var(--primary),var(--teal))}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modes .card{flex-direction:column;align-items:flex-start;gap:10px}
+.num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--primary);color:var(--primary);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none}
+.play{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(52,211,153,.15);color:var(--primary);flex:none}
+.star{color:var(--amber)}
+.state{text-align:center;color:var(--muted);padding:34px 10px;font-size:14px}
+.state button{margin-top:12px;padding:10px 18px;border-radius:12px;border:1px solid var(--primary);color:var(--primary);font-weight:600}
+.sk{height:72px;border-radius:var(--radius);background:linear-gradient(90deg,var(--card),var(--card-hover),var(--card));background-size:200% 100%;animation:sh 1.3s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:var(--card-hover);padding:12px 18px;border-radius:12px;font-size:14px;transition:.25s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="row">
+    <a href="home.html" class="ib" id="backBtn" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <div class="ttl"><h1 id="title">Practice Questions</h1><p><span class="dot" id="dot"></span><span id="sub">Connecting…</span></p></div>
+    <button class="ib" id="searchBtn" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+  </div>
+  <div class="search" id="searchWrap"><input type="search" id="q" placeholder="Search..." autocomplete="off"></div>
+</header>
+
+<main class="wrap">
+  <section id="home">
+    <div class="sec"><span>All courses</span></div>
+    <div class="list" id="courses"></div>
+    <div class="state" id="homeState" hidden></div>
+  </section>
+
+  <section id="course" hidden>
+    <div class="hero">
+      <h2>General Practice</h2>
+      <p id="genDesc">Questions from all your materials for this course, mixed together.</p>
+      <a class="btn" id="genBtn" href="#">Start General Practice
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+    <div class="sec"><span>Other ways to practice</span></div>
+    <div class="modes" id="modes"></div>
+    <div class="sec"><span>Practice by topic</span><span id="topicCount"></span></div>
+    <div class="list" id="topics"></div>
+    <div class="state" id="topicState" hidden></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const enc = encodeURIComponent;
+const ARROW = '<svg class="ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+const BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 010-5H20"/></svg>';
+const MODES = [
+  { name:'Quick Practice', desc:'Short random set', color:'', icon:'<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>' },
+  { name:'Timed Practice', desc:'Race the clock', color:'teal', icon:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' },
+  { name:'Mock Exam', desc:'Full exam simulation', color:'red', icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>' },
+  { name:'Past Questions', desc:'Previous examinations', color:'purple', icon:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/>' }
+];
+
+let courses = [], loaded = false, query = '';
+const topicCache = {};   // course code -> {state:'loading'|'ready'|'error', rows:[]}
+
+const codeKey = c => String(c.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+const selectedId = () => { const m = location.hash.match(/course=([^&]+)/); return m ? decodeURIComponent(m[1]) : null; };
+const selectedCourse = () => courses.find(c => c.ids.some(x => String(x) === selectedId())) || null;
+let tt; const toast = m => { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 3500); };
+
+// Courses that share one code are shown as ONE course, questions added together
+function groupByCode(list) {
+  const map = new Map();
+  list.forEach(c => { const k = codeKey(c) || 'id:' + c.id; if (!map.has(k)) map.set(k, []); map.get(k).push(c); });
+  return [...map.values()].map(m => {
+    m.sort((a, b) => (b.count || 0) - (a.count || 0));
+    const f = m[0];
+    if (m.length === 1) return { ...f, ids: [f.id], members: m };
+    const known = m.every(x => x.count != null);
+    return { ...f, ids: m.map(x => x.id), members: m, title: String(f.code).trim(), description: '', count: known ? m.reduce((n, x) => n + x.count, 0) : null };
+  });
+}
+
+async function loadCourses() {
+  let res = await sb.from('courses').select('*, questions(count)');
+  if (res.error) res = await sb.from('courses').select('*');
+  if (res.error) return showHomeError(res.error.message);
+  const pick = (r, ks) => { for (const k of ks) if (r[k] != null && r[k] !== '') return r[k]; return ''; };
+  const all = (res.data || []).map(c => ({
+    ...c,
+    title: pick(c, ['title','name','course_name','course_title','subject']) || 'Untitled course',
+    code: pick(c, ['code','course_code']),
+    description: pick(c, ['description','desc','details','summary']),
+    count: Array.isArray(c.questions) && c.questions[0] ? Number(c.questions[0].count) : (c.questions ? 0 : null)
+  }));
+  courses = groupByCode(all);
+  const label = c => String(c.code || c.title || '');
+  courses.sort((a, b) => label(a).localeCompare(label(b), undefined, { numeric: true, sensitivity: 'base' }));
+  loaded = true; render();
+}
+
+function showHomeError(msg) {
+  const s = $('homeState'); s.hidden = false;
+  s.innerHTML = 'Could not load courses. ' + esc(msg || '') + '<br><button type="button" id="retry">Try again</button>';
+  $('retry').onclick = () => { s.hidden = true; loadCourses(); };
+}
+
+async function loadTopics(course) {
+  const code = String(course.code || '').trim();
+  if (!code) { topicCache[''] = { state: 'ready', rows: [] }; return; }
+  if (topicCache[code] && topicCache[code].state !== 'error') return;
+  topicCache[code] = { state: 'loading', rows: [] }; render();
+  const { data, error } = await sb.rpc('get_course_topics', { p_code: code });
+  topicCache[code] = error ? { state: 'error', rows: [] } : { state: 'ready', rows: data || [] };
+  render();
+}
+
+const link = (c, mode, extra) => 'practice-setup.html?courseId=' + enc(c.id) + '&courseIds=' + enc(c.ids.join(',')) +
+  '&course=' + enc(c.title) + '&mode=' + enc(mode) + (extra || '');
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+
+function render() {
+  if (!loaded) return;
+  const course = selectedCourse();
+  if (selectedId() && !course) { toast('That course is no longer available.'); history.replaceState(null, '', location.pathname + location.search); return render(); }
+  const q = query;
+  $('home').hidden = !!course; $('course').hidden = !course;
+
+  if (!course) {
+    $('title').textContent = 'Practice Questions';
+    $('sub').textContent = courses.length ? plural(courses.length, 'course') + ' available' : 'Choose a subject to begin';
+    $('q').placeholder = 'Search courses...';
+    const list = courses.filter(c => !q || [c.title, c.code, c.description, ...c.members.map(m => m.title)].join(' ').toLowerCase().includes(q));
+    $('courses').innerHTML = list.map(c => {
+      const head = c.members.length > 1 ? c.code : [c.code, c.description].filter(Boolean).join(' — ');
+      return '<a class="card" href="#course=' + enc(c.id) + '"><div class="ico">' + BOOK + '</div><div class="bd"><b>' + esc(c.title) +
+        '</b><span>' + esc(head && head !== c.title ? head + ' · ' : '') + (c.count != null ? plural(c.count, 'question') : 'Questions') + '</span></div>' + ARROW + '</a>';
+    }).join('');
+    const s = $('homeState');
+    s.hidden = list.length > 0;
+    if (!list.length) s.textContent = courses.length ? 'No courses match your search.' : 'No courses have been added yet.';
+    return;
+  }
+
+  $('title').textContent = course.title;
+  $('sub').textContent = course.count != null ? plural(course.count, 'question') + ' · choose how to practice' : 'Choose how to practice';
+  $('q').placeholder = 'Search topics...';
+  $('genBtn').href = link(course, 'General Practice');
+  $('modes').innerHTML = MODES.map(m => '<a class="card" href="' + link(course, m.name) + '"><div class="ico ' + m.color + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + m.icon +
+    '</svg></div><div class="bd"><b>' + m.name + '</b><span>' + m.desc + '</span></div></a>').join('');
+
+  const tc = topicCache[String(course.code || '').trim()] || { state: 'loading', rows: [] };
+  const rows = tc.rows.filter(t => !q || t.topic.toLowerCase().includes(q));
+  $('topicCount').textContent = tc.rows.length ? plural(tc.rows.length, 'topic') : '';
+  $('topics').innerHTML = tc.state === 'loading' ? '<div class="sk"></div><div class="sk"></div><div class="sk"></div>' :
+    rows.map((t, i) => '<a class="card" href="' + link(course, 'Topic Practice', '&topicKey=' + enc(t.topic_key) + '&topicName=' + enc(t.topic)) + '">' +
+      '<div class="num">' + (i + 1) + '</div><div class="bd"><b>' + esc(t.topic) + '</b><span>' + plural(t.question_count, 'question') +
+      (t.focused_count > 0 ? ' · <i class="star">★</i> ' + t.focused_count + ' directly on this topic' : '') + '</span></div>' +
+      '<div class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></a>').join('');
+  const st = $('topicState');
+  st.hidden = tc.state === 'loading' || rows.length > 0;
+  if (!st.hidden) {
+    if (tc.state === 'error') { st.innerHTML = 'Could not load topics.<br><button type="button" id="rt">Try again</button>'; $('rt').onclick = () => loadTopics(course); }
+    else st.textContent = tc.rows.length ? 'No topics match your search.' : 'No topics yet for this course. Use General Practice for now.';
+  }
+  loadTopics(course);
+}
+
+$('searchBtn').onclick = () => { const w = $('searchWrap'); w.classList.toggle('open'); if (w.classList.contains('open')) $('q').focus(); else resetSearch(); };
+function resetSearch() { query = ''; $('q').value = ''; }
+$('q').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); render(); });
+$('backBtn').addEventListener('click', e => { if (selectedId()) { e.preventDefault(); resetSearch(); history.pushState(null, '', location.pathname + location.search); render(); } });
+window.addEventListener('hashchange', () => { resetSearch(); render(); window.scrollTo(0, 0); });
+window.addEventListener('popstate', render);
+
+let rt; const refetch = () => { clearTimeout(rt); rt = setTimeout(loadCourses, 1500); };
+sb.channel('practice-live')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, refetch)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, refetch)
+  .subscribe(s => $('dot').classList.toggle('on', s === 'SUBSCRIBED'));
+loadCourses();
+</script>
+</body>
+</html>
