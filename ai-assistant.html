@@ -3,20 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#060b1a">
+  <meta name="theme-color" content="#070D1C">
+  <link rel="icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+  <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
   <title>PRIME-CBT — AI Study Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060b1a;
-      --card-bg: #0f172a;
-      --card-bg-hover: #1e293b;
-      --border: #334155;
-      --muted: #94a3b8;
-      --text-main: #f1f5f9;
-      --emerald-bright: #34d399;
+      --bg: #070D1C;
+      --card-bg: #10192B;
+      --card-bg-hover: #17233A;
+      --border: #2A3850;
+      --muted: #9BA8BE;
+      --text-main: #F4F6FC;
+      --emerald-bright: #31D3A2;
+      /* PRIME-CBT design-system tokens */
+      --surface: #10192B;
+      --surface-2: #17233A;
+      --field: #0B1324;
+      --inactive: #344256;
+      --placeholder: #6F7F99;
+      --emerald-hover: #4BE0B5;
+      --emerald-press: #27B98D;
+      --on-emerald: #070D1C;
+      --ring: rgba(49, 211, 162, 0.2);
+      --card: linear-gradient(160deg, #15233C 0%, #0D1627 100%);
+      --line: rgba(49, 211, 162, 0.22);
       --teal-bright: #2dd4bf;
       --amber: #fbbf24;
       --red: #f87171;
@@ -45,6 +59,8 @@
       height: 100%;
       overflow: hidden;
       background-color: var(--bg);
+      background-image: radial-gradient(760px 420px at 50% -90px, rgba(49, 211, 162, 0.13), transparent 70%);
+      background-repeat: no-repeat;
       color: var(--text-main);
       font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -87,7 +103,7 @@
       gap: 12px;
       padding: max(12px, env(safe-area-inset-top)) max(var(--pad-x), env(safe-area-inset-right)) 12px max(var(--pad-x), env(safe-area-inset-left));
       border-bottom: 1px solid var(--border);
-      background: rgba(6, 11, 26, 0.95);
+      background: rgba(7, 13, 28, 0.88);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
       z-index: 10;
@@ -95,8 +111,8 @@
     }
 
     .icon-btn {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       flex-shrink: 0;
       display: flex;
       align-items: center;
@@ -118,6 +134,7 @@
 
     .topbar-text { flex: 1; min-width: 0; }
     .topbar-text h1 {
+      font-family: 'Lora', serif;
       font-size: clamp(1rem, 2.6vw, 1.15rem);
       font-weight: 700;
       color: #f1f5f9;
@@ -211,7 +228,7 @@
 
     .message.user {
       background: var(--emerald-bright);
-      color: #060b1a;
+      color: var(--on-emerald);
       font-weight: 500;
       align-self: flex-end;
       border-bottom-right-radius: 4px;
@@ -220,10 +237,11 @@
 
     .message.assistant {
       background: var(--card-bg);
+      background-image: var(--card);
       color: var(--text-main);
       align-self: flex-start;
       border-bottom-left-radius: 4px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
     }
 
     .message.error {
@@ -244,6 +262,7 @@
       color: #fecaca;
       border-radius: 999px;
       padding: 4px 14px;
+      min-height: 44px;
       font-size: 0.85rem;
       font-weight: 600;
     }
@@ -267,7 +286,7 @@
     .message.assistant pre {
       margin: 0 0 0.7em;
       padding: 12px;
-      background: #060b1a;
+      background: var(--field);
       border: 1px solid var(--border);
       border-radius: 10px;
       overflow-x: auto;
@@ -281,13 +300,15 @@
       border: 1px solid var(--border);
       color: var(--muted);
       border-radius: 999px;
-      padding: 3px 12px;
+      padding: 3px 14px;
+      min-height: 44px;
       font-size: 0.78rem;
       font-weight: 600;
       transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
     .act-btn:hover { background: var(--card-bg-hover); color: var(--text-main); border-color: #475569; }
-    .act-btn:focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+    .act-btn:focus-visible, .ai-input-form textarea:focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
+    .ai-input-form textarea:focus-visible { outline: none; } /* the form shows the emerald ring instead */
 
     .typing { display: inline-flex; gap: 5px; padding: 4px 0; }
     .typing span {
@@ -309,16 +330,17 @@
     .prompt-card {
       min-width: 0;
       background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
+      background-image: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
       text-align: left;
       display: flex;
       flex-direction: column;
       gap: 8px;
       transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
     }
-    .prompt-card:hover { background: var(--card-bg-hover); border-color: #475569; transform: translateY(-2px); }
+    .prompt-card:hover { background: var(--card-bg-hover); background-image: var(--card); border-color: rgba(49, 211, 162, 0.45); transform: translateY(-2px); }
 
     .prompt-icon {
       width: 32px; height: 32px;
@@ -338,7 +360,7 @@
     .ai-input-dock {
       padding: 12px max(var(--pad-x), env(safe-area-inset-right)) calc(max(env(safe-area-inset-bottom, 0px), 12px) + 14px) max(var(--pad-x), env(safe-area-inset-left));
       border-top: 1px solid var(--border);
-      background: rgba(6, 11, 26, 0.95);
+      background: rgba(7, 13, 28, 0.88);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
       flex-shrink: 0;
@@ -348,13 +370,14 @@
       display: flex;
       align-items: flex-end;
       gap: 8px;
-      background: var(--card-bg);
+      background: var(--field);
       border: 1px solid var(--border);
-      border-radius: 26px;
-      padding: 5px 5px 5px 16px;
+      border-radius: 28px;
+      min-height: 54px;
+      padding: 5px 5px 5px 18px;
       transition: border-color 0.3s ease, background-color 0.3s ease;
     }
-    .ai-input-form:focus-within { border-color: var(--emerald-bright); background: var(--card-bg-hover); }
+    .ai-input-form:focus-within { border-color: var(--emerald-bright); background: var(--card-bg-hover); box-shadow: 0 0 0 3px var(--ring); }
 
     .ai-input-form textarea {
       flex: 1;
@@ -368,26 +391,38 @@
       padding: 9px 0;
       max-height: 140px;
     }
-    .ai-input-form textarea::placeholder { color: #64748b; }
+    .ai-input-form textarea::placeholder { color: var(--placeholder); }
 
     .send-btn {
-      width: 40px; height: 40px;
+      width: 44px; height: 44px;
+      box-shadow: 0 6px 18px rgba(49, 211, 162, 0.28);
       flex-shrink: 0;
       border-radius: 50%;
       background: var(--emerald-bright);
-      color: #060b1a;
+      color: var(--on-emerald);
       border: none;
       display: flex; align-items: center; justify-content: center;
       transition: background-color 0.3s ease, transform 0.3s ease;
     }
-    .send-btn:hover { background: var(--teal-bright); transform: scale(0.95); }
+    .send-btn:hover { background: var(--emerald-hover); transform: scale(0.95); }
+    .send-btn:active { background: var(--emerald-press); }
     .send-btn svg { width: 16px; height: 16px; }
     .send-btn .ico-stop { display: none; }
     .send-btn.is-stop .ico-send { display: none; }
     .send-btn.is-stop .ico-stop { display: block; }
 
+    /* Shimmer skeleton (design-system loading style) */
+    .sk {
+      display: block;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+
     /* ---------- Animations ---------- */
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
     @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
 
     @media (prefers-reduced-motion: reduce) {
@@ -402,9 +437,15 @@
       .prompt-desc { font-size: 0.8rem; }
     }
 
+    /* Phones: lighter, shorter animations */
+    @media (max-width: 640px) {
+      .message { animation-duration: 0.18s; }
+      .prompt-card:hover { transform: none; }
+    }
+
     @media (max-width: 340px) {
       .topbar { gap: 8px; }
-      .icon-btn { width: 36px; height: 36px; }
+      .icon-btn { width: 44px; height: 44px; }
       .message { max-width: 94%; padding: 10px 12px; }
     }
 
@@ -436,7 +477,7 @@
       </button>
     </header>
 
-    <div class="offline-banner" id="offlineBanner" role="status" hidden>You're offline. Reconnect to chat.</div>
+    <div class="offline-banner" id="offlineBanner" role="status" aria-live="polite" hidden>You're offline. Reconnect to chat.</div>
 
     <!-- Chat Area -->
     <main class="ai-content" id="chatArea">
