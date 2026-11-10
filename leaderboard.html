@@ -3,41 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#070D1C" />
+  <meta name="color-scheme" content="dark" />
   <title>Leaderboard — PRIME-CBT</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { navy: '#060b1a' },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-        }
-      }
-    }
-  </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png" />
+  <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png" />
+  <!-- Tailwind CDN + its config removed: replaced by the hand-written stylesheet below (PRIME-CBT rule 2.6) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: #060b1a; }
+    :root {
+      --bg: #070D1C; --surface: #10192B; --surface-2: #17233A; --field: #0B1324;
+      --border: #2A3850; --inactive: #344256; --text: #F4F6FC; --muted: #9BA8BE; --placeholder: #6F7F99;
+      --emerald: #31D3A2; --emerald-hover: #4BE0B5; --emerald-press: #27B98D; --on-emerald: #070D1C;
+      --red: #F87171; --amber: #E3A84A; --ring: rgba(49,211,162,.2);
+      --card: linear-gradient(160deg, #15233C 0%, #0D1627 100%);
+      --line: rgba(49,211,162,.22);
+    }
 
+    html { background-color: var(--bg); }
     html, body { min-height: 100%; }
 
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
+      margin: 0;
       font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(760px 420px at 50% -90px, rgba(49,211,162,.13), transparent 70%),
+        var(--bg);
+      background-repeat: no-repeat;
       background-color: var(--bg);
+      -webkit-font-smoothing: antialiased;
       -webkit-tap-highlight-color: transparent;
       -webkit-text-size-adjust: 100%;
       overflow-x: hidden;
+      overflow-wrap: anywhere;
+    }
+
+    h1, p { margin: 0; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    .hidden { display: none !important; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
     }
 
     .scrollbar-none { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     .scrollbar-none::-webkit-scrollbar { display: none; }
 
-    .card { transition: border-color 0.2s ease, background-color 0.2s ease; }
-    .card:hover { border-color: #475569; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    .card:hover { border-color: rgba(49,211,162,.45); }
 
     .wrap {
       width: 100%;
-      max-width: 48rem;
+      max-width: 560px;
       margin-inline: auto;
       padding-inline: max(0.875rem, env(safe-area-inset-left)) max(0.875rem, env(safe-area-inset-right));
     }
@@ -45,7 +73,149 @@
       .wrap { padding-inline: 1.5rem; }
     }
 
-    button:focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }
+    button:focus-visible { outline: 2px solid var(--emerald); outline-offset: 2px; }
+
+    /* faint side borders on desktop, content column centred */
+    @media (min-width: 640px) {
+      body::before {
+        content: ""; position: fixed; top: 0; bottom: 0; left: 50%;
+        width: min(560px, 100%); transform: translateX(-50%);
+        border-inline: 1px solid rgba(42,56,80,.45);
+        pointer-events: none; z-index: 0;
+      }
+    }
+
+    /* header */
+    .hdr {
+      position: sticky; top: 0; z-index: 40;
+      background: rgba(7,13,28,.88);
+      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding-top: env(safe-area-inset-top);
+    }
+    .hdr-row { height: 56px; display: flex; align-items: center; gap: .75rem; }
+    .hdr h1 {
+      font-family: 'Lora', Georgia, serif; font-weight: 600; letter-spacing: -.01em;
+      font-size: 1.125rem; flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .icon-btn {
+      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      transition: background-color .2s ease, color .2s ease;
+    }
+    .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+    .live {
+      display: none; align-items: center; gap: .375rem; flex-shrink: 0;
+      font-size: 11px; color: var(--muted);
+    }
+    .live.flex { display: inline-flex; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(49,211,162,.5); } 50% { box-shadow: 0 0 0 5px rgba(49,211,162,0); } }
+
+    /* layout */
+    .main {
+      position: relative; z-index: 1;
+      padding-top: 1.25rem; padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; gap: 1.25rem;
+    }
+    @media (min-width: 640px) { .main { padding-top: 1.5rem; gap: 1.5rem; } }
+
+    .banner {
+      border-radius: 14px; border: 1px solid rgba(248,113,113,.4);
+      background: rgba(248,113,113,.1); color: var(--red);
+      font-size: .875rem; padding: .625rem 1rem;
+    }
+
+    /* tabs */
+    .tabs {
+      display: flex; gap: .5rem; overflow-x: auto;
+      margin-inline: -.125rem; padding: .125rem;
+    }
+    .pill {
+      flex-shrink: 0; white-space: nowrap; min-height: 44px; padding-inline: 1.1rem;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--muted); font-size: 12px;
+      transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+    }
+    .tab-time { font-weight: 600; }
+    .tab-cat { font-weight: 500; padding-inline: 1rem; }
+    .pill.is-off:hover { background: var(--surface-2); color: var(--text); }
+    .pill.is-active {
+      background: var(--emerald); border-color: var(--emerald); color: var(--on-emerald);
+      box-shadow: 0 6px 18px -8px rgba(49,211,162,.55);
+    }
+
+    /* my rank card */
+    .rank-card { padding: 1rem; border-color: rgba(49,211,162,.38); box-shadow: 0 10px 30px -18px rgba(49,211,162,.4); }
+    @media (min-width: 640px) { .rank-card { padding: 1.25rem; } }
+    .me-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .me-left { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+    @media (min-width: 640px) { .me-left { gap: 1rem; } }
+    .me-pos {
+      min-width: 48px; height: 48px; padding-inline: .5rem; border-radius: 999px; flex-shrink: 0;
+      background: rgba(49,211,162,.18); color: var(--emerald); font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .me-text { min-width: 0; }
+    .me-title { font-weight: 600; font-size: .875rem; color: var(--text); }
+    .me-sub { font-size: .75rem; color: var(--muted); margin-top: .125rem; }
+    .me-right { text-align: right; flex-shrink: 0; }
+    .me-xp { font-size: 1rem; font-weight: 700; color: var(--emerald); }
+    .me-tf { font-size: 11px; color: var(--muted); }
+
+    /* list rows */
+    .list { display: flex; flex-direction: column; gap: .625rem; padding-bottom: 1rem; }
+    @media (min-width: 640px) { .list { gap: .75rem; } }
+    .row-card { padding: .75rem; display: flex; align-items: center; gap: .75rem; }
+    @media (min-width: 640px) { .row-card { padding: 1rem; gap: 1rem; } }
+    .row-card.is-me { background: linear-gradient(160deg, rgba(49,211,162,.12) 0%, #0D1627 100%); border-color: rgba(49,211,162,.45); }
+    .badge {
+      min-width: 32px; height: 32px; padding-inline: .375rem; border-radius: 999px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 12px; background: var(--surface-2); color: var(--muted);
+    }
+    .badge-1 { background: rgba(227,168,74,.2); color: var(--amber); }
+    .badge-2 { background: var(--inactive); color: #cbd5e1; }
+    .badge-3 { background: rgba(180,110,50,.28); color: #e0a066; }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface-2); border: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; color: #cbd5e1;
+    }
+    .info { flex: 1; min-width: 0; }
+    .name { font-weight: 600; font-size: .875rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .you-tag { margin-left: .5rem; vertical-align: middle; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--emerald); }
+    .sub { font-size: .75rem; color: var(--muted); margin-top: .125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .stats { text-align: right; flex-shrink: 0; }
+    .acc { font-weight: 700; font-size: .875rem; color: #e2e8f0; }
+    .acc.top { color: var(--emerald); }
+    .xp { font-size: .75rem; color: var(--muted); }
+
+    .empty { text-align: center; font-size: .875rem; color: var(--muted); padding: 2.5rem 1rem; }
+    .empty .btn-secondary { margin-top: 1rem; }
+    .btn-secondary {
+      min-height: 44px; padding-inline: 1.25rem; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      font-size: .875rem; font-weight: 600;
+    }
+    .btn-secondary:hover { background: var(--surface-2); }
+    .list-note { text-align: center; font-size: .75rem; color: var(--muted); padding-bottom: .5rem; }
+
+    /* shimmer skeletons */
+    .sk {
+      display: block; border-radius: 10px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+      background-size: 200% 100%; animation: shimmer 1.4s linear infinite;
+    }
+    .sk-circle { border-radius: 50%; flex-shrink: 0; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    @media (max-width: 640px) {
+      .fade-in { animation-duration: .18s; }
+      .sk { animation-duration: 1.8s; }
+    }
 
     .fade-in { animation: fadeIn .3s ease both; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -55,48 +225,55 @@
     }
   </style>
 </head>
-<body class="bg-navy text-slate-100 min-h-screen antialiased">
+<body>
 
   <!-- Header -->
-  <header class="sticky top-0 z-40 bg-navy/90 backdrop-blur-md border-b border-slate-800 pt-[env(safe-area-inset-top)]">
-    <div class="wrap h-14 flex items-center gap-3">
-      <button id="backBtn" type="button" aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800/80 text-slate-300 shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  <header class="hdr">
+    <div class="wrap hdr-row">
+      <button id="backBtn" type="button" aria-label="Go back" class="icon-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </button>
-      <h1 class="text-base sm:text-lg font-semibold tracking-tight text-slate-100 flex-1 truncate">Leaderboard</h1>
-      <span id="liveDot" class="hidden items-center gap-1.5 text-[11px] text-slate-400 shrink-0" aria-live="polite">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>Live
+      <h1>Leaderboard</h1>
+      <span id="liveDot" class="hidden live" aria-live="polite">
+        <span class="live-dot" aria-hidden="true"></span>Live
       </span>
     </div>
   </header>
 
-  <main class="wrap pt-5 sm:pt-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] space-y-5 sm:space-y-6">
+  <main class="wrap main">
 
-    <div id="errorBanner" class="hidden rounded-xl border border-red-400/40 bg-red-400/10 text-red-400 text-sm px-4 py-2.5" role="alert"></div>
+    <div id="errorBanner" class="hidden banner" role="alert"></div>
 
     <!-- Timeframe Tabs -->
-    <div id="timeframeTabs" class="flex gap-2 overflow-x-auto scrollbar-none -mx-0.5 px-0.5" role="tablist" aria-label="Timeframe">
-      <button type="button" data-tf="weekly" class="tab-time shrink-0 px-4 h-10 sm:h-9 rounded-full text-xs font-semibold border">Weekly</button>
-      <button type="button" data-tf="monthly" class="tab-time shrink-0 px-4 h-10 sm:h-9 rounded-full text-xs font-semibold border">Monthly</button>
-      <button type="button" data-tf="all" class="tab-time shrink-0 px-4 h-10 sm:h-9 rounded-full text-xs font-semibold border">All-Time</button>
+    <div id="timeframeTabs" class="tabs scrollbar-none" role="tablist" aria-label="Timeframe">
+      <button type="button" data-tf="weekly" class="tab-time pill">Weekly</button>
+      <button type="button" data-tf="monthly" class="tab-time pill">Monthly</button>
+      <button type="button" data-tf="all" class="tab-time pill">All-Time</button>
     </div>
 
     <!-- Your Rank -->
-    <section id="myRank" class="bg-slate-900/80 border border-emerald-500/40 rounded-2xl p-4 sm:p-5 shadow-sm" aria-live="polite">
-      <div class="h-12 flex items-center text-sm text-slate-400">Loading your rank...</div>
+    <section id="myRank" class="card rank-card" aria-live="polite">
+      <div class="me-row">
+        <span class="sr-only">Loading your rank...</span>
+        <div class="me-left" aria-hidden="true">
+          <span class="sk sk-circle" style="width:48px;height:48px"></span>
+          <div class="me-text"><span class="sk" style="width:90px;height:14px"></span><span class="sk" style="width:120px;height:12px;margin-top:8px"></span></div>
+        </div>
+        <span class="sk" style="width:76px;height:20px" aria-hidden="true"></span>
+      </div>
     </section>
 
     <!-- Category Filters -->
-    <div id="categoryFilters" class="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-0.5 px-0.5" role="tablist" aria-label="Leaderboard group">
-      <button type="button" data-scope="global" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">Global</button>
-      <button type="button" data-scope="level" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">My Level</button>
-      <button type="button" data-scope="department" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">Department</button>
-      <button type="button" data-scope="course" class="tab-cat shrink-0 px-3.5 h-10 sm:h-8 rounded-full text-xs font-medium whitespace-nowrap border">Course</button>
+    <div id="categoryFilters" class="tabs scrollbar-none" role="tablist" aria-label="Leaderboard group">
+      <button type="button" data-scope="global" class="tab-cat pill">Global</button>
+      <button type="button" data-scope="level" class="tab-cat pill">My Level</button>
+      <button type="button" data-scope="department" class="tab-cat pill">Department</button>
+      <button type="button" data-scope="course" class="tab-cat pill">Course</button>
     </div>
 
     <!-- Leaderboard List -->
-    <section id="list" class="space-y-2.5 sm:space-y-3 pb-4" aria-live="polite"></section>
-    <p id="listNote" class="hidden text-center text-xs text-slate-500 pb-2"></p>
+    <section id="list" class="list" aria-live="polite"></section>
+    <p id="listNote" class="hidden list-note"></p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -107,6 +284,12 @@
     const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const LOGIN_URL = 'auth.html?mode=login';
+    // Logged-out visitors come back to this page after login (PRIME-CBT ?next= rule).
+    // Falls back to plain LOGIN_URL if the file name is not a plain same-site .html page.
+    function loginUrlWithNext() {
+      const page = location.pathname.split('/').pop() || '';
+      return /^[A-Za-z0-9_\-]+\.html$/.test(page) ? LOGIN_URL + '&next=' + encodeURIComponent(page) : LOGIN_URL;
+    }
     const LIMIT = 50;
 
     const $ = (id) => document.getElementById(id);
@@ -122,6 +305,7 @@
 
     const state = { tf: 'weekly', scope: 'global' };
     let me = null, rows = [], reqId = 0, refreshTimer = null;
+    let animateNext = true;   // fade rows in on first paint / tab change only, not on every live refresh
 
     /* ───── Helpers ───── */
     function el(tag, cls, text) {
@@ -144,8 +328,8 @@
     }
 
     /* ───── Tabs ───── */
-    const ON  = ['bg-emerald-500', 'text-slate-950', 'border-emerald-500'];
-    const OFF = ['bg-slate-900', 'text-slate-300', 'border-slate-800', 'hover:bg-slate-800'];
+    const ON  = ['is-active'];
+    const OFF = ['is-off'];
     function paintTabs(sel, attr, value) {
       document.querySelectorAll(sel).forEach((b) => {
         const active = b.dataset[attr] === value;
@@ -161,11 +345,15 @@
     }
     document.querySelectorAll('.tab-time').forEach((b) => b.addEventListener('click', () => {
       if (state.tf === b.dataset.tf) return;
-      state.tf = b.dataset.tf; paintAll(); load();
+      state.tf = b.dataset.tf; paintAll();
+      rows = []; animateNext = true;   // drop the other tab's rows so they are not shown under the new tab
+      load();
     }));
     document.querySelectorAll('.tab-cat').forEach((b) => b.addEventListener('click', () => {
       if (state.scope === b.dataset.scope) return;
-      state.scope = b.dataset.scope; paintAll(); load();
+      state.scope = b.dataset.scope; paintAll();
+      rows = []; animateNext = true;
+      load();
     }));
 
     $('backBtn').addEventListener('click', () => {
@@ -174,39 +362,39 @@
 
     /* ───── Rendering ───── */
     function rankBadge(pos) {
-      const base = 'w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ';
-      if (pos === 1) return base + 'bg-amber-400/20 text-amber-400';
-      if (pos === 2) return base + 'bg-slate-700 text-slate-300';
-      if (pos === 3) return base + 'bg-amber-700/30 text-amber-500';
-      return base + 'bg-slate-800 text-slate-400';
+      const base = 'badge ';
+      if (pos === 1) return base + 'badge-1';
+      if (pos === 2) return base + 'badge-2';
+      if (pos === 3) return base + 'badge-3';
+      return base;
     }
 
     function renderMyRank() {
       myRankEl.replaceChildren();
       const mine = rows.find((r) => r.is_me);
-      const row = el('div', 'flex items-center justify-between gap-3');
-      const left = el('div', 'flex items-center gap-3 sm:gap-4 min-w-0');
+      const row = el('div', 'me-row');
+      const left = el('div', 'me-left');
 
       if (!mine) {
-        left.append(el('div', 'w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 shrink-0', '—'));
-        const t = el('div', 'min-w-0');
-        t.append(el('p', 'font-semibold text-sm text-slate-100', 'You are not ranked yet'));
-        t.append(el('p', 'text-xs text-slate-400 mt-0.5', 'Complete a practice test to earn XP and appear here.'));
+        left.append(el('div', 'me-pos', '—'));
+        const t = el('div', 'me-text');
+        t.append(el('p', 'me-title', 'You are not ranked yet'));
+        t.append(el('p', 'me-sub', 'Complete a practice test to earn XP and appear here.'));
         left.append(t);
         row.append(left);
         myRankEl.append(row);
         return;
       }
 
-      left.append(el('div', 'min-w-12 h-12 px-2 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 shrink-0', '#' + mine.rank_pos));
-      const t = el('div', 'min-w-0');
-      t.append(el('p', 'font-semibold text-sm text-slate-100', 'You'));
-      t.append(el('p', 'text-xs text-slate-400 mt-0.5', (mine.acc_pct == null ? '—' : mine.acc_pct + '%') + ' Accuracy'));
+      left.append(el('div', 'me-pos', '#' + mine.rank_pos));
+      const t = el('div', 'me-text');
+      t.append(el('p', 'me-title', 'You'));
+      t.append(el('p', 'me-sub', (mine.acc_pct == null ? '—' : mine.acc_pct + '%') + ' Accuracy'));
       left.append(t);
 
-      const right = el('div', 'text-right shrink-0');
-      right.append(el('p', 'text-base font-bold text-emerald-400', fmtXp(mine.total_xp)));
-      right.append(el('p', 'text-[11px] text-slate-500', TF_LABEL[state.tf]));
+      const right = el('div', 'me-right');
+      right.append(el('p', 'me-xp', fmtXp(mine.total_xp)));
+      right.append(el('p', 'me-tf', TF_LABEL[state.tf]));
       row.append(left, right);
       myRankEl.append(row);
     }
@@ -214,38 +402,82 @@
     function renderList() {
       listEl.replaceChildren();
       if (!rows.length) {
-        listEl.append(el('div', 'text-center text-sm text-slate-500 py-10 px-4', SCOPE_EMPTY[state.scope]));
+        listEl.append(el('div', 'empty', SCOPE_EMPTY[state.scope]));
         noteEl.classList.add('hidden');
         return;
       }
       for (const r of rows) {
         const mine = r.is_me;
-        const card = el('div', 'card rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 border ' +
-          (mine ? 'bg-emerald-500/5 border-emerald-500/40' : 'bg-slate-900/80 border-slate-800'));
+        const card = el('div', 'card row-card' + (mine ? ' is-me' : '') + (animateNext ? ' fade-in' : ''));
         card.append(el('div', rankBadge(Number(r.rank_pos)), String(r.rank_pos)));
-        card.append(el('div', 'w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 shrink-0', initials(r.name)));
+        card.append(el('div', 'avatar', initials(r.name)));
 
-        const info = el('div', 'flex-1 min-w-0');
-        const nameLine = el('p', 'font-semibold text-sm text-slate-100 truncate', r.name || 'Student');
-        if (mine) nameLine.append(el('span', 'ml-2 align-middle text-[10px] font-semibold uppercase text-emerald-400', 'You'));
+        const info = el('div', 'info');
+        const nameLine = el('p', 'name', r.name || 'Student');
+        if (mine) nameLine.append(el('span', 'you-tag', 'You'));
         info.append(nameLine);
         const sub = subtitle(r);
-        if (sub) info.append(el('p', 'text-xs text-slate-400 truncate mt-0.5', sub));
+        if (sub) info.append(el('p', 'sub', sub));
         card.append(info);
 
-        const right = el('div', 'text-right shrink-0');
-        right.append(el('p', 'font-bold text-sm ' + (Number(r.rank_pos) <= 3 ? 'text-emerald-400' : 'text-slate-200'), r.acc_pct == null ? '—' : r.acc_pct + '%'));
-        right.append(el('p', 'text-xs text-slate-500', fmtXp(r.total_xp)));
+        const right = el('div', 'stats');
+        right.append(el('p', 'acc' + (Number(r.rank_pos) <= 3 ? ' top' : ''), r.acc_pct == null ? '—' : r.acc_pct + '%'));
+        right.append(el('p', 'xp', fmtXp(r.total_xp)));
         card.append(right);
         listEl.append(card);
       }
+      animateNext = false;
       noteEl.textContent = 'Showing the top ' + LIMIT + (rows.some((r) => r.is_me && r.rank_pos > LIMIT) ? ' and your position.' : '.');
       noteEl.classList.remove('hidden');
     }
 
     function showLoading() {
       if (rows.length) return;   // keep old rows on screen while refreshing
-      listEl.replaceChildren(el('div', 'text-center text-sm text-slate-500 py-10', 'Loading leaderboard...'));
+      // shimmer skeletons (screen readers still get the text)
+      listEl.replaceChildren(el('span', 'sr-only', 'Loading leaderboard...'));
+      for (let i = 0; i < 6; i++) listEl.append(skeletonRow());
+      renderMyRankSkeleton();
+    }
+    function skeletonRow() {
+      const card = el('div', 'card row-card');
+      card.setAttribute('aria-hidden', 'true');
+      card.append(el('span', 'sk sk-circle', ''), el('span', 'sk sk-circle', ''));
+      card.firstChild.style.cssText = 'width:32px;height:32px';
+      card.lastChild.style.cssText = 'width:40px;height:40px';
+      const info = el('div', 'info');
+      const a = el('span', 'sk'); a.style.cssText = 'width:60%;height:14px';
+      const b = el('span', 'sk'); b.style.cssText = 'width:40%;height:12px;margin-top:8px';
+      info.append(a, b);
+      const right = el('span', 'sk'); right.style.cssText = 'width:56px;height:30px;flex-shrink:0';
+      card.append(info, right);
+      return card;
+    }
+    function renderMyRankSkeleton() {
+      myRankEl.replaceChildren();
+      const row = el('div', 'me-row');
+      const left = el('div', 'me-left');
+      left.setAttribute('aria-hidden', 'true');
+      const c = el('span', 'sk sk-circle'); c.style.cssText = 'width:48px;height:48px';
+      const t = el('div', 'me-text');
+      const a = el('span', 'sk'); a.style.cssText = 'width:90px;height:14px';
+      const b = el('span', 'sk'); b.style.cssText = 'width:120px;height:12px;margin-top:8px';
+      t.append(a, b);
+      left.append(c, t);
+      const r = el('span', 'sk'); r.style.cssText = 'width:76px;height:20px';
+      r.setAttribute('aria-hidden', 'true');
+      row.append(el('span', 'sr-only', 'Loading your rank...'), left, r);
+      myRankEl.append(row);
+    }
+    // Shown when the first load fails, so the page is not stuck on skeletons.
+    function renderLoadError() {
+      myRankEl.replaceChildren(el('p', 'me-sub', "Your rank isn't available right now."));
+      const box = el('div', 'empty', "The leaderboard couldn't be loaded.");
+      const btn = el('button', 'btn-secondary', 'Try again');
+      btn.type = 'button';
+      btn.addEventListener('click', load);
+      box.append(el('br'), btn);
+      listEl.replaceChildren(box);
+      noteEl.classList.add('hidden');
     }
 
     /* ───── Data ───── */
@@ -259,7 +491,7 @@
       if (error) {
         console.error('leaderboard:', error.message);
         showError("Couldn't load the leaderboard. Check your connection and try again.");
-        if (!rows.length) listEl.replaceChildren();
+        if (!rows.length) { listEl.replaceChildren(); renderLoadError(); }
         return;
       }
       showError('');
@@ -290,6 +522,8 @@
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') load();
       });
+      window.addEventListener('online', load);
+      window.addEventListener('pageshow', (e) => { if (e.persisted) load(); });   // back/forward cache
       setInterval(() => { if (document.visibilityState === 'visible') load(); }, 5 * 60 * 1000); // covers week/month rollover
     }
 
@@ -298,7 +532,7 @@
       paintAll();
       let session = null;
       try { session = (await supabaseClient.auth.getSession()).data.session; } catch (_) {}
-      if (!session) { location.replace(LOGIN_URL); return; }
+      if (!session) { location.replace(loginUrlWithNext()); return; }
       if (typeof needsProfileSetup === 'function' && needsProfileSetup(session.user)) {
         location.replace('profile-setup.html'); return;
       }
