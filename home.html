@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-<meta name="theme-color" content="#04110E">
+<meta name="theme-color" content="#070D1D">
 <title>PRIME-CBT — Home</title>
 <link rel="icon" type="image/png" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
@@ -17,15 +17,14 @@
 <script src="maintenance-gate.js"></script>
 <style>
 :root{
-  --bg:#03100C;--card:#0B221B;--surf:#12312A;--dim:#071812;
-  --em:#2FE0A8;--em2:#1BA97F;--em-soft:rgba(47,224,168,.14);
-  --lg1:#2ED8A3;--lg2:#22B8E8;--lg3:#1F6FD6;
-  --logo-grad:linear-gradient(135deg,var(--lg1),var(--lg2) 55%,var(--lg3));
-  --logo-grad-h:linear-gradient(90deg,var(--lg1),var(--lg2) 55%,var(--lg3));
-  --logo-glow:rgba(34,184,232,.38);
-  --tx:#F2FAF6;--mut:#8FB0A5;--mut2:#6C8E83;
-  --bd:rgba(47,224,168,.16);--bd2:rgba(255,255,255,.07);
-  --glass:linear-gradient(160deg,rgba(20,56,46,.62),rgba(8,26,21,.78));
+  --bg:#070D1D;--card:#10182B;--surf:#1A2540;--dim:#0D1424;
+  --em:#31D3A2;--em2:#27B58A;--em-soft:rgba(49,211,162,.14);
+  --logo-grad:var(--em);
+  --logo-grad-h:linear-gradient(90deg,var(--em2),var(--em));
+  --logo-glow:rgba(49,211,162,.28);
+  --tx:#F1F5FF;--mut:#97A6CF;--mut2:#7F8CAC;
+  --bd:#273852;--bd2:rgba(255,255,255,.07);
+  --glass:linear-gradient(160deg,#121C32,#0F1729);
   --r:20px;--nav-h:72px
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
@@ -38,11 +37,11 @@ svg{display:block}
 
 .app{width:100%;max-width:720px;height:100%;position:relative;overflow:hidden;visibility:hidden;border-inline:1px solid var(--bd2);display:flex;flex-direction:column;
   background:
-    radial-gradient(120% 55% at 100% 0%,rgba(47,224,168,.20),transparent 60%),
-    radial-gradient(80% 40% at 0% 38%,rgba(27,169,127,.10),transparent 70%),
-    linear-gradient(180deg,#05150F 0%,#03100C 55%,#020B08 100%)}
+    radial-gradient(120% 55% at 100% 0%,rgba(70,110,210,.10),transparent 60%),
+    radial-gradient(80% 40% at 0% 38%,rgba(49,211,162,.05),transparent 70%),
+    linear-gradient(180deg,#080E1F 0%,#070D1D 55%,#050A16 100%)}
 .app::before{content:"";position:absolute;top:-10%;right:-25%;width:75%;height:55%;pointer-events:none;
-  background:linear-gradient(118deg,transparent 30%,rgba(47,224,168,.16) 48%,transparent 62%);transform:rotate(-8deg);filter:blur(2px)}
+  background:linear-gradient(118deg,transparent 30%,rgba(90,130,230,.07) 48%,transparent 62%);transform:rotate(-8deg);filter:blur(2px)}
 .app.ready{visibility:visible}
 .page{display:flex;flex-direction:column;height:100%;min-width:0;position:relative;z-index:1}
 
@@ -69,7 +68,7 @@ svg{display:block}
 .hello p{font-size:.95rem;color:var(--mut);margin-top:8px;line-height:1.45;max-width:30ch}
 
 .card{background:var(--glass);border:1px solid var(--bd);border-radius:var(--r);padding:16px;min-width:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
-.btn-solid{height:50px;padding:0 20px;border:none;border-radius:14px;background:var(--logo-grad);box-shadow:0 6px 18px var(--logo-glow);color:#03120C;font-weight:700;font-size:1rem}
+.btn-solid{height:50px;padding:0 20px;border:none;border-radius:14px;background:var(--logo-grad);box-shadow:0 6px 18px var(--logo-glow);color:#06101A;font-weight:700;font-size:1rem}
 .btn-solid:active{transform:scale(.98)}
 .btn-solid:disabled{opacity:.6}
 .btn-ghost{height:50px;padding:0 20px;border-radius:14px;background:var(--dim);border:1px solid var(--bd);font-weight:600;font-size:.95rem}
@@ -95,18 +94,18 @@ svg{display:block}
 .date-input:focus{border-color:var(--em)}
 
 /* Continue learning */
-.learn{display:block;position:relative;overflow:hidden;padding:18px;border-color:rgba(47,224,168,.34);
-  background:radial-gradient(90% 120% at 100% 0%,rgba(34,184,232,.26),transparent 60%),radial-gradient(70% 90% at 0% 100%,rgba(47,224,168,.14),transparent 65%),linear-gradient(150deg,#0F4034 0%,#0A2A22 70%)}
+.learn{display:block;position:relative;overflow:hidden;padding:18px;border-color:#2A4058;
+  background:radial-gradient(90% 120% at 100% 0%,rgba(49,211,162,.08),transparent 60%),linear-gradient(150deg,#10223A 0%,#0D1A2E 70%)}
 .learn-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.learn .lab{font-size:.85rem;color:rgba(242,250,246,.78);font-weight:500}
+.learn .lab{font-size:.85rem;color:rgba(241,245,255,.78);font-weight:500}
 .learn h2{font-size:1.35rem;font-weight:700;margin-top:4px;line-height:1.2;overflow-wrap:anywhere}
 .learn .sub{font-size:.85rem;color:var(--mut);margin-top:6px;overflow-wrap:anywhere}
-.learn .corner{width:20px;height:20px;color:rgba(242,250,246,.8);flex-shrink:0;align-self:flex-start}
+.learn .corner{width:20px;height:20px;color:rgba(241,245,255,.8);flex-shrink:0;align-self:flex-start}
 .learn-foot{display:flex;align-items:center;gap:12px;margin-top:16px}
 .bar{flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
 .bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--logo-grad-h);box-shadow:0 0 10px var(--logo-glow);transition:width .6s ease}
 .count{font-size:.78rem;color:var(--mut);font-variant-numeric:tabular-nums}
-.go{width:42px;height:42px;border-radius:50%;background:var(--logo-grad);color:#03120C;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 18px var(--logo-glow)}
+.go{width:42px;height:42px;border-radius:50%;background:var(--logo-grad);color:#06101A;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 18px var(--logo-glow)}
 .go svg{width:20px;height:20px}
 
 /* Section headings */
@@ -143,14 +142,14 @@ svg{display:block}
 
 /* Floating bottom navigation */
 .bottom-nav{position:absolute;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:20;height:var(--nav-h);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;padding:6px;border-radius:26px;
-  background:linear-gradient(180deg,rgba(18,49,42,.78),rgba(7,22,18,.86));border:1px solid rgba(47,224,168,.22);
+  background:linear-gradient(180deg,rgba(18,28,50,.78),rgba(10,16,32,.86));border:1px solid #273852;
   backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
   box-shadow:0 14px 34px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.07)}
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;min-width:0;color:var(--mut2);font-size:.68rem;font-weight:500;border-radius:20px;position:relative;transition:color .2s,background .2s}
 .nav-item svg{width:24px;height:24px}
 .nav-item span{max-width:100%;white-space:nowrap}
 .nav-item:active{background:var(--em-soft)}
-.nav-item.active{color:var(--em);font-weight:600;background:radial-gradient(70% 90% at 50% 0%,rgba(34,184,232,.22),rgba(47,224,168,.04))}
+.nav-item.active{color:var(--em);font-weight:600;background:radial-gradient(70% 90% at 50% 0%,rgba(49,211,162,.16),rgba(49,211,162,.03))}
 .nav-item.active::before{content:"";position:absolute;top:0;left:30%;right:30%;height:2px;border-radius:0 0 4px 4px;background:var(--logo-grad-h);box-shadow:0 0 12px var(--logo-glow)}
 .nav-item.active svg{filter:drop-shadow(0 0 6px var(--logo-glow))}
 .nav-item.active .solid{fill:currentColor}
@@ -170,7 +169,7 @@ button.nav-item{background:none;border:none;font-family:inherit}
 .online-dot{width:8px;height:8px;border-radius:50%;background:var(--em)}
 #updatesSection{display:none}
 .update-row{display:flex;align-items:center;gap:12px;background:var(--glass);border:1px solid var(--bd2);border-radius:14px;padding:12px 14px;margin-top:8px}
-.update-row.unread{border-color:rgba(47,224,168,.4)}
+.update-row.unread{border-color:rgba(49,211,162,.4)}
 .update-title{font-size:.85rem;font-weight:600}
 .update-time{font-size:.7rem;color:var(--mut);margin-top:2px}
 
@@ -183,7 +182,7 @@ button.nav-item{background:none;border:none;font-family:inherit}
 .notif-popup-close{background:none;border:none;color:var(--mut);font-size:16px;padding:6px}
 .toast{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + var(--nav-h) + 28px);z-index:210;background:var(--card);border:1px solid var(--em);font-size:.85rem;font-weight:600;padding:14px 16px;border-radius:14px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.55);opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .3s,transform .3s}
 .toast.show{opacity:1;transform:none}
-.sheet-backdrop{position:absolute;inset:0;z-index:300;background:rgba(2,10,7,.82);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center}
+.sheet-backdrop{position:absolute;inset:0;z-index:300;background:rgba(3,7,16,.82);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center}
 .sheet-backdrop.open{display:flex}
 .sheet{width:100%;max-height:92%;overflow-y:auto;background:var(--card);border:1px solid var(--bd);border-radius:24px 24px 0 0;padding:20px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px);display:flex;flex-direction:column;gap:14px}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -203,7 +202,7 @@ button.nav-item{background:none;border:none;font-family:inherit}
 .focus-stats b{font-size:1.2rem;font-variant-numeric:tabular-nums}
 .focus-stats span{font-size:.72rem;color:var(--mut)}
 .stars{display:flex;gap:6px;justify-content:center}
-.star{background:none;border:none;font-size:36px;line-height:1;color:#35524a;padding:2px}
+.star{background:none;border:none;font-size:36px;line-height:1;color:#34456A;padding:2px}
 .star.on{color:#fbbf24}
 .sheet textarea{width:100%;background:rgba(0,0,0,.25);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;color:var(--tx);font-size:16px;resize:none;outline:none}
 .sheet textarea:focus{border-color:var(--em)}
@@ -224,9 +223,9 @@ button.nav-item{background:none;border:none;font-family:inherit}
   .bottom-nav{display:none}
   .content{padding-bottom:32px}
   .toast{bottom:20px}
-  .site-menu{display:flex;order:-1;width:260px;flex-shrink:0;height:100%;flex-direction:column;padding:28px 20px;background:rgba(7,24,18,.85);border-right:1px solid var(--bd);position:relative;z-index:2}
+  .site-menu{display:flex;order:-1;width:260px;flex-shrink:0;height:100%;flex-direction:column;padding:28px 20px;background:rgba(14,25,47,.88);border-right:1px solid var(--bd);position:relative;z-index:2}
   .site-menu-header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--bd2);margin-bottom:16px}
-  .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#2FE0A8,#1BA97F) center/cover no-repeat;color:#03120C;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#31D3A2,#27B58A) center/cover no-repeat;color:#06101A;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
   .menu-username{font-weight:700}.menu-usersub{font-size:.75rem;color:var(--mut)}
   .menu-list{list-style:none;flex:1;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
   .menu-link{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;color:var(--mut);font-size:.9rem;font-weight:500;width:100%;background:none;border:none;text-align:left}
@@ -405,7 +404,7 @@ button.nav-item{background:none;border:none;font-family:inherit}
         <button type="button" class="chip" data-min="45">45m</button>
       </div>
       <div class="timer-ring">
-        <svg width="150" height="150" viewBox="0 0 150 150"><circle cx="75" cy="75" r="64" fill="none" stroke="#1d3a33" stroke-width="8"/><circle id="ringFg" cx="75" cy="75" r="64" fill="none" stroke="#2FE0A8" stroke-width="8" stroke-linecap="round"/></svg>
+        <svg width="150" height="150" viewBox="0 0 150 150"><circle cx="75" cy="75" r="64" fill="none" stroke="#1E2B47" stroke-width="8"/><circle id="ringFg" cx="75" cy="75" r="64" fill="none" stroke="#31D3A2" stroke-width="8" stroke-linecap="round"/></svg>
         <div class="timer-time" id="timerTime">25:00</div>
       </div>
       <div class="timer-actions"><button type="button" class="btn-solid" id="timerToggle">Start</button><button type="button" class="btn-ghost" id="timerReset">Reset</button></div>
