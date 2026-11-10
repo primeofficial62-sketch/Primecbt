@@ -3,16 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070D1C">
+<link rel="icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+<link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 <title>PRIME-CBT — Community Chat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
-:root{--bg:#070D1C;--surface:#10192B;--surface-2:#182337;--dim:#0D1525;--border:#29364C;--text:#F4F6FC;--muted-2:#9BA8BE;--muted-3:#6F7F9B;--muted-4:#3A4A63;--nav-muted:#7C8BB5;--emerald:#31D3A2;--emerald-bright:#31D3A2;--on-em:#04120D;--red:#f87171;--amber:#fbbf24;--pad:clamp(12px,3.5vw,20px)}
+:root{--bg:#070D1C;--surface:#10192B;--surface-2:#182337;--dim:#0D1525;--border:#29364C;--text:#F4F6FC;--muted-2:#9BA8BE;--muted-3:#6F7F9B;--muted-4:#3A4A63;--nav-muted:#7C8BB5;--emerald:#31D3A2;--emerald-bright:#31D3A2;--on-em:#04120D;--red:#f87171;--amber:#fbbf24;--pad:clamp(12px,3.5vw,20px);--ring:rgba(49,211,162,.2);--line:rgba(49,211,162,.22);--card:linear-gradient(160deg,#15233C 0%,#0D1627 100%);--field:#0B1324;--inactive:#344256;--emerald-hover:#4BE0B5;--emerald-press:#27B98D}
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;width:100%;margin:0}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:0;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow:hidden}
+body{background:var(--bg);background-image:radial-gradient(760px 420px at 50% -90px,rgba(49,211,162,.13),transparent 70%);background-repeat:no-repeat;color:var(--text);font-family:'Inter',sans-serif;padding:0;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow:hidden}
 button{font-family:inherit}
 
 /* App shell */
@@ -29,11 +33,11 @@ button{font-family:inherit}
 }
 
 /* Top bar */
-.topbar{padding:12px var(--pad);padding-top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;align-items:center;gap:12px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.topbar{padding:12px var(--pad);padding-top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;align-items:center;gap:12px;background:rgba(7,13,28,.88);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
 .topbar-text{flex:1;min-width:0}
 .topbar-text h1{font-size:clamp(16px,4.4vw,18px);font-weight:700;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar-text p{color:var(--muted-2);font-size:12px;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.back-btn,.icon-btn{width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;text-decoration:none;transition:background .2s;flex-shrink:0;padding:0}
+.back-btn,.icon-btn{width:44px;height:44px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;text-decoration:none;transition:background .2s;flex-shrink:0;padding:0}
 .back-btn:hover,.icon-btn:hover{background:var(--surface-2)}
 .back-btn svg,.icon-btn svg{width:20px;height:20px}
 .back-btn:focus-visible,.icon-btn:focus-visible,.send-btn:focus-visible,.btn:focus-visible,.user-avatar-item:focus-visible,.chat-list-item:focus-visible,.nav-item:focus-visible{outline:2px solid var(--emerald);outline-offset:2px}
@@ -47,7 +51,7 @@ button{font-family:inherit}
 .search-box input::placeholder{color:var(--muted-3)}
 .search-box input::-webkit-search-cancel-button{display:none}
 .search-box>svg{stroke:var(--muted-2);flex-shrink:0}
-.clear-btn{width:34px;height:34px;border-radius:50%;border:none;background:var(--surface-2);color:var(--muted-2);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0}
+.clear-btn{width:44px;height:44px;border-radius:50%;border:none;background:var(--surface-2);color:var(--muted-2);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0}
 .clear-btn[hidden]{display:none}
 
 /* List pane */
@@ -133,14 +137,34 @@ button{font-family:inherit}
 .profile-modal-avatar{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;background:var(--emerald) center/cover no-repeat;color:var(--on-em);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700}
 .profile-bio{font-size:.85rem;color:var(--muted-2);margin:12px 0 20px;line-height:1.45;overflow-wrap:anywhere}
 .profile-actions{display:flex;gap:10px}
-.btn{flex:1;padding:12px;border-radius:12px;font-weight:600;cursor:pointer;border:none;font-size:.9rem}
+.btn{flex:1;padding:12px 16px;min-height:48px;border-radius:999px;font-weight:600;cursor:pointer;border:none;font-size:.9rem}
 .btn-primary{background:var(--emerald);color:var(--on-em)}
 .btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
 .btn-secondary:hover{background:var(--muted-4)}
 
 @media (max-width:360px){.user-circle{width:50px;height:50px;font-size:.95rem}.user-avatar-item{width:58px}.message-bubble{max-width:88%}.topbar{gap:8px}}
 @media (max-height:480px){.topbar{padding-top:calc(env(safe-area-inset-top,0px) + 8px);padding-bottom:8px}.chat-input-area{padding-top:8px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- PRIME-CBT upgrade additions ---- */
+.topbar-text h1{font-family:'Lora',serif}
+:focus-visible{outline:2px solid var(--emerald);outline-offset:2px}
+.search-box input:focus-visible,.chat-input-area input:focus-visible{outline:none}
+.search-box:focus-within,.chat-input-area input:focus{box-shadow:0 0 0 3px var(--ring)}
+.chat-input-area input{min-height:48px}
+.chat-list-item{background:var(--card);border-color:var(--line)}
+.chat-list-item:hover{background:var(--surface-2);border-color:rgba(49,211,162,.45)}
+.chat-list-item.active{border-color:var(--emerald)}
+.profile-modal-content{background:var(--card);border-color:var(--line);border-radius:22px}
+.msg-sender{padding:4px 0}
+.send-btn{box-shadow:0 6px 18px rgba(49,211,162,.28)}
+@media (prefers-reduced-motion:no-preference){.sk,.sk-circle{animation:shimmer 1.4s infinite linear}}
+.sk,.sk-circle{background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%}
+.sk{display:block;height:14px;border-radius:8px}
+.sk-circle{width:56px;height:56px;border-radius:50%;flex-shrink:0}
+.sk-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:16px;min-height:68px}
+.sk-card .sk-lines{flex:1;display:flex;flex-direction:column;gap:8px}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
 </style>
 </head>
 <body>
@@ -163,7 +187,7 @@ button{font-family:inherit}
     </div>
 
     <div class="list-scroll">
-      <div class="banner" id="errorBanner" hidden></div>
+      <div class="banner" id="errorBanner" role="alert" hidden></div>
 
       <section class="section">
         <div class="section-header"><h2>Community</h2></div>
@@ -179,13 +203,13 @@ button{font-family:inherit}
 
       <section class="section">
         <div class="section-header"><h2>Students</h2></div>
-        <div class="online-users-scroll" id="membersRow"></div>
+        <div class="online-users-scroll" id="membersRow"><span class="sk-circle" aria-hidden="true"></span><span class="sk-circle" aria-hidden="true"></span><span class="sk-circle" aria-hidden="true"></span><span class="sk-circle" aria-hidden="true"></span></div>
         <div class="empty-state" id="membersEmpty" hidden></div>
       </section>
 
       <section class="section">
         <div class="section-header"><h2>Recent Chats</h2></div>
-        <div class="chat-list" id="chatList"></div>
+        <div class="chat-list" id="chatList"><div class="sk-card" aria-hidden="true"><span class="sk-circle" style="width:48px;height:48px"></span><div class="sk-lines"><span class="sk" style="width:55%"></span><span class="sk" style="width:80%"></span></div></div><div class="sk-card" aria-hidden="true"><span class="sk-circle" style="width:48px;height:48px"></span><div class="sk-lines"><span class="sk" style="width:45%"></span><span class="sk" style="width:70%"></span></div></div></div>
         <div class="empty-state" id="chatsEmpty" hidden></div>
       </section>
     </div>
@@ -249,6 +273,9 @@ button{font-family:inherit}
   const SUPABASE_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
   const LOGIN_URL = 'auth.html?mode=login';
+  // Logged-out visitors come back to this page after login (?next=); logout still uses plain LOGIN_URL.
+  const PAGE_NAME = location.pathname.split('/').pop() || '';
+  const LOGIN_NEXT = /\.html$/i.test(PAGE_NAME) ? LOGIN_URL + '&next=' + encodeURIComponent(PAGE_NAME + location.search) : LOGIN_URL;
   const HEARTBEAT_MS = 60_000;
   const RECENT_MIN = 60;
 
@@ -278,6 +305,7 @@ button{font-family:inherit}
   let me = null;
   const profiles = new Map(), convos = new Map(), online = new Set();
   let activeId = null, thread = [], channel = null, query = '';
+  let wasDown = false, modalOpener = null;
 
   const GENERAL = '__general__';
   let gThread = [], gLast = null, gUnread = 0, generalOk = true;
@@ -381,13 +409,14 @@ button{font-family:inherit}
     if (error) throw error;
     gThread = data.reverse();
     gLast = gThread.length ? gThread[gThread.length - 1] : null;
-    const seen = Number(localStorage.getItem(gReadKey()) || 0);
+    let seen = 0;
+    try { seen = Number(localStorage.getItem(gReadKey()) || 0); } catch (_) {}
     gUnread = gThread.filter((m) => m.sender_id !== me.id && new Date(m.created_at).getTime() > seen).length;
     await Promise.all([...new Set(gThread.map((m) => m.sender_id))].map(ensureProfile));
   }
   function markGeneralRead() {
     gUnread = 0;
-    localStorage.setItem(gReadKey(), String(gLast ? new Date(gLast.created_at).getTime() : Date.now()));
+    try { localStorage.setItem(gReadKey(), String(gLast ? new Date(gLast.created_at).getTime() : Date.now())); } catch (_) {}
     renderGeneralCard();
   }
   function renderGeneralCard() {
@@ -552,9 +581,15 @@ button{font-family:inherit}
     $('modalDept').textContent = p.department || ''; $('modalDept').hidden = !p.department;
     $('modalStatus').textContent = statusOf(id).text;
     $('modalBio').textContent = p.bio || ''; $('modalBio').hidden = !p.bio;
+    modalOpener = document.activeElement;
     $('profileModal').classList.add('open');
+    $('closeModalBtn').focus();
   }
-  function closeProfile() { $('profileModal').classList.remove('open'); modalId = null; }
+  function closeProfile() {
+    $('profileModal').classList.remove('open'); modalId = null;
+    if (modalOpener && modalOpener.focus) { try { modalOpener.focus(); } catch (_) {} }
+    modalOpener = null;
+  }
   $('closeModalBtn').addEventListener('click', closeProfile);
   $('profileModal').addEventListener('click', (e) => { if (e.target.id === 'profileModal') closeProfile(); });
   $('messageBtn').addEventListener('click', () => { const id = modalId; closeProfile(); if (id) openChat(id); });
@@ -637,8 +672,12 @@ button{font-family:inherit}
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (p) => { if (p.new.id !== me.id) { profiles.set(p.new.id, p.new); renderMembers(); renderChats(); updateChatHeader(); } })
       .on('presence', { event: 'sync' }, syncPresence)
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') { showError(''); await channel.track({ user_id: me.id, at: Date.now() }); }
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') showError('Live connection lost. Reconnecting...');
+        if (status === 'SUBSCRIBED') {
+          showError(''); await channel.track({ user_id: me.id, at: Date.now() });
+          // after a dropped connection, reload what was missed (reuses the visibilitychange refresh)
+          if (wasDown) { wasDown = false; document.dispatchEvent(new Event('visibilitychange')); }
+        }
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { wasDown = true; showError('Live connection lost. Reconnecting...'); }
       });
   }
   async function heartbeat() {
@@ -663,7 +702,7 @@ button{font-family:inherit}
   /* Boot */
   (async function init() {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { location.href = LOGIN_URL; return; }
+    if (!session) { location.href = LOGIN_NEXT; return; }
     me = session.user;
     sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') location.href = LOGIN_URL; });
     try { await loadProfiles(); await loadConversations(); }
