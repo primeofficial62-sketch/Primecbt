@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js">
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@500;600;700&display=swap"></noscript>
 <script src="maintenance-gate.js"></script>
 <style>
 :root{
@@ -25,7 +25,7 @@
   --tx:#F1F5FF;--mut:#97A6CF;--mut2:#7F8CAC;
   --bd:#273852;--bd2:rgba(255,255,255,.07);
   --glass:linear-gradient(160deg,#121C32,#0F1729);
-  --r:20px;--nav-h:72px
+  --serif:'Lora',Georgia,serif;--r:20px;--nav-h:72px
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -37,8 +37,8 @@ svg{display:block}
 
 .app{width:100%;max-width:720px;height:100%;position:relative;overflow:hidden;visibility:hidden;border-inline:1px solid var(--bd2);display:flex;flex-direction:column;
   background:
-    radial-gradient(120% 55% at 100% 0%,rgba(70,110,210,.10),transparent 60%),
-    radial-gradient(80% 40% at 0% 38%,rgba(49,211,162,.05),transparent 70%),
+    radial-gradient(120% 55% at 100% 0%,rgba(70,110,210,.18),transparent 60%),
+    radial-gradient(80% 40% at 0% 38%,rgba(49,211,162,.11),transparent 70%),
     linear-gradient(180deg,#080E1F 0%,#070D1D 55%,#050A16 100%)}
 .app::before{content:"";position:absolute;top:-10%;right:-25%;width:75%;height:55%;pointer-events:none;
   background:linear-gradient(118deg,transparent 30%,rgba(90,130,230,.07) 48%,transparent 62%);transform:rotate(-8deg);filter:blur(2px)}
@@ -63,11 +63,11 @@ svg{display:block}
 .content::-webkit-scrollbar{display:none}
 .content>*{flex-shrink:0}
 
-.hello h1{font-weight:600;font-size:1.55rem;line-height:1.15;letter-spacing:-.2px}
-.hello h1 .nm{display:block;font-size:2.15rem;font-weight:700;color:var(--em);background:var(--logo-grad-h);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px;overflow-wrap:anywhere;padding-bottom:.08em}
+.hello h1{font-weight:600;font-size:1.7rem;line-height:1.2;letter-spacing:-.3px}
+.hello h1 .nm{margin-left:.28em;overflow-wrap:anywhere}
 .hello p{font-size:.95rem;color:var(--mut);margin-top:8px;line-height:1.45;max-width:30ch}
 
-.card{background:var(--glass);border:1px solid var(--bd);border-radius:var(--r);padding:16px;min-width:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.card{background:radial-gradient(120% 90% at 0% 0%,rgba(255,255,255,.055),transparent 55%),var(--glass);border:1px solid var(--bd);border-radius:var(--r);padding:16px;min-width:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 30px -16px rgba(0,0,0,.7)}
 .btn-solid{height:50px;padding:0 20px;border:none;border-radius:14px;background:var(--logo-grad);box-shadow:0 6px 18px var(--logo-glow);color:#06101A;font-weight:700;font-size:1rem}
 .btn-solid:active{transform:scale(.98)}
 .btn-solid:disabled{opacity:.6}
@@ -80,15 +80,17 @@ svg{display:block}
 .cd-ico{width:38px;height:38px;border-radius:11px;background:var(--em-soft);border:1px solid var(--bd);color:var(--em);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .cd-ico svg{width:20px;height:20px}
 .cd-title{flex:1;min-width:0}
-.cd-title h2{font-size:.95rem;font-weight:600}
+.cd-title h2{font-size:1.05rem;font-weight:600}
 .cd-title p{font-size:.8rem;color:var(--mut);margin-top:2px;overflow-wrap:anywhere}
 .cd-edit{width:36px;height:36px;border-radius:50%;background:none;border:none;color:var(--mut);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .cd-edit svg{width:20px;height:20px}
-.cd-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px;border-top:1px solid var(--bd2);padding-top:14px}
-.cd-box{text-align:center;padding:2px 2px}
+.cd-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;align-items:end;margin-top:16px;padding-top:16px;border-top:1px solid var(--bd2)}
+.cd-box{text-align:left;padding:0 0 0 14px}
+.cd-box:first-child{padding-left:0}
 .cd-box+.cd-box{border-left:1px solid var(--bd2)}
-.cd-num{font-size:clamp(1.4rem,7vw,1.8rem);font-weight:700;color:var(--tx);font-variant-numeric:tabular-nums;line-height:1.1}
-.cd-lab{font-size:.72rem;color:var(--mut);margin-top:4px}
+.cd-num{font-size:1.4rem;font-weight:600;color:var(--tx);font-variant-numeric:tabular-nums;line-height:1}
+.cd-box:first-child .cd-num{font-family:var(--serif);font-size:clamp(3rem,15vw,3.9rem);font-weight:600;color:var(--em);letter-spacing:-1px;line-height:.95}
+.cd-lab{font-size:.74rem;color:var(--mut);margin-top:6px}
 .date-row{display:flex;gap:10px;margin-top:14px}
 .date-input{flex:1;min-width:0;height:50px;background:rgba(0,0,0,.25);border:1px solid var(--bd);border-radius:14px;padding:0 14px;color:var(--tx);font-size:16px;color-scheme:dark;outline:none}
 .date-input:focus{border-color:var(--em)}
@@ -208,9 +210,17 @@ button.nav-item{background:none;border:none;font-family:inherit}
 .sheet textarea:focus{border-color:var(--em)}
 .err{font-size:.8rem;color:#f87171}
 
+/* Header actions + profile */
+.topbar{background:rgba(7,13,29,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bd2)}
+.top-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.avatar-btn.on{background:linear-gradient(135deg,var(--em),var(--em2)) center/cover no-repeat;color:#06101A;font-weight:700;font-size:1rem;border-color:rgba(255,255,255,.18);box-shadow:0 0 0 3px rgba(49,211,162,.12)}
+.hello h1,.hello h1 span,.learn h2,.sec-head h3,.cd-title h2{font-family:var(--serif)}
+.sec-head h3{font-size:1.1rem}
+.cd-card{padding:18px;border-color:#2A4058;background:radial-gradient(90% 120% at 100% 0%,rgba(49,211,162,.13),transparent 60%),radial-gradient(120% 90% at 0% 0%,rgba(255,255,255,.06),transparent 55%),var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 18px 40px -18px rgba(49,211,162,.28)}
+
 @media (max-width:360px){
   .topbar{padding-inline:14px}.content{padding-inline:14px;gap:14px}
-  .hello h1{font-size:1.35rem}.hello h1 .nm{font-size:1.8rem}.learn h2{font-size:1.2rem}
+  .hello h1{font-size:1.45rem}.learn h2{font-size:1.2rem}
   .bottom-nav{left:8px;right:8px}.nav-item{font-size:.64rem}.qa a{font-size:.66rem}
 }
 @media (min-width:600px){.content{padding-inline:28px;gap:20px}.topbar{padding-inline:28px}.bottom-nav{left:24px;right:24px}}
@@ -254,10 +264,13 @@ button.nav-item{background:none;border:none;font-family:inherit}
         <img src="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png" alt="" width="42" height="42">
         <span>PRIME-CBT</span>
       </a>
+      <div class="top-actions">
       <a href="notification.html" class="icon-btn" aria-label="Notifications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
         <span class="badge-dot" id="notifDot" hidden></span>
       </a>
+      <a href="profile.html" class="icon-btn avatar-btn" id="topAvatar" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></a>
+      </div>
     </header>
 
     <main class="content">
@@ -268,15 +281,15 @@ button.nav-item{background:none;border:none;font-family:inherit}
       <div class="online-pill span-all" id="onlinePill"><span class="online-dot"></span><span id="onlineText"></span></div>
 
       <!-- Exam countdown -->
-      <section class="card" id="examPanel">
+      <section class="card cd-card" id="examPanel">
         <div class="cd-head">
           <span class="cd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-          <div class="cd-title"><h2>Exam Countdown</h2><p id="examCaption">Set your exam date to start counting down.</p></div>
+          <div class="cd-title"><h2>Exam countdown</h2><p id="examCaption">Set your exam date to start counting down.</p></div>
           <button type="button" class="cd-edit" id="examEdit" aria-label="Change exam date" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
         </div>
         <div id="examSet" style="display:none">
           <div class="cd-grid" id="cdGrid">
-            <div class="cd-box"><div class="cd-num" id="cdD">0</div><div class="cd-lab">Days</div></div>
+            <div class="cd-box"><div class="cd-num" id="cdD">0</div><div class="cd-lab">Days to go</div></div>
             <div class="cd-box"><div class="cd-num" id="cdH">00</div><div class="cd-lab">Hours</div></div>
             <div class="cd-box"><div class="cd-num" id="cdM">00</div><div class="cd-lab">Mins</div></div>
             <div class="cd-box"><div class="cd-num" id="cdS">00</div><div class="cd-lab">Secs</div></div>
@@ -826,6 +839,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const av = $('menuAvatar'), photo = pickAvatar(p, meta);
     if (photo) { av.textContent = ''; av.style.backgroundImage = 'url("' + String(photo).replace(/["\\]/g, '') + '")'; }
     else { av.style.backgroundImage = ''; av.textContent = firstName.charAt(0).toUpperCase(); }
+    const ta = $('topAvatar'); ta.classList.add('on');
+    if (photo) { ta.textContent = ''; ta.style.backgroundImage = 'url("' + String(photo).replace(/["\\]/g, '') + '")'; }
+    else { ta.style.backgroundImage = ''; ta.textContent = firstName.charAt(0).toUpperCase(); }
   }
   let identityBusy = false;
   async function refreshIdentity() {
