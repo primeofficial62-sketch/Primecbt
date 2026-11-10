@@ -3,23 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070D1C">
+  <link rel="icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+  <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
   <title>PRIME-CBT — Discussion</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060b1a;
-      --surface: #0f172a;
-      --surface-2: #1e293b;
-      --border: #334155;
-      --text: #f1f5f9;
+      /* PRIME-CBT design-system values */
+      --bg: #070D1C;
+      --surface: #10192B;
+      --surface-2: #17233A;
+      --border: #2A3850;
+      --text: #F4F6FC;
       --muted-1: #cbd5e1;
-      --muted-2: #94a3b8;
-      --muted-3: #64748b;
-      --muted-4: #475569;
-      --emerald: #10b981;
-      --emerald-bright: #34d399;
+      --muted-2: #9BA8BE;
+      --muted-3: #6F7F99;
+      --muted-4: #344256;
+      --emerald: #31D3A2;
+      --emerald-bright: #31D3A2;
+      --emerald-hover: #4BE0B5;
+      --on-emerald: #070D1C;
+      --field: #0B1324;
+      --ring: rgba(49, 211, 162, 0.2);
+      --line: rgba(49, 211, 162, 0.22);
+      --card: linear-gradient(160deg, #15233C 0%, #0D1627 100%);
       --red: #f87171;
       --amber: #fbbf24;
       --radius: 16px;
@@ -44,6 +55,8 @@
 
     body {
       background-color: var(--bg);
+      background-image: radial-gradient(760px 420px at 50% -90px, rgba(49, 211, 162, 0.13), transparent 70%);
+      background-repeat: no-repeat;
       color: var(--text);
       overflow: hidden;
       -webkit-text-size-adjust: 100%;
@@ -306,6 +319,29 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
     }
+
+    /* ---- PRIME-CBT upgrade additions ---- */
+    .topbar, .reply-dock { background: rgba(7, 13, 28, 0.88); }
+    .topbar-text h1 { font-family: 'Lora', serif; }
+    .back-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--surface); }
+    .back-btn:hover { background: var(--surface-2); border-color: var(--muted-3); }
+    .post-card { background: var(--card); border-color: var(--line); border-radius: 22px; }
+    .post-card:hover { border-color: rgba(49, 211, 162, 0.45); }
+    .reply-card { border-color: var(--line); }
+    .reply-card:hover { border-color: rgba(49, 211, 162, 0.45); }
+    .action-btn { min-height: 44px; }
+    .reply-actions button { min-height: 44px; padding: 6px 12px; }
+    .sort-btn { min-height: 44px; border-radius: 999px; padding: 8px 16px; }
+    .reply-input-wrap:focus-within { box-shadow: 0 0 0 3px var(--ring); }
+    .reply-input-wrap input { min-height: 44px; }
+    .reply-input-wrap button { width: 44px; height: 44px; color: var(--on-emerald); box-shadow: 0 6px 18px rgba(49, 211, 162, 0.28); }
+    .reply-input-wrap button:hover { background: var(--emerald-hover); }
+    .banner { margin-bottom: 0; }
+    .reply-input-wrap input:focus-visible { outline: none; }
+    /* loading skeleton (shimmer) */
+    .sk { display: block; height: 14px; border-radius: 8px; background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
+    .sk-wrap { display: flex; flex-direction: column; gap: 10px; width: min(100%, 320px); margin: 14px auto 0; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   </style>
 </head>
 <body>
@@ -321,8 +357,8 @@
     </div>
 
     <div class="content" id="scrollContent">
-      <div class="banner" id="errorBanner" hidden></div>
-      <div class="state-msg" id="loadingMsg">Loading discussion...</div>
+      <div class="banner" id="errorBanner" role="alert" hidden></div>
+      <div class="state-msg" id="loadingMsg" role="status">Loading discussion...<div class="sk-wrap" aria-hidden="true"><span class="sk"></span><span class="sk" style="width:80%"></span><span class="sk" style="width:60%"></span></div></div>
 
       <article class="post-card" id="postCard" hidden>
         <div class="post-author">
@@ -365,7 +401,7 @@
       <form id="replyForm" class="reply-form" autocomplete="off">
         <div class="author-avatar purple" id="meAvatar" style="width:36px;height:36px;font-size:.8rem;"></div>
         <div class="reply-input-wrap">
-          <input type="text" id="replyInput" placeholder="Write a reply..." maxlength="2000" enterkeyhint="send">
+          <input type="text" id="replyInput" aria-label="Write a reply" placeholder="Write a reply..." maxlength="2000" enterkeyhint="send">
           <button type="submit" id="sendBtn" aria-label="Send reply">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           </button>
@@ -384,6 +420,9 @@
     const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const LOGIN_URL = 'auth.html?mode=login';
+    // Logged-out visitors come back to this discussion after login; logout still uses plain LOGIN_URL.
+    const PAGE_NAME = location.pathname.split('/').pop() || '';
+    const LOGIN_NEXT = /\.html$/i.test(PAGE_NAME) ? LOGIN_URL + '&next=' + encodeURIComponent(PAGE_NAME + location.search) : LOGIN_URL;
 
     const $ = (id) => document.getElementById(id);
     const content = $('scrollContent'), replyList = $('replyList');
@@ -399,6 +438,7 @@
     const replyLikes = new Map();        // reply id -> Set(user ids)
     const seen = new Set();              // reply ids already rendered (for enter animation)
     let sortMode = 'top';                // top | new | old
+    let wasDown = false;                 // live connection dropped (reload on reconnect)
     const SORTS = { top: 'Most liked', new: 'Newest', old: 'Oldest' };
 
     /* ───── Helpers ───── */
@@ -517,6 +557,7 @@
       const likes = likeSet(r.id);
       const likeBtn = el('button', likes.has(me.id) ? 'active' : '', 'Like · ' + likes.size);
       likeBtn.type = 'button';
+      likeBtn.setAttribute('aria-pressed', String(likes.has(me.id)));
       likeBtn.addEventListener('click', () => toggleReplyLike(r.id));
       const replyBtn = el('button', null, 'Reply');
       replyBtn.type = 'button';
@@ -685,11 +726,16 @@
           if (p.old && p.old.id === postId) showGone();
         })
         .subscribe((status) => {
-          if (status === 'SUBSCRIBED') showError('');
-          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') showError('Live connection lost. Reconnecting...');
+          if (status === 'SUBSCRIBED') { showError(''); if (wasDown) { wasDown = false; resync(); } }
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { wasDown = true; showError('Live connection lost. Reconnecting...'); }
         });
     }
 
+    // after a dropped live connection reconnects, reload what was missed
+    async function resync() {
+      if (!post) return;
+      try { if (await loadAll()) { renderPost(); renderReplies(); } else showGone(); } catch (_) {}
+    }
     setInterval(refreshTimes, 30000);
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState !== 'visible' || !post) return;
@@ -700,7 +746,7 @@
     (async function init() {
       let session = null;
       try { session = (await supabaseClient.auth.getSession()).data.session; } catch (_) {}
-      if (!session) { location.replace(LOGIN_URL); return; }
+      if (!session) { location.replace(LOGIN_NEXT); return; }
       if (typeof needsProfileSetup === 'function' && needsProfileSetup(session.user)) {
         location.replace('profile-setup.html'); return;
       }
