@@ -3,25 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070D1C">
   <title>Create Study Plan — PRIME-CBT</title>
   <link rel="icon" type="image/png" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060b1a;
-      --surface: #0f172a;
-      --surface-2: #1e293b;
-      --border: #334155;
-      --text: #f1f5f9;
+      /* PRIME-CBT design-system values */
+      --bg: #070D1C;
+      --surface: #10192B;
+      --surface-2: #17233A;
+      --border: #2A3850;
+      --text: #F4F6FC;
       --text-2: #cbd5e1;
-      --text-3: #94a3b8;
-      --text-4: #64748b;
-      --emerald-400: #34d399;
-      --emerald-500: #10b981;
+      --text-3: #9BA8BE;
+      --text-4: #6F7F99;
+      --emerald-400: #31D3A2;
+      --emerald-500: #31D3A2;
       --red-400: #f87171;
+      --field: #0B1324;
+      --ring: rgba(49, 211, 162, 0.2);
+      --line: rgba(49, 211, 162, 0.22);
+      --card: linear-gradient(160deg, #15233C 0%, #0D1627 100%);
+      --emerald-hover: #4BE0B5;
+      --on-emerald: #070D1C;
       --ease: cubic-bezier(0.4, 0, 0.2, 1);
 
       /* Content column: fluid on small screens, centered max 720px on large ones */
@@ -45,6 +54,8 @@
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
+      background-image: radial-gradient(760px 420px at 50% -90px, rgba(49, 211, 162, 0.13), transparent 70%);
+      background-repeat: no-repeat;
       color: var(--text);
       -webkit-font-smoothing: antialiased;
       -webkit-text-size-adjust: 100%;
@@ -79,7 +90,8 @@
       z-index: 40;
     }
     .icon-btn {
-      width: 40px; height: 40px; flex-shrink: 0;
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: var(--surface); border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       border-radius: 999px; color: var(--text-2); text-decoration: none;
       transition: background 0.25s var(--ease), transform 0.15s var(--ease);
@@ -217,6 +229,21 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
+
+    /* ---- PRIME-CBT upgrade additions ---- */
+    .topbar h1 { font-family: 'Lora', serif; font-weight: 700; }
+    .field { height: 54px; border-radius: 16px; background: var(--field); }
+    .field:focus { box-shadow: 0 0 0 3px var(--ring); }
+    .field:focus-visible { outline: none; }
+    .option { border-radius: 14px; min-height: 48px; }
+    .option.selected { background: rgba(49, 211, 162, 0.12); }
+    .summary { background: var(--card); border-color: var(--line); border-radius: 20px; }
+    .cta { height: auto; min-height: 54px; border-radius: 999px; color: var(--on-emerald); box-shadow: 0 8px 24px rgba(49, 211, 162, 0.28); }
+    .cta:disabled { opacity: 0.6; }
+    @media (hover: hover) {
+      .cta:not(:disabled):hover { background: var(--emerald-hover); }
+      .summary:hover { border-color: rgba(49, 211, 162, 0.45); }
+    }
   </style>
 </head>
 <body>
@@ -237,7 +264,7 @@
 
       <section class="block">
         <h2>Target Score</h2>
-        <div class="opt-grid three" id="scoreGroup">
+        <div class="opt-grid three" id="scoreGroup" role="group" aria-label="Target score">
           <button type="button" class="option selected" data-value="70%+">70%+</button>
           <button type="button" class="option" data-value="80%+">80%+</button>
           <button type="button" class="option" data-value="90%+">90%+</button>
@@ -246,7 +273,7 @@
 
       <section class="block">
         <h2>Daily Study Time</h2>
-        <div class="opt-grid two" id="timeGroup">
+        <div class="opt-grid two" id="timeGroup" role="group" aria-label="Daily study time">
           <button type="button" class="option" data-value="30 mins">30 mins</button>
           <button type="button" class="option selected" data-value="1 hour">1 hour</button>
           <button type="button" class="option" data-value="1.5 hours">1.5 hours</button>
@@ -256,7 +283,7 @@
 
       <section class="block">
         <h2>Study Days</h2>
-        <div class="opt-grid days" id="daysGroup">
+        <div class="opt-grid days" id="daysGroup" role="group" aria-label="Study days">
           <button type="button" class="option selected" data-day="Mon">Mon</button>
           <button type="button" class="option selected" data-day="Tue">Tue</button>
           <button type="button" class="option selected" data-day="Wed">Wed</button>
@@ -347,6 +374,7 @@
       }
 
       function renderSummary() {
+        document.querySelectorAll('.option').forEach((b) => b.setAttribute('aria-pressed', String(b.classList.contains('selected'))));
         const sum = $('summary');
         const exam = examInput.value;
         const days = selectedDays();
@@ -505,7 +533,12 @@
           session = res.data && res.data.session;
         } catch (e) { session = null; }
 
-        if (!session) { window.location.replace('auth.html?mode=login'); return; }
+        if (!session) {
+          // come back to this page after login (logout elsewhere still goes to plain auth.html?mode=login)
+          const pg = window.location.pathname.split('/').pop();
+          window.location.replace('auth.html?mode=login' + (/\.html$/i.test(pg) ? '&next=' + encodeURIComponent(pg) : ''));
+          return;
+        }
         if (needsProfileSetup(session.user)) { window.location.replace('profile-setup.html'); return; }
 
         user = session.user;
