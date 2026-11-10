@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#070D1D">
 <title>PRIME-CBT — Home</title>
 <link rel="icon" type="image/png" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://xuofkjjhupgmrphzgyun.supabase.co" crossorigin>
@@ -243,6 +244,26 @@ button.nav-item{background:none;border:none;font-family:inherit}
 .day.today{color:var(--tx)}
 .day.today i{border-color:var(--em)}
 
+/* Install card */
+.install{display:flex;align-items:center;gap:12px;padding:12px 14px;border-color:rgba(49,211,162,.4)}
+.install[hidden],.banner[hidden],.weak[hidden],.mile[hidden]{display:none}
+.install .tool-body b{font-size:.9rem}
+.install .btn-solid{height:40px;padding:0 16px;font-size:.88rem;border-radius:12px}
+.x-btn{background:none;border:none;color:var(--mut);font-size:16px;padding:6px;flex-shrink:0}
+/* Announcement banner */
+.banner{display:flex;align-items:center;gap:10px;padding:10px 12px;border-color:rgba(49,211,162,.4)}
+.banner a{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.banner .tool-body b,.banner .tool-body span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Countdown milestone */
+.mile{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--em-soft);border:1px solid rgba(49,211,162,.3);font-size:.82rem;line-height:1.4;color:var(--tx)}
+/* Weak topics */
+.weak-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.weak-row+.weak-row{border-top:1px solid var(--bd2)}
+.weak-row b{flex:1;min-width:0;font-size:.9rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.weak-bar{width:72px;height:6px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;flex-shrink:0}
+.weak-bar i{display:block;height:100%;border-radius:99px;background:#fbbf24}
+.weak-pct{width:38px;text-align:right;font-size:.8rem;color:var(--mut);font-variant-numeric:tabular-nums}
+
 @media (max-width:360px){
   .topbar{padding-inline:14px}.content{padding-inline:14px;gap:14px}
   .hello h1{font-size:1.45rem}.learn h2{font-size:1.2rem}
@@ -305,6 +326,20 @@ button.nav-item{background:none;border:none;font-family:inherit}
       </div>
       <div class="online-pill span-all" id="onlinePill"><span class="online-dot"></span><span id="onlineText"></span></div>
 
+      <!-- Latest announcement -->
+      <div class="card banner span-all" id="annBanner" hidden>
+        <a href="notification.html"><span style="font-size:22px">📢</span><span class="tool-body"><b id="annTitle"></b><span id="annText"></span></span></a>
+        <button type="button" class="x-btn" id="annClose" aria-label="Dismiss">✕</button>
+      </div>
+
+      <!-- Install app (Chrome only, shown when installable) -->
+      <div class="card install span-all" id="installCard" hidden>
+        <span class="cd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span>
+        <span class="tool-body"><b>Install PRIME-CBT</b><span>Add it to your home screen.</span></span>
+        <button type="button" class="btn-solid" id="installBtn">Install</button>
+        <button type="button" class="x-btn" id="installClose" aria-label="Dismiss">✕</button>
+      </div>
+
       <!-- Exam countdown -->
       <section class="card cd-card" id="examPanel">
         <div class="cd-head">
@@ -319,6 +354,7 @@ button.nav-item{background:none;border:none;font-family:inherit}
             <div class="cd-box"><div class="cd-num" id="cdM">00</div><div class="cd-lab">Mins</div></div>
             <div class="cd-box"><div class="cd-num" id="cdS">00</div><div class="cd-lab">Secs</div></div>
           </div>
+          <div class="mile" id="cdMile" hidden></div>
         </div>
         <div id="examForm">
           <div class="date-row">
@@ -354,6 +390,19 @@ button.nav-item{background:none;border:none;font-family:inherit}
           <span class="count" id="learnCount"></span>
           <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
         </div>
+      </a>
+
+      <!-- Weak topics -->
+      <section class="card weak" id="weakCard" hidden>
+        <div class="sec-head" style="margin-bottom:4px"><h3>Weak topics</h3><span class="count">Tap to practise</span></div>
+        <div id="weakList"></div>
+      </section>
+
+      <!-- AI assistant shortcut -->
+      <a href="ai-assistant.html" class="card tool" id="aiCard">
+        <span class="cd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V4H8M2 14h2M20 14h2M9 13v2M15 13v2"/></svg></span>
+        <span class="tool-body"><b>Ask the AI Assistant</b><span id="aiQ">"Explain this topic simply"</span></span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
       </a>
 
       <!-- Recent activity -->
@@ -481,6 +530,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const pad = (n) => String(n).padStart(2, '0');
   const dateStr = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 
+  // ----- Instant first paint: reuse the last known name + subject while sign-in finishes -----
+  const SNAP = 'pcbt_snap';
+  const getSnap = () => { try { return JSON.parse(localStorage.getItem(SNAP)); } catch (e) { return null; } };
+  const putSnap = (o) => { try { localStorage.setItem(SNAP, JSON.stringify(Object.assign(getSnap() || {}, o))); } catch (e) {} };
+  (function () {
+    const sn = getSnap();
+    if (!sn || !sn.name) return;
+    const hr = new Date().getHours();
+    $('greetText').textContent = (hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening') + ',';
+    $('greetName').textContent = sn.name;
+    if (sn.last && sn.last.subject) {
+      $('learnLab').textContent = 'Continue Learning';
+      $('learnTitle').textContent = sn.last.subject;
+      $('learnSub').textContent = sn.last.topic || 'Pick up where you left off.';
+      $('learnBarWrap').style.visibility = 'hidden';
+      $('learnCard').href = 'practice.html?subject=' + encodeURIComponent(sn.last.subject);
+    }
+    $('appRoot').classList.add('ready');
+  })();
+
   // ----- Bottom nav: highlight current route -----
   const here = (location.pathname.split('/').pop() || 'home.html').toLowerCase();
   document.querySelectorAll('.nav-item').forEach((a) => {
@@ -492,6 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('logoutBtn').addEventListener('click', async () => {
+    try { localStorage.removeItem(SNAP); } catch (e) {}
     await supabaseClient.auth.signOut();
     window.location.replace('auth.html?mode=login');
   });
@@ -606,6 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderUpdates() {
     const latest = notifs.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 3);
     $('updatesSection').classList.toggle('on', latest.length > 0);
+    renderAnnouncement();
     const list = $('updatesList');
     list.innerHTML = '';
     latest.forEach((n) => {
@@ -671,6 +742,14 @@ document.addEventListener('DOMContentLoaded', () => {
       cap.textContent = msg || 'Set your exam date to start counting down.';
       input.value = canCancel ? examDate : '';
     }
+    let mileKey = null;
+    function mile(days) {
+      const k = days <= 1 ? 1 : days <= 7 ? 7 : days <= 14 ? 14 : days <= 30 ? 30 : 0;
+      if (k === mileKey) return;
+      mileKey = k;
+      const M = { 1: 'Final day. Do light revision and sleep early.', 7: 'Final week. Focus on weak topics and timed practice.', 14: '2 weeks left. Time to switch to past questions.', 30: '1 month to go. Build a steady daily study routine.' };
+      $('cdMile').hidden = !k; $('cdMile').textContent = k ? M[k] : '';
+    }
     function tick() {
       const diff = target() - Date.now();
       if (diff <= 0) {
@@ -686,9 +765,10 @@ document.addEventListener('DOMContentLoaded', () => {
       $('cdH').textContent = pad(Math.floor((s % 86400) / 3600));
       $('cdM').textContent = pad(Math.floor((s % 3600) / 60));
       $('cdS').textContent = pad(s % 60);
+      mile(Math.floor(s / 86400));
     }
     function render() {
-      clearInterval(ticker);
+      clearInterval(ticker); mileKey = null;
       if (!examDate) { showForm(); return; }
       examForm.style.display = 'none'; examSet.style.display = ''; examEdit.style.display = '';
       $('cdGrid').style.display = '';
@@ -727,6 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initLearning(user) {
     const last = readJSON('pcbt_last_' + user.id, null);
     const card = $('learnCard');
+    putSnap({ last: last && last.subject ? { subject: last.subject, topic: last.topic || '' } : null });
     if (last && last.subject) {
       const done = Math.max(0, Number(last.done) || 0), total = Math.max(0, Number(last.total) || 0);
       $('learnLab').textContent = 'Continue Learning';
@@ -737,8 +818,12 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(() => { $('learnBar').style.width = Math.min(100, Math.round(done / total * 100)) + '%'; });
       } else { $('learnBarWrap').style.visibility = 'hidden'; }
       card.href = 'practice.html?subject=' + encodeURIComponent(last.subject);
+      const q = 'Explain ' + (last.topic || last.subject) + ' simply';
+      $('aiQ').textContent = '"' + q + '"';
+      $('aiCard').href = 'ai-assistant.html?q=' + encodeURIComponent(q);
     } else {
       $('learnBarWrap').style.visibility = 'hidden';
+      $('aiCard').href = 'ai-assistant.html?q=' + encodeURIComponent('Explain this topic simply');
     }
   }
   function initActivity(user) {
@@ -818,6 +903,44 @@ document.addEventListener('DOMContentLoaded', () => {
     draw(); drawStats();
   }
 
+  // ----- Weak topics -----
+  // Practice pages save per-subject results in  pcbt_scores_<uid> -> { "Biology": { correct: 12, total: 30 }, ... }
+  function initWeak(user) {
+    const scores = readJSON('pcbt_scores_' + user.id, {});
+    const rows = Object.keys(scores).map((k) => {
+      const c = Number(scores[k].correct) || 0, t = Number(scores[k].total) || 0;
+      return { name: k, pct: t > 0 ? Math.round(c / t * 100) : null, total: t };
+    }).filter((r) => r.pct !== null && r.total >= 5 && r.pct < 70).sort((a, b) => a.pct - b.pct).slice(0, 3);
+    $('weakCard').hidden = !rows.length;
+    const list = $('weakList'); list.innerHTML = '';
+    rows.forEach((r) => {
+      const a = document.createElement('a'); a.className = 'weak-row';
+      a.href = 'practice.html?subject=' + encodeURIComponent(r.name);
+      const b = document.createElement('b'); b.textContent = r.name;
+      const bar = document.createElement('span'); bar.className = 'weak-bar';
+      const i = document.createElement('i'); i.style.width = r.pct + '%'; bar.appendChild(i);
+      const pc = document.createElement('span'); pc.className = 'weak-pct'; pc.textContent = r.pct + '%';
+      a.append(b, bar, pc); list.appendChild(a);
+    });
+  }
+
+  // ----- Latest announcement banner (from the notifications already loaded) -----
+  function renderAnnouncement() {
+    const DAY7 = 7 * 864e5;
+    let gone = ''; try { gone = localStorage.getItem('pcbt_ann_gone') || ''; } catch (e) {}
+    const a = notifs.filter((n) => n.type === 'announcement' && String(n.id) !== gone && Date.now() - new Date(n.created_at).getTime() < DAY7)
+      .sort((x, y) => new Date(y.created_at) - new Date(x.created_at))[0];
+    $('annBanner').hidden = !a;
+    if (!a) return;
+    $('annTitle').textContent = a.title || 'Announcement';
+    $('annText').textContent = a.body || '';
+    $('annBanner').dataset.id = a.id;
+  }
+  $('annClose').addEventListener('click', () => {
+    try { localStorage.setItem('pcbt_ann_gone', $('annBanner').dataset.id || ''); } catch (e) {}
+    $('annBanner').hidden = true;
+  });
+
   // ----- Daily tip -----
   const TIPS = [
     'Read every option before you pick one. CBT questions often include answers that are almost right.',
@@ -858,6 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hr = new Date().getHours();
     $('greetText').textContent = (hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening') + ',';
     $('greetName').textContent = firstName;
+    putSnap({ name: firstName });
     $('menuUsername').textContent = fullName;
     $('menuUsersub').textContent = user.email || '';
     const av = $('menuAvatar'), photo = pickAvatar(p, meta);
@@ -885,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadUser() {
     let session = null;
     try { const res = await supabaseClient.auth.getSession(); session = res.data && res.data.session; } catch (e) {}
-    if (!session) { window.location.replace('auth.html?mode=login'); return; }
+    if (!session) { try { localStorage.removeItem(SNAP); } catch (e) {} window.location.replace('auth.html?mode=login'); return; }
     if (needsProfileSetup(session.user)) { window.location.replace('profile-setup.html'); return; }
     const user = session.user;
     fetch('/api/email?action=ping', {
@@ -894,7 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(() => {});
     paintIdentity(user, {});
     refreshIdentity();
-    initTip(); initExam(user); initLearning(user); initActivity(user); initFocus(user); startNotifications(user);
+    initTip(); initExam(user); initLearning(user); initWeak(user); initActivity(user); initFocus(user); startNotifications(user);
     setTimeout(() => initPresence(user), 1500);
     $('appRoot').classList.add('ready');
   }
@@ -941,6 +1065,26 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 </script>
 <script src="/push.js"></script>
-<script src="/install-prompt.js" defer></script>
+<script>
+// Chrome install button: shows only when the browser says the site is installable.
+(function () {
+  var card = document.getElementById('installCard'), KEY = 'pcbt_install_dismissed', dp = null;
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+  var snoozed = function () { try { return Date.now() - Number(localStorage.getItem(KEY) || 0) < 7 * 864e5; } catch (e) { return false; } };
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); dp = e;
+    if (!standalone && !snoozed()) card.hidden = false;
+  });
+  document.getElementById('installBtn').addEventListener('click', function () {
+    if (!dp) return;
+    card.hidden = true; dp.prompt();
+    dp.userChoice.catch(function () {}).then(function () { dp = null; });
+  });
+  document.getElementById('installClose').addEventListener('click', function () {
+    card.hidden = true; try { localStorage.setItem(KEY, Date.now()); } catch (e) {}
+  });
+  window.addEventListener('appinstalled', function () { card.hidden = true; dp = null; });
+})();
+</script>
 </body>
 </html>
