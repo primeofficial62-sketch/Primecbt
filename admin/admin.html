@@ -991,7 +991,7 @@ async function compressPdf(file, onProgress) {
     });
     var d = {};
     try { d = await res.json(); } catch (e) {}
-    if (!res.ok || !d.pdf_url) throw new Error(d.error || 'Conversion failed (' + res.status + ')');
+        if (!res.ok || !d.pdf_url) { var er = new Error(d.error || 'Conversion failed (' + res.status + ')'); er.status = res.status; throw er; }
     try { var pdf = await pdfjsLib.getDocument({ url: d.pdf_url }).promise; d.pages = pdf.numPages; } catch (e) {}
     return d;
   }
