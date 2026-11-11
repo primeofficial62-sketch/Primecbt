@@ -1018,7 +1018,7 @@ async function compressPdf(file, onProgress) {
       } catch (e) {
         bad++;
         if ($('cvLog')) $('cvLog').insertAdjacentHTML('beforeend', '<div class="row"><div class="row-main"><div class="row-title">' + esc(m.title || 'file') + '</div><div class="row-sub">' + esc(e.message) + '</div></div></div>');
-        if (e.status === 401) break;
+                if (e.status === 401 || /not verified|unauthorized|invalid api key|quota|credits/i.test(e.message)) { toast('Stopped: ' + e.message, true, 8000); break; }
       }
     }
     if ($('cvTxt')) $('cvTxt').textContent = 'Finished. ' + good + ' converted' + (bad ? ', ' + bad + ' failed' : '') + '.';
