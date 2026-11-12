@@ -3,33 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#060b1a">
+  <meta name="theme-color" content="#03100C">
   <title>Settings — PRIME-CBT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --bg-dark: #060b1a;
-      --card-bg: #0f172a;
-      --card-bg-alt: #1e293b;
-      --input-bg: #1e293b;
-      --border-color: #334155;
+      --bg: #03100C;
+      --card: #0B221B;
+      --surf: #12312A;
+      --dim: #071812;
+      --input-bg: rgba(0, 0, 0, 0.28);
 
-      --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --text-muted: #94a3b8;
-      --text-subtle: #64748b;
-      --text-disabled: #475569;
+      --em: #2FE0A8;
+      --em2: #1BA97F;
+      --em-soft: rgba(47, 224, 168, 0.14);
+      --brand: linear-gradient(135deg, #2ED8A3 0%, #22B8E8 55%, #1F6FD6 100%);
 
-      --emerald-400: #34d399;
-      --emerald-500: #10b981;
-      --teal-400: #2dd4bf;
-      --red-400: #f87171;
-      --red-500: #ef4444;
-      --amber-400: #fbbf24;
+      --tx: #F2FAF6;
+      --tx2: #CFE3DB;
+      --mut: #8FB0A5;
+      --mut2: #6C8E83;
 
+      --bd: rgba(47, 224, 168, 0.16);
+      --bd2: rgba(255, 255, 255, 0.07);
+      --glass: linear-gradient(160deg, rgba(20, 56, 46, 0.62), rgba(8, 26, 21, 0.78));
+
+      --red: #f87171;
       --pad: clamp(1rem, 4vw, 2rem);
     }
 
@@ -41,17 +43,15 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Everything is in rem, so the page scales fluidly with the screen.
-       16px base matches the rest of the site. */
     html {
       font-size: clamp(16px, 15px + 0.35vw, 18px);
       -webkit-text-size-adjust: 100%;
-      background: var(--bg-dark);
+      background: var(--bg);
     }
 
     body {
-      background: var(--bg-dark);
-      color: var(--text-primary);
+      background: var(--bg);
+      color: var(--tx);
       min-height: 100vh;
       min-height: 100dvh;
       display: flex;
@@ -60,8 +60,6 @@
     }
 
     [hidden] { display: none !important; }
-
-    /* Font Awesome icons need their own font family */
     .fas, .fa-solid { font-family: "Font Awesome 6 Free" !important; font-weight: 900; }
 
     .app {
@@ -71,10 +69,14 @@
       min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      position: relative;
+      background:
+        radial-gradient(120% 40% at 100% 0%, rgba(47, 224, 168, 0.18), transparent 60%),
+        radial-gradient(70% 30% at 0% 45%, rgba(34, 184, 232, 0.07), transparent 70%),
+        linear-gradient(180deg, #05150F 0%, #03100C 50%, #020B08 100%);
     }
-
     @media (min-width: 64rem) {
-      .app { border-left: 1px solid rgba(51, 65, 85, 0.5); border-right: 1px solid rgba(51, 65, 85, 0.5); }
+      .app { border-left: 1px solid var(--bd2); border-right: 1px solid var(--bd2); }
     }
 
     /* ---------- Header ---------- */
@@ -85,16 +87,15 @@
       display: flex;
       align-items: center;
       gap: 0.9rem;
-      padding: max(1rem, env(safe-area-inset-top)) var(--pad) 1rem;
+      padding: max(0.85rem, env(safe-area-inset-top)) var(--pad) 0.85rem;
       padding-left: max(var(--pad), env(safe-area-inset-left));
       padding-right: max(var(--pad), env(safe-area-inset-right));
-      background: rgba(6, 11, 26, 0.92);
-      -webkit-backdrop-filter: blur(12px);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-color);
+      background: rgba(3, 16, 12, 0.8);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--bd2);
     }
-
-    .header h1 { font-size: 1.25rem; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+    .header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.2px; min-width: 0; overflow-wrap: anywhere; }
 
     .icon-btn {
       width: 2.75rem;
@@ -102,18 +103,18 @@
       min-width: 44px;
       min-height: 44px;
       flex-shrink: 0;
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      font-size: 1.15rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--bd2);
+      color: var(--tx);
+      font-size: 1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 0.7rem;
-      text-decoration: none;
+      border-radius: 50%;
+      transition: background 0.2s;
     }
-    .icon-btn:hover { background: var(--card-bg-alt); }
+    .icon-btn:active { background: var(--em-soft); }
 
     /* ---------- Main ---------- */
     .main {
@@ -127,16 +128,57 @@
       margin-top: 1rem;
       background: rgba(248, 113, 113, 0.12);
       border: 1px solid rgba(248, 113, 113, 0.35);
-      color: var(--text-secondary);
-      border-radius: 0.75rem;
+      color: var(--tx2);
+      border-radius: 0.9rem;
       padding: 0.75rem 1rem;
       font-size: 0.9rem;
       line-height: 1.45;
       overflow-wrap: anywhere;
     }
-    .banner strong { color: var(--red-400); }
+    .banner strong { color: var(--red); }
 
-    /* Main list: sections flow into columns on wide screens */
+    /* Account summary */
+    .summary {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      margin-top: 1.1rem;
+      padding: 1rem;
+      background: var(--glass);
+      border: 1px solid var(--bd);
+      border-radius: 1.25rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .avatar {
+      width: 3.4rem;
+      height: 3.4rem;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #03120C;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.15rem;
+      box-shadow: 0 0 0 3px rgba(47, 224, 168, 0.15), 0 8px 22px rgba(34, 184, 232, 0.25);
+    }
+    .summary-text { min-width: 0; flex: 1; }
+    .summary-name { font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
+    .summary-sub { font-size: 0.85rem; color: var(--mut); margin-top: 0.1rem; overflow-wrap: anywhere; }
+    .summary-edit {
+      flex-shrink: 0;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      background: var(--em-soft);
+      border: 1px solid var(--bd);
+      color: var(--em);
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
     .settings-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
@@ -146,31 +188,32 @@
     .settings-grid > * { min-width: 0; }
 
     .section-title {
-      color: var(--text-subtle);
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      margin: 1.25rem 0 0.5rem 0.5rem;
+      color: var(--mut);
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin: 1.3rem 0 0.55rem 0.4rem;
     }
 
     .settings-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 0.9rem;
+      background: var(--glass);
+      border: 1px solid var(--bd);
+      border-radius: 1.25rem;
       overflow: hidden;
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .settings-item {
       width: 100%;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      min-height: 3.5rem;
-      padding: 0.9rem 1rem;
+      gap: 0.8rem;
+      min-height: 3.6rem;
+      padding: 0.75rem 1rem;
       background: none;
       border: none;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--bd2);
       color: inherit;
       text-align: left;
       text-decoration: none;
@@ -180,146 +223,147 @@
       transition: background 0.15s ease;
     }
     .settings-item:last-child { border-bottom: none; }
-    .settings-item:hover { background: rgba(30, 41, 59, 0.5); }
-    .settings-item:active { background: var(--card-bg-alt); }
+    .settings-item:active { background: var(--em-soft); }
     .settings-item.static { cursor: default; }
-    .settings-item.static:hover { background: none; }
+    .settings-item.static:active { background: none; }
 
-    .item-text { min-width: 0; }
-    .item-title { font-size: 1rem; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
-    .item-desc { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
-
-    .chevron { color: var(--text-subtle); font-size: 0.85rem; flex-shrink: 0; }
-
-    .value-label {
-      color: var(--text-muted);
-      font-size: 0.95rem;
+    .item-ico {
+      width: 2.3rem;
+      height: 2.3rem;
+      flex-shrink: 0;
+      border-radius: 0.75rem;
+      background: var(--em-soft);
+      border: 1px solid var(--bd);
+      color: var(--em);
       display: flex;
       align-items: center;
-      gap: 0.4rem;
-      flex-shrink: 0;
+      justify-content: center;
+      font-size: 0.95rem;
     }
+    .item-text { min-width: 0; flex: 1; }
+    .item-title { font-size: 0.98rem; font-weight: 500; color: var(--tx); overflow-wrap: anywhere; }
+    .item-desc { font-size: 0.8rem; color: var(--mut); margin-top: 0.12rem; overflow-wrap: anywhere; }
 
-    .app-version { text-align: center; color: var(--text-disabled); font-size: 0.85rem; margin-top: 1.75rem; }
+    .chevron { color: var(--mut2); font-size: 0.8rem; flex-shrink: 0; }
+    .value-label { color: var(--mut); font-size: 0.88rem; display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0; }
 
-    :focus-visible { outline: 2px solid var(--emerald-400); outline-offset: 2px; }
+    .app-version { text-align: center; color: var(--mut2); font-size: 0.82rem; margin-top: 1.75rem; }
+
+    :focus-visible { outline: 2px solid var(--em); outline-offset: 2px; }
 
     /* ---------- Toggles ---------- */
-    .toggle-switch { position: relative; width: 2.9rem; height: 1.5rem; display: inline-block; flex-shrink: 0; }
+    .toggle-switch { position: relative; width: 2.9rem; height: 1.6rem; display: inline-block; flex-shrink: 0; }
     .toggle-switch input { opacity: 0; width: 100%; height: 100%; position: absolute; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
     .toggle-switch input:disabled { cursor: not-allowed; }
-
-    .slider {
-      position: absolute;
-      inset: 0;
-      background: var(--border-color);
-      transition: 0.25s;
-      border-radius: 1.5rem;
-    }
+    .slider { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.12); transition: 0.25s; border-radius: 1.6rem; }
     .slider::before {
       content: "";
       position: absolute;
-      height: 1.125rem;
-      width: 1.125rem;
-      left: 0.1875rem;
-      bottom: 0.1875rem;
-      background: var(--text-primary);
+      height: 1.2rem;
+      width: 1.2rem;
+      left: 0.2rem;
+      bottom: 0.2rem;
+      background: var(--tx);
       transition: 0.25s;
       border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     }
-    input:checked + .slider { background: var(--emerald-500); }
-    input:checked + .slider::before { transform: translateX(1.4rem); }
-    input:disabled + .slider { opacity: 0.6; }
-    input:focus-visible + .slider { outline: 2px solid var(--emerald-400); outline-offset: 2px; }
+    input:checked + .slider { background: var(--brand); box-shadow: 0 0 12px rgba(47, 224, 168, 0.35); }
+    input:checked + .slider::before { transform: translateX(1.3rem); }
+    input:disabled + .slider { opacity: 0.55; }
+    input:focus-visible + .slider { outline: 2px solid var(--em); outline-offset: 2px; }
 
     /* ---------- Sub-views ---------- */
     .view-body { width: 100%; max-width: 36rem; margin: 0 auto; padding-top: 1.25rem; }
 
     .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .form-group label { display: block; font-size: 0.9rem; color: var(--mut); margin-bottom: 0.4rem; }
 
     .form-input {
       width: 100%;
-      padding: 0.8rem 0.9rem;
+      padding: 0.85rem 0.95rem;
       background: var(--input-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 0.6rem;
-      color: var(--text-primary);
-      font-size: 16px; /* prevents iOS zoom on focus */
+      border: 1px solid var(--bd);
+      border-radius: 0.9rem;
+      color: var(--tx);
+      font-size: 16px;
+      color-scheme: dark;
     }
     .form-input.textarea { resize: vertical; min-height: 8rem; }
-    .form-input:focus { outline: none; border-color: var(--emerald-400); }
+    .form-input:focus { outline: none; border-color: var(--em); box-shadow: 0 0 0 3px rgba(47, 224, 168, 0.12); }
     .form-input:disabled { opacity: 0.6; }
+    select.form-input option { background: var(--card); color: var(--tx); }
 
-    .hint { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4; }
+    .hint { font-size: 0.82rem; color: var(--mut); margin-top: 0.35rem; line-height: 1.4; }
 
     .note {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 0.7rem;
-      padding: 0.8rem 1rem;
-      font-size: 0.95rem;
+      background: var(--glass);
+      border: 1px solid var(--bd);
+      border-radius: 1rem;
+      padding: 0.85rem 1rem;
+      font-size: 0.93rem;
       line-height: 1.5;
-      color: var(--text-secondary);
+      color: var(--tx2);
       margin-bottom: 1rem;
       overflow-wrap: anywhere;
     }
-    .note.error { border-color: rgba(248, 113, 113, 0.4); color: var(--red-400); }
+    .note.error { border-color: rgba(248, 113, 113, 0.4); color: var(--red); }
 
     .btn-primary, .btn-secondary, .btn-danger {
       width: 100%;
-      min-height: 3rem;
+      min-height: 3.1rem;
       padding: 0.8rem;
       font: inherit;
       font-size: 1rem;
       font-weight: 700;
       border: none;
-      border-radius: 0.6rem;
+      border-radius: 0.9rem;
       cursor: pointer;
       margin-top: 0.75rem;
+      transition: transform 0.15s;
     }
-    .btn-primary { background: linear-gradient(135deg, var(--emerald-500), var(--teal-400)); color: #060b1a; }
-    .btn-secondary { background: var(--card-bg-alt); color: var(--text-primary); border: 1px solid var(--border-color); }
-    .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--red-400); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-primary:active, .btn-danger:active { transform: scale(0.98); }
+    .btn-primary { background: var(--brand); color: #03120C; box-shadow: 0 8px 22px rgba(34, 184, 232, 0.22); }
+    .btn-secondary { background: var(--surf); color: var(--tx); border: 1px solid var(--bd); }
+    .btn-danger { background: rgba(239, 68, 68, 0.14); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.4); }
     button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-    .selectable-list { background: var(--card-bg); border-radius: 0.9rem; border: 1px solid var(--border-color); overflow: hidden; }
-
+    .selectable-list { background: var(--glass); border-radius: 1.25rem; border: 1px solid var(--bd); overflow: hidden; }
     .select-item {
       width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 0.75rem;
-      min-height: 3.25rem;
+      min-height: 3.5rem;
       padding: 0.85rem 1rem;
       background: none;
       border: none;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--bd2);
       cursor: pointer;
-      color: var(--text-secondary);
+      color: var(--tx2);
       font: inherit;
       text-align: left;
     }
     .select-item:last-child { border-bottom: none; }
-    .check-icon { visibility: hidden; color: var(--emerald-400); }
-    .select-item.active { color: var(--text-primary); background: var(--card-bg-alt); }
+    .check-icon { visibility: hidden; color: #03120C; background: var(--brand); width: 1.5rem; height: 1.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+    .select-item.active { color: var(--tx); background: var(--em-soft); }
     .select-item.active .check-icon { visibility: visible; }
 
     .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-    .qr-wrap img { width: min(14rem, 70vw); height: auto; background: #fff; padding: 0.5rem; border-radius: 0.6rem; }
-    .secret { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; word-break: break-all; text-align: center; color: var(--text-secondary); }
+    .qr-wrap img { width: min(14rem, 70vw); height: auto; background: #fff; padding: 0.5rem; border-radius: 0.8rem; }
+    .secret { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; word-break: break-all; text-align: center; color: var(--tx2); }
 
     /* ---------- Toast ---------- */
     .toast {
       visibility: hidden;
       width: max-content;
       max-width: calc(100vw - 2rem);
-      background: linear-gradient(135deg, var(--emerald-500), var(--teal-400));
-      color: #060b1a;
+      background: var(--brand);
+      color: #03120C;
       text-align: center;
       border-radius: 1.5rem;
-      padding: 0.65rem 1.1rem;
+      padding: 0.7rem 1.2rem;
       position: fixed;
       z-index: 200;
       bottom: max(1.5rem, env(safe-area-inset-bottom));
@@ -330,6 +374,7 @@
       opacity: 0;
       transition: opacity 0.3s, visibility 0.3s;
       overflow-wrap: anywhere;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     }
     .toast.error { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
     .toast.show { visibility: visible; opacity: 1; }
@@ -350,26 +395,39 @@
 
       <!-- ==================== MAIN ==================== -->
       <section id="view-main" data-title="Settings">
+        <div class="summary">
+          <div class="avatar" id="sumAvatar">S</div>
+          <div class="summary-text">
+            <div class="summary-name" id="sumName">Student</div>
+            <div class="summary-sub" id="sumEmail"></div>
+          </div>
+          <button type="button" class="summary-edit" data-go="edit-profile">Edit</button>
+        </div>
+
         <div class="settings-grid">
           <div>
-            <div class="section-title">ACCOUNT</div>
+            <div class="section-title">Account</div>
             <div class="settings-card">
               <button type="button" class="settings-item" data-go="edit-profile">
-                <span class="item-title">Edit Profile</span><i class="fas fa-chevron-right chevron"></i>
+                <span class="item-ico"><i class="fas fa-user-pen"></i></span>
+                <span class="item-text"><span class="item-title">Edit Profile</span></span><i class="fas fa-chevron-right chevron"></i>
               </button>
               <button type="button" class="settings-item" data-go="change-password">
-                <span class="item-title">Change Password</span><i class="fas fa-chevron-right chevron"></i>
+                <span class="item-ico"><i class="fas fa-lock"></i></span>
+                <span class="item-text"><span class="item-title">Change Password</span></span><i class="fas fa-chevron-right chevron"></i>
               </button>
               <button type="button" class="settings-item" data-go="email-phone">
-                <span class="item-title">Email &amp; Phone</span><i class="fas fa-chevron-right chevron"></i>
+                <span class="item-ico"><i class="fas fa-envelope"></i></span>
+                <span class="item-text"><span class="item-title">Email &amp; Phone</span></span><i class="fas fa-chevron-right chevron"></i>
               </button>
             </div>
           </div>
 
           <div>
-            <div class="section-title">STUDY</div>
+            <div class="section-title">Study</div>
             <div class="settings-card">
               <div class="settings-item static">
+                <span class="item-ico"><i class="fas fa-bell"></i></span>
                 <div class="item-text">
                   <div class="item-title">Daily Goal Reminder</div>
                   <div class="item-desc">Get notified about your daily target</div>
@@ -381,6 +439,7 @@
               </div>
 
               <div class="settings-item static">
+                <span class="item-ico"><i class="fas fa-volume-high"></i></span>
                 <div class="item-text">
                   <div class="item-title">Sound Effects</div>
                   <div class="item-desc">Play sounds on correct/incorrect</div>
@@ -392,16 +451,18 @@
               </div>
 
               <button type="button" class="settings-item" data-go="practice-mode">
-                <span class="item-title">Default Practice Mode</span>
+                <span class="item-ico"><i class="fas fa-stopwatch"></i></span>
+                <span class="item-text"><span class="item-title">Default Practice Mode</span></span>
                 <span class="value-label"><span id="current-practice-label">–</span> <i class="fas fa-chevron-right chevron"></i></span>
               </button>
             </div>
           </div>
 
           <div>
-            <div class="section-title">PREFERENCES</div>
+            <div class="section-title">Preferences</div>
             <div class="settings-card">
               <div class="settings-item static">
+                <span class="item-ico"><i class="fas fa-moon"></i></span>
                 <div class="item-text">
                   <div class="item-title">Dark Mode</div>
                   <div class="item-desc">Always on</div>
@@ -415,15 +476,16 @@
           </div>
 
           <div id="securitySection" hidden>
-            <div class="section-title">PRIVACY &amp; SECURITY</div>
+            <div class="section-title">Privacy &amp; Security</div>
             <div class="settings-card" id="securityCard"></div>
           </div>
 
           <div>
-            <div class="section-title">SUPPORT</div>
+            <div class="section-title">Support</div>
             <div class="settings-card" id="supportCard">
               <button type="button" class="settings-item" data-go="contact-support">
-                <span class="item-title">Contact Support</span><i class="fas fa-chevron-right chevron"></i>
+                <span class="item-ico"><i class="fas fa-headset"></i></span>
+                <span class="item-text"><span class="item-title">Contact Support</span></span><i class="fas fa-chevron-right chevron"></i>
               </button>
             </div>
           </div>
@@ -503,10 +565,10 @@
         <div class="view-body">
           <div class="selectable-list" role="radiogroup" aria-label="Default practice mode">
             <button type="button" class="select-item" role="radio" data-mode="practice">
-              <span>Practice Mode (Untimed)</span><i class="fas fa-check check-icon"></i>
+              <span>Practice Mode (Untimed)</span><span class="check-icon"><i class="fas fa-check"></i></span>
             </button>
             <button type="button" class="select-item" role="radio" data-mode="exam">
-              <span>Exam Simulation (Timed)</span><i class="fas fa-check check-icon"></i>
+              <span>Exam Simulation (Timed)</span><span class="check-icon"><i class="fas fa-check"></i></span>
             </button>
           </div>
         </div>
@@ -652,7 +714,17 @@
     /* ---------- Main view ---------- */
     function practiceLabel(m) { return m === 'exam' ? 'Exam' : 'Practice'; }
 
+    function renderSummary() {
+      const meta = (user && user.user_metadata) || {};
+      const name = String(profile.full_name || meta.full_name || meta.name || (user && user.email ? user.email.split('@')[0] : '') || 'Student').trim();
+      $('sumName').textContent = name;
+      $('sumEmail').textContent = (user && user.email) || '';
+      const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('') || 'S';
+      $('sumAvatar').textContent = initials;
+    }
+
     function renderMain() {
+      renderSummary();
       $('toggle-daily-goal').checked = !!settings.daily_goal_reminder;
       $('toggle-sound-effects').checked = !!settings.sound_effects;
       $('toggle-daily-goal').disabled = false;
@@ -667,20 +739,20 @@
     }
 
     function buildLinkRows() {
-      const row = (href, label) =>
-        `<a class="settings-item" href="${esc(href)}" target="_blank" rel="noopener"><span class="item-title">${esc(label)}</span><i class="fas fa-chevron-right chevron"></i></a>`;
+      const row = (href, label, icon) =>
+        `<a class="settings-item" href="${esc(href)}" target="_blank" rel="noopener"><span class="item-ico"><i class="fas ${icon}"></i></span><span class="item-text"><span class="item-title">${esc(label)}</span></span><i class="fas fa-chevron-right chevron"></i></a>`;
 
       let sec = '';
-      if (LINKS.privacy) sec += row(LINKS.privacy, 'Privacy Policy');
-      if (LINKS.terms) sec += row(LINKS.terms, 'Terms of Service');
+      if (LINKS.privacy) sec += row(LINKS.privacy, 'Privacy Policy', 'fa-shield-halved');
+      if (LINKS.terms) sec += row(LINKS.terms, 'Terms of Service', 'fa-file-contract');
       if (ENABLE_2FA) {
-        sec += `<button type="button" class="settings-item" data-go="two-factor"><span class="item-title">Two-Factor Authentication</span><i class="fas fa-chevron-right chevron"></i></button>`;
+        sec += `<button type="button" class="settings-item" data-go="two-factor"><span class="item-ico"><i class="fas fa-key"></i></span><span class="item-text"><span class="item-title">Two-Factor Authentication</span></span><i class="fas fa-chevron-right chevron"></i></button>`;
       }
       $('securityCard').innerHTML = sec;
       $('securitySection').hidden = !sec;
 
-      if (LINKS.help) $('supportCard').insertAdjacentHTML('beforeend', row(LINKS.help, 'Help Center'));
-      if (LINKS.rate) $('supportCard').insertAdjacentHTML('beforeend', row(LINKS.rate, 'Rate the App'));
+      if (LINKS.help) $('supportCard').insertAdjacentHTML('beforeend', row(LINKS.help, 'Help Center', 'fa-circle-question'));
+      if (LINKS.rate) $('supportCard').insertAdjacentHTML('beforeend', row(LINKS.rate, 'Rate the App', 'fa-star'));
 
       $('appVersion').textContent = APP_VERSION ? 'PRIME-CBT ' + APP_VERSION : '';
     }
@@ -754,6 +826,7 @@
         const { error } = await sb.auth.updateUser({ data: { full_name: name } });
         if (error) console.error('[settings] metadata update:', error);
         dirty.profile = false;
+        renderSummary();
         toast('Profile updated successfully!');
         setBusy(form, false);
         setTimeout(goBack, 500);
@@ -981,6 +1054,7 @@
 
         user = data.session.user;
         uid = user.id;
+        renderSummary();
 
         await loadProfile();
         show();
@@ -990,6 +1064,7 @@
           if (event === 'SIGNED_OUT') { window.location.href = 'auth.html'; return; }
           if (session && session.user) {
             user = session.user;
+            renderSummary();
             if (currentView() === 'email-phone') fillContactForm(false);
           }
         });
