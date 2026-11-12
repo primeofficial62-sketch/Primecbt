@@ -3,34 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#070D1C">
+  <meta name="theme-color" content="#070D1D">
   <title>PRIME-CBT — Profile</title>
   <link rel="icon" type="image/png" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 <link rel="apple-touch-icon" href="34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* PRIME-CBT palette (Profile refinement) */
-    --bg: #070D1C;
-    --surface: #10192B;
-    --surface-2: #182337;
-    --surface-muted: #0D1525;
-    --border: #29364C;
+    /* PRIME-CBT palette (same as the home page) */
+    --bg: #070D1D;
+    --surface: #10182B;
+    --surface-2: #1A2540;
+    --surface-muted: #0D1424;
+    --border: #273852;
 
-    --text: #F4F6FC;
-    --muted-1: #C3CDDF;
-    --muted-2: #9BA8BE;
-    --muted-3: #6F7E97;
+    --text: #F1F5FF;
+    --muted-1: #C3CEEA;
+    --muted-2: #97A6CF;
+    --muted-3: #7F8CAC;
     --muted-4: #2A3850;
 
     --emerald: #31D3A2;
     --emerald-bright: #31D3A2;
+    --em-soft: rgba(49, 211, 162, 0.14);
+    --on-em: #06101A;
     --red: #f87171;
     --amber: #fbbf24;
-    --radius: 1rem;
+    --radius: 1.1rem;
     --pad: clamp(1rem, 4vw, 2rem);
+    --nav-h: 72px;
+    --serif: 'Lora', Georgia, serif;
+    --glass: radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.055), transparent 55%), linear-gradient(160deg, #121C32, #0F1729);
   }
 
   * {
@@ -59,6 +64,18 @@
     overflow-x: hidden;
   }
 
+  /* Soft ambient glow behind the page (fixed, so scrolling stays cheap) */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(120% 40% at 100% 0%, rgba(70,110,210,.18), transparent 60%),
+      radial-gradient(80% 35% at 0% 45%, rgba(49,211,162,.09), transparent 70%);
+  }
+
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; }
+
   .app {
     width: 100%;
     max-width: 70rem;
@@ -66,7 +83,6 @@
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    background: var(--bg);
   }
 
   @media (min-width: 70rem) {
@@ -84,12 +100,12 @@
     padding: max(1rem, env(safe-area-inset-top)) var(--pad) 1rem;
     padding-left: max(var(--pad), env(safe-area-inset-left));
     padding-right: max(var(--pad), env(safe-area-inset-right));
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255,255,255,.07);
     /* Solid background instead of blur: blur is slow on mid/low-end phones */
-    background: rgba(7, 13, 28, 0.97);
+    background: rgba(7, 13, 29, 0.95);
   }
 
-  .back-btn {
+  .back-btn, .icon-btn {
     width: 2.75rem;
     height: 2.75rem;
     min-width: 44px;
@@ -97,22 +113,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.75rem;
-    background: var(--surface);
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
     color: var(--text);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255,255,255,.08);
     text-decoration: none;
     flex-shrink: 0;
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition: background 0.2s ease, transform 0.15s ease;
   }
 
-  .back-btn:hover { background: var(--surface-2); border-color: var(--muted-3); }
-  .back-btn svg { width: 1.25rem; height: 1.25rem; }
+  .back-btn:hover, .icon-btn:hover { background: var(--em-soft); }
+  .back-btn:active, .icon-btn:active { transform: scale(0.94); }
+  .back-btn svg, .icon-btn svg { width: 1.25rem; height: 1.25rem; }
 
   .topbar-text { flex: 1; min-width: 0; }
-  .topbar-text h1 { font-size: 1.25rem; font-weight: 700; }
+  .topbar-text h1 { font-family: var(--serif); font-size: 1.45rem; font-weight: 600; line-height: 1.15; }
   .topbar-text p {
-    font-size: 0.875rem; color: var(--muted-2);
+    font-size: 0.8rem; color: var(--muted-2); margin-top: 0.1rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
@@ -125,7 +142,7 @@
     align-items: start;
     gap: clamp(1rem, 3vw, 1.5rem);
     padding: var(--pad);
-    padding-bottom: max(var(--pad), env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--nav-h) + 3rem + env(safe-area-inset-bottom));
     padding-left: max(var(--pad), env(safe-area-inset-left));
     padding-right: max(var(--pad), env(safe-area-inset-right));
   }
@@ -168,34 +185,37 @@
 
   /* ---------- Profile header ---------- */
   .profile-header {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: radial-gradient(90% 120% at 100% 0%, rgba(49,211,162,.12), transparent 60%), var(--glass);
+    border: 1px solid #2A4058;
     border-radius: var(--radius);
-    padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 4vw, 1.75rem);
-    display: flex;
-    flex-direction: column;
+    padding: clamp(1.1rem, 4vw, 1.6rem);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "av info" "stats stats";
     align-items: center;
-    text-align: center;
-    gap: 0.6rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    column-gap: 1.1rem;
+    row-gap: 1.1rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.09), 0 18px 40px -22px rgba(49,211,162,.3);
     transition: opacity 0.3s ease;
   }
 
   .profile-header.is-loading { opacity: 0.55; }
 
-  .avatar-wrap { position: relative; margin-bottom: 0.25rem; }
+  .avatar-wrap { grid-area: av; position: relative; }
 
   .avatar {
-    width: 4.75rem;
-    height: 4.75rem;
+    width: 4.9rem;
+    height: 4.9rem;
     border-radius: 50%;
-    background: rgba(49, 211, 162, 0.12);
+    background: rgba(49, 211, 162, 0.14);
     color: var(--emerald);
-    border: 2px solid rgba(49, 211, 162, 0.35);
+    border: 2px solid rgba(49, 211, 162, 0.5);
+    box-shadow: 0 0 0 5px rgba(49,211,162,.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    font-family: var(--serif);
+    font-weight: 600;
     font-size: 1.6rem;
     overflow: hidden;
   }
@@ -204,58 +224,64 @@
 
   .level-badge {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    background: var(--amber);
-    color: var(--bg);
-    font-size: 0.75rem;
+    bottom: -0.15rem;
+    right: -0.35rem;
+    background: var(--emerald);
+    color: var(--on-em);
+    font-size: 0.7rem;
     font-weight: 700;
-    padding: 0.1rem 0.45rem;
-    border-radius: 0.7rem;
+    padding: 0.12rem 0.5rem;
+    border-radius: 0.8rem;
     border: 2px solid var(--surface);
   }
+  .level-badge::before { content: "Lv "; }
+
+  .profile-info { grid-area: info; min-width: 0; }
 
   .profile-name {
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-family: var(--serif);
+    font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.2;
     max-width: 100%;
     overflow-wrap: anywhere;
   }
 
   .profile-meta {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--muted-2);
-    margin-bottom: 0.5rem;
+    margin-top: 0.2rem;
     max-width: 100%;
     overflow-wrap: anywhere;
     min-height: 1.2em;
   }
 
   .profile-stats {
+    grid-area: stats;
     width: 100%;
-    max-width: 34rem;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background: var(--surface-muted);
+    background: rgba(5, 10, 22, .45);
     border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 0.75rem 0.5rem;
-    margin-top: 0.25rem;
+    border-radius: 0.9rem;
+    padding: 0.9rem 0.5rem;
   }
 
   .stat {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem;
+    gap: 0.25rem;
     flex: 1;
     min-width: 0;
   }
 
   .stat-num {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1;
     max-width: 100%;
     overflow-wrap: anywhere;
   }
@@ -263,24 +289,23 @@
   .stat-num.emerald { color: var(--emerald-bright); }
 
   .stat-label {
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     color: var(--muted-2);
     font-weight: 500;
-    letter-spacing: 0.02em;
     text-align: center;
   }
 
-  .stat-divider { width: 1px; height: 1.5rem; background: var(--border); flex-shrink: 0; }
+  .stat-divider { width: 1px; height: 2rem; background: var(--border); flex-shrink: 0; }
 
   /* ---------- Menus ---------- */
   .menu-card {
-    background: var(--surface);
+    background: var(--glass);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -16px rgba(0,0,0,.7);
   }
 
   .menu-item {
@@ -288,13 +313,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    min-height: 3.25rem;
-    padding: 0.85rem 1rem;
+    min-height: 3.6rem;
+    padding: 0.7rem 1rem;
     text-decoration: none;
     color: var(--text);
     background: none;
     border: none;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255,255,255,.06);
     width: 100%;
     text-align: left;
     cursor: pointer;
@@ -302,8 +327,8 @@
   }
 
   .menu-card .menu-item:last-child { border-bottom: none; }
-  .menu-item:hover { background: var(--surface-2); }
-  .menu-item:active { background: var(--surface-2); }
+  .menu-item:hover { background: rgba(255,255,255,.03); }
+  .menu-item:active { background: var(--em-soft); }
 
   .menu-item:focus-visible,
   .back-btn:focus-visible,
@@ -315,18 +340,61 @@
   .menu-left {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
     font-size: 1rem;
     font-weight: 500;
     min-width: 0;
   }
 
-  .menu-left svg { width: 1.25rem; height: 1.25rem; color: var(--muted-2); flex-shrink: 0; }
+  /* Icons sit in small mint tiles */
+  .menu-left svg {
+    width: 2.35rem; height: 2.35rem; padding: 0.55rem;
+    border-radius: 0.75rem;
+    background: var(--em-soft);
+    border: 1px solid rgba(49,211,162,.25);
+    color: var(--emerald);
+    flex-shrink: 0;
+  }
   .menu-left span { min-width: 0; overflow-wrap: anywhere; }
 
   .menu-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 
   .chevron { width: 1rem; height: 1rem; color: var(--muted-3); flex-shrink: 0; }
+
+  .menu-item.danger { color: var(--red); }
+  .menu-item.danger .menu-left svg { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.3); color: var(--red); }
+
+  /* ---------- Floating bottom navigation (same as the home page) ---------- */
+  .bottom-nav {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 28px); max-width: 692px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); z-index: 40;
+    height: var(--nav-h); display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+    padding: 6px; border-radius: 26px;
+    background: linear-gradient(180deg, rgba(18,28,50,.78), rgba(10,16,32,.86));
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 14px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    height: 100%; min-width: 0; background: none; border: none; color: var(--muted-3);
+    font-size: 11px; font-weight: 500; border-radius: 20px; position: relative; cursor: pointer;
+  }
+  .nav-item svg { width: 24px; height: 24px; }
+  .nav-item.active { color: var(--emerald); font-weight: 600; background: radial-gradient(70% 90% at 50% 0%, rgba(49,211,162,.16), rgba(49,211,162,.03)); }
+  .nav-item.active::before { content: ""; position: absolute; top: 0; left: 30%; right: 30%; height: 2px; border-radius: 0 0 4px 4px; background: var(--emerald); box-shadow: 0 0 12px rgba(49,211,162,.5); }
+  .nav-item.active svg { filter: drop-shadow(0 0 6px rgba(49,211,162,.5)); }
+
+  .sheet-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(3,7,16,.82); display: none; align-items: flex-end; justify-content: center; }
+  .sheet-backdrop.open { display: flex; }
+  .sheet { width: 100%; max-width: 720px; background: var(--surface); border: 1px solid var(--border); border-radius: 24px 24px 0 0; padding: 20px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .sheet-head b { font-family: var(--serif); font-size: 1.1rem; }
+  .sheet-head button { background: none; border: none; color: var(--emerald); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .more-tile { display: flex; align-items: center; gap: 10px; padding: 14px; background: var(--surface-muted); border: 1px solid var(--border); border-radius: 16px; font-size: .9rem; font-weight: 600; }
+  .more-tile svg { width: 22px; height: 22px; color: var(--emerald); flex-shrink: 0; }
 
   /* ---------- Entrance animation ---------- */
   .animate-fade-up { animation: fadeUp 0.4s ease both; }
@@ -344,8 +412,9 @@
   /* Tiny screens: keep the three metrics in one row, just tighter */
   @media (max-width: 340px) {
     .profile-stats { padding: 0.65rem 0.25rem; }
-    .stat-num { font-size: 1rem; }
+    .stat-num { font-size: 1.15rem; }
     .stat-label { font-size: 0.62rem; }
+    .avatar { width: 4rem; height: 4rem; font-size: 1.3rem; }
   }
 
   /* Short landscape screens (phones turned sideways) */
@@ -369,7 +438,7 @@
     <!-- Top Bar -->
     <header class="topbar">
       <a href="home.html" class="back-btn" aria-label="Back to Home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18l-6-6 6-6"/>
         </svg>
       </a>
@@ -378,6 +447,13 @@
         <h1>Profile</h1>
         <p>Your account &amp; preferences</p>
       </div>
+
+      <a href="settings.html" class="icon-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </a>
     </header>
 
     <!-- Content -->
@@ -394,8 +470,10 @@
           <div class="avatar" id="avatar">–</div>
           <div class="level-badge" id="levelBadge">–</div>
         </div>
-        <h2 class="profile-name" id="profileName">Loading…</h2>
-        <p class="profile-meta" id="profileMeta">&nbsp;</p>
+        <div class="profile-info">
+          <h2 class="profile-name" id="profileName">Loading…</h2>
+          <p class="profile-meta" id="profileMeta">&nbsp;</p>
+        </div>
 
         <div class="profile-stats">
           <div class="stat">
@@ -419,7 +497,7 @@
       <section class="menu-card animate-fade-up delay-2">
         <a href="account.html" class="menu-item">
           <div class="menu-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
@@ -430,11 +508,9 @@
           </svg>
         </a>
 
-        </a>
-
         <a href="achievements.html" class="menu-item">
           <div class="menu-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="8" r="6"/>
               <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
             </svg>
@@ -447,7 +523,7 @@
 
         <a href="leaderboard.html" class="menu-item">
           <div class="menu-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
               <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
@@ -466,7 +542,7 @@
       <section class="menu-card animate-fade-up delay-3">
         <a href="settings.html" class="menu-item">
           <div class="menu-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
@@ -477,8 +553,50 @@
           </svg>
         </a>
 
+        <a href="home.html#support" class="menu-item">
+          <div class="menu-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"/>
+            </svg>
+            <span>Help &amp; Support</span>
+          </div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </a>
+
+        <button type="button" class="menu-item danger" id="logoutBtn">
+          <div class="menu-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+            <span>Log out</span>
+          </div>
+        </button>
       </section>
     </main>
+
+    <!-- Floating bottom navigation -->
+    <nav class="bottom-nav" aria-label="Main">
+      <a href="home.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg><span>Home</span></a>
+      <a href="materials.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 5a1 1 0 011-1h5a4 4 0 014 4v12a3 3 0 00-3-3H3a1 1 0 01-1-1zM22 5a1 1 0 00-1-1h-5a4 4 0 00-4 4v12a3 3 0 013-3h6a1 1 0 001-1z"/></svg><span>Materials</span></a>
+      <a href="practice.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 14l2 2 4-4"/></svg><span>Practice</span></a>
+      <a href="progress.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/></svg><span>Progress</span></a>
+      <button type="button" class="nav-item active" id="moreBtnNav" aria-haspopup="dialog" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span>More</span></button>
+    </nav>
+
+    <div class="sheet-backdrop" id="moreSheet">
+      <div class="sheet" role="dialog" aria-modal="true" aria-label="More">
+        <div class="sheet-head"><b>More</b><button type="button" id="moreClose">Close</button></div>
+        <div class="more-grid">
+          <a href="profile.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Profile</a>
+          <a href="community.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Community</a>
+          <a href="ai-assistant.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V4H8M9 13v2M15 13v2"/></svg>AI Assistant</a>
+          <a href="home.html#support" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Support</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -681,6 +799,21 @@
 
       init();
     });
+  </script>
+
+  <!-- New: More sheet + Log out button (separate from the page script above, which is unchanged) -->
+  <script>
+    (function () {
+      var sheet = document.getElementById('moreSheet');
+      document.getElementById('moreBtnNav').addEventListener('click', function () { sheet.classList.add('open'); });
+      document.getElementById('moreClose').addEventListener('click', function () { sheet.classList.remove('open'); });
+      sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.classList.remove('open'); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') sheet.classList.remove('open'); });
+      document.getElementById('logoutBtn').addEventListener('click', function () {
+        if (typeof sb === 'undefined' || !sb) { window.location.href = 'auth.html?mode=login'; return; }
+        sb.auth.signOut().then(function () { window.location.replace('auth.html?mode=login'); });
+      });
+    })();
   </script>
 </body>
 </html>
