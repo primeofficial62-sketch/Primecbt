@@ -3,28 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#060b1a">
+  <meta name="theme-color" content="#070D1D">
   <title>PRIME-CBT — Question Map</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060b1a;
-      --surface: #0f172a;
-      --surface-2: #1e293b;
-      --border: #334155;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --muted-light: #cbd5e1;
-      --emerald: #10b981;
-      --emerald-bright: #34d399;
+      /* PRIME-CBT palette (same as the home page) */
+      --bg: #070D1D;
+      --surface: #10182B;
+      --surface-2: #1A2540;
+      --border: #273852;
+      --text: #F1F5FF;
+      --muted: #97A6CF;
+      --muted-light: #C3CEEA;
+      --emerald: #31D3A2;
+      --emerald-bright: #31D3A2;
+      --em-soft: rgba(49, 211, 162, 0.14);
+      --on-em: #06101A;
       --amber: #fbbf24;
       --red: #f87171;
-      --slate: #64748b;
+      --slate: #7F8CAC;
       --font-display: 'Lora', Georgia, serif;
       --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       --pad: clamp(1rem, 4vw, 2rem);
+      --glass: radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.055), transparent 55%), linear-gradient(160deg, #121C32, #0F1729);
     }
 
     * {
@@ -52,6 +56,15 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* Soft ambient glow behind the page (fixed, so scrolling stays cheap) */
+    body::before {
+      content: "";
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(120% 40% at 100% 0%, rgba(70,110,210,.18), transparent 60%),
+        radial-gradient(80% 35% at 0% 55%, rgba(49,211,162,.09), transparent 70%);
+    }
+
     .app {
       width: 100%;
       max-width: 64rem;
@@ -59,11 +72,10 @@
       min-height: 100dvh;
       display: flex;
       flex-direction: column;
-      background: var(--bg);
     }
 
     @media (min-width: 64rem) {
-      .app { border-left: 1px solid rgba(51, 65, 85, 0.5); border-right: 1px solid rgba(51, 65, 85, 0.5); }
+      .app { border-left: 1px solid rgba(255, 255, 255, 0.07); border-right: 1px solid rgba(255, 255, 255, 0.07); }
     }
 
     /* ---------- Top bar ---------- */
@@ -77,10 +89,9 @@
       padding: max(1rem, env(safe-area-inset-top)) var(--pad) 0.9rem;
       padding-left: max(var(--pad), env(safe-area-inset-left));
       padding-right: max(var(--pad), env(safe-area-inset-right));
-      background: rgba(6, 11, 26, 0.92);
-      -webkit-backdrop-filter: blur(16px);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
+      /* Solid background instead of blur: blur is slow on mid/low-end phones */
+      background: rgba(7, 13, 29, 0.95);
+      border-bottom: 1px solid rgba(255,255,255,.07);
     }
 
     .back-btn {
@@ -88,23 +99,24 @@
       height: 2.75rem;
       min-width: 44px;
       min-height: 44px;
-      border-radius: 0.7rem;
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--muted-light);
+      color: var(--text);
       cursor: pointer;
       flex-shrink: 0;
-      transition: background 0.2s ease, color 0.2s ease;
+      transition: background 0.2s ease, transform 0.15s ease;
     }
-    .back-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text); }
+    .back-btn:hover { background: var(--em-soft); }
+    .back-btn:active { transform: scale(0.94); }
     .back-btn svg { width: 1.15rem; height: 1.15rem; }
 
     .topbar-title { min-width: 0; }
-    .topbar-title h1 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; }
-    .topbar-title p { font-size: 0.82rem; color: var(--muted); margin-top: 1px; overflow-wrap: anywhere; }
+    .topbar-title h1 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 600; line-height: 1.15; }
+    .topbar-title p { font-size: 0.82rem; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
 
     /* ---------- Layout ---------- */
     .content {
@@ -155,7 +167,7 @@
     .status strong { color: var(--red); }
 
     .empty-state {
-      background: rgba(15, 23, 42, 0.8);
+      background: var(--glass);
       border: 1px dashed var(--border);
       border-radius: 1rem;
       padding: 2rem 1.25rem;
@@ -171,20 +183,30 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
       gap: 0.65rem;
-      padding: 0.85rem 1rem;
-      background: rgba(15, 23, 42, 0.8);
+      padding: 0.9rem 1rem;
+      background: var(--glass);
       border: 1px solid var(--border);
-      border-radius: 0.9rem;
+      border-radius: 1rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -16px rgba(0,0,0,.7);
     }
 
     .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--muted-light); }
-    .legend-dot { width: 0.7rem; height: 0.7rem; border-radius: 3px; flex-shrink: 0; }
-    .legend-dot.answered { background: var(--emerald); }
+    .legend-dot { width: 0.75rem; height: 0.75rem; border-radius: 4px; flex-shrink: 0; }
+    .legend-dot.answered { background: var(--emerald); box-shadow: 0 0 8px rgba(49,211,162,.5); }
     .legend-dot.unanswered { background: var(--border); }
     .legend-dot.flagged { background: var(--amber); }
     .legend-dot.skipped { background: var(--slate); }
 
     /* ---------- Question grid ---------- */
+    .map-wrap {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 1.1rem;
+      padding: 1rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -16px rgba(0,0,0,.7);
+    }
+    .map-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; margin-bottom: 0.9rem; }
+
     .map-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr));
@@ -193,8 +215,8 @@
 
     .map-item {
       aspect-ratio: 1;
-      border-radius: 0.75rem;
-      background: rgba(15, 23, 42, 0.8);
+      border-radius: 0.85rem;
+      background: rgba(5, 10, 22, .5);
       border: 1.5px solid var(--border);
       display: flex;
       align-items: center;
@@ -210,8 +232,8 @@
     .map-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); }
     .map-item:active { transform: scale(0.95); }
 
-    .map-item.answered { background: rgba(16, 185, 129, 0.15); border-color: var(--emerald); color: var(--emerald-bright); }
-    .map-item.skipped { background: rgba(100, 116, 139, 0.15); border-color: var(--slate); color: var(--muted); }
+    .map-item.answered { background: var(--em-soft); border-color: rgba(49,211,162,.7); color: var(--emerald-bright); }
+    .map-item.skipped { background: rgba(127, 140, 172, 0.14); border-color: var(--slate); color: var(--muted); }
     .map-item.flagged { border-color: var(--amber); }
     .map-item.flagged::after {
       content: "";
@@ -224,10 +246,10 @@
       border-radius: 50%;
     }
     .map-item.current {
-      background: linear-gradient(135deg, var(--emerald), #059669);
+      background: linear-gradient(135deg, var(--emerald), #27B58A);
       border-color: var(--emerald);
-      color: #022c22;
-      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+      color: var(--on-em);
+      box-shadow: 0 0 0 3px rgba(49, 211, 162, 0.25), 0 8px 18px -6px rgba(49,211,162,.5);
     }
 
     .map-item:focus-visible, .btn:focus-visible, .back-btn:focus-visible {
@@ -237,25 +259,27 @@
 
     /* ---------- Summary ---------- */
     .summary {
-      background: rgba(15, 23, 42, 0.8);
+      background: var(--glass);
       border: 1px solid var(--border);
-      border-radius: 1rem;
+      border-radius: 1.1rem;
       padding: 1rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -16px rgba(0,0,0,.7);
     }
 
     .summary-title {
-      font-size: 0.8rem;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
       font-weight: 600;
       margin-bottom: 0.75rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
     }
+
+    .sum-bar { height: 0.45rem; border-radius: 99px; background: rgba(5, 10, 22, .55); border: 1px solid var(--border); overflow: hidden; margin-bottom: 0.9rem; }
+    .sum-bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #27B58A, #31D3A2); box-shadow: 0 0 10px rgba(49,211,162,.4); transition: width .5s ease; }
 
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr)); gap: 0.5rem; }
 
-    .summary-item { background: rgba(30, 41, 59, 0.5); border-radius: 0.7rem; padding: 0.65rem 0.25rem; text-align: center; }
-    .summary-value { font-size: 1.2rem; font-weight: 700; margin-bottom: 2px; }
+    .summary-item { background: rgba(5, 10, 22, .45); border: 1px solid var(--border); border-radius: 0.8rem; padding: 0.7rem 0.25rem; text-align: center; }
+    .summary-value { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; margin-bottom: 2px; }
     .summary-value.green { color: var(--emerald-bright); }
     .summary-value.amber { color: var(--amber); }
     .summary-value.muted { color: var(--muted); }
@@ -273,12 +297,12 @@
       padding-bottom: max(1rem, env(safe-area-inset-bottom));
       padding-left: max(var(--pad), env(safe-area-inset-left));
       padding-right: max(var(--pad), env(safe-area-inset-right));
-      background: linear-gradient(to top, var(--bg) 75%, rgba(6, 11, 26, 0));
+      background: linear-gradient(to top, var(--bg) 75%, rgba(7, 13, 29, 0));
     }
 
     .btn {
       min-height: 3.1rem;
-      border-radius: 0.9rem;
+      border-radius: 0.95rem;
       font: inherit;
       font-size: 0.95rem;
       font-weight: 700;
@@ -319,9 +343,7 @@
       justify-content: center;
       padding: 1.25rem;
       overflow-y: auto;
-      background: rgba(6, 11, 26, 0.78);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
+      background: rgba(3, 7, 16, 0.84);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
@@ -334,14 +356,14 @@
       margin: auto;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 1rem;
+      border-radius: 1.2rem;
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
     }
-    .modal-box h3 { font-family: var(--font-display); font-size: 1.2rem; }
+    .modal-box h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
     .modal-box p { font-size: 0.92rem; color: var(--muted-light); line-height: 1.5; }
     .modal-box p strong { color: var(--text); }
     .modal-actions { display: flex; gap: 0.65rem; margin-top: 0.5rem; }
@@ -394,6 +416,7 @@
 
       <!-- Grid -->
       <div class="map-wrap">
+        <div class="map-title">Jump to a question</div>
         <div class="map-grid" id="mapGrid"></div>
         <div class="empty-state" id="emptyState" hidden></div>
       </div>
@@ -401,6 +424,7 @@
       <!-- Summary -->
       <div class="summary">
         <div class="summary-title">Session Summary</div>
+        <div class="sum-bar" aria-hidden="true"><i id="sumFill"></i></div>
         <div class="summary-grid">
           <div class="summary-item">
             <div class="summary-value green" id="answeredCount">–</div>
@@ -661,6 +685,21 @@
 
       render();
     });
+  </script>
+
+  <!-- New: fills the progress bar in the summary from the counts the page already shows (separate from the page script above, which is unchanged) -->
+  <script>
+    (function () {
+      var ids = ['answeredCount', 'unansweredCount', 'skippedCount'];
+      function sync() {
+        var v = ids.map(function (id) { return parseInt(document.getElementById(id).textContent, 10) || 0; });
+        var total = v[0] + v[1] + v[2];
+        document.getElementById('sumFill').style.width = total ? Math.round(v[0] / total * 100) + '%' : '0%';
+      }
+      var mo = new MutationObserver(sync);
+      ids.forEach(function (id) { mo.observe(document.getElementById(id), { childList: true, characterData: true, subtree: true }); });
+      sync();
+    })();
   </script>
 </body>
 </html>
