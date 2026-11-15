@@ -203,12 +203,15 @@
       padding: .5rem 1.25rem; cursor: pointer; border: none; transition: transform .15s ease;
     }
     .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .6; cursor: default; }
     .btn:focus-visible, .tab:focus-visible, .status button:focus-visible { outline: 2px solid var(--emerald-bright); outline-offset: 2px; }
     .btn-primary { background: linear-gradient(135deg, #31D3A2, #27B58A); color: var(--on-em); box-shadow: 0 6px 20px rgba(49,211,162,.28); }
     .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    /* Retake Practice: outlined in the brand colour so it stands out from Back to Home */
+    .btn-retake { background: var(--em-soft); border: 1px solid rgba(49,211,162,.5); color: var(--emerald-bright); }
     @media (min-width: 40rem) {
-      .bottom-actions { flex-direction: row; justify-content: center; }
-      .bottom-actions .btn { flex: 0 1 18rem; }
+      .bottom-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+      .bottom-actions .btn { flex: 0 1 14rem; }
     }
     @media (max-height: 480px) and (orientation: landscape) { .bottom-actions { position: static; } }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
@@ -272,6 +275,7 @@
 
     <div class="bottom-actions" id="bottomActions" hidden>
       <a class="btn btn-primary" id="practiceMoreBtn" href="practice-setup.html">Practice More</a>
+      <button type="button" class="btn btn-retake" id="retakeBtn">🔁 Retake Practice</button>
       <a class="btn btn-secondary" href="home.html">Back to Home</a>
     </div>
   </div>
@@ -292,7 +296,11 @@
       RPC_NAME: 'get_practice_result',
       loginPage: 'login.html',
       setupPage: 'practice-setup.html',
-      homePage: 'home.html'
+      homePage: 'home.html',
+      /* RETAKE: the page where users actually answer questions (the CBT session page).
+         CHANGE THIS to its exact file name. It is opened as
+         <quizPage>?retake=<result id>&course=<course id>&mode=<mode> */
+      quizPage: 'practice.html'
     };
     /* ==================== */
 
@@ -481,6 +489,17 @@
       }).join('');
     }
 
+    /* ---------- Retake Practice ----------
+       Sends the user back to the quiz page with the id of the attempt they just finished.
+       The quiz page then loads the SAME questions through get_retake_questions(), already
+       shuffled into a new order, and skips the normal "new questions" picker. */
+    function retake() {
+      if (!model || !resultId) return;
+      const params = new URLSearchParams({ retake: resultId, mode: model.mode });
+      if (model.courseId) params.set('course', model.courseId);
+      location.href = CONFIG.quizPage + '?' + params.toString();
+    }
+
     /* ---------- Load ---------- */
     async function load() {
       $('statusBanner').hidden = true;
@@ -522,13 +541,14 @@
     }
 
     $('statusRetry').addEventListener('click', load);
+    $('retakeBtn').addEventListener('click', retake);
     $('tabWrong').addEventListener('click', () => { viewAll = false; renderReview(); });
     $('tabAll').addEventListener('click', () => { viewAll = true; renderReview(); });
     document.addEventListener('DOMContentLoaded', load);
   })();
   </script>
 
-  <!-- New: fills and colours the score ring from the score the page already shows (separate from the page script above, which is unchanged) -->
+  <!-- Fills and colours the score ring from the score the page already shows (separate from the page script above) -->
   <script>
     (function () {
       var score = document.getElementById('heroScore'), ring = document.getElementById('ring');
