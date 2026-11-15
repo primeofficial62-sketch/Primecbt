@@ -123,7 +123,7 @@ const el = { back:$('backLink'), title:$('cbtTitle'), sub:$('cbtSub'), offline:$
   dlg:$('dlg'), dlgBody:$('dlgBody'), dlgErr:$('dlgErr'), dlgCancel:$('dlgCancel'), dlgOk:$('dlgOk'), toast:$('toast') };
 const LETTERS = 'ABCDEFGHIJ';
 
-/* ---- URL params (sent by practice-setup.html) ---- */
+/* ---- URL params (sent by practice-setup.html, or by results.html for a retake) ---- */
 const P = new URLSearchParams(location.search);
 const courseParam = (P.get('courseId') || P.get('course') || '').trim();
 const topicParam = (P.get('topic') || '').trim();
@@ -137,6 +137,7 @@ const mode = P.get('mode') === 'timed' ? 'timed' : 'practice';
 const instant = mode === 'practice' && P.get('feedback') !== 'end';
 const randomize = P.get('randomize') !== 'false';
 const nonce = P.get('s') || '';
+const retakeId = (P.get('retake') || '').trim();   // id of the finished session to retake (same questions, new order)
 const minutesParam = parseInt(P.get('minutes'), 10) || 0;
 const secsPerQ = parseInt(P.get('secsPerQ'), 10) || CONFIG.defaultSecsPerQ;
 
@@ -168,7 +169,7 @@ if (!window.supabase) { el.sub.textContent = 'Not connected'; showMessage('Could
 const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 /* ---- resume (per tab) ---- */
-const storeKey = () => `primecbt:session:${S.user.id}:${courseParam || topicParam}:${mode}:${difficulty}:${wantCount}:${randomize}:${idsParam.length}:${idsParam[0] || ''}:${nonce}`;
+const storeKey = () => `primecbt:session:${S.user.id}:${courseParam || topicParam}:${mode}:${difficulty}:${wantCount}:${randomize}:${idsParam.length}:${idsParam[0] || ''}:${nonce}:${retakeId}`;
 function save() { if (S.done || !S.qs.length) return; try { sessionStorage.setItem(storeKey(), JSON.stringify({ ids:S.qs.map(q => q.id), answers:S.answers, flags:[...S.flags], index:S.index, startedAt:S.startedAt, endAt:S.endAt })); } catch (_) {} }
 function loadSaved() { try { const d = JSON.parse(sessionStorage.getItem(storeKey()) || 'null'); if (!d || !Array.isArray(d.ids) || !d.ids.length || Date.now() - (d.startedAt || 0) > CONFIG.resumeWindowMs) return null; return d; } catch (_) { return null; } }
 const clearSaved = () => { try { sessionStorage.removeItem(storeKey()); } catch (_) {} };
@@ -199,6 +200,20 @@ async function fetchByIds(ids) {
 
 async function fetchQuestions(saved) {
   if (saved) return fetchByIds(saved.ids);
+
+  // RETAKE: the exact questions of a finished session, already shuffled into a new order by the server.
+  // Skips the "unseen questions first" rotation on purpose.
+  if (retakeId) {
+    const { data, error } = await db.rpc('get_retake_questions', { p_session_id: retakeId });
+    if (error) throw error;
+    const items = (data && Array.isArray(data.items)) ? data.items : [];
+    return items.map(it => ({
+      id: it.question_id, question: it.question, options: it.options,
+      correct_index: it.correct_index, explanation: it.explanation,
+      image_url: it.image_url, svg: it.svg
+    })).filter(valid);
+  }
+
   if (idsParam.length) { const list = await fetchByIds(idsParam); return randomize ? shuffle(list) : list; }
 
   const cids = courseIds.length ? courseIds : [S.course.id];   // courses sharing one code are practised together
@@ -238,7 +253,7 @@ function buildFigure(q) {
 /* ---- render ---- */
 function renderHeader() {
   el.title.textContent = topicName || S.course.title || 'Practice session';
-  const n = S.qs.length, label = kind === 'mock' ? 'MOCK EXAM' : kind === 'topic' ? 'TOPIC' : mode === 'timed' ? 'TIMED' : 'PRACTICE';
+  const n = S.qs.length, label = kind === 'retake' ? 'RETAKE' : kind === 'mock' ? 'MOCK EXAM' : kind === 'topic' ? 'TOPIC' : mode === 'timed' ? 'TIMED' : 'PRACTICE';
   el.sub.textContent = [topicName ? S.course.title : '', `${n} ${n === 1 ? 'Question' : 'Questions'}`, label].filter(Boolean).join(' • ');
   document.title = `${topicName || S.course.title || 'Session'} — PRIME-CBT`;
 }
