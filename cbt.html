@@ -125,7 +125,7 @@ const LETTERS = 'ABCDEFGHIJ';
 
 /* ---- URL params (sent by practice-setup.html, or by results.html for a retake) ---- */
 const P = new URLSearchParams(location.search);
-const courseParam = (P.get('courseId') || P.get('course') || '').trim();
+let courseParam = (P.get('courseId') || P.get('course') || '').trim();
 const topicParam = (P.get('topic') || '').trim();
 const courseIds = (P.get('courseIds') || '').split(',').map(s => s.trim()).filter(Boolean);
 const idsParam = (P.get('ids') || '').split(',').map(s => s.trim()).filter(Boolean);   // exact question list (topic / weak practice)
@@ -367,6 +367,14 @@ async function init() {
     const { data: { session } } = await db.auth.getSession(); if (!session) return redirectToLogin();
     const { data: { user }, error: ue } = await db.auth.getUser(); if (ue || !user) return redirectToLogin();
     S.user = user; db.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') redirectToLogin(); });
+    // RETAKE: take the course from the finished session itself, so the link never needs to carry it
+    if (retakeId && !courseParam) {
+      const { data: rt } = await db.rpc('get_retake_questions', { p_session_id: retakeId });
+      if (rt && rt.course_id) {
+        courseParam = String(rt.course_id);
+        el.back.href = CONFIG.setupPage + '?course=' + encodeURIComponent(courseParam) + '&mode=Practice';
+      }
+    }
     if (!courseParam && !topicParam) { el.sub.textContent = 'No course selected'; return showMessage('No course selected', 'Choose a course and set up your session first.', 'Set up a session', null, CONFIG.setupPage); }
     S.course = await resolveCourse();
     if (!S.course) { el.sub.textContent = 'Course not found'; return showMessage('Course not found', 'We couldn’t find that course.', 'Set up a session', null, CONFIG.setupPage); }
