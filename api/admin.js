@@ -1071,7 +1071,98 @@ const actions = {
       return { saved: out.saved, rejected: out.rejected, duplicates: out.duplicates, total: out.total, already: !!out.already, course_title: out.course_title };
     } finally { unlock(key); }
   },
+  // Writes new questions for ONE course from its title and description (no file needed).
+  // Used by Questions > Generate questions. The admin page calls it in batches of 25 until a course has 100 new ones.
+  async generate_course_questions(req, res, b) {
+    await requireAuth(req);
+    if (!(await hasKeys())) throw new HttpError(500, 'No Gemini API key found. Open the API Keys section in this panel and add one.');
+    if (!isId(String(b.course_id))) throw new HttpError(400, 'Choose a course.');
+    const want = Math.min(Math.max(parseInt(b.count, 10) || 25, 1), 30);
+    const batchNo = Math.max(parseInt(b.batch_no, 10) || 0, 0);
+    const course = ((await sb('/rest/v1/courses?id=eq.' + enc(b.course_id) + '&select=id,title,code,description')).data || [])[0];
+    if (!course) throw new HttpError(400, 'Course not found.');
 
+    return runCtx.run({ deadline: Date.now() + RUN_BUDGET_MS }, async function () {
+      const existing = {}, stems = [];
+      ((await sb('/rest/v1/questions?course_id=eq.' + enc(course.id) + '&select=question&order=created_at.desc&limit=5000')).data || []).forEach(function (q) {
+        existing[normQ(q.question)] = 1;
+        if (stems.length < 80) stems.push(String(q.question).slice(0, 110));
+      });
+
+      const ask = Math.min(Math.ceil(want * 1.25), 30);   // a few extra, because duplicates and weak ones are thrown away
+      const avoid = stems.map(function (s) { return '- ' + s; }).join('\n');
+      const prompt =
+        'Course: ' + course.title + (course.code ? ' (' + course.code + ')' : '') + '\n' +
+        (course.description ? 'Description: ' + String(course.description).slice(0, 600) + '\n' : '') +
+        '\nWrite ' + ask + ' multiple-choice exam questions for university students taking this course, using standard, well-established textbook knowledge.\n' +
+        'Accuracy matters most: only write a question if you are certain of the correct answer.\n' +
+        'Rules:\n' +
+        '- This is set number ' + (batchNo + 1) + '. Spread the questions across the WHOLE syllabus and cover topics different from earlier sets.\n' +
+        '- Never write two questions about the same fact.\n' +
+        '- Each question has exactly 4 options and exactly one correct option. Do not use "all of the above" or "none of the above".\n' +
+        '- "correct_index" is the position of the correct option, starting at 0.\n' +
+        '- "difficulty" is one of easy, medium, hard. Mix them. "explanation" is one or two sentences.\n' +
+        '- Write all maths, formulas and chemical equations in LaTeX. Inline: \\( ... \\)  On its own line: \\[ ... \\]  Chemistry: \\(\\ce{H2SO4}\\). Never use a single dollar sign for maths. Inside the JSON every backslash must be doubled.\n' +
+        (avoid ? '- These questions already exist. Do not repeat or reword them:\n' + avoid + '\n' : '') +
+        'Return a JSON array only, in this shape:\n' +
+        '[{"question":"","options":["","","",""],"correct_index":0,"explanation":"","difficulty":"easy"}]';
+
+      const body = {
+        systemInstruction: { parts: [{ text: 'You write accurate multiple-choice exam questions for university students. Write all mathematics, formulas and chemical equations in LaTeX. Reply with a JSON array only, no other text.' }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.6,
+          maxOutputTokens: 16000,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'ARRAY',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                question: { type: 'STRING' },
+                options: { type: 'ARRAY', items: { type: 'STRING' } },
+                correct_index: { type: 'INTEGER' },
+                explanation: { type: 'STRING' },
+                difficulty: { type: 'STRING', enum: ['easy', 'medium', 'hard'] }
+              },
+              required: ['question', 'options', 'correct_index', 'explanation', 'difficulty']
+            }
+          }
+        }
+      };
+
+      const items = parseJsonArray(await askGemini('', body));
+      if (!items) throw new HttpError(502, 'The question writer returned an unreadable answer. Try again.');
+
+      let rejected = 0, duplicates = 0;
+      const rows = [];
+      items.forEach(function (it) {
+        if (rows.length >= want) return;
+        const options = it && Array.isArray(it.options) ? it.options.map(function (o) { return String(o == null ? '' : o).trim(); }) : [];
+        const ok = it && typeof it.question === 'string' && it.question.trim().length > 10 &&
+          options.length === 4 && options.every(Boolean) &&
+          new Set(options.map(normQ)).size === 4 &&
+          Number.isInteger(it.correct_index) && it.correct_index >= 0 && it.correct_index < 4;
+        if (!ok) { rejected++; return; }
+        const key = normQ(it.question);
+        if (existing[key]) { duplicates++; return; }
+        existing[key] = 1;
+        const mixed = shuffleOptions(options, it.correct_index);
+        rows.push({
+          course_id: course.id,
+          question: it.question.trim(),
+          options: mixed.options,
+          correct_index: mixed.correct_index,
+          explanation: (it.explanation || '').toString().trim() || null,
+          difficulty: ['easy', 'medium', 'hard'].indexOf(it.difficulty) > -1 ? it.difficulty : 'medium',
+          ai_generated: false
+        });
+      });
+      if (rows.length) await insertQuestions(rows);
+      return { saved: rows.length, rejected: rejected, duplicates: duplicates, course_title: course.title };
+    });
+  },
+  
   // Rewrites OLD questions that show maths as plain text (x^2, sqrt(3), H2SO4 ...) in LaTeX, a few at a time.
   // The admin page calls this again and again with the returned "next_after" until "done" is true.
   // Options keep their order, so the correct answer stays correct. Nothing is changed unless the ordinary words survive.
