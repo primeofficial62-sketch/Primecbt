@@ -3,6 +3,7 @@
 //   SUPABASE_URL                 e.g. https://xuofkjjhupgmrphzgyun.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY    Supabase > Settings > API Keys > secret / service_role key
 //   ADMIN_SESSION_SECRET         any long random text (40+ characters)
+//   CRON_SECRET                  secret that lets the Supabase every-minute schedule start background question writing
 //   GEMINI_API_KEY               (optional now) last-resort fallback key. Your main keys live in Admin > API Keys.
 //   STORAGE_BUCKET               (optional) Supabase Storage bucket for uploads. Defaults to "materials".
 //   GEMINI_MODEL                 (optional) force one Gemini model first. Otherwise the newest available one is used.
@@ -12,6 +13,9 @@
 //
 // API KEY ROTATION: keys are stored in the Supabase table "api_keys" (add them in Admin > API Keys).
 // When one key hits its limit, the same request is retried on the next key straight away.
+//
+// BACKGROUND JOBS: "queue_generation" saves a job per course in the table "question_jobs". A Supabase schedule (pg_cron)
+// calls the "run_jobs" action every minute while jobs are waiting, so question writing continues after you leave the site.
 //
 // Needs in package.json (project root):  "pdf-parse": "1.1.1", "jszip": "3.10.1", "pdf-lib": "1.17.1", "@vercel/functions": "^2.0.0"
 // Needs in vercel.json:   { "functions": { "api/admin.js": { "maxDuration": 300 } } }
@@ -47,6 +51,7 @@ const GEMINI_MODELS = [
   'gemini-3.5-flash-lite'
 ].filter(Boolean);
 const COOKIE = 'admin_session';
+const CRON_SECRET = process.env.CRON_SECRET || '';
 const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
 
@@ -251,6 +256,7 @@ async function getConfig() {
   return r.data && r.data[0] ? r.data[0] : null;
 }
 async function requireAuth(req) {
+  if (req && req.cronOk) return {};   // the every-minute background schedule (checked with CRON_SECRET in the handler)
   const tok = readToken(req);
   const cfg = await getConfig();
   if (!tok || !cfg || tok.v !== cfg.pin_version) throw new HttpError(401, 'Please sign in again.');
@@ -845,6 +851,80 @@ async function signUpload(path) {
   return signed;
 }
 
+/* ---------- background jobs (keep running when you leave the site) ---------- */
+// "queue_generation" saves one job per course in the table question_jobs. A Supabase schedule (pg_cron) calls
+// "run_jobs" every minute while jobs are waiting. Each run writes questions in batches of 25 until its time is used up,
+// saves its progress, and the next minute carries on from there.
+const JOB_LOCK_MS = 6 * 60000;
+const jobPatch = function (id, body) {
+  return sb('/rest/v1/question_jobs?id=eq.' + enc(id), { method: 'PATCH', body: Object.assign({ updated_at: new Date().toISOString() }, body) });
+};
+
+async function runJob(req, job, t0) {
+  const release = function (extra) { return jobPatch(job.id, Object.assign({ locked_until: null }, extra || {})); };
+  try {
+    const course = ((await sb('/rest/v1/courses?id=eq.' + enc(job.course_id) + '&select=id')).data || [])[0];
+    if (!course) { await release({ status: 'failed', error: 'Course no longer exists.' }); return; }
+    let saved = job.saved, batchNo = job.batch_no, empty = job.empty_batches, fails = job.fails;
+    while (saved < job.target) {
+      const elapsed = Date.now() - t0;
+      if (elapsed > 200000) { await release({ saved: saved, batch_no: batchNo, empty_batches: empty }); return; }   // the next minute carries on
+      const cur = ((await sb('/rest/v1/question_jobs?id=eq.' + enc(job.id) + '&select=status')).data || [])[0];
+      if (!cur || cur.status === 'cancelled') return;
+      try {
+        const r = await actions.generate_course_questions(req, null, {
+          course_id: job.course_id,
+          count: Math.min(25, job.target - saved),
+          batch_no: batchNo,
+          budget_ms: Math.min(240000, 280000 - elapsed)
+        });
+        saved += r.saved; batchNo++; empty = r.saved ? 0 : empty + 1; fails = 0;
+        if (empty >= 4) {
+          await release({ status: 'done', saved: saved, batch_no: batchNo, empty_batches: empty, fails: 0, error: 'Could not find more new questions for this course.' });
+          return;
+        }
+        await jobPatch(job.id, { saved: saved, batch_no: batchNo, empty_batches: empty, fails: 0, error: null, locked_until: new Date(Date.now() + JOB_LOCK_MS).toISOString() });
+      } catch (e) {
+        const msg = (e && e.message) || 'Question writing failed.';
+        if (/Ran out of time/i.test(msg)) { await release({ saved: saved, batch_no: batchNo, empty_batches: empty }); return; }
+        fails++;
+        const hard = /No Gemini API key|not valid or missing/i.test(msg) || fails >= 6;
+        await release(hard
+          ? { status: 'failed', error: msg, saved: saved, batch_no: batchNo, empty_batches: empty, fails: fails }
+          : { error: msg, saved: saved, batch_no: batchNo, empty_batches: empty, fails: fails, retry_at: new Date(Date.now() + Math.min(30, fails * fails * 2) * 60000).toISOString() });
+        return;
+      }
+    }
+    await release({ status: 'done', saved: saved, batch_no: batchNo, empty_batches: empty, error: null });
+  } catch (e) {
+    try { await release({ error: (e && e.message) || 'Job failed.' }); } catch (e2) { /* ignore */ }
+  }
+}
+
+async function processJobs(req) {
+  const t0 = Date.now();
+  // only one worker at a time
+  const busy = (await sb('/rest/v1/question_jobs?select=id&status=eq.running&locked_until=gt.' + enc(new Date().toISOString()) + '&limit=1')).data || [];
+  if (busy.length) return { skipped: 'busy' };
+  let worked = 0;
+  while (Date.now() - t0 < 200000) {
+    const iso = new Date().toISOString();
+    const cand = (await sb('/rest/v1/question_jobs?select=*&status=in.(pending,running)&or=(locked_until.is.null,locked_until.lt.' + enc(iso) + ')&order=created_at.asc&limit=10')).data || [];
+    const job = cand.filter(function (j) { return !j.retry_at || new Date(j.retry_at) <= new Date(); })[0];
+    if (!job) break;
+    // claim it: only one worker can win
+    const claimed = (await sb('/rest/v1/question_jobs?id=eq.' + enc(job.id) + '&or=(locked_until.is.null,locked_until.lt.' + enc(iso) + ')', {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: { status: 'running', locked_until: new Date(Date.now() + JOB_LOCK_MS).toISOString(), updated_at: iso }
+    })).data || [];
+    if (!claimed.length) continue;
+    worked++;
+    await runJob(req, claimed[0], t0);
+  }
+  return { worked: worked };
+}
+
 /* ---------- actions ---------- */
 const actions = {
   async status(req) {
@@ -1072,7 +1152,7 @@ const actions = {
     } finally { unlock(key); }
   },
   // Writes new questions for ONE course from its title and description (no file needed).
-  // Used by Questions > Generate questions. The admin page calls it in batches of 25 until a course has 100 new ones.
+  // Used by Questions > Generate questions, and by the background jobs below (batches of 25 until a course has 100 new ones).
   async generate_course_questions(req, res, b) {
     await requireAuth(req);
     if (!(await hasKeys())) throw new HttpError(500, 'No Gemini API key found. Open the API Keys section in this panel and add one.');
@@ -1082,7 +1162,8 @@ const actions = {
     const course = ((await sb('/rest/v1/courses?id=eq.' + enc(b.course_id) + '&select=id,title,code,description')).data || [])[0];
     if (!course) throw new HttpError(400, 'Course not found.');
 
-    return runCtx.run({ deadline: Date.now() + RUN_BUDGET_MS }, async function () {
+    const budget = Math.min(RUN_BUDGET_MS, Math.max(30000, parseInt(b.budget_ms, 10) || RUN_BUDGET_MS));
+    return runCtx.run({ deadline: Date.now() + budget }, async function () {
       const existing = {}, stems = [];
       ((await sb('/rest/v1/questions?course_id=eq.' + enc(course.id) + '&select=question&order=created_at.desc&limit=5000')).data || []).forEach(function (q) {
         existing[normQ(q.question)] = 1;
@@ -1162,7 +1243,53 @@ const actions = {
       return { saved: rows.length, rejected: rejected, duplicates: duplicates, course_title: course.title };
     });
   },
-  
+
+  // Starts question writing on the server. It keeps running after you close the site.
+  // course_id is one course's id, or "all" for every course. target = new questions to add per course (default 100).
+  async queue_generation(req, res, b) {
+    await requireAuth(req);
+    if (!(await hasKeys())) throw new HttpError(500, 'No Gemini API key found. Open the API Keys section in this panel and add one.');
+    const target = Math.min(Math.max(parseInt(b.target, 10) || 100, 5), 300);
+    let courses;
+    if (b.course_id === 'all') courses = (await sb('/rest/v1/courses?select=id,title&limit=1000')).data || [];
+    else {
+      if (!isId(String(b.course_id))) throw new HttpError(400, 'Choose a course.');
+      courses = (await sb('/rest/v1/courses?id=eq.' + enc(b.course_id) + '&select=id,title')).data || [];
+    }
+    if (!courses.length) throw new HttpError(400, 'Course not found.');
+    const active = ((await sb('/rest/v1/question_jobs?select=course_id&status=in.(pending,running)')).data || []).map(function (j) { return String(j.course_id); });
+    const fresh = courses.filter(function (c) { return active.indexOf(String(c.id)) < 0; });
+    for (let i = 0; i < fresh.length; i += 200) {
+      await sb('/rest/v1/question_jobs', { method: 'POST', body: fresh.slice(i, i + 200).map(function (c) { return { course_id: c.id, course_title: c.title, target: target }; }) });
+    }
+    background(processJobs({ cronOk: true }));   // start right now; the every-minute schedule takes over after
+    return { queued: fresh.length, skipped: courses.length - fresh.length };
+  },
+
+  // Progress of the background jobs, for the admin page to show.
+  async job_status(req) {
+    await requireAuth(req);
+    const rows = (await sb('/rest/v1/question_jobs?select=id,course_id,course_title,target,saved,status,error,created_at,updated_at&order=created_at.desc&limit=300')).data || [];
+    const summary = { pending: 0, running: 0, done: 0, failed: 0, cancelled: 0 };
+    rows.forEach(function (j) { summary[j.status] = (summary[j.status] || 0) + 1; });
+    return { jobs: rows, summary: summary };
+  },
+
+  // Stops every job that is waiting or running.
+  async cancel_jobs(req) {
+    await requireAuth(req);
+    await sb('/rest/v1/question_jobs?status=in.(pending,running)', { method: 'PATCH', body: { status: 'cancelled', locked_until: null, updated_at: new Date().toISOString() } });
+    return { ok: true };
+  },
+
+  // Called every minute by the Supabase schedule (secret header), or by you.
+  async run_jobs(req) {
+    if (!req.cronOk) await requireAuth(req);
+    const w = { cronOk: true };
+    if (waitUntil) { background(processJobs(w)); return { started: true }; }
+    return await processJobs(w);
+  },
+
   // Rewrites OLD questions that show maths as plain text (x^2, sqrt(3), H2SO4 ...) in LaTeX, a few at a time.
   // The admin page calls this again and again with the returned "next_after" until "done" is true.
   // Options keep their order, so the correct answer stays correct. Nothing is changed unless the ordinary words survive.
@@ -1423,6 +1550,11 @@ module.exports = async function handler(req, res) {
     if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
     b = b || {};
     if (!Object.prototype.hasOwnProperty.call(actions, b.action)) throw new HttpError(400, 'Unknown action.');
+    // The Supabase every-minute schedule proves itself with the CRON_SECRET header. It may only start the background jobs.
+    if (b.action === 'run_jobs' && CRON_SECRET) {
+      const got = Buffer.from(String(req.headers['x-cron-secret'] || '')), want = Buffer.from(CRON_SECRET);
+      if (got.length === want.length && crypto.timingSafeEqual(got, want)) req.cronOk = true;
+    }
     const out = await actions[b.action](req, res, b);
     res.status(200).json(out);
   } catch (e) {
