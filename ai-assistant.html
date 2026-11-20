@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="nav.css">
   <style>
     :root {
       --bg: #070D1C;
@@ -457,10 +457,21 @@
       .topbar { padding-top: max(6px, env(safe-area-inset-top)); padding-bottom: 6px; }
       .ai-input-dock { padding-top: 8px; padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 8px) + 8px); }
     }
+      /* ---------- Laptop / desktop: fill the screen ---------- */
+    @media (min-width:1024px){
+      :root { --app-max: none; --side: clamp(24px, 6vw, 120px); }
+      .app { border-left:0; border-right:0; }
+      .topbar { padding-left:var(--side); padding-right:var(--side); }
+      .ai-content { padding-left:var(--side); padding-right:var(--side); }
+      .ai-content > * { width:100%; max-width:960px; margin-inline:auto; }
+      .ai-input-dock { padding-left:var(--side); padding-right:var(--side); }
+      .ai-input-form { max-width:960px; margin-inline:auto; }
+      .prompt-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body data-bottom-nav="off">
   <div class="app ai-app">
     <!-- Top Bar -->
     <header class="topbar">
@@ -579,5 +590,6 @@
   </script>
 
   <script src="ai-assistant-chat.js"></script>
+  <script src="nav.js" defer></script>
 </body>
 </html>
