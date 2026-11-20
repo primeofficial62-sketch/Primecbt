@@ -2477,8 +2477,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
 
     for (var i = 0; i < courses.length && !gqStop && !abort; i++) {
       var c = courses[i], made = 0, misses = 0, nextBatch = 0, bFail = 0, lastErr = '';
-  /* ================= GENERATE QUESTIONS (All / Select) ================= */
-  var GQ_TOTAL = 100, GQ_BATCH = 25, gqStop = false;
+ 
 
   // Counts the questions each course already has (courses sharing a code count as one).
   async function loadGenState(rows) {
