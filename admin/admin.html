@@ -30,6 +30,13 @@
     (function () {
       function show(msg, where) {
         var b = document.getElementById('boot'); if (!b) return;
+              function show(msg, where) {
+        var b = document.getElementById('boot'); if (!b) return;
+        var ap = document.getElementById('app'); if (ap && !ap.hidden) { console.error(msg, where); return; }
+        var l = document.getElementById('lock'); if (l) l.hidden = true;
+        var sp = document.getElementById('splash'); if (sp) sp.hidden = true;
+        b.hidden = false;
+        ...
         var l = document.getElementById('lock'); if (l) l.hidden = true;
         var sp = document.getElementById('splash'); if (sp) sp.hidden = true;
         b.hidden = false;
@@ -1303,6 +1310,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
 
     var plural = function (n) { return num(n) + (n === 1 ? ' question' : ' questions'); };
     function paint() {
+            if (!$('gRows') || !data) return;
       var h = '<div class="row tap" data-all="1"><div class="row-main"><div class="row-title">All questions<span class="tag">' + esc(num(data.total)) + '</span></div><div class="row-sub">See every question from every course</div></div></div>';
       data.groups.forEach(function (g, gi) {
         var multi = g.ids.length > 1, n = g.n;
@@ -1313,23 +1321,20 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       $('gRows').innerHTML = h;
       $('gCount').textContent = data.groups.length + (data.groups.length === 1 ? ' course' : ' courses');
     }
-    async function pull() {
-      var cs = await fetchAllRows('courses'), qs = await fetchAllRows(sec.table);
-      var counts = {};
-      qs.rows.forEach(function (r) { counts[r.course_id] = (counts[r.course_id] || 0) + 1; });
+        async function pull() {
+      var cs = await fetchAllRows('courses'), counts = {}, qtotal = 0, ci = 0;
+      // Count each course with one tiny request instead of downloading every question.
+      async function countWorker() {
+        while (ci < cs.rows.length) {
+          var c = cs.rows[ci++];
+          var d = await api('list', { table: sec.table, filters: { course_id: c.id }, limit: 1 });
+          counts[c.id] = d.total || 0; qtotal += counts[c.id];
+        }
+      }
+      await Promise.all([countWorker(), countWorker(), countWorker(), countWorker(), countWorker(), countWorker()]);
+      var qs = { total: qtotal };
       var sig = JSON.stringify([cs.rows.map(function (c) { return [c.id, c.title, c.code]; }), counts, qs.total]);
       if (data && data.sig === sig) return;
-      // One entry per course CODE. Courses that share a code (different topics) are merged into it.
-      var map = {}, groups = [];
-      cs.rows.forEach(function (c) {
-        var k = normName(c.code || c.title);
-        if (!map[k]) { map[k] = { code: c.code || c.title, ids: [], titles: [], n: 0 }; groups.push(map[k]); }
-        map[k].ids.push(c.id); map[k].titles.push(c.title); map[k].n += counts[c.id] || 0;
-      });
-      groups.sort(function (a, b) { return azCompare(a.code, b.code); });
-      data = { sig: sig, courses: cs.rows, groups: groups, counts: counts, total: qs.total };
-      paint();
-    }
     async function first() { try { await pull(); } catch (e) { if ($('gRows')) $('gRows').innerHTML = emptyHtml(e.message, true); } }
     var again = function () { pull().catch(function () {}); };
 
@@ -1390,10 +1395,11 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         (d.sub ? '<div class="row-sub">' + esc(d.sub) + '</div>' : '') + (d.sub2 ? '<div class="row-sub">' + esc(d.sub2) + '</div>' : '') + '</div>' +
         (acts ? '<div class="row-actions">' + acts + '</div>' : '') + '</div>';
     }
-    function paint(fresh) {
+        function paint(fresh) {
+      if (!$('lRows')) return;   // section was switched while loading
       $('lRows').innerHTML = st.rows.length ? st.rows.map(function (r, i) { return rowHtml(r, i, fresh); }).join('') : emptyHtml(st.q || st.filter ? 'Nothing matches your search.' : (sec.empty || 'Nothing here yet.'));
-      $('lCount').textContent = st.total ? st.rows.length + ' of ' + st.total : '';
-      $('lMore').innerHTML = st.rows.length < st.total ? '<button class="btn" id="lMoreBtn">Load more</button>' : '';
+      if ($('lCount')) $('lCount').textContent = st.total ? st.rows.length + ' of ' + st.total : '';
+      if ($('lMore')) $('lMore').innerHTML = st.rows.length < st.total ? '<button class="btn" id="lMoreBtn">Load more</button>' : '';
     }
     function filtersNow() { var f = {}; if (sec.filter && st.filter) f[sec.filter.key] = st.filter; return f; }
     var compact = function (v) { return normName(v).replace(/ /g, ''); };
@@ -1430,7 +1436,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         if (sec.prepare) await sec.prepare(d.rows);
         st.sig = JSON.stringify(st.rows) + '|' + st.total;
         paint();
-      } catch (e) { $('lRows').innerHTML = emptyHtml(e.message, true); }
+                  } catch (e) { if ($('lRows')) $('lRows').innerHTML = emptyHtml(e.message, true); }
       st.busy = false;
     }
     async function refresh() {
@@ -2463,25 +2469,32 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     var grand = 0, failed = 0, abort = false;
 
     for (var i = 0; i < courses.length && !gqStop && !abort; i++) {
-      var c = courses[i], made = 0, misses = 0, batchNo = 0;
-      while (made < GQ_TOTAL && !gqStop) {
-        say(i, 'Writing… ' + made + '/' + GQ_TOTAL);
-        try {
-          var payload = { course_id: c.id, count: Math.min(GQ_BATCH, GQ_TOTAL - made), batch_no: batchNo++ };
-          if (courseHasMath(c)) { payload.math = true; payload.format = 'latex'; }
-          var r = await api('generate_course_questions', payload, 280000);
-          var n = (r && r.saved) || 0;
-          made += n; grand += n;
-          misses = n ? 0 : misses + 1;
-          if ($('gqTotal')) $('gqTotal').textContent = grand.toLocaleString() + ' questions added';
-          if (misses >= 2) break;
-        } catch (e) {
-          if (e.status === 401) { abort = true; break; }
-          misses++;
-          if (misses >= 2) { say(i, 'Failed: ' + e.message); failed++; break; }
-          await sleep(3000);   // the server switches to the next API key on retry
+            var c = courses[i], made = 0, misses = 0, nextBatch = 0, bFail = 0, lastErr = '';
+      var nBatches = Math.ceil(GQ_TOTAL / GQ_BATCH);
+      say(i, 'Writing ' + GQ_TOTAL + ' questions…');
+      var runBatches = async function () {
+        while (nextBatch < nBatches && !gqStop && !abort) {
+          var bn = nextBatch++;
+          for (var tries = 0; tries < 2 && !gqStop; tries++) {
+            try {
+              var payload = { course_id: c.id, count: GQ_BATCH, batch_no: bn };
+              if (courseHasMath(c)) { payload.math = true; payload.format = 'latex'; }
+              var r = await api('generate_course_questions', payload, 280000);
+              var n = (r && r.saved) || 0;
+              made += n; grand += n;
+              say(i, 'Writing… ' + made + '/' + GQ_TOTAL);
+              if ($('gqTotal')) $('gqTotal').textContent = grand.toLocaleString() + ' questions added';
+              break;
+            } catch (e) {
+              if (e.status === 401) { abort = true; return; }
+              lastErr = e.message;
+              if (tries) bFail++; else await sleep(3000);
+            }
+          }
         }
-      }
+      };
+      await Promise.all([runBatches(), runBatches(), runBatches(), runBatches()]);
+      if (made === 0 && bFail) { misses = 2; say(i, 'Failed: ' + lastErr); failed++; }
       if (!abort && !(misses >= 2 && made === 0)) say(i, made + ' questions added' + (made < GQ_TOTAL ? ' (stopped early)' : ''));
     }
     genBusy = false;
