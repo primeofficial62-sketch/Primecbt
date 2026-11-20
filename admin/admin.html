@@ -2744,31 +2744,49 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
   }
   
   /* ---------- fix old questions: plain-text maths -> proper maths ---------- */
-  async function fixOldMath(done) {
+    async function fixOldMath(done) {
     var ids;
     try { ids = (await allCourses()).filter(courseHasMath).map(function (c) { return c.id; }); } catch (e) { toast(e.message, true); return; }
     if (!ids.length) { toast('No ' + MATH_COURSES.join('/') + ' courses found.', true); return; }
-    var ok = await confirmBox({ title: 'Fix maths in old questions?', text: 'Old questions in your ' + MATH_COURSES.join(', ') + ' courses that show equations as plain text are rewritten with proper maths. The answers and the order of the options stay the same, and a question is only changed if all its ordinary words survive. This can take a few minutes.', yes: 'Fix now' });
+    var ok = await confirmBox({ title: 'Fix maths in old questions?', text: 'Old questions in your ' + MATH_COURSES.join(', ') + ' courses that show equations as plain text are rewritten with proper maths. The answers and the order of the options stay the same. It keeps going until every question is checked.', yes: 'Start' });
     if (!ok) return;
-    openSheet('Fixing maths in old questions', '<div class="count" id="fmTxt">Starting\u2026</div>', '<button class="btn primary" id="fmClose" disabled>Working\u2026</button>');
-    var after = '', scanned = 0, changed = 0, rejected = 0, err = '';
+    openSheet('Fixing maths in old questions',
+      '<div class="count" id="fmTxt">Counting questions\u2026</div>' +
+      '<div style="height:8px;border-radius:8px;background:rgba(127,127,127,.25);overflow:hidden;margin:10px 0"><div id="fmBar" style="height:100%;width:0;background:var(--accent, #7c8cff);transition:width .3s"></div></div>' +
+      '<div class="count" id="fmSub"></div>',
+      '<button class="btn primary" id="fmClose" disabled>Working\u2026</button>');
+    var total = 0, after = '', scanned = 0, changed = 0, rejected = 0, err = '';
     try {
-      for (var n = 0; n < 400; n++) {
+      for (var k = 0; k < ids.length; k++) {
+        var d = await api('list', { table: 'questions', filters: { course_id: ids[k] }, limit: 1 });
+        total += d.total || 0;
+      }
+      var calls = 0, fails = 0, maxCalls = Math.ceil(total / 12) + 60;
+      while (calls++ < maxCalls) {
         if (!$('fmTxt')) break;   // the box was closed
-        var r = await api('fix_math', { course_ids: ids, after: after, limit: 12 }, 280000);
+        var r;
+        try { r = await api('fix_math', { course_ids: ids, after: after, limit: 12 }, 280000); fails = 0; }
+        catch (e) {
+          if (e.status === 401 || ++fails >= 3) throw e;
+          await sleep(3000); continue;   // retry the same batch
+        }
         scanned += r.scanned || 0; changed += r.changed || 0; rejected += r.rejected || 0; after = r.next_after || after;
-        if ($('fmTxt')) $('fmTxt').textContent = 'Checked ' + scanned + ' questions. Fixed ' + changed + (rejected ? '. Left ' + rejected + ' unchanged to be safe' : '') + '\u2026';
+        var pct = total ? Math.min(100, Math.round(scanned / total * 100)) : 0;
+        if ($('fmTxt')) $('fmTxt').textContent = 'Checked ' + scanned.toLocaleString() + ' of ' + total.toLocaleString() + ' questions (' + pct + '%)';
+        if ($('fmBar')) $('fmBar').style.width = pct + '%';
+        if ($('fmSub')) $('fmSub').textContent = 'Fixed so far: ' + changed.toLocaleString() + ' \u00b7 Still to check: ' + Math.max(0, total - scanned).toLocaleString() + (rejected ? ' \u00b7 Left unchanged to be safe: ' + rejected : '');
         if (r.done) break;
       }
     } catch (e) { err = e.message; }
     if ($('fmTxt')) {
-      $('fmTxt').textContent = (err ? 'Stopped: ' + err + '. ' : 'Finished. ') + 'Checked ' + scanned + ' questions, fixed ' + changed + (rejected ? ', left ' + rejected + ' unchanged to be safe' : '') + '.';
+      $('fmTxt').textContent = (err ? 'Stopped: ' + err : 'Finished. All ' + total.toLocaleString() + ' questions checked.');
+      if ($('fmBar') && !err) $('fmBar').style.width = '100%';
+      if ($('fmSub')) $('fmSub').textContent = 'Fixed ' + changed.toLocaleString() + (rejected ? ', left ' + rejected + ' unchanged to be safe' : '') + (err ? '. Press the button again to continue; fixed ones are skipped.' : '.');
       var b = $('fmClose'); b.disabled = false; b.textContent = 'Done';
       b.onclick = function () { closeSheet(); if (done) done(); };
     }
     toast((err ? '\u26A0\uFE0F ' : '\u2705 ') + changed + (changed === 1 ? ' question' : ' questions') + ' fixed', !!err && !changed, 6000);
   }
-
   /* ---------- silent background generation ---------- */
   var bgQueue = [], bgRunning = false, bgSum = null;
   var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
