@@ -29,14 +29,8 @@
     // If anything goes wrong, show the reason on screen instead of a blank page.
     (function () {
       function show(msg, where) {
-        var b = document.getElementById('boot'); if (!b) return;
-              function show(msg, where) {
-        var b = document.getElementById('boot'); if (!b) return;
+                var b = document.getElementById('boot'); if (!b) return;
         var ap = document.getElementById('app'); if (ap && !ap.hidden) { console.error(msg, where); return; }
-        var l = document.getElementById('lock'); if (l) l.hidden = true;
-        var sp = document.getElementById('splash'); if (sp) sp.hidden = true;
-        b.hidden = false;
-        ...
         var l = document.getElementById('lock'); if (l) l.hidden = true;
         var sp = document.getElementById('splash'); if (sp) sp.hidden = true;
         b.hidden = false;
@@ -1309,8 +1303,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     $('view').innerHTML = top;
 
     var plural = function (n) { return num(n) + (n === 1 ? ' question' : ' questions'); };
-    function paint() {
-            if (!$('gRows') || !data) return;
+        function paint() {
+      if (!$('gRows') || !data) return;
       var h = '<div class="row tap" data-all="1"><div class="row-main"><div class="row-title">All questions<span class="tag">' + esc(num(data.total)) + '</span></div><div class="row-sub">See every question from every course</div></div></div>';
       data.groups.forEach(function (g, gi) {
         var multi = g.ids.length > 1, n = g.n;
@@ -1322,8 +1316,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       $('gCount').textContent = data.groups.length + (data.groups.length === 1 ? ' course' : ' courses');
     }
         async function pull() {
-      var cs = await fetchAllRows('courses'), counts = {}, qtotal = 0, ci = 0;
-      // Count each course with one tiny request instead of downloading every question.
+            var cs = await fetchAllRows('courses'), counts = {}, qtotal = 0, ci = 0;
       async function countWorker() {
         while (ci < cs.rows.length) {
           var c = cs.rows[ci++];
@@ -1395,8 +1388,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         (d.sub ? '<div class="row-sub">' + esc(d.sub) + '</div>' : '') + (d.sub2 ? '<div class="row-sub">' + esc(d.sub2) + '</div>' : '') + '</div>' +
         (acts ? '<div class="row-actions">' + acts + '</div>' : '') + '</div>';
     }
-        function paint(fresh) {
-      if (!$('lRows')) return;   // section was switched while loading
+            function paint(fresh) {
+      if (!$('lRows')) return;
       $('lRows').innerHTML = st.rows.length ? st.rows.map(function (r, i) { return rowHtml(r, i, fresh); }).join('') : emptyHtml(st.q || st.filter ? 'Nothing matches your search.' : (sec.empty || 'Nothing here yet.'));
       if ($('lCount')) $('lCount').textContent = st.total ? st.rows.length + ' of ' + st.total : '';
       if ($('lMore')) $('lMore').innerHTML = st.rows.length < st.total ? '<button class="btn" id="lMoreBtn">Load more</button>' : '';
@@ -1435,8 +1428,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         st.rows = st.rows.concat(d.rows); st.total = d.total; st.offset = st.rows.length;
         if (sec.prepare) await sec.prepare(d.rows);
         st.sig = JSON.stringify(st.rows) + '|' + st.total;
-        paint();
-                  } catch (e) { if ($('lRows')) $('lRows').innerHTML = emptyHtml(e.message, true); }
+        paint();      } catch (e) { if ($('lRows')) $('lRows').innerHTML = emptyHtml(e.message, true); }
       st.busy = false;
     }
     async function refresh() {
@@ -2456,7 +2448,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     };
   }
 
-  async function runGenerateQuestions(courses, done) {
+    async function runGenerateQuestions(courses, done) {
     if (genBusy) { toast('Questions are already being made. Please wait.', true); return; }
     genBusy = true; gqStop = false;
     openSheet('Generating questions',
@@ -2469,7 +2461,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     var grand = 0, failed = 0, abort = false;
 
     for (var i = 0; i < courses.length && !gqStop && !abort; i++) {
-            var c = courses[i], made = 0, misses = 0, nextBatch = 0, bFail = 0, lastErr = '';
+      var c = courses[i], made = 0, misses = 0, nextBatch = 0, bFail = 0, lastErr = '';
       var nBatches = Math.ceil(GQ_TOTAL / GQ_BATCH);
       say(i, 'Writing ' + GQ_TOTAL + ' questions…');
       var runBatches = async function () {
