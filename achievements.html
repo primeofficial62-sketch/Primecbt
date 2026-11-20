@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="nav.css">
   <style>
     :root {
       --bg:#070D1C; --surface:#10192B; --surface-2:#17233A; --border:#2A3850; --inactive:#344256;
@@ -101,9 +101,21 @@
     .sk { color:transparent !important; background:linear-gradient(90deg,#17233A 25%,#223250 50%,#17233A 75%); background-size:200% 100%; animation:shimmer 1.4s linear infinite; border-radius:10px; }
     @keyframes shimmer { to { background-position:-200% 0; } }
     @media (prefers-reduced-motion:reduce){ *,*::before,*::after{ animation:none !important; transition:none !important; } }
+      /* ---------- Laptop / desktop: fill the screen ---------- */
+    @media (min-width:1024px){
+      .stage { max-width:none; border-left:0; border-right:0; }
+      .top { padding-left:clamp(24px,4vw,64px); padding-right:clamp(24px,4vw,64px); }
+      main {
+        width:100%; max-width:1400px; margin:0 auto;
+        padding:32px clamp(24px,4vw,64px) 56px;
+        display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; align-items:start;
+      }
+      main > section[aria-label="Achievements"], #errorBanner { grid-column:1 / -1; }
+      .grid { grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); }
+    }
   </style>
 </head>
-<body>
+<body data-nav-parent="progress.html">
 <div class="stage">
   <header class="top">
     <div class="top-row">
@@ -403,5 +415,6 @@
   })();
 })();
 </script>
+<script src="nav.js" defer></script>
 </body>
 </html>
