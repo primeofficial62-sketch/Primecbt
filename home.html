@@ -765,13 +765,19 @@ document.addEventListener('DOMContentLoaded', () => {
       input.value = canCancel ? examDate : '';
     }
     let mileKey = null;
-    function mile(days) {
-      const k = days <= 1 ? 1 : days <= 7 ? 7 : days <= 14 ? 14 : days <= 30 ? 30 : 0;
-      if (k === mileKey) return;
-      mileKey = k;
-      const M = { 1: 'Final day. Do light revision and sleep early.', 7: 'Final week. Focus on weak topics and timed practice.', 14: '2 weeks left. Time to switch to past questions.', 30: '1 month to go. Build a steady daily study routine.' };
-      $('cdMile').hidden = !k; $('cdMile').textContent = k ? M[k] : '';
-    }
+function mile(days) {
+  if (days === mileKey) return;
+  mileKey = days;
+  const n = days + (days === 1 ? ' day' : ' days');
+  let msg = '';
+  if (days === 0) msg = 'Final day. Do light revision and sleep early.';
+  else if (days === 1) msg = n + ' left. Light revision, then sleep early.';
+  else if (days <= 7) msg = n + ' left. Focus on weak topics and timed practice.';
+  else if (days <= 14) msg = n + ' left. Time to switch to past questions.';
+  else if (days <= 30) msg = n + ' left. Build a steady daily study routine.';
+  $('cdMile').hidden = !msg;
+  $('cdMile').textContent = msg;
+}
     function tick() {
       const diff = target() - Date.now();
       if (diff <= 0) {
