@@ -1,0 +1,47 @@
+/* PRIME-CBT: fill the screen on laptops/desktops */
+html, body {
+  width: 100%;
+  max-width: none !important;
+  margin: 0;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* remove width caps on page wrappers (modals and popups are left alone) */
+main,
+[class*="container"]:not([class*="modal"]):not([class*="toast"]),
+[class*="wrapper"]:not([class*="modal"]):not([class*="toast"]),
+[class*="shell"],
+[class*="layout"],
+[class*="page"]:not([class*="modal"]) {
+  max-width: none !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* laptop and larger: comfortable side padding that scales with the screen */
+@media (min-width: 1024px) {
+  main,
+  [class*="content"]:not([class*="modal"]) {
+    padding-left: clamp(24px, 4vw, 64px);
+    padding-right: clamp(24px, 4vw, 64px);
+  }
+
+  /* any card grid fills the row and reflows */
+  [class*="grid"],
+  [class*="cards"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+}
+
+/* big screens: keep text readable but still use the space */
+@media (min-width: 1600px) {
+  main, [class*="content"]:not([class*="modal"]) {
+    padding-left: 6vw;
+    padding-right: 6vw;
+  }
+}
+
+img, video, canvas, table { max-width: 100%; }
