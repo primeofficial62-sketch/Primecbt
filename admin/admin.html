@@ -2477,19 +2477,126 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
 
     for (var i = 0; i < courses.length && !gqStop && !abort; i++) {
       var c = courses[i], made = 0, misses = 0, nextBatch = 0, bFail = 0, lastErr = '';
-      var nBatches = Math.ceil(GQ_TOTAL / GQ_BATCH);
-      say(i, 'Writing ' + GQ_TOTAL + ' questions…');
+  /* ================= GENERATE QUESTIONS (All / Select) ================= */
+  var GQ_TOTAL = 100, GQ_BATCH = 25, gqStop = false;
+
+  // Counts the questions each course already has (courses sharing a code count as one).
+  async function loadGenState(rows) {
+    var groups = {}, list = [];
+    rows.forEach(function (c) {
+      var k = cmpName(c.code || c.title); if (!k) return;
+      if (!groups[k]) { groups[k] = { c: c, ids: [] }; list.push(groups[k]); }
+      groups[k].ids.push(c.id);
+    });
+    var jobs = [];
+    list.forEach(function (g) { g.ids.forEach(function (id) { jobs.push({ g: g, id: id }); }); });
+    var next = 0;
+    async function worker() {
+      while (next < jobs.length) {
+        var j = jobs[next++];
+        try { var d = await api('list', { table: 'questions', filters: { course_id: j.id }, limit: 1 }); j.g.n = (j.g.n || 0) + (d.total || 0); }
+        catch (e) { j.g.n = (j.g.n || 0); }
+      }
+    }
+    await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
+    var out = list.map(function (g) {
+      var c = Object.assign({}, g.c);
+      c._n = g.n || 0;
+      c._need = Math.max(0, GQ_TOTAL - c._n);
+      return c;
+    });
+    out.sort(function (a, b) { return String(a.code || a.title).localeCompare(String(b.code || b.title)); });
+    return out;
+  }
+
+  async function openGenerateQuestions(done) {
+    if (genBusy) { toast('Questions are already being made. Please wait.', true); return; }
+    openSheet('Generate questions', '<div class="count">Checking which courses already have their questions…</div>', '<button class="btn" id="gqCancel">Cancel</button>');
+    $('gqCancel').onclick = function () { closeSheet(); };
+    var list;
+    try { list = await loadGenState(await allCourses()); } catch (e) { toast(e.message, true); closeSheet(); return; }
+    if (!$('gqCancel')) return;   // closed meanwhile
+    if (!list.length) { closeSheet(); toast('Add a course first.', true); return; }
+    var pending = list.filter(function (c) { return c._need > 0; });
+    var finished = list.length - pending.length;
+
+    openSheet('Generate questions',
+      '<div class="count">' + finished + ' course' + (finished === 1 ? '' : 's') + ' already generated (' + GQ_TOTAL + '+ questions). ' + pending.length + ' still need questions.</div>' +
+      '<div class="stack">' +
+      '<button class="btn primary" id="gqAll"' + (pending.length ? '' : ' disabled') + '>Generate all pending (' + pending.length + ')</button>' +
+      '<button class="btn" id="gqSel">Select courses</button></div>',
+      '<button class="btn" id="gqCancel">Cancel</button>');
+    $('gqCancel').onclick = function () { closeSheet(); };
+    $('gqAll').onclick = async function () {
+      var qn = pending.reduce(function (s, c) { return s + c._need; }, 0);
+      var ok = await confirmBox({ title: 'Generate for ' + pending.length + ' pending courses?', text: qn.toLocaleString() + ' questions will be written. Courses that already have ' + GQ_TOTAL + ' are skipped. This can take a long time.', yes: 'Start' });
+      if (ok) runGenerateQuestions(pending, done);
+    };
+    $('gqSel').onclick = function () { pickGenerateCourses(list, done); };
+  }
+
+  function pickGenerateCourses(list, done) {
+    openSheet('Select courses',
+      '<div class="fld"><input id="gqQ" type="search" placeholder="Search courses" autocomplete="off"></div>' +
+      '<div class="count" id="gqCount">0 selected</div>' +
+      '<div class="stack" id="gqList">' + list.map(function (c, i) {
+        var isDone = c._need === 0;
+        return '<label class="row gqrow" data-t="' + esc((c.code || '') + ' ' + c.title).toLowerCase() + '" style="display:flex;gap:10px;align-items:center;cursor:' + (isDone ? 'default;opacity:.55' : 'pointer') + '">' +
+          '<input type="checkbox" class="gqc" data-i="' + i + '"' + (isDone ? ' disabled' : '') + '><span class="row-title">' + esc(c.code ? c.code + ' - ' + c.title : c.title) +
+          '</span><span class="row-sub" style="margin-left:auto">' + (isDone ? '\u2713 Generated (' + c._n + ')' : c._n + ' / ' + GQ_TOTAL) + '</span></label>';
+      }).join('') + '</div>',
+      '<button class="btn" id="gqBack">Back</button><button class="btn" id="gqAllTick">Tick all</button><button class="btn primary" id="gqGo">Generate</button>');
+    var boxes = function () { return Array.prototype.slice.call(document.querySelectorAll('.gqc')); };
+    var count = function () { $('gqCount').textContent = boxes().filter(function (b) { return b.checked; }).length + ' selected'; };
+    boxes().forEach(function (b) { b.onchange = count; });
+    $('gqQ').oninput = function () {
+      var q = this.value.toLowerCase().trim();
+      Array.prototype.forEach.call(document.querySelectorAll('.gqrow'), function (r) { r.style.display = !q || r.getAttribute('data-t').indexOf(q) > -1 ? 'flex' : 'none'; });
+    };
+    $('gqAllTick').onclick = function () {
+      var vis = boxes().filter(function (b) { return !b.disabled && b.closest('.gqrow').style.display !== 'none'; });
+      var on = vis.some(function (b) { return !b.checked; });
+      vis.forEach(function (b) { b.checked = on; }); count();
+    };
+    $('gqBack').onclick = function () { openGenerateQuestions(done); };
+    $('gqGo').onclick = function () {
+      var picked = boxes().filter(function (b) { return b.checked; }).map(function (b) { return list[+b.getAttribute('data-i')]; });
+      if (!picked.length) { toast('Select at least one course.', true); return; }
+      runGenerateQuestions(picked, done);
+    };
+  }
+
+  async function runGenerateQuestions(courses, done) {
+    if (genBusy) { toast('Questions are already being made. Please wait.', true); return; }
+    genBusy = true; gqStop = false;
+    openSheet('Generating questions',
+      '<div class="count" id="gqTotal">0 questions added</div><div class="stack" id="gqLog">' + courses.map(function (c, i) {
+        return '<div class="row"><div class="row-main"><div class="row-title">' + esc(c.code ? c.code + ' - ' + c.title : c.title) + '</div><div class="row-sub" id="gq_' + i + '">Waiting\u2026</div></div></div>';
+      }).join('') + '</div>',
+      '<button class="btn danger-solid" id="gqStop">Stop</button>');
+    $('gqStop').onclick = function () { gqStop = true; this.disabled = true; this.textContent = 'Stopping\u2026'; };
+    var say = function (i, t) { var el = $('gq_' + i); if (el) el.textContent = t; };
+    var grand = 0, failed = 0, abort = false;
+
+    for (var i = 0; i < courses.length && !gqStop && !abort; i++) {
+      var c = courses[i], made = 0, nextBatch = 0, bFail = 0, lastErr = '';
+      var need = Math.max(0, typeof c._need === 'number' ? c._need : GQ_TOTAL);
+      if (!need) { say(i, '\u2713 Already generated'); continue; }
+      var nBatches = Math.ceil(need / GQ_BATCH);
+      var offset = Math.floor((c._n || 0) / GQ_BATCH);   // so a top-up does not repeat earlier batches
+      say(i, 'Writing ' + need + ' questions\u2026');
       var runBatches = async function () {
         while (nextBatch < nBatches && !gqStop && !abort) {
           var bn = nextBatch++;
+          var cnt = Math.min(GQ_BATCH, need - bn * GQ_BATCH);
           for (var tries = 0; tries < 2 && !gqStop; tries++) {
             try {
-              var payload = { course_id: c.id, count: GQ_BATCH, batch_no: bn };
+              var payload = { course_id: c.id, count: cnt, batch_no: bn + offset };
               if (courseHasMath(c)) { payload.math = true; payload.format = 'latex'; }
               var r = await api('generate_course_questions', payload, 280000);
               var n = (r && r.saved) || 0;
               made += n; grand += n;
-              say(i, 'Writing… ' + made + '/' + GQ_TOTAL);
+              say(i, 'Writing\u2026 ' + made + '/' + need);
               if ($('gqTotal')) $('gqTotal').textContent = grand.toLocaleString() + ' questions added';
               break;
             } catch (e) {
@@ -2501,8 +2608,9 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         }
       };
       await Promise.all([runBatches(), runBatches(), runBatches(), runBatches()]);
-      if (made === 0 && bFail) { misses = 2; say(i, 'Failed: ' + lastErr); failed++; }
-      if (!abort && !(misses >= 2 && made === 0)) say(i, made + ' questions added' + (made < GQ_TOTAL ? ' (stopped early)' : ''));
+      c._n = (c._n || 0) + made; c._need = Math.max(0, GQ_TOTAL - c._n);
+      if (made === 0 && bFail) { say(i, 'Failed: ' + lastErr); failed++; }
+      else if (!abort) say(i, c._need === 0 ? '\u2713 Generated (' + c._n + ' questions)' : made + ' added. Still needs ' + c._need + ' more (run again)');
     }
     genBusy = false;
     var b = $('gqStop');
