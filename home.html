@@ -275,7 +275,8 @@ button.nav-item{background:none;border:none;font-family:inherit}
 
 /* Desktop */
 @media (min-width:1024px){
-  .app{max-width:1180px;flex-direction:row}
+  .app{max-width:none;flex-direction:row;border-inline:0}
+.topbar{padding-inline:max(32px,calc((100% - 1200px)/2))}
   .bottom-nav{display:none}
   .content{padding-bottom:32px}
   .toast{bottom:20px}
