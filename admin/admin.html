@@ -1324,10 +1324,24 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
           counts[c.id] = d.total || 0; qtotal += counts[c.id];
         }
       }
+
       await Promise.all([countWorker(), countWorker(), countWorker(), countWorker(), countWorker(), countWorker()]);
       var qs = { total: qtotal };
       var sig = JSON.stringify([cs.rows.map(function (c) { return [c.id, c.title, c.code]; }), counts, qs.total]);
       if (data && data.sig === sig) return;
+
+      // group courses that share a code
+      var map = {}, groups = [];
+      cs.rows.forEach(function (c) {
+        var k = cmpName(c.code) || ('t:' + cmpName(c.title));
+        if (!map[k]) { map[k] = { code: c.code || '', ids: [], titles: [], n: 0 }; groups.push(map[k]); }
+        var g = map[k];
+        g.ids.push(c.id); g.titles.push(c.title || ''); g.n += counts[c.id] || 0;
+      });
+      groups.sort(function (a, b) { return azCompare(a.code || a.titles[0], b.code || b.titles[0]); });
+      data = { groups: groups, total: qs.total, sig: sig };
+      paint();
+    }
     async function first() { try { await pull(); } catch (e) { if ($('gRows')) $('gRows').innerHTML = emptyHtml(e.message, true); } }
     var again = function () { pull().catch(function () {}); };
 
@@ -1348,6 +1362,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     setTask(pull, 30000);
   }
 
+  
   /* ================= generic list view ================= */
   var PAGE = 30;
   async function renderList(sec, opts) {
