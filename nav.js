@@ -6,7 +6,8 @@
    Optional <body> attributes:
      data-nav="off"                 no nav at all (exam, results, reader)
      data-bottom-nav="off"          no bottom nav on mobile (hamburger still works on desktop)
-     data-nav-parent="progress.html" highlight this item for sub-pages (e.g. achievements) */
+     data-nav-parent="progress.html" highlight this item for sub-pages (e.g. achievements)
+   Optional on a back button: data-keep-back  (page decides when to show it on desktop) */
 (() => {
   'use strict';
   const b = document.body;
@@ -89,10 +90,10 @@
   burger.setAttribute('aria-expanded', 'false');
   burger.innerHTML = I.burger;
 
-  const back = document.querySelector('header .icon-btn[aria-label^="Back"], header .icon-btn[aria-label="Go back"], header [data-back]');
+  const back = document.querySelector('header [aria-label^="Back"], header [aria-label="Go back"], header [data-back]');
   const header = document.querySelector('header');
   if (back && back.parentNode) {
-    back.classList.add('pn-back');
+    if (!back.hasAttribute('data-keep-back')) back.classList.add('pn-back');   // data-keep-back: page controls it itself
     back.parentNode.insertBefore(burger, back);
   } else if (header && header.firstElementChild) {
     header.firstElementChild.insertBefore(burger, header.firstElementChild.firstChild);
