@@ -7,6 +7,9 @@
   --pn-red:#f87171;--pn-h:72px
 }
 [hidden].pn-backdrop,[hidden].pn-sheet-wrap{display:none!important}
+.pn-item,.pn-link,.pn-tile,.pn-burger,.pn-close{touch-action:manipulation}
+.pn-progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:120;opacity:0;pointer-events:none;background:linear-gradient(90deg,#27B58A,#31D3A2);box-shadow:0 0 10px rgba(49,211,162,.6)}
+.pn-progress.run{opacity:1;width:88%;transition:width 6s cubic-bezier(.1,.7,.2,1)}
 html.pn-lock{overflow:hidden}
 
 /* ---------- Floating bottom nav (mobile) ---------- */
@@ -71,3 +74,37 @@ html.pn-lock{overflow:hidden}
   .pn-logout:hover{color:var(--pn-red)}
 }
 @media (prefers-reduced-motion:reduce){.pn-drawer{transition:none!important}}
+
+/* ---------- Pin the bar to home's exact size on every page ---------- */
+@media (max-width:1023.98px){
+  body nav.pn-bottom{
+    box-sizing:border-box;
+    position:fixed;
+    left:14px;right:14px;
+    bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
+    height:var(--pn-h);
+    padding:6px;
+    border-radius:26px;
+    display:grid;grid-auto-flow:column;grid-auto-columns:1fr;align-items:center;
+  }
+  body nav.pn-bottom .pn-item{
+    box-sizing:border-box;
+    height:100%;
+    gap:4px;
+    font-size:10.9px;
+    line-height:1;
+    border-radius:20px;
+  }
+  body nav.pn-bottom .pn-item svg{width:24px;height:24px}
+}
+@media (max-width:360px){
+  body nav.pn-bottom{left:8px;right:8px}
+  body nav.pn-bottom .pn-item{font-size:10.2px}
+}
+@media (min-width:600px) and (max-width:1023.98px){
+  body nav.pn-bottom{left:24px;right:24px}
+}
+@media (max-height:480px) and (orientation:landscape) and (max-width:1023.98px){
+  body nav.pn-bottom .pn-item{flex-direction:row;gap:6px}
+  body nav.pn-bottom .pn-item svg{width:20px;height:20px}
+}
