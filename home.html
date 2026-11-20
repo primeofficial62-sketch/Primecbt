@@ -289,7 +289,7 @@ button.nav-item{background:none;border:none;font-family:inherit}
   .menu-link:hover,.menu-link.active{background:var(--surf);color:var(--em)}
   .menu-logout:hover{color:#f87171}
   .page{flex:1}
-  .content{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:20px;padding:32px}
+  .content{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:20px;padding:32px max(32px,calc((100% - 1200px)/2))}
   .span-all{grid-column:1/-1}
   .online-pill.on{display:inline-flex}
   #updatesSection.on{display:block}
