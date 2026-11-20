@@ -45,3 +45,63 @@ main,
 }
 
 img, video, canvas, table { max-width: 100%; }
+
+/* ===== Shared bottom nav: same size on every page ===== */
+html:root { --nav-h: 84px; }              /* bigger frame; page padding follows it */
+
+html body .bottom-nav {
+  position: fixed;
+  left: 0; right: 0; margin: 0 auto;
+  width: calc(100% - 24px);
+  max-width: 760px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 40;
+  height: var(--nav-h);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #121C32, #0C1426);
+  border: 1px solid var(--border, #273852);
+  box-shadow: 0 10px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.07);
+  transform: translateZ(0);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html body .bottom-nav .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 100%;
+  min-width: 0;
+  border-radius: 22px;
+  font-size: .76rem;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+}
+
+html body .bottom-nav .nav-item svg {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+html body .bottom-nav .nav-item.active svg { filter: none; }
+
+/* Keep page content clear of the taller nav */
+html body .content {
+  padding-bottom: calc(var(--nav-h) + 44px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Small phones: slightly tighter so 5 buttons never crowd */
+@media (max-width: 360px) {
+  html:root { --nav-h: 78px; }
+  html body .bottom-nav .nav-item { font-size: .7rem; }
+  html body .bottom-nav .nav-item svg { width: 25px; height: 25px; }
+}
