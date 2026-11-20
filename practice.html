@@ -7,14 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="nav.css?v=3">
 <style>
 :root{--bg:#060b1a;--card:#0f172a;--card-hover:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--submuted:#64748b;--primary:#34d399;--teal:#2dd4bf;--blue:#60a5fa;--purple:#a78bfa;--amber:#fbbf24;--red:#f87171;--border:#334155;--radius:16px;--pad:clamp(14px,4vw,32px)}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:radial-gradient(120% 60% at 100% 0,rgba(52,211,153,.10),transparent 60%),var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}button{cursor:pointer;color:inherit;background:none;border:0}
 svg{width:20px;height:20px;flex:none}
-.wrap{max-width:720px;margin:0 auto;padding:0 var(--pad) 40px}
+.wrap{max-width:720px;margin:0 auto;padding:0 var(--pad) calc(72px + 44px + env(safe-area-inset-bottom,0px))}
 .top{position:sticky;top:0;z-index:5;padding:calc(env(safe-area-inset-top,0px) + 14px) var(--pad) 12px;background:linear-gradient(var(--bg) 70%,transparent);max-width:720px;margin:0 auto}
 .row{display:flex;align-items:center;gap:12px}
 .ib{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(15,23,42,.8);border:1px solid var(--border)}
@@ -45,7 +44,7 @@ svg{width:20px;height:20px;flex:none}
 .state button{margin-top:12px;padding:10px 18px;border-radius:12px;border:1px solid var(--primary);color:var(--primary);font-weight:600}
 .sk{height:72px;border-radius:var(--radius);background:linear-gradient(90deg,var(--card),var(--card-hover),var(--card));background-size:200% 100%;animation:sh 1.3s infinite}
 @keyframes sh{to{background-position:-200% 0}}
-.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:var(--card-hover);padding:12px 18px;border-radius:12px;font-size:14px;transition:.25s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast{position:fixed;left:50%;bottom:calc(72px + 28px + env(safe-area-inset-bottom,0px));z-index:120;transform:translate(-50%,30px);opacity:0;background:var(--card-hover);padding:12px 18px;border-radius:12px;font-size:14px;transition:.25s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
 
 /* Laptop / desktop: fill the screen */
@@ -57,28 +56,39 @@ svg{width:20px;height:20px;flex:none}
   #backBtn:not(.in-course){display:none}
 }
   html{-webkit-text-size-adjust:100%}
-@media (max-width:1023.98px){
-  nav.pn-bottom{
-    position:fixed!important;left:14px!important;right:14px!important;
-    bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important;
-    width:auto!important;max-width:none!important;margin:0!important;
-    height:72px!important;min-height:72px!important;padding:6px!important;
-    box-sizing:border-box!important;border-radius:26px!important;
-    display:grid!important;grid-auto-flow:column!important;grid-auto-columns:1fr!important;align-items:center!important;
-    background:linear-gradient(180deg,rgba(18,28,50,.78),rgba(10,16,32,.86))!important;
-    border:1px solid #273852!important;
-    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-    box-shadow:0 14px 34px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.07)!important;
-    z-index:60!important;
-  }
-  nav.pn-bottom .pn-item{
-    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
-    height:100%!important;min-width:0!important;gap:4px!important;font-size:10.9px!important;border-radius:20px!important;
-  }
-  nav.pn-bottom .pn-item svg{width:24px!important;height:24px!important}
+
+/* ---------- Floating bottom navigation (identical to Materials / Home) ---------- */
+.bottom-nav{
+  position:fixed;left:50%;transform:translateX(-50%);
+  width:calc(100% - 28px);max-width:692px;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:40;
+  height:72px;display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
+  padding:6px;border-radius:26px;
+  background:linear-gradient(180deg,rgba(18,28,50,.78),rgba(10,16,32,.86));
+  border:1px solid #273852;
+  backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
+  box-shadow:0 14px 34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);
 }
-@media (max-width:360px){nav.pn-bottom{left:8px!important;right:8px!important}}
-@media (min-width:600px) and (max-width:1023.98px){nav.pn-bottom{left:24px!important;right:24px!important}}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  height:100%;min-width:0;background:none;border:none;color:#7F8CAC;
+  font-size:.68rem;font-weight:500;border-radius:20px;position:relative;text-decoration:none;
+}
+.nav-item svg{width:24px;height:24px}
+.nav-item.active{color:#31D3A2;font-weight:600;background:radial-gradient(70% 90% at 50% 0%,rgba(49,211,162,.16),rgba(49,211,162,.03))}
+.nav-item.active::before{content:"";position:absolute;top:0;left:30%;right:30%;height:2px;border-radius:0 0 4px 4px;background:#31D3A2;box-shadow:0 0 12px rgba(49,211,162,.5)}
+.nav-item.active svg{filter:drop-shadow(0 0 6px rgba(49,211,162,.5))}
+
+/* "More" sheet */
+.sheet-backdrop{position:fixed;inset:0;z-index:100;background:rgba(3,7,16,.82);display:none;align-items:flex-end;justify-content:center}
+.sheet-backdrop.open{display:flex}
+.sheet{width:100%;max-width:720px;background:#10182B;border:1px solid #273852;border-radius:24px 24px 0 0;padding:20px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sheet-head b{font-size:1.1rem}
+.sheet-close{color:#31D3A2;font-size:13px;font-weight:600;padding:4px 0}
+.more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.more-tile{display:flex;align-items:center;gap:10px;padding:14px;background:#0D1424;border:1px solid #273852;border-radius:16px;color:var(--text);font-size:.9rem;font-weight:600}
+.more-tile svg{width:22px;height:22px;color:#31D3A2}
 </style>
 </head>
 <body>
@@ -252,6 +262,34 @@ sb.channel('practice-live')
   .subscribe(s => $('dot').classList.toggle('on', s === 'SUBSCRIBED'));
 loadCourses();
 </script>
-<script src="nav.js" defer></script>
+<!-- Floating bottom navigation -->
+<nav class="bottom-nav" aria-label="Main">
+  <a href="home.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg><span>Home</span></a>
+  <a href="materials.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 5a1 1 0 011-1h5a4 4 0 014 4v12a3 3 0 00-3-3H3a1 1 0 01-1-1zM22 5a1 1 0 00-1-1h-5a4 4 0 00-4 4v12a3 3 0 013-3h6a1 1 0 001-1z"/></svg><span>Materials</span></a>
+  <a href="practice.html" class="nav-item active" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 14l2 2 4-4"/></svg><span>Practice</span></a>
+  <a href="progress.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/></svg><span>Progress</span></a>
+  <button type="button" class="nav-item" id="moreBtnNav" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span>More</span></button>
+</nav>
+
+<div class="sheet-backdrop" id="moreSheet">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="More">
+    <div class="sheet-head"><b>More</b><button type="button" class="sheet-close" id="moreClose">Close</button></div>
+    <div class="more-grid">
+      <a href="profile.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Profile</a>
+      <a href="community.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Community</a>
+      <a href="ai-assistant.html" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V4H8M9 13v2M15 13v2"/></svg>AI Assistant</a>
+      <a href="home.html#support" class="more-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Support</a>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var sheet=document.getElementById('moreSheet');
+  document.getElementById('moreBtnNav').addEventListener('click',function(){sheet.classList.add('open')});
+  document.getElementById('moreClose').addEventListener('click',function(){sheet.classList.remove('open')});
+  sheet.addEventListener('click',function(e){if(e.target===sheet)sheet.classList.remove('open')});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')sheet.classList.remove('open')});
+})();
+</script>
 </body>
 </html>
