@@ -293,6 +293,27 @@ button.nav-item{background:none;border:none;font-family:inherit}
   .online-pill.on{display:inline-flex}
   #updatesSection.on{display:block}
 }
+
+html, body { width: 100%; min-height: 100%; margin: 0; }
+
+/* the outer wrappers: remove the cap */
+.app, .shell, .container, main {
+  max-width: none !important;
+  width: 100%;
+}
+
+/* laptop+ layout: fixed sidebar + fluid content */
+@media (min-width: 1024px) {
+  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  .content { padding: 32px clamp(24px, 4vw, 64px); }
+
+  /* cards fill the row instead of fixed widths */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+  }
+}
 </style>
 </head>
 <body>
