@@ -19,8 +19,8 @@
   const SUPPORT_FALLBACK = 'home.html#support';   // used only if the page has no support handler
 
   const I = {
-    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>',
-    materials: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2 5a1 1 0 011-1h5a4 4 0 014 4v12a3 3 0 00-3-3H3a1 1 0 01-1-1zM22 5a1 1 0 00-1-1h-5a4 4 0 00-4 4v12a3 3 0 013-3h6a1 1 0 001-1z"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path class="solid" d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>',
+    materials: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path class="solid" d="M2 5a1 1 0 011-1h5a4 4 0 014 4v12a3 3 0 00-3-3H3a1 1 0 01-1-1zM22 5a1 1 0 00-1-1h-5a4 4 0 00-4 4v12a3 3 0 013-3h6a1 1 0 001-1z"/></svg>',
     practice: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 14l2 2 4-4"/></svg>',
     progress: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/></svg>',
     more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
@@ -75,7 +75,7 @@
     </nav>`;
 
   const holder = document.createElement('div');
-  holder.innerHTML = bottom + drawer;
+  holder.innerHTML = '<div class="pn-progress" id="pnProgress" aria-hidden="true"></div>' + bottom + drawer;
   while (holder.firstChild) b.appendChild(holder.firstChild);
   if (wantBottom) b.classList.add('pn-has-bottom');
 
@@ -138,6 +138,46 @@
   });
   const onChange = () => { if (desktop.matches) setSheet(false); else setDrawer(false); };
   (desktop.addEventListener ? desktop.addEventListener('change', onChange) : desktop.addListener(onChange));
+
+  /* ---------- instant feel: press feedback + prefetch ---------- */
+  function paintActive() {
+    b.querySelectorAll('.pn-bottom a.pn-item, .pn-drawer a.pn-link, .pn-sheet a.pn-tile').forEach((a) => {
+      a.classList.toggle('is-active', (a.getAttribute('href') || '').toLowerCase() === cur);
+    });
+    const m = $('pnMoreBtn'); if (m) m.classList.toggle('is-active', moreActive);
+  }
+  const bar = $('pnProgress');
+  b.addEventListener('click', (e) => {
+    const a = e.target.closest('a.pn-item, a.pn-link, a.pn-tile');
+    if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
+    const href = (a.getAttribute('href') || '').toLowerCase();
+    if (!href || href === here) return;
+    if (a.classList.contains('pn-item')) {            // highlight the tapped tab immediately
+      b.querySelectorAll('.pn-bottom .pn-item').forEach((x) => x.classList.remove('is-active'));
+      a.classList.add('is-active');
+    }
+    bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run');   // loading line at the top
+  });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) { paintActive(); bar.classList.remove('run'); } });
+
+  // Download the other pages in the background so they open straight away
+  const conn = navigator.connection;
+  if (!(conn && conn.saveData)) {
+    const picks = desktop.matches ? SIDE.map((x) => x[0]) : BOTTOM.concat(MORE).map((x) => x[0]);
+    const urls = picks.filter((h, i) => h !== here && picks.indexOf(h) === i);
+    const warm = () => {
+      if (window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
+        const sr = document.createElement('script');
+        sr.type = 'speculationrules';
+        sr.textContent = JSON.stringify({ prefetch: [{ source: 'list', urls, eagerness: 'immediate' }] });
+        document.head.appendChild(sr);
+      } else {
+        urls.forEach((u) => { const l = document.createElement('link'); l.rel = 'prefetch'; l.as = 'document'; l.href = u; document.head.appendChild(l); });
+      }
+    };
+    const start = () => (window.requestIdleCallback ? requestIdleCallback(warm, { timeout: 3000 }) : setTimeout(warm, 1500));
+    if (document.readyState === 'complete') start(); else window.addEventListener('load', start, { once: true });
+  }
 
   /* ---------- support + logout ---------- */
   function support() {
