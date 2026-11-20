@@ -47,19 +47,21 @@ svg{width:20px;height:20px;flex:none}
 @keyframes sh{to{background-position:-200% 0}}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:var(--card-hover);padding:12px 18px;border-radius:12px;font-size:14px;transition:.25s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
-  @media (min-width:1024px){
+
+/* Laptop / desktop: fill the screen */
+@media (min-width:1024px){
   .top{max-width:none;margin:0;padding-left:max(32px,calc((100% - 1400px)/2));padding-right:max(32px,calc((100% - 1400px)/2))}
   .wrap{max-width:none;padding-left:max(32px,calc((100% - 1400px)/2));padding-right:max(32px,calc((100% - 1400px)/2))}
   .list{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
   .modes{grid-template-columns:repeat(4,minmax(0,1fr))}
   #backBtn:not(.in-course){display:none}
-  }
+}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="row">
-    <a href="home.html" class="ib" id="backBtn" data-keep-back aria-label="Back">
+    <a href="home.html" class="ib" id="backBtn" data-keep-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></a>
     <div class="ttl"><h1 id="title">Practice Questions</h1><p><span class="dot" id="dot"></span><span id="sub">Connecting…</span></p></div>
     <button class="ib" id="searchBtn" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
   </div>
@@ -226,7 +228,7 @@ sb.channel('practice-live')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, refetch)
   .subscribe(s => $('dot').classList.toggle('on', s === 'SUBSCRIBED'));
 loadCourses();
-  <script src="nav.js" defer></script>
 </script>
+<script src="nav.js" defer></script>
 </body>
 </html>
