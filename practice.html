@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="responsive.css">
+<link rel="stylesheet" href="nav.css">
 <style>
 :root{--bg:#060b1a;--card:#0f172a;--card-hover:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--submuted:#64748b;--primary:#34d399;--teal:#2dd4bf;--blue:#60a5fa;--purple:#a78bfa;--amber:#fbbf24;--red:#f87171;--border:#334155;--radius:16px;--pad:clamp(14px,4vw,32px)}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
@@ -52,7 +52,7 @@ svg{width:20px;height:20px;flex:none}
 <body>
 <header class="top">
   <div class="row">
-    <a href="home.html" class="ib" id="backBtn" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <a href="home.html" class="ib" id="backBtn" data-keep-back aria-label="Back">
     <div class="ttl"><h1 id="title">Practice Questions</h1><p><span class="dot" id="dot"></span><span id="sub">Connecting…</span></p></div>
     <button class="ib" id="searchBtn" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
   </div>
