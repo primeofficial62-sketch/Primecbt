@@ -1,35 +1,28 @@
+/* Instant nav: warm up the next page before the tap finishes */
 (function () {
-  /* GPU layers + skip rendering off-screen cards. No visual change. */
-  var s = document.createElement('style');
-  s.textContent =
-    '.bottom-nav,.topbar{transform:translateZ(0);will-change:transform}' +
-    '.tip,.tool,#activityList,#updatesSection{content-visibility:auto;contain-intrinsic-size:auto 80px}';
-  document.head.appendChild(s);
-
-  /* Images: decode off main thread, lazy-load below the fold */
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('img').forEach(function (i) {
-      i.decoding = 'async';
-      if (!i.hasAttribute('loading') && i.getBoundingClientRect().top > innerHeight) i.loading = 'lazy';
-    });
-  });
-
-  /* Instant page switches: prefetch pages on touch + when idle */
-  var done = {}, c = navigator.connection || {};
-  var saver = c.saveData || /2g/.test(c.effectiveType || '');
-  function pf(u) {
-    if (done[u]) return; done[u] = 1;
-    var l = document.createElement('link'); l.rel = 'prefetch'; l.href = u; document.head.appendChild(l);
+  var warmed = {};
+  function warm(a) {
+    var href = a.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return;
+    var u = new URL(href, location.href);
+    if (u.origin !== location.origin || u.pathname === location.pathname || warmed[u.pathname]) return;
+    warmed[u.pathname] = 1;
+    var l = document.createElement('link');
+    l.rel = 'prefetch';
+    l.href = u.href;
+    document.head.appendChild(l);
   }
-  document.addEventListener('touchstart', function (e) {
-    var a = e.target.closest && e.target.closest('a');
-    if (a && a.origin === location.origin && /\.html$/.test(a.pathname) && a.pathname !== location.pathname) pf(a.href);
-  }, { passive: true });
-  var idle = window.requestIdleCallback || function (f) { setTimeout(f, 2000); };
-  if (!saver) idle(function () { ['practice.html', 'materials.html', 'progress.html'].forEach(pf); });
+  function onDown(e) {
+    var a = e.target.closest && e.target.closest('a.pn-item, a.nav-item');
+    if (a) warm(a);
+  }
+  document.addEventListener('pointerdown', onDown, { passive: true });
+  document.addEventListener('touchstart', onDown, { passive: true });
 
-  /* Cache static files for repeat visits */
-  if ('serviceWorker' in navigator) addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js').catch(function () {});
-  });
+  /* Also preload every nav page once the browser is idle */
+  function preloadAll() {
+    document.querySelectorAll('a.pn-item, a.nav-item').forEach(warm);
+  }
+  if ('requestIdleCallback' in window) requestIdleCallback(preloadAll, { timeout: 2500 });
+  else setTimeout(preloadAll, 1500);
 })();
