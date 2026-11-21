@@ -443,6 +443,7 @@ html, body { width: 100%; min-height: 100%; margin: 0; }
         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
       </button>
 
+      <div class="span-all" id="proCard" hidden></div>
       <div class="span-all" id="updatesSection">
         <div class="sec-head" style="margin-bottom:0"><h3>Latest updates</h3></div>
         <div id="updatesList"></div>
@@ -1095,6 +1096,17 @@ document.addEventListener('DOMContentLoaded', function () {
   } catch (e) {}
 })();
 </script>
+<script src="pro-ui.js"></script>
+<script>
+(function () {
+  var el = document.getElementById('proCard');
+  function show() { PrimePro.mount(el); }
+  supabaseClient.auth.getSession().then(function (r) {
+    if (r && r.data && r.data.session) PrimePro.init(supabaseClient).then(show);
+  });
+  document.addEventListener('prime:pro-changed', show);
+})();
+</script>
 <script src="/push.js"></script>
 <script>
 // Chrome install button: shows only when the browser says the site is installable.
@@ -1116,7 +1128,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   window.addEventListener('appinstalled', function () { card.hidden = true; dp = null; });
 })();
-  <script src="perf.js"></script>
 </script>
+<script src="perf.js"></script>
 </body>
 </html>
