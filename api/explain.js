@@ -1,9 +1,11 @@
 // Vercel Serverless Function: /api/explain
-// Env: GEMINI_API_KEY, SUPABASE_SERVICE_ROLE_KEY (SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY optional)
+// Env: SUPABASE_SERVICE_ROLE_KEY (required). GEMINI_API_KEY is optional: Gemini keys are read from the
+// api_keys table (same pool as explain-details) and GEMINI_API_KEY is only used as a last fallback.
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://xuofkjjhupgmrphzgyun.supabase.co";
 const PUB_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
-const MODEL = "gemini-2.5-flash";
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];   // second one has its own free quota
+const MAX_ATTEMPTS = 4;
 
 const SYSTEM = `You are a friendly tutor helping university students understand study material.
 Explain ONLY what is on the given page. Do not invent content that is not there.
@@ -19,6 +21,17 @@ function svcHeaders(extra = {}) {
 }
 const rest = (path, init = {}) =>
   fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: svcHeaders(init.headers || {}) });
+
+// Gemini keys: the shared pool in api_keys (least recently used first), then the env key as a fallback
+async function loadKeys() {
+  const out = [];
+  try {
+    const r = await rest("api_keys?select=id,label,key,provider,uses&enabled=eq.true&order=last_used.asc.nullsfirst");
+    if (r.ok) for (const k of await r.json()) if ((!k.provider || k.provider === "gemini") && k.key) out.push(k);
+  } catch (e) { console.error("api_keys load failed", String(e)); }
+  if (process.env.GEMINI_API_KEY) out.push({ id: null, label: "env", key: process.env.GEMINI_API_KEY, uses: 0 });
+  return out;
+}
 
 // Quota RPCs run as the STUDENT (their token), so auth.uid() is the student
 async function rpc(fn, args, token) {
@@ -39,8 +52,8 @@ module.exports = async (req, res) => {
 
   let reserved = false, qkey = "", token = "";
   try {
-    if (!process.env.GEMINI_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("Missing GEMINI_API_KEY or SUPABASE_SERVICE_ROLE_KEY");
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Missing SUPABASE_SERVICE_ROLE_KEY");
       return send(500, { error: "AI is not configured yet." });
     }
 
@@ -79,6 +92,9 @@ module.exports = async (req, res) => {
       }
     }
 
+    const keys = await loadKeys();
+    if (!keys.length) { console.error("No Gemini keys available"); return send(500, { error: "AI is not configured yet." }); }
+
     // 2) Reserve one unit (atomic, server-side). One unit per page per day:
     //    "simpler" / "example" on the same page cost nothing extra.
     qkey = `${key}|${page}`;
@@ -107,25 +123,40 @@ module.exports = async (req, res) => {
     if (image) parts.push({ inlineData: { mimeType: "image/jpeg", data: image } });
     parts.push({ text: prompt });
 
-    const gr = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-      method: "POST",
-      headers: { "x-goog-api-key": process.env.GEMINI_API_KEY, "content-type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{ role: "user", parts }],
-        generationConfig: { maxOutputTokens: 1200, temperature: 0.5, thinkingConfig: { thinkingBudget: 0 } },
-      }),
+    const reqBody = JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: "user", parts }],
+      generationConfig: { maxOutputTokens: 1200, temperature: 0.5, thinkingConfig: { thinkingBudget: 0 } },
     });
-    if (!gr.ok) {
-      console.error("Gemini error", gr.status, await gr.text());
+    let explanation = "", usedKey = null, tries = 0;
+    outer: for (const model of MODELS) {
+      for (const k of keys) {
+        if (tries++ >= MAX_ATTEMPTS) break outer;
+        try {
+          const gr = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+            method: "POST",
+            headers: { "x-goog-api-key": k.key, "content-type": "application/json" },
+            body: reqBody,
+            signal: AbortSignal.timeout(15000),
+          });
+          if (!gr.ok) { console.error("Gemini error", k.label, model, gr.status, (await gr.text()).slice(0, 300)); continue; }
+          const data = await gr.json();
+          const t = ((data.candidates?.[0]?.content?.parts) || []).map((p) => p.text || "").join("").trim();
+          if (t) { explanation = t; usedKey = k; break outer; }
+          console.error("Gemini empty answer", k.label, model, data.promptFeedback || data.candidates?.[0]?.finishReason || "");
+        } catch (e) { console.error("Gemini request failed", k.label, model, String(e && e.name)); }
+      }
+    }
+    if (!explanation) {
       if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token); reserved = false; }
       return send(502, { error: "The AI is busy right now. You were not charged. Try again shortly." });
     }
-    const data = await gr.json();
-    const explanation = ((data.candidates?.[0]?.content?.parts) || []).map((p) => p.text || "").join("").trim();
-    if (!explanation) {
-      if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token); reserved = false; }
-      return send(502, { error: "No explanation was returned. You were not charged." });
+    if (usedKey && usedKey.id) {
+      rest(`api_keys?id=eq.${usedKey.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ last_used: new Date().toISOString(), uses: (usedKey.uses || 0) + 1, last_error: null }),
+      }).catch(() => {});
     }
 
     // 4) Confirm the charge + save shared cache
