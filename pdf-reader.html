@@ -14,6 +14,7 @@
 
   <!-- PDF engine downloads in parallel with the page (deferred, never blocks paint) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="quota.js"></script>
 
   <!-- Non-blocking font -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -404,6 +405,7 @@
         </button>
       </div>
       <div class="explain-body" id="explainBody"></div>
+      <div id="exQuota" hidden style="padding:0 18px 10px;font-size:12px;color:var(--muted)"></div>
       <div class="explain-actions">
         <button type="button" id="exMore" class="primary">More details</button>
         <button type="button" id="exSimpler">Simpler</button>
@@ -1429,6 +1431,12 @@
       renderMath(body);
     }
 
+    function setQuotaLine(q) {
+      const el = $('exQuota');
+      el.textContent = (q && window.PrimeQuota) ? PrimeQuota.aiText(q) : '';
+      el.hidden = !el.textContent;
+    }
+
     function showExError(msg) {
       const p = document.createElement('p');
       p.className = 'ex-error';
@@ -1557,8 +1565,8 @@
             ...payload
           }, partial => { if (myReq === exReq) paintStream(partial); });
         } else {
-          // Short explanation / Simpler / Example now run on the Supabase "explain-page" function
-          const { resp, data } = await postJson(SUPABASE_URL + '/functions/v1/explain-page', tok, {
+          // Short explanation / Simpler / Example run on /api/explain (counts against the daily allowance)
+          const { resp, data } = await postJson('/api/explain', tok, {
             material_key: materialKey,
             file_url: material.file_url,
             title: material.title,
@@ -1566,11 +1574,18 @@
             page: n,
             mode,
             ...payload
-          }, 60000, { apikey: SUPABASE_ANON_KEY });
+          }, 60000);
           if (resp.status === 401) throw new Error('Your session expired. Please log in again.');
+          if (resp.status === 429 && data && data.code === 'AI_LIMIT') {
+            setQuotaLine({ limit: data.limit, remaining: 0 });
+            if (myReq === exReq) showExError(data.error);
+            if (window.PrimeQuota) PrimeQuota.showAiLimit(data.limit);
+            return;
+          }
           if (!resp.ok || !data || !data.explanation) {
             throw new Error((data && (data.error || data.message)) || ('Server error ' + resp.status + '. Please try again.'));
           }
+          if (data.quota) setQuotaLine(data.quota);
           text = data.explanation;
         }
 
