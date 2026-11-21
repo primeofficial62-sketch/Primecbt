@@ -1,125 +1,146 @@
-// Vercel Node function: /api/explain   (AI explanation of one PDF page, used by the PDF reader)
-// Save as:  api/explain.js        <- must be inside the "api" folder, or the reader gets "Server error 404"
-// Needs:    GEMINI_API_KEY in Vercel environment variables (same key study-tools.js uses)
-// Add to vercel.json:  "functions": { "api/explain.js": { "maxDuration": 60 } }
+// Vercel Serverless Function: /api/explain
+// Env: GEMINI_API_KEY, SUPABASE_SERVICE_ROLE_KEY (SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY optional)
 
-const SUPABASE_URL = (process.env.SUPABASE_URL || 'https://xuofkjjhupgmrphzgyun.supabase.co').replace(/\/$/, '');
-const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
-const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-const MODELS = [...new Set([
-  process.env.GEMINI_MODEL,
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-3.5-flash-lite'
-].filter(Boolean))];
-const DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 40;
-const MAX_TEXT = 12000;
-const MAX_IMAGE_CHARS = 2500000;   // base64 length of the page photo used for scanned pages
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://xuofkjjhupgmrphzgyun.supabase.co";
+const PUB_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+const MODEL = "gemini-2.5-flash";
 
-class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+const SYSTEM = `You are a friendly tutor helping university students understand study material.
+Explain ONLY what is on the given page. Do not invent content that is not there.
+Be clear and practical: start with the main idea in 1-2 sentences, then break down the key points, define technical terms simply, and end with one short "Remember this" line.
+Format: short paragraphs, "- " bullets where useful, **bold** for key terms. No headings. Keep it under 300 words.
+If the page is mostly a diagram, table or image, describe what it shows and explain it.`;
 
-async function supa(path, token, opts) {
-  opts = opts || {};
-  const res = await fetch(SUPABASE_URL + path, {
-    method: opts.method || 'GET',
-    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: opts.body == null ? undefined : JSON.stringify(opts.body)
-  });
-  if (!res.ok) return { ok: false, status: res.status, data: null };
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
-  return { ok: true, status: res.status, data };
+function svcHeaders(extra = {}) {
+  const k = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const h = { apikey: k, ...extra };
+  if (k.startsWith("eyJ")) h.Authorization = "Bearer " + k;
+  return h;
 }
+const rest = (path, init = {}) =>
+  fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: svcHeaders(init.headers || {}) });
 
-async function callGemini(system, userContent) {
-  let lastStatus = 0;
-  for (const model of MODELS) {
-    const r = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + GEMINI_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        temperature: 0.4,
-        max_tokens: 1500,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: userContent }]
-      })
-    });
-    if (r.ok) {
-      const d = await r.json();
-      return ((d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '').trim();
-    }
-    lastStatus = r.status;
-    if (![403, 404, 429, 503].includes(r.status)) break;
-  }
-  if (lastStatus === 429) throw new HttpError(429, 'The assistant is busy right now. Please try again in a moment.');
-  throw new HttpError(502, 'The AI service had a problem (' + lastStatus + '). Please try again.');
-}
-
-const SYSTEM =
-  'You are a friendly tutor helping a Nigerian university student understand one page of their course material. ' +
-  'Base your answer on the page content you are given. You may use simple general knowledge to clarify terms, ' +
-  'but never invent facts about what the document says. ' +
-  'Write in plain, simple English. Use short paragraphs and "- " bullet points. Use **bold** only for key terms. ' +
-  'Do not use headings, tables or LaTeX; write maths in plain text (for example: x^2 or 1/2). ' +
-  'Do not start with phrases like "Sure" or "Certainly".';
-
-const TASKS = {
-  explain: 'Explain what this page is about in a clear, helpful way. Start with a one or two sentence overview, then explain the key ideas as short bullet points. Keep it under about 250 words.',
-  simpler: 'Explain this page again in much simpler words, as if to a first-year student seeing the topic for the first time. Use everyday comparisons where they help. Keep it under about 180 words.',
-  example: 'Give one or two clear, concrete worked examples that make the main idea on this page easy to understand. Keep it under about 250 words.'
-};
-
-module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  const send = (status, obj) => res.status(status).json(obj);
+// Quota RPCs run as the STUDENT (their token), so auth.uid() is the student
+async function rpc(fn, args, token) {
   try {
-    if (req.method !== 'POST') throw new HttpError(405, 'Method not allowed.');
-    if (!GEMINI_KEY) throw new HttpError(500, 'The assistant is not set up yet (missing GEMINI_API_KEY on the server).');
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: "POST",
+      headers: { apikey: PUB_KEY, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify(args || {}),
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
 
-    // Signed-in students only
-    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    if (!token) throw new HttpError(401, 'Please sign in to use AI explanations.');
-    const who = await supa('/auth/v1/user', token);
-    if (!who.ok) throw new HttpError(401, 'Your session has expired. Please sign in again.');
+module.exports = async (req, res) => {
+  const send = (status, obj) => res.status(status).json(obj);
+  if (req.method !== "POST") return send(405, { error: "Method not allowed." });
 
-    let b = req.body;
-    if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
-    b = b || {};
-
-    const mode = Object.prototype.hasOwnProperty.call(TASKS, b.mode) ? b.mode : 'explain';
-    const page = Math.max(1, Math.min(parseInt(b.page, 10) || 1, 5000));
-    const text = typeof b.text === 'string' ? b.text.slice(0, MAX_TEXT).trim() : '';
-    const image = typeof b.image === 'string' && /^[A-Za-z0-9+/=]+$/.test(b.image) && b.image.length <= MAX_IMAGE_CHARS ? b.image : '';
-    if (text.length < 20 && !image) throw new HttpError(400, 'This page has nothing readable to explain.');
-
-    // Daily limit shared with the chat. Skipped if setup-ai.sql has not been run.
-    const q = await supa('/rest/v1/rpc/ai_use_quota', token, { method: 'POST', body: { p_limit: DAILY_LIMIT } });
-    if (q.ok && q.data && q.data.allowed === false) {
-      throw new HttpError(429, 'You have used your ' + DAILY_LIMIT + ' assistant uses for today. Come back tomorrow.');
+  let reserved = false, qkey = "", token = "";
+  try {
+    if (!process.env.GEMINI_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Missing GEMINI_API_KEY or SUPABASE_SERVICE_ROLE_KEY");
+      return send(500, { error: "AI is not configured yet." });
     }
 
-    const title = String(b.title || 'Course material').slice(0, 200);
-    const category = String(b.category || '').slice(0, 80);
-    const head = 'Document: ' + title + (category ? ' (' + category + ')' : '') + '\nPage: ' + page + '\n\n' + TASKS[mode] + '\n\n';
+    token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+    if (!token) return send(401, { error: "Please log in to use AI explanations." });
+    const ur = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: PUB_KEY, Authorization: "Bearer " + token },
+    });
+    if (!ur.ok) return send(401, { error: "Please log in to use AI explanations." });
+    const user = await ur.json();
+    if (!user || !user.id) return send(401, { error: "Please log in to use AI explanations." });
 
-    let content;
-    if (text.length >= 20) {
-      content = head + '<page>\n' + text + '\n</page>';
-    } else {
-      content = [
-        { type: 'text', text: head + 'The page is shown as an image because it has no selectable text.' },
-        { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + image } }
-      ];
+    const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+    const page = parseInt(b.page, 10);
+    const mode = ["explain", "simpler", "example"].includes(b.mode) ? b.mode : "explain";
+    const text = String(b.text ?? "").slice(0, 12000);
+    const image = String(b.image ?? "");
+    const key = String(b.material_key ?? "").slice(0, 500);
+    if (!page || !key || (!text && !image)) return send(400, { error: "Nothing to explain on this page." });
+    if (image.length > 2500000) return send(400, { error: "This page is too large to read." });
+
+    // 1) Shared cache hit = free, no quota used
+    if (mode === "explain") {
+      const cr = await rest(
+        `page_explanations?select=explanation,file_url&material_key=eq.${encodeURIComponent(key)}&page=eq.${page}&limit=1`
+      );
+      if (cr.ok) {
+        const rows = await cr.json();
+        const hit = rows && rows[0];
+        if (hit && (hit.file_url ?? null) === (b.file_url ?? null)) {
+          const u = await rpc("my_quota_usage", {}, token);
+          const limit = u && u.limits && u.limits.ai ? u.limits.ai.limit : null;
+          const quota = limit != null ? { limit, remaining: Math.max(0, limit - (u.ai_used || 0)) } : null;
+          return send(200, { explanation: hit.explanation, cached: true, quota });
+        }
+      }
     }
 
-    const explanation = await callGemini(SYSTEM, content);
-    if (!explanation) throw new HttpError(502, 'The assistant sent an empty answer. Please try again.');
-    return send(200, { explanation });
+    // 2) Reserve one unit (atomic, server-side). One unit per page per day:
+    //    "simpler" / "example" on the same page cost nothing extra.
+    qkey = `${key}|${page}`;
+    const rv = await rpc("reserve_ai_explanation", { p_key: qkey }, token);
+    if (!rv) return send(503, { error: "Couldn't check your daily allowance. Please try again." });
+    if (rv.ok === false) {
+      if (rv.reason === "auth") return send(401, { error: "Please log in to use AI explanations." });
+      return send(429, {
+        code: "AI_LIMIT", limit: rv.limit, remaining: 0,
+        error: "You've used all your free AI explanations for today. Your allowance resets at midnight (Lagos time).",
+      });
+    }
+    reserved = rv.charged === true;   // only the request that paid may release it
+
+    // 3) Ask Gemini
+    const extra =
+      mode === "simpler"
+        ? "Explain it again in much simpler words, as if to a student who struggled to understand the first time."
+        : mode === "example"
+        ? "Give 1-2 concrete, relatable worked examples that make this page's content easy to understand."
+        : "Explain this page in detail.";
+    const prompt =
+      `Course/material: ${b.title ?? "Unknown"}${b.category ? " (" + b.category + ")" : ""}\nPage ${page}\n\n${extra}` +
+      (text ? `\n\nPage text:\n"""\n${text}\n"""` : "\n\nThe page is attached as an image.");
+    const parts = [];
+    if (image) parts.push({ inlineData: { mimeType: "image/jpeg", data: image } });
+    parts.push({ text: prompt });
+
+    const gr = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+      method: "POST",
+      headers: { "x-goog-api-key": process.env.GEMINI_API_KEY, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{ role: "user", parts }],
+        generationConfig: { maxOutputTokens: 1200, temperature: 0.5, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    });
+    if (!gr.ok) {
+      console.error("Gemini error", gr.status, await gr.text());
+      if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token); reserved = false; }
+      return send(502, { error: "The AI is busy right now. You were not charged. Try again shortly." });
+    }
+    const data = await gr.json();
+    const explanation = ((data.candidates?.[0]?.content?.parts) || []).map((p) => p.text || "").join("").trim();
+    if (!explanation) {
+      if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token); reserved = false; }
+      return send(502, { error: "No explanation was returned. You were not charged." });
+    }
+
+    // 4) Confirm the charge + save shared cache
+    if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: true }, token); reserved = false; }
+    if (mode === "explain") {
+      await rest("page_explanations?on_conflict=material_key,page", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({ material_key: key, page, file_url: b.file_url ?? null, explanation }),
+      });
+    }
+    return send(200, { explanation, quota: { limit: rv.limit, remaining: rv.remaining } });
   } catch (e) {
-    if (e instanceof HttpError) return send(e.status, { error: e.message });
     console.error(e);
-    return send(500, { error: 'Something went wrong on the server.' });
+    if (reserved && qkey && token) await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token);
+    return send(500, { error: "Something went wrong. You were not charged. Try again." });
   }
 };
