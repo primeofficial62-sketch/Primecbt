@@ -4,7 +4,8 @@
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://xuofkjjhupgmrphzgyun.supabase.co";
 const PUB_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
-const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];   // second one has its own free quota
+// "-latest" aliases keep working when Google retires a version (same ones explain-details uses)
+const MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest"];
 const MAX_ATTEMPTS = 4;
 
 const SYSTEM = `You are a friendly tutor helping university students understand study material.
@@ -126,7 +127,7 @@ module.exports = async (req, res) => {
     const reqBody = JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: "user", parts }],
-      generationConfig: { maxOutputTokens: 1200, temperature: 0.5, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { maxOutputTokens: 3000, temperature: 0.5 },
     });
     let explanation = "", usedKey = null, tries = 0;
     outer: for (const model of MODELS) {
