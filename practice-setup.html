@@ -489,6 +489,7 @@
     </main>
 
     <footer class="bottom-cta" id="bottomCta">
+      <p id="quotaLine" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px" hidden></p>
       <button type="button" class="start-btn" id="startBtn" disabled>
         <span id="startLabel">Start Practice</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -519,6 +520,7 @@
   })();
   </script>
 
+  <script src="quota.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
   (() => {
@@ -579,6 +581,7 @@
       wantMax: false,
       kind: 'generic',          // quick | weak | past | timed | mock | generic
       pace: 60,                 // seconds per question (timed)
+      maxQ: null,               // General Practice question cap (from plan_limits, only when limits are on)
       weakIds: [], weakTable: null, weakChecked: false
     };
 
@@ -926,8 +929,10 @@
     }
 
     /* ---------- Render ---------- */
+    // General Practice question cap (only set while the Free Plan limits are switched on)
+    const capQ = () => (state.kind === 'generic' && state.maxQ) ? state.maxQ : Infinity;
     function countOptions() {
-      const avail = poolSize();
+      const avail = Math.min(poolSize(), capQ());
       if (avail <= 0) return [];
       const steps = stepsFor();
       const sizes = steps.filter((n) => n <= avail);
@@ -1169,8 +1174,17 @@
       savePrefs(); render();
     });
 
-    el.start.addEventListener('click', () => {
+    el.start.addEventListener('click', async () => {
       if (!state.course || !(state.count > 0)) return;
+
+      // Free Plan check (nothing is consumed here; the session is counted when the first answer is given)
+      const qm = window.PrimeQuota && PrimeQuota.modeFor(state.kind);
+      if (qm) {
+        const u = await PrimeQuota.usage(db, true);
+        if (u && PrimeQuota.left(u, qm) === 0) { PrimeQuota.showLimit(qm, u.limits[qm].limit); return; }
+        if (qm === 'general' && state.maxQ) state.count = Math.min(state.count, state.maxQ);
+      }
+
       const id = String(state.course[C.courseId]);
       const timed = isTimed();
       const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -1224,6 +1238,17 @@
           return;
         }
         renderCourseHeader();
+
+        // Free Plan: read this mode's limits (empty while limits are switched off) and show sessions left
+        const qm0 = window.PrimeQuota && PrimeQuota.modeFor(state.kind);
+        if (qm0) PrimeQuota.usage(db).then((u) => {
+          if (!u || !u.limits || !u.limits[qm0]) return;
+          if (qm0 === 'general') { state.maxQ = u.limits.general.max_questions; if (!el.form.hidden) render(); }
+          const n = PrimeQuota.left(u, qm0), ql = $('quotaLine');
+          ql.textContent = n + ' of ' + u.limits[qm0].limit + (n === 1 ? ' session' : ' sessions') + ' left today';
+          ql.hidden = false;
+        });
+
         if (state.kind !== 'past') await detectQuestionColumns();
         await refresh();
         subscribe();
