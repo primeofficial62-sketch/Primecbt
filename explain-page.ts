@@ -1,12 +1,9 @@
-// Vercel Serverless Function: /api/explain  (Gemini version, no extra packages needed)
-// Environment variables (Vercel > Project > Settings > Environment Variables):
-//   GEMINI_API_KEY             your NEW Google AI Studio key
-//   SUPABASE_SERVICE_ROLE_KEY  Supabase > Project Settings > API (secret / service_role key)
-//   SUPABASE_URL               optional, defaults to your project URL below
+// Vercel Serverless Function: /api/explain
+// Env: GEMINI_API_KEY, SUPABASE_SERVICE_ROLE_KEY (SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY optional)
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://xuofkjjhupgmrphzgyun.supabase.co";
-const MODEL = "gemini-2.5-flash"; // change here if Google renames/retires it
-const DAILY_LIMIT = 40;
+const PUB_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
+const MODEL = "gemini-2.5-flash";
 
 const SYSTEM = `You are a friendly tutor helping university students understand study material.
 Explain ONLY what is on the given page. Do not invent content that is not there.
@@ -17,27 +14,40 @@ If the page is mostly a diagram, table or image, describe what it shows and expl
 function svcHeaders(extra = {}) {
   const k = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
   const h = { apikey: k, ...extra };
-  if (k.startsWith("eyJ")) h.Authorization = "Bearer " + k; // legacy JWT-style key
+  if (k.startsWith("eyJ")) h.Authorization = "Bearer " + k;
   return h;
 }
 const rest = (path, init = {}) =>
   fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: svcHeaders(init.headers || {}) });
 
+// Quota RPCs run as the STUDENT (their token), so auth.uid() is the student
+async function rpc(fn, args, token) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: "POST",
+      headers: { apikey: PUB_KEY, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify(args || {}),
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
 module.exports = async (req, res) => {
   const send = (status, obj) => res.status(status).json(obj);
   if (req.method !== "POST") return send(405, { error: "Method not allowed." });
 
+  let reserved = false, qkey = "", token = "";
   try {
     if (!process.env.GEMINI_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error("Missing GEMINI_API_KEY or SUPABASE_SERVICE_ROLE_KEY");
       return send(500, { error: "AI is not configured yet." });
     }
 
-    // 0) Must be a logged-in user
-    const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+    token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
     if (!token) return send(401, { error: "Please log in to use AI explanations." });
     const ur = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: "Bearer " + token },
+      headers: { apikey: PUB_KEY, Authorization: "Bearer " + token },
     });
     if (!ur.ok) return send(401, { error: "Please log in to use AI explanations." });
     const user = await ur.json();
@@ -52,7 +62,7 @@ module.exports = async (req, res) => {
     if (!page || !key || (!text && !image)) return send(400, { error: "Nothing to explain on this page." });
     if (image.length > 2500000) return send(400, { error: "This page is too large to read." });
 
-    // 1) Shared cache: first student pays, everyone after gets it free
+    // 1) Shared cache hit = free, no quota used
     if (mode === "explain") {
       const cr = await rest(
         `page_explanations?select=explanation,file_url&material_key=eq.${encodeURIComponent(key)}&page=eq.${page}&limit=1`
@@ -61,20 +71,27 @@ module.exports = async (req, res) => {
         const rows = await cr.json();
         const hit = rows && rows[0];
         if (hit && (hit.file_url ?? null) === (b.file_url ?? null)) {
-          return send(200, { explanation: hit.explanation, cached: true });
+          const u = await rpc("my_quota_usage", {}, token);
+          const limit = u && u.limits && u.limits.ai ? u.limits.ai.limit : null;
+          const quota = limit != null ? { limit, remaining: Math.max(0, limit - (u.ai_used || 0)) } : null;
+          return send(200, { explanation: hit.explanation, cached: true, quota });
         }
       }
     }
 
-    // 2) Per-user daily limit
-    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-    const lr = await rest(
-      `explain_usage?select=id&user_id=eq.${user.id}&created_at=gte.${encodeURIComponent(since)}`,
-      { method: "HEAD", headers: { Prefer: "count=exact" } }
-    );
-    const range = lr.headers.get("content-range") || "";
-    const used = parseInt(range.split("/")[1], 10) || 0;
-    if (used >= DAILY_LIMIT) return send(429, { error: "Daily AI explanation limit reached. Try again tomorrow." });
+    // 2) Reserve one unit (atomic, server-side). One unit per page per day:
+    //    "simpler" / "example" on the same page cost nothing extra.
+    qkey = `${key}|${page}`;
+    const rv = await rpc("reserve_ai_explanation", { p_key: qkey }, token);
+    if (!rv) return send(503, { error: "Couldn't check your daily allowance. Please try again." });
+    if (rv.ok === false) {
+      if (rv.reason === "auth") return send(401, { error: "Please log in to use AI explanations." });
+      return send(429, {
+        code: "AI_LIMIT", limit: rv.limit, remaining: 0,
+        error: "You've used all your free AI explanations for today. Your allowance resets at midnight (Lagos time).",
+      });
+    }
+    reserved = rv.charged === true;   // only the request that paid may release it
 
     // 3) Ask Gemini
     const extra =
@@ -86,7 +103,6 @@ module.exports = async (req, res) => {
     const prompt =
       `Course/material: ${b.title ?? "Unknown"}${b.category ? " (" + b.category + ")" : ""}\nPage ${page}\n\n${extra}` +
       (text ? `\n\nPage text:\n"""\n${text}\n"""` : "\n\nThe page is attached as an image.");
-
     const parts = [];
     if (image) parts.push({ inlineData: { mimeType: "image/jpeg", data: image } });
     parts.push({ text: prompt });
@@ -102,18 +118,18 @@ module.exports = async (req, res) => {
     });
     if (!gr.ok) {
       console.error("Gemini error", gr.status, await gr.text());
-      return send(502, { error: "The AI is busy right now. Try again shortly." });
+      if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token); reserved = false; }
+      return send(502, { error: "The AI is busy right now. You were not charged. Try again shortly." });
     }
     const data = await gr.json();
     const explanation = ((data.candidates?.[0]?.content?.parts) || []).map((p) => p.text || "").join("").trim();
-    if (!explanation) return send(502, { error: "No explanation was returned." });
+    if (!explanation) {
+      if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token); reserved = false; }
+      return send(502, { error: "No explanation was returned. You were not charged." });
+    }
 
-    // 4) Save usage + shared cache
-    await rest("explain_usage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ user_id: user.id }),
-    });
+    // 4) Confirm the charge + save shared cache
+    if (reserved) { await rpc("finish_ai_explanation", { p_key: qkey, p_success: true }, token); reserved = false; }
     if (mode === "explain") {
       await rest("page_explanations?on_conflict=material_key,page", {
         method: "POST",
@@ -121,9 +137,10 @@ module.exports = async (req, res) => {
         body: JSON.stringify({ material_key: key, page, file_url: b.file_url ?? null, explanation }),
       });
     }
-    return send(200, { explanation });
+    return send(200, { explanation, quota: { limit: rv.limit, remaining: rv.remaining } });
   } catch (e) {
     console.error(e);
-    return send(500, { error: "Something went wrong. Try again." });
+    if (reserved && qkey && token) await rpc("finish_ai_explanation", { p_key: qkey, p_success: false }, token);
+    return send(500, { error: "Something went wrong. You were not charged. Try again." });
   }
 };
