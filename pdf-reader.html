@@ -1510,9 +1510,17 @@
           let data = null;
           try { data = await resp.json(); } catch {}
           if (resp.status === 401) throw new Error('Your session expired. Please log in again.');
+          if (resp.status === 429 && data && data.code === 'AI_LIMIT') {
+            setQuotaLine({ limit: data.limit, remaining: 0 });
+            if (window.PrimeQuota) PrimeQuota.showAiLimit(data.limit);
+            throw new Error(data.error);
+          }
           if (data && data.answer) return data.answer;
           throw new Error((data && (data.error || data.message)) || ('Server error ' + resp.status + '. Please try again.'));
         }
+
+        const qLim = resp.headers.get('x-quota-limit');
+        if (qLim) setQuotaLine({ limit: +qLim, remaining: +resp.headers.get('x-quota-remaining') });
 
         if (!resp.body || !resp.body.getReader) {                  // very old browser: wait for the whole text
           const all = await resp.text();
