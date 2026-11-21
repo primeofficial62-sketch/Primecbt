@@ -17,6 +17,9 @@
 // BACKGROUND JOBS: "queue_generation" saves a job per course in the table "question_jobs". A Supabase schedule (pg_cron)
 // calls the "run_jobs" action every minute while jobs are waiting, so question writing continues after you leave the site.
 //
+// PRIME PRO: the switch lives in admin_settings (keys pro_mode and pro_test_emails). The waitlist is the table pro_waitlist
+// (notified_at). Payments are in pro_payments. Packages are in pro_packages.
+//
 // Needs in package.json (project root):  "pdf-parse": "1.1.1", "jszip": "3.10.1", "pdf-lib": "1.17.1", "@vercel/functions": "^2.0.0"
 // Needs in vercel.json:   { "functions": { "api/admin.js": { "maxDuration": 300 } } }
 // The PDF / PowerPoint (.pptx) / Word (.docx) reader is built into this file. No api/_extract.js needed.
@@ -24,6 +27,7 @@
 // Needs in Supabase: run setup.sql once, then (for maths + diagrams):
 //   alter table questions add column if not exists image_url text;
 //   alter table questions add column if not exists svg text;
+// Also needs the SQL function question_counts() (already created) for the fast question counts.
 
 const crypto = require('crypto');
 const { AsyncLocalStorage } = require('async_hooks');
@@ -54,6 +58,7 @@ const COOKIE = 'admin_session';
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const WEEK = 7 * 24 * 3600;
 const UPLOAD_EXT = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'];
+const PRO_MODE_LIST = ['off', 'coming_soon', 'test', 'live'];
 
 // Optional helpers: they load only if installed, so a missing package can never break the whole admin API.
 let waitUntil = null;
@@ -193,7 +198,8 @@ const TABLES = {
   levels: { cols: ['name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   reviews: { cols: ['status'], search: ['user_name', 'user_email', 'message'], order: 'created_at', del: true },
   material_levels: { cols: ['enabled'], search: [], order: 'level', asc: true, del: false },
-  api_keys: { cols: ['label', 'key', 'enabled'], search: ['label'], order: 'created_at', asc: true, del: true }
+  api_keys: { cols: ['label', 'key', 'enabled'], search: ['label'], order: 'created_at', asc: true, del: true },
+  pro_packages: { cols: ['code', 'name', 'price_kobo', 'original_price_kobo', 'months', 'sort_order', 'active', 'benefits'], search: ['name'], order: 'sort_order', asc: true, del: true }
 };
 
 
@@ -284,6 +290,13 @@ async function count(table, filter) {
   return parseInt(cr.split('/')[1], 10) || 0;
 }
 async function safeCount(table, filter) { try { return await count(table, filter); } catch (e) { return 0; } }
+// Counts rows of a table that has no "id" column (for example pro_waitlist, whose key is user_id).
+async function countBy(table, col, filter) {
+  try {
+    const r = await sb('/rest/v1/' + table + '?select=' + col + (filter || '') + '&limit=1', { headers: { Prefer: 'count=exact' } });
+    return parseInt((r.res.headers.get('content-range') || '').split('/')[1], 10) || 0;
+  } catch (e) { return 0; }
+}
 
 // Runs a job after the response is sent (Vercel keeps the function alive until it finishes).
 function background(promise) {
@@ -349,12 +362,16 @@ function coolUntil(msg) {
   const secs = m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 60;
   return Date.now() + Math.max(secs, 5) * 1000;
 }
+// The key list is remembered for 20 seconds, so a burst of question-writing calls does not ask the database for it every time.
+let keyCache = { at: 0, list: null };
 async function getKeys() {
+  if (keyCache.list && Date.now() - keyCache.at < 20000) return keyCache.list;
   let rows = [];
   try { rows = (await sb('/rest/v1/api_keys?select=id,key,uses&enabled=eq.true&provider=eq.gemini&order=created_at.asc')).data || []; }
   catch (e) { rows = []; }   // table not created yet: fall back to the Vercel key
   const list = rows.map(function (r) { return { id: String(r.id), key: r.key, uses: r.uses || 0, db: true }; });
   if (GEMINI_KEY && !list.some(function (k) { return k.key === GEMINI_KEY; })) list.push({ id: 'env', key: GEMINI_KEY, uses: 0, db: false });
+  keyCache = { at: Date.now(), list: list };
   return list;
 }
 async function hasKeys() { return (await getKeys()).length > 0; }
@@ -389,7 +406,8 @@ async function geminiCall(model, body) {
       data = await res.json().catch(function () { return {}; });
     }
     if (res.ok) {
-      if (k.db) { try { await sb('/rest/v1/api_keys?id=eq.' + enc(k.id), { method: 'PATCH', body: { uses: k.uses + 1, last_used: new Date().toISOString(), exhausted_until: null } }); } catch (e) { /* ignore */ } }
+      // the usage counter is saved in the background, so it never slows the answer down
+      if (k.db) { sb('/rest/v1/api_keys?id=eq.' + enc(k.id), { method: 'PATCH', body: { uses: k.uses + 1, last_used: new Date().toISOString(), exhausted_until: null } }).catch(function () { /* ignore */ }); }
       return { res: res, data: data };
     }
     last = { res: res, data: data };
@@ -402,6 +420,7 @@ async function geminiCall(model, body) {
     }
     if ((res.status === 400 || res.status === 401 || res.status === 403) && /api key/i.test(msg)) {   // bad or revoked key
       keyCool[ck] = Date.now() + 3600000;
+      keyCache = { at: 0, list: null };
       if (k.db) { try { await sb('/rest/v1/api_keys?id=eq.' + enc(k.id), { method: 'PATCH', body: { enabled: false, last_error: msg.slice(0, 300) } }); } catch (e) { /* ignore */ } }
       continue;
     }
@@ -1052,6 +1071,7 @@ const actions = {
     if (b.table === 'api_keys' && 'key' in data) {
       data.key = String(data.key || '').trim();
       if (!data.key) throw new HttpError(400, 'Paste the API key.');
+      keyCache = { at: 0, list: null };
     }
     // The student site reads "category", so keep it in step with the material type.
     if (b.table === 'materials' && data.material_type && !data.category) data.category = data.material_type;
@@ -1083,6 +1103,8 @@ const actions = {
         savedId = await write(rest);
       } else if (b.table === 'api_keys' && /duplicate|unique/i.test(e.message)) {
         throw new HttpError(400, 'This API key is already saved.');
+      } else if (b.table === 'pro_packages' && /duplicate|unique/i.test(e.message)) {
+        throw new HttpError(400, 'A package with this name and length already exists.');
       } else throw e;
     }
     // A readable file was added: write its questions automatically in the background.
@@ -1096,7 +1118,68 @@ const actions = {
     if (!t.del) throw new HttpError(400, 'This cannot be deleted here.');
     if (!isId(String(b.id))) throw new HttpError(400, 'Bad id.');
     await sb('/rest/v1/' + b.table + '?id=eq.' + enc(b.id), { method: 'DELETE' });
+    if (b.table === 'api_keys') keyCache = { at: 0, list: null };
     return { ok: true };
+  },
+
+  // Question count for every course in ONE request (used by the Questions list and Generate questions).
+  // Uses the SQL function question_counts(). If it is missing, it pages through the question list instead.
+  async question_counts(req) {
+    await requireAuth(req);
+    const counts = {};
+    try {
+      const r = await sb('/rest/v1/rpc/question_counts', { method: 'POST', body: {} });
+      (r.data || []).forEach(function (x) { counts[String(x.course_id)] = Number(x.n) || 0; });
+    } catch (e) {
+      const pages = Math.ceil((await safeCount('questions')) / 1000);
+      for (let p = 0; p < pages; p += 5) {
+        const set = [];
+        for (let k = p; k < Math.min(p + 5, pages); k++) set.push(sb('/rest/v1/questions?select=course_id&order=id.asc&limit=1000&offset=' + k * 1000));
+        (await Promise.all(set)).forEach(function (r) {
+          (r.data || []).forEach(function (q) { const id = String(q.course_id); counts[id] = (counts[id] || 0) + 1; });
+        });
+      }
+    }
+    return { counts: counts };
+  },
+
+  // Prime Pro: the switch, test emails, waitlist and paid counts for the Prime Pro page.
+  async pro_get(req) {
+    await requireAuth(req);
+    const rows = (await sb('/rest/v1/admin_settings?select=key,value&key=in.(pro_mode,pro_test_emails)')).data || [];
+    const set = {};
+    rows.forEach(function (r) { set[r.key] = r.value; });
+    const mode = PRO_MODE_LIST.indexOf(set.pro_mode) > -1 ? set.pro_mode : 'off';
+    const c = await Promise.all([
+      countBy('pro_waitlist', 'user_id'),
+      countBy('pro_waitlist', 'user_id', '&notified_at=is.null'),
+      countBy('pro_payments', 'id', '&status=eq.success')
+    ]);
+    return {
+      mode: mode,
+      test_emails: Array.isArray(set.pro_test_emails) ? set.pro_test_emails : [],
+      waitlist: c[0],
+      waitlist_pending: c[1],
+      paid: c[2]
+    };
+  },
+
+  async pro_set_mode(req, res, b) {
+    await requireAuth(req);
+    if (PRO_MODE_LIST.indexOf(b.mode) < 0) throw new HttpError(400, 'Choose a valid mode.');
+    await sb('/rest/v1/admin_settings?on_conflict=key', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: { key: 'pro_mode', value: b.mode, updated_at: new Date().toISOString() }
+    });
+    return { ok: true, mode: b.mode };
+  },
+
+  // Tells everyone on the waitlist that Pro is live. Each person gets one notification (the database function marks them as told).
+  async pro_notify_waitlist(req) {
+    await requireAuth(req);
+    const r = await sb('/rest/v1/rpc/notify_pro_waitlist', { method: 'POST', body: {} });
+    return { sent: Number(r.data) || 0 };
   },
 
   // Gives the admin page a one-time link to upload a file straight to Supabase Storage,
