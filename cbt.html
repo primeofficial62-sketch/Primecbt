@@ -108,6 +108,7 @@ dialog .row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}dialog .row .bt
   <div class="row"><button type="button" class="btn" id="dlgCancel">Keep going</button><button type="button" class="btn primary" id="dlgOk">Submit</button></div></dialog>
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="quota.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
@@ -151,7 +152,11 @@ const secsPerQ = parseInt(P.get('secsPerQ'), 10) || CONFIG.defaultSecsPerQ;
   el.back.href = CONFIG.setupPage + '?' + b.toString();
 })();
 
-const S = { user:null, course:null, qs:[], answers:{}, flags:new Set(), index:0, endAt:null, startedAt:Date.now(), submitting:false, done:false, retry:null };
+// Free Plan: which daily allowance this session counts against (null = not limited, e.g. retakes)
+const qMode = (window.PrimeQuota && !retakeId) ? PrimeQuota.modeFor(kind) : null;
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+
+const S = { attemptId:null, qid:null, qp:null, user:null, course:null, qs:[], answers:{}, flags:new Set(), index:0, endAt:null, startedAt:Date.now(), submitting:false, done:false, retry:null };
 
 let tT; const toast = (m) => { el.toast.textContent = m; el.toast.hidden = false; clearTimeout(tT); tT = setTimeout(() => { el.toast.hidden = true; }, 3500); };
 function showMessage(title, body, btnText, action, href) {
@@ -171,7 +176,7 @@ const db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANO
 
 /* ---- resume (per tab) ---- */
 const storeKey = () => `primecbt:session:${S.user.id}:${courseParam || topicParam}:${mode}:${difficulty}:${wantCount}:${randomize}:${idsParam.length}:${idsParam[0] || ''}:${nonce}:${retakeId}`;
-function save() { if (S.done || !S.qs.length) return; try { sessionStorage.setItem(storeKey(), JSON.stringify({ ids:S.qs.map(q => q.id), answers:S.answers, flags:[...S.flags], index:S.index, startedAt:S.startedAt, endAt:S.endAt })); } catch (_) {} }
+function save() { if (S.done || !S.qs.length) return; try { sessionStorage.setItem(storeKey(), JSON.stringify({ ids:S.qs.map(q => q.id), answers:S.answers, flags:[...S.flags], index:S.index, startedAt:S.startedAt, endAt:S.endAt, attemptId:S.attemptId, qid:S.qid })); } catch (_) {} }
 function loadSaved() { try { const d = JSON.parse(sessionStorage.getItem(storeKey()) || 'null'); if (!d || !Array.isArray(d.ids) || !d.ids.length || Date.now() - (d.startedAt || 0) > CONFIG.resumeWindowMs) return null; return d; } catch (_) { return null; } }
 const clearSaved = () => { try { sessionStorage.removeItem(storeKey()); } catch (_) {} };
 
@@ -296,8 +301,31 @@ function render(animate = true) {
 }
 
 /* ---- actions ---- */
-function choose(i) {
+
+// Free Plan: the session is counted on the FIRST answer, by the server. The attempt id makes
+// refreshes, resumes and double taps safe (the same attempt is never counted twice).
+async function ensureSession() {
+  if (!qMode || S.qid) return true;
+  if (!S.qp) S.qp = (async () => {
+    const { data, error } = await db.rpc('start_practice_session', { p_mode: qMode, p_attempt: S.attemptId });
+    S.qp = null;
+    if (error || !data) { toast('Couldn’t start the session. Check your connection and try again.'); return false; }
+    if (data.ok === false) {
+      if (data.reason === 'limit') {
+        PrimeQuota.showLimit(qMode, data.limit);
+        showMessage('Daily limit reached', 'You’ve used today’s allowance for this practice mode. It resets at midnight (Lagos time). Your materials are still open.', 'Back to practice', null, 'practice.html');
+      } else toast('Couldn’t start the session. Please try again.');
+      return false;
+    }
+    S.qid = data.session_id; save(); return true;
+  })();
+  return S.qp;
+}
+
+async function choose(i) {
   const q = S.qs[S.index]; if (instant && answered(q)) return;
+  if (qMode && !S.qid && !(await ensureSession())) return;
+  if (instant && answered(q)) return;
   if (!instant && S.answers[q.id] === i) delete S.answers[q.id]; else S.answers[q.id] = i;   // exam style: tap again to clear
   save(); render(false);
 }
@@ -354,6 +382,7 @@ async function submit(auto) {
     el.dlgErr.hidden = false; el.dlgOk.disabled = false; el.dlgOk.textContent = 'Try again'; if (auto) el.dlgCancel.hidden = true; return;
   }
   S.done = true; clearInterval(tick); clearSaved();
+  if (S.qid) { try { await db.rpc('complete_practice_session', { p_session: S.qid }); } catch (_) {} }
   location.href = `${CONFIG.resultsPage}?result=${encodeURIComponent(data)}`;
 }
 
@@ -380,7 +409,14 @@ async function init() {
     S.course = await resolveCourse();
     if (!S.course) { el.sub.textContent = 'Course not found'; return showMessage('Course not found', 'We couldn’t find that course.', 'Set up a session', null, CONFIG.setupPage); }
     const saved = loadSaved();
+    S.attemptId = (saved && saved.attemptId) || newId();   // one id per attempt: refresh / resume never counts twice
+    S.qid = (saved && saved.qid) || null;
     S.qs = await fetchQuestions(saved);
+    if (qMode === 'general') {   // General Practice question cap (only present while Free Plan limits are on)
+      const u = await PrimeQuota.usage(db);
+      const cap = u && u.limits && u.limits.general && u.limits.general.max_questions;
+      if (cap && S.qs.length > cap) S.qs = S.qs.slice(0, cap);
+    }
     if (!S.qs.length) { el.title.textContent = S.course.title || 'Practice session'; el.sub.textContent = 'No questions available'; return showMessage('No questions available', 'There aren’t any questions for these settings. Go back and adjust them.', 'Back to setup', null, el.back.href); }
     if (saved) {
       const ids = new Set(S.qs.map(q => q.id));
