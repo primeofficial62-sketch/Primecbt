@@ -111,11 +111,12 @@
 
     /* ========== FORM ========== */
     .form { display: flex; flex-direction: column; gap: 18px; margin-top: 26px; }
-    .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+    .field { position: relative; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
     .field-label { font-size: 13px; font-weight: 500; color: var(--muted); }
     .field-label .opt { color: #64748b; font-weight: 400; }
+    .field-hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
 
-    .field input[type="text"],
+    .field input[type="text"], .field input[type="tel"],
     .field select {
       width: 100%; min-width: 0;
       height: 50px;
@@ -230,7 +231,7 @@
     /* ========== RESPONSIVE ========== */
     @media (max-width: 360px) {
       .topbrand { font-size: 15px; }
-      .field input[type="text"], .field select { height: 46px; }
+      .field input[type="text"], .field input[type="tel"], .field select { height: 46px; }
       .cta { height: 48px; }
     }
 
@@ -247,7 +248,7 @@
         background: var(--surface);
         box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
       }
-      .field input[type="text"], .field select { background-color: var(--bg); }
+      .field input[type="text"], .field input[type="tel"], .field select { background-color: var(--bg); }
       .field input:focus, .field select:focus { background-color: var(--surface-2); }
     }
     @media (min-width: 1024px) {
@@ -279,7 +280,7 @@
     .stage { border-left-color: rgba(42, 56, 80, .5); border-right-color: rgba(42, 56, 80, .5); background: transparent; }
     .topbar { position: sticky; top: 0; z-index: 30; background: rgba(7, 13, 28, .88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
     .text-btn { min-height: 44px; }
-    .field input[type="text"], .field select { height: 54px; border-radius: 16px; background-color: var(--field); }
+    .field input[type="text"], .field input[type="tel"], .field select { height: 54px; border-radius: 16px; background-color: var(--field); }
     .field input:focus, .field select:focus { background-color: var(--field); box-shadow: 0 0 0 3px var(--ring); }
     .field input::placeholder { color: var(--placeholder); }
     .checkbox { min-height: 44px; align-items: center; }
@@ -293,13 +294,64 @@
     .toast { background: var(--surface-2); }
     @media (min-width: 600px) {
       .stage { background: var(--card); border-color: var(--line); }
-      .field input[type="text"], .field select { background-color: var(--field); }
+      .field input[type="text"], .field input[type="tel"], .field select { background-color: var(--field); }
       .field input:focus, .field select:focus { background-color: var(--field); }
     }
     @media (min-width: 1024px) { .stage { max-width: 560px; } }
     /* lighter animation on phones */
     @media (max-width: 640px) { .view.active { animation-duration: .2s; } }
     @media (max-width: 360px) { .cta { min-height: 52px; } }
+
+    /* ===== Dropdowns that always open downward ===== */
+    .field select.dd-native { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); pointer-events: none; }
+    .dd { position: relative; }
+    .dd-btn {
+      width: 100%;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      padding: 0 44px 0 16px;
+      background-color: var(--field);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239BA8BE' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--text);
+      font: inherit;
+      font-size: 16px;
+      text-align: left;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .dd-btn:focus-visible, .dd.open .dd-btn { border-color: var(--emerald); box-shadow: 0 0 0 3px var(--ring); }
+    .dd-btn:disabled { opacity: .6; cursor: not-allowed; }
+    .dd-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dd.is-placeholder .dd-text { color: var(--muted); }
+    .field.error .dd-btn { border-color: var(--red); }
+    .dd-list {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 40;
+      margin: 0;
+      padding: 6px;
+      list-style: none;
+      max-height: 280px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+    }
+    .dd-opt { min-height: 44px; display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; font-size: 15px; line-height: 1.35; color: var(--text); cursor: pointer; }
+    .dd-opt:hover, .dd-opt.is-active { background: var(--surface-2); }
+    .dd-opt[aria-selected="true"] { color: var(--emerald); font-weight: 600; }
+    @media (max-width: 360px) { .dd-btn { height: 46px; } }
   </style>
 </head>
 <body>
@@ -335,18 +387,32 @@
           <span class="field-error" role="alert">Please enter your full name</span>
         </label>
 
-        <label class="field" data-field="school">
-          <span class="field-label">School</span>
+        <div class="field" data-field="school">
+          <label class="field-label" for="schoolSelect">School</label>
           <select id="schoolSelect" name="school"><option value="" disabled selected>Loading schools…</option></select>
-          <input type="text" id="schoolText" placeholder="Name of your institution" autocomplete="organization" hidden>
+          <input type="text" id="schoolText" placeholder="Name of your institution" aria-label="School" autocomplete="organization" hidden>
           <span class="field-error" role="alert">Please choose or enter your school</span>
-        </label>
+        </div>
 
-        <label class="field" data-field="department">
-          <span class="field-label">Department</span>
-          <select id="departmentSelect" name="department" hidden></select>
-          <input type="text" id="departmentText" placeholder="Your department" autocomplete="off">
+        <div class="field" data-field="college">
+          <label class="field-label" for="collegeSelect">College</label>
+          <select id="collegeSelect" name="college"><option value="" disabled selected>Loading colleges…</option></select>
+          <input type="text" id="collegeText" placeholder="Your faculty or college" aria-label="College" autocomplete="off" hidden>
+          <span class="field-error" role="alert">Please choose or enter your college</span>
+        </div>
+
+        <div class="field" data-field="department">
+          <label class="field-label" for="departmentSelect">Department</label>
+          <select id="departmentSelect" name="department" disabled><option value="" disabled selected>Select your college first</option></select>
+          <input type="text" id="departmentText" placeholder="Your department" aria-label="Department" autocomplete="off" hidden>
           <span class="field-error" role="alert">Please choose or enter your department</span>
+        </div>
+
+        <label class="field" data-field="whatsapp">
+          <span class="field-label">WhatsApp number</span>
+          <input type="tel" id="whatsapp" name="whatsapp" inputmode="tel" placeholder="e.g. 08012345678" autocomplete="tel">
+          <span class="field-hint">Outside Nigeria? Start with your country code, e.g. +44.</span>
+          <span class="field-error" role="alert">Enter a valid WhatsApp number</span>
         </label>
 
         <div class="field-grid">
@@ -407,7 +473,8 @@
   const saveBtn = $('saveBtn');
 
   let finishing = false;
-  let schools = [], departments = [], levels = [];
+  let currentUser = null;
+  let schools = [], colleges = [], departments = [], levels = [];
   // Where to go after setup: same-site .html page saved by auth.html (sessionStorage 'auth_next'), else home.html
   function nextUrl() {
     let n = '';
@@ -420,7 +487,7 @@
     try { sessionStorage.removeItem('auth_next'); } catch (e) {}
     window.location.replace(url);
   }
-  const prefill = { fullname: '', school: '', department: '', level: '', matric: '' };
+  const prefill = { fullname: '', school: '', college: '', department: '', whatsapp: '', level: '', matric: '' };
 
   /* ---------- Helpers ---------- */
   function showToast(message, type = 'success') {
@@ -438,7 +505,7 @@
 
   const nameOf = (r) => String(r.name || r.title || r.label || '').trim();
   const sortRows = (rows) => rows
-    .filter((r) => nameOf(r))
+    .filter((r) => nameOf(r) && r.is_active !== false)
     .sort((a, b) => (Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0)) ||
                     nameOf(a).localeCompare(nameOf(b), undefined, { numeric: true }));
 
@@ -448,9 +515,28 @@
     return sortRows(data || []);
   }
 
+  // WhatsApp number -> international format (08012345678 -> +2348012345678). Null if it isn't a real number.
+  function normalizeWhatsapp(raw) {
+    let s = String(raw || '').trim().replace(/[\s\-().]/g, '');
+    if (!s) return null;
+    if (s.startsWith('00')) s = '+' + s.slice(2);
+    if (s.startsWith('+')) {
+      s = '+' + s.slice(1).replace(/\D/g, '');
+      s = s.replace(/^\+2340/, '+234');
+    } else {
+      s = s.replace(/\D/g, '');
+      if (/^0\d{10}$/.test(s)) s = '+234' + s.slice(1);
+      else if (/^234\d{10}$/.test(s)) s = '+' + s;
+      else if (/^[789]\d{9}$/.test(s)) s = '+234' + s;
+      else return null;
+    }
+    return /^\+\d{10,15}$/.test(s) ? s : null;
+  }
+
   /* ---------- Choice fields (select when the database has options, text otherwise) ---------- */
   const ctl = {
     school: { sel: $('schoolSelect'), txt: $('schoolText') },
+    college: { sel: $('collegeSelect'), txt: $('collegeText') },
     department: { sel: $('departmentSelect'), txt: $('departmentText') },
     level: { sel: $('levelSelect'), txt: null }
   };
@@ -475,6 +561,7 @@
       return;
     }
     sel.hidden = false;
+    sel.disabled = false;
     if (txt) txt.hidden = true;
     const ph = new Option('Select…', '', true, true);
     ph.disabled = true;
@@ -488,15 +575,40 @@
   }
 
   function renderSchools() {
-    renderChoice('school', schools, getValue('school') || prefill.school);
+    // With only one school in the database, pick it for the student
+    const wanted = getValue('school') || prefill.school || (schools.length === 1 ? nameOf(schools[0]) : '');
+    renderChoice('school', schools, wanted);
+    renderColleges();
+  }
+
+  function renderColleges() {
+    const schoolId = getId('school');
+    const relevant = schoolId == null ? [] : colleges.filter((c) => String(c.school_id) === String(schoolId));
+    renderChoice('college', relevant, getValue('college') || prefill.college);
     renderDepartments();
   }
 
   function renderDepartments() {
-    const schoolId = getId('school');
-    const relevant = departments.filter((d) =>
-      d.school_id == null || (schoolId != null && String(d.school_id) === String(schoolId)));
-    renderChoice('department', relevant, getValue('department') || prefill.department);
+    const { sel, txt } = ctl.department;
+    if (!ctl.college.sel.hidden) {
+      // Colleges come from the list, so departments come from the chosen college
+      const collegeId = getId('college');
+      if (!collegeId) {
+        sel.hidden = false;
+        txt.hidden = true;
+        const ph = new Option('Select your college first', '', true, true);
+        ph.disabled = true;
+        sel.replaceChildren(ph);
+        sel.disabled = true;
+        return;
+      }
+      const relevant = departments.filter((d) => String(d.college_id) === String(collegeId));
+      renderChoice('department', relevant, getValue('department') || prefill.department);
+      return;
+    }
+    // Typed-in school/college: let them type the department too
+    sel.disabled = false;
+    renderChoice('department', [], getValue('department') || prefill.department);
   }
 
   function renderLevels() {
@@ -507,20 +619,172 @@
   }
 
   async function loadSchools() { schools = await fetchList('schools'); renderSchools(); }
+  async function loadColleges() { colleges = await fetchList('colleges'); renderColleges(); }
   async function loadDepartments() { departments = await fetchList('departments'); renderDepartments(); }
   async function loadLevels() { levels = await fetchList('levels'); renderLevels(); }
-
-  ctl.school.sel.addEventListener('change', () => { prefill.department = ''; renderDepartments(); clearError('school'); });
-  ctl.department.sel.addEventListener('change', () => clearError('department'));
-  ctl.level.sel.addEventListener('change', () => clearError('level'));
-  ctl.school.txt.addEventListener('input', () => clearError('school'));
-  ctl.department.txt.addEventListener('input', () => clearError('department'));
-  $('fullname').addEventListener('input', () => clearError('fullname'));
-  $('termsCheck').addEventListener('change', () => { $('termsError').style.display = 'none'; });
 
   const field = (key) => form.querySelector(`[data-field="${key}"]`);
   const clearError = (key) => { const f = field(key); if (f) f.classList.remove('error'); };
   const setError = (key) => { const f = field(key); if (f) f.classList.add('error'); };
+
+  ctl.school.sel.addEventListener('change', () => { prefill.college = ''; prefill.department = ''; renderColleges(); clearError('school'); });
+  ctl.college.sel.addEventListener('change', () => { prefill.department = ''; renderDepartments(); clearError('college'); });
+  ctl.department.sel.addEventListener('change', () => clearError('department'));
+  ctl.level.sel.addEventListener('change', () => clearError('level'));
+  ctl.school.txt.addEventListener('input', () => clearError('school'));
+  ctl.college.txt.addEventListener('input', () => clearError('college'));
+  ctl.department.txt.addEventListener('input', () => clearError('department'));
+  $('fullname').addEventListener('input', () => clearError('fullname'));
+  $('whatsapp').addEventListener('input', () => clearError('whatsapp'));
+  $('termsCheck').addEventListener('change', () => { $('termsError').style.display = 'none'; });
+
+  /* ---------- Dropdowns that always open downward ----------
+     Phone browsers decide for themselves whether a native <select> list opens up or
+     down. These keep the real <select> (so all the logic above still works) and show
+     our own list, which always opens below the field and scrolls. */
+  let ddCounter = 0;
+  const openDropdowns = new Set();
+  document.addEventListener('click', (e) => {
+    openDropdowns.forEach((d) => { if (!d.wrap.contains(e.target)) d.close(); });
+  });
+
+  function makeDropdown(select) {
+    const fieldEl = select.closest('.field');
+    const label = fieldEl && fieldEl.querySelector('.field-label');
+    const id = 'dd' + (++ddCounter);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'dd';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'dd-btn';
+    btn.id = id + '-btn';
+    btn.setAttribute('role', 'combobox');
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', id + '-list');
+    const txt = document.createElement('span');
+    txt.className = 'dd-text';
+    btn.appendChild(txt);
+    const list = document.createElement('ul');
+    list.className = 'dd-list';
+    list.id = id + '-list';
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+    wrap.append(btn, list);
+
+    select.classList.add('dd-native');
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
+    select.insertAdjacentElement('afterend', wrap);
+    if (label && label.tagName === 'LABEL') label.htmlFor = btn.id;
+
+    let active = -1;
+    const items = () => Array.from(list.children);
+    const isOpen = () => !list.hidden;
+
+    function render() {
+      list.innerHTML = '';
+      Array.from(select.options).forEach((o) => {
+        if (o.value === '') return; // the placeholder isn't a choice
+        const li = document.createElement('li');
+        li.className = 'dd-opt';
+        li.id = id + '-o' + list.children.length;
+        li.setAttribute('role', 'option');
+        li.dataset.value = o.value;
+        li.textContent = o.text;
+        li.setAttribute('aria-selected', String(o.value === select.value));
+        li.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus on the button
+        li.addEventListener('click', () => choose(o.value));
+        list.appendChild(li);
+      });
+      const cur = select.options[select.selectedIndex];
+      txt.textContent = cur ? cur.text : '';
+      wrap.classList.toggle('is-placeholder', !cur || cur.value === '');
+      wrap.hidden = select.hidden;
+      btn.disabled = select.disabled;
+      if ((btn.disabled || wrap.hidden) && isOpen()) close();
+    }
+
+    function setActive(i) {
+      const els = items();
+      if (!els.length) return;
+      active = Math.max(0, Math.min(els.length - 1, i));
+      els.forEach((el, k) => el.classList.toggle('is-active', k === active));
+      btn.setAttribute('aria-activedescendant', els[active].id);
+      const el = els[active];
+      const top = el.offsetTop, bottom = top + el.offsetHeight;
+      if (top < list.scrollTop) list.scrollTop = top;
+      else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+    }
+
+    function open() {
+      if (btn.disabled) return;
+      openDropdowns.forEach((d) => { if (d !== api) d.close(); });
+      list.hidden = false;
+      wrap.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      openDropdowns.add(api);
+
+      // Make room below the field, then size the list to fit
+      let r = btn.getBoundingClientRect();
+      const room = window.innerHeight - r.bottom;
+      const delta = Math.min(260 - room, r.top - 80);
+      if (room < 260 && delta > 0) { window.scrollBy(0, delta); r = btn.getBoundingClientRect(); }
+      list.style.maxHeight = Math.max(160, Math.min(280, window.innerHeight - r.bottom - 14)) + 'px';
+
+      const els = items();
+      const sel = els.findIndex((el) => el.getAttribute('aria-selected') === 'true');
+      setActive(sel >= 0 ? sel : 0);
+    }
+
+    function close() {
+      list.hidden = true;
+      wrap.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.removeAttribute('aria-activedescendant');
+      openDropdowns.delete(api);
+    }
+
+    function choose(value) {
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      render();
+      close();
+      btn.focus();
+    }
+
+    btn.addEventListener('click', () => (isOpen() ? close() : open()));
+    btn.addEventListener('keydown', (e) => {
+      const k = e.key;
+      if (!isOpen()) {
+        if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'Enter' || k === ' ') { e.preventDefault(); open(); }
+        return;
+      }
+      if (k === 'Escape') { e.preventDefault(); close(); }
+      else if (k === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
+      else if (k === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+      else if (k === 'Enter' || k === ' ') {
+        e.preventDefault();
+        const el = items()[active];
+        if (el) choose(el.dataset.value); else close();
+      }
+      else if (k === 'Tab') close();
+      else if (k.length === 1) {
+        const els = items();
+        const lower = k.toLowerCase();
+        const hit = els.findIndex((el, n) => n > active && el.textContent.toLowerCase().startsWith(lower));
+        const any = hit >= 0 ? hit : els.findIndex((el) => el.textContent.toLowerCase().startsWith(lower));
+        if (any >= 0) setActive(any);
+      }
+    });
+
+    const api = { wrap, close };
+    new MutationObserver(render).observe(select, { childList: true, attributes: true, attributeFilter: ['disabled', 'hidden'] });
+    render();
+  }
+
+  [ctl.school.sel, ctl.college.sel, ctl.department.sel].forEach(makeDropdown);
 
   /* ---------- Live updates ---------- */
   let timers = {};
@@ -528,11 +792,12 @@
 
   const channel = sb.channel('profile-setup-lists')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'schools' }, debounced('s', loadSchools))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'colleges' }, debounced('c', loadColleges))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'departments' }, debounced('d', loadDepartments))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'levels' }, debounced('l', loadLevels))
     .subscribe();
 
-  function refreshAll() { loadSchools().then(loadDepartments).then(loadLevels); }
+  function refreshAll() { loadSchools().then(loadColleges).then(loadDepartments).then(loadLevels); }
 
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshAll(); });
   window.addEventListener('online', () => { showToast('Back online', 'success'); refreshAll(); });
@@ -545,16 +810,20 @@
     if (!needsSetup(session.user)) { window.location.replace('home.html'); return; }
 
     document.documentElement.classList.remove('checking');
+    currentUser = session.user;
 
     const meta = session.user.user_metadata || {};
     const name = String(meta.full_name || meta.name || '').trim();
     prefill.fullname = name;
     prefill.school = meta.school || '';
+    prefill.college = meta.college || '';
     prefill.department = meta.department || '';
+    prefill.whatsapp = meta.whatsapp || '';
     prefill.level = meta.level || '';
     prefill.matric = meta.matric || '';
 
     $('fullname').value = name;
+    $('whatsapp').value = prefill.whatsapp;
     $('matric').value = prefill.matric;
     if (name) $('welcomeText').textContent = 'Welcome, ' + name.split(/\s+/)[0] + '! Just a few details to get you started.';
 
@@ -576,38 +845,76 @@
 
     const fullname = $('fullname').value.trim();
     const school = getValue('school');
+    const college = getValue('college');
     const department = getValue('department');
+    const whatsapp = normalizeWhatsapp($('whatsapp').value);
     const level = getValue('level');
 
-    ['fullname', 'school', 'department', 'level'].forEach(clearError);
+    ['fullname', 'school', 'college', 'department', 'whatsapp', 'level'].forEach(clearError);
     let firstBad = null;
     const check = (key, ok) => { if (!ok) { setError(key); firstBad = firstBad || key; } };
     check('fullname', !!fullname);
     check('school', !!school);
+    check('college', !!college);
     check('department', !!department);
+    check('whatsapp', !!whatsapp);
     check('level', !!level);
 
     if (firstBad) {
       const f = field(firstBad);
       f.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      const c = f.querySelector('input:not([hidden]), select:not([hidden])');
+      const c = Array.from(f.querySelectorAll('.dd-btn, input')).find((el) => el.offsetParent !== null && !el.disabled);
       if (c) c.focus({ preventScroll: true });
       return;
     }
     if (!$('termsCheck').checked) { $('termsError').style.display = 'block'; return; }
     if (!navigator.onLine) { showToast('You are offline. Check your connection.', 'error'); return; }
+    if (!currentUser) { showToast('Still loading. Try again in a moment.', 'info'); return; }
 
     saveBtn.disabled = true;
     saveBtn.classList.add('loading');
     finishing = true;   // stops the auth listener from redirecting before the success screen
 
+    const stop = (msg) => {
+      saveBtn.classList.remove('loading');
+      finishing = false;
+      saveBtn.disabled = false;
+      showToast(msg, 'error');
+    };
+
+    // 1) Save to the profiles table, so every user carries their college, department and WhatsApp number
+    const payload = {
+      full_name: fullname,
+      institution: school,
+      college,
+      department,
+      whatsapp,
+      updated_at: new Date().toISOString()
+    };
+    try {
+      let r = await sb.from('profiles').update(payload).eq('id', currentUser.id).select('id');
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.length) {
+        r = await sb.from('profiles').insert(Object.assign({ id: currentUser.id }, payload));
+        if (r.error) throw r.error;
+      }
+    } catch (err) {
+      console.warn('[profile-setup] profile save failed', err);
+      stop('Couldn’t save your profile. Check your connection and try again.');
+      return;
+    }
+
+    // 2) Mark setup as completed on the account (this is what stops the redirect to this page)
     const { error } = await sb.auth.updateUser({
       data: {
         full_name: fullname,
         school,
         school_id: getId('school'),
+        college,
+        college_id: getId('college'),
         department,
         department_id: getId('department'),
+        whatsapp,
         level,
         matric: $('matric').value.trim(),
         profile_completed: true
