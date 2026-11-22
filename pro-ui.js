@@ -96,7 +96,7 @@
     if (!st || !(st.plans || []).length) { toast('Pro plans are not available right now.'); return; }
     var o = overlay('pp-plans');
     var test = st.mode === 'test';
-    var h = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Prime Pro plans"><div class="pp-h"><h2>Choose your plan</h2><button type="button" class="pp-x" id="ppClose" aria-label="Close">&#10005;</button></div>';
+    var h = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Prime CBT plans"><div class="pp-h"><h2>Choose your plan</h2><button type="button" class="pp-x" id="ppClose" aria-label="Close">&#10005;</button></div>';
     if (test) h += '<div class="pp-test">TEST MODE: no real money is charged.</div>';
     st.plans.forEach(function (p, i) {
       h += '<div class="pp-plan' + (p.discount_percent ? ' pp-hot' : '') + '">' + (p.discount_percent ? '<div class="pp-badge">Save ' + p.discount_percent + '%</div>' : '') +
@@ -196,15 +196,15 @@
     if (!s) return;   // not allowed to see Pro (or the check failed): show nothing at all
     var title, sub, btn = '', act = null;
     if (s.is_pro) {
-      title = 'Prime ' + (s.plan_name || 'Pro') + ' is active';
+      title = 'Prime ' + (s.plan_name || 'CBT Pro') + ' is active';
       sub = s.expires_at ? 'Valid until ' + dateTxt(s.expires_at) : 'Unlimited AI explanations and practice';
       btn = 'View receipt'; act = viewLatestReceipt;
     } else if (s.can_subscribe) {
-      title = 'Go Prime Pro';
+      title = 'Go Prime CBT Pro';
       sub = 'Unlimited AI explanations and practice sessions';
       btn = 'See plans'; act = openPlans;
     } else if (s.show_coming_soon) {
-      title = 'Prime Pro is coming soon';
+      title = 'Prime CBT Pro is coming soon';
       sub = s.on_waitlist ? 'You are on the waitlist. We will tell you the moment it opens.' : 'Join the waitlist and be the first to know.';
       btn = s.on_waitlist ? 'On the waitlist' : 'Join waitlist';
       act = s.on_waitlist ? null : async function (b) {
