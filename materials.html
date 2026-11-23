@@ -349,6 +349,14 @@
     @media (prefers-reduced-motion: reduce) {
       * { animation: none !important; transition: none !important; }
     }
+/* ===== Laptop fix ===== */
+@media (min-width:820px){
+  .bottom-nav{display:none!important}
+  .app{max-width:none}
+  .content{padding-bottom:40px}
+  .grid,.level-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+}
+    
   </style>
 </head>
 <body>
@@ -973,5 +981,6 @@ async function loadLevels() {
     })();
   </script>
   <script src="perf.js"></script>
+  <script src="sidebar.js"></script>
 </body>
 </html>
