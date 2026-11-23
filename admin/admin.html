@@ -2419,9 +2419,9 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     };
   }
   /* ================= GENERATE QUESTIONS (All / Select) ================= */
-    var GQ_TOTAL = 500, GQ_BATCH = 25, GQ_BATCH_PAR = 6, GQ_COURSE_PAR = 3, gqStop = false;
-  var GQ_CHUNK = 7000;   // characters of PDF text sent with each batch
-  var gqTextCache = {};   // material id -> text, so each PDF is read only once
+      var GQ_TOTAL = 500, GQ_BATCH = 40, GQ_BATCH_PAR = 3, GQ_COURSE_PAR = 2, gqStop = false;
+  var GQ_CHUNK = 7000;
+  var gqTextCache = {};
   // Counts the questions each course already has (courses sharing a code count as one).
   async function loadGenState(rows) {
     var groups = {}, list = [];
@@ -2511,44 +2511,39 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     var say = function (i, t) { var el = $('gq_' + i); if (el) el.textContent = t; };
     var grand = 0, failed = 0, abort = false;
 
-        async function doCourse(i) {
+            async function doCourse(i) {
       var c = courses[i], made = 0, nextBatch = 0, bFail = 0, lastErr = '';
       var need = Math.max(0, typeof c._need === 'number' ? c._need : GQ_TOTAL);
       if (!need) { say(i, '\u2713 Already generated'); return; }
       var nBatches = Math.ceil(need / GQ_BATCH);
       var offset = Math.floor((c._n || 0) / GQ_BATCH);   // so a top-up does not repeat earlier batches
-      var chunks = [];
-      try {
-        say(i, 'Finding the PDFs of this course\u2026');
-        var mats = (await allMaterials()).filter(function (m) { return isPdfMaterial(m) && sameCourse(c, m.course); });
-        if (!mats.length) { say(i, 'No PDF filed under ' + (c.code || c.title) + '. Add its PDF in Materials first.'); failed++; return; }
-        for (var mi = 0; mi < mats.length && !gqStop; mi++) {
-          var m = mats[mi], txt = gqTextCache[m.id];
-          if (!txt) {
-            say(i, 'Reading PDF ' + (mi + 1) + ' of ' + mats.length + '\u2026');
-            try { txt = await clientReadMaterial(m, function (t) { say(i, t); }); gqTextCache[m.id] = txt; }
-            catch (e) { lastErr = e.message; continue; }
-          }
-          for (var pos = 0; pos < txt.length; pos += GQ_CHUNK) {
-            var piece = txt.slice(pos, pos + GQ_CHUNK);
-            if (piece.length > 400) chunks.push({ m: m, text: piece });
-          }
-        }
-      } catch (e) { say(i, 'Failed: ' + e.message); failed++; return; }
-      if (!chunks.length) { say(i, 'Failed: could not read any PDF text. ' + lastErr); failed++; return; }
-      if (gqStop) return;
-      say(i, 'Writing ' + need + ' questions from the PDFs\u2026');
+      var mats = [];
+      try { mats = (await allMaterials()).filter(function (m) { return isPdfMaterial(m) && sameCourse(c, m.course); }); }
+      catch (e) { say(i, 'Failed: ' + e.message); failed++; return; }
+      if (!mats.length) { say(i, 'No PDF filed under ' + (c.code || c.title) + '. Add its PDF in Materials first.'); failed++; return; }
+      say(i, 'Writing ' + need + ' questions from ' + mats.length + ' PDF(s)\u2026');
       var runBatches = async function () {
         while (nextBatch < nBatches && !gqStop && !abort) {
           var bn = nextBatch++;
           var cnt = Math.min(GQ_BATCH, need - bn * GQ_BATCH);
-          var ch = chunks[(bn + offset) % chunks.length];
+          var m = mats[(bn + offset) % mats.length];
           for (var tries = 0; tries < 2 && !gqStop; tries++) {
             try {
-              var payload = { material_id: ch.m.id, course_id: c.id, count: cnt, batch_no: bn + offset, text: ch.text, chosen: true, force: true,
+              var payload = { material_id: m.id, course_id: c.id, count: cnt, batch_no: bn + offset, text: '', chosen: true, force: true,
                               subject: (c.code ? c.code + ' ' : '') + c.title, stay_on_subject: true };
               if (courseHasMath(c)) { payload.math = true; payload.format = 'latex'; }
-              var r = await api('generate_questions', payload, 280000);
+              var r;
+              try { r = await api('generate_questions', payload, 280000); }
+              catch (e1) {
+                if (e1.status === 401 || !serverCouldNotRead(e1.message)) throw e1;
+                say(i, 'Server could not read this PDF. Reading it here\u2026');
+                if (!gqTextCache[m.id]) gqTextCache[m.id] = clientReadMaterial(m, function (t) { say(i, t); });
+                var full;
+                try { full = await gqTextCache[m.id]; } catch (e2) { delete gqTextCache[m.id]; throw e2; }
+                var start = ((bn + offset) * GQ_CHUNK) % Math.max(1, full.length);
+                payload.text = full.slice(start, start + GQ_CHUNK * 2);
+                r = await api('generate_questions', payload, 280000);
+              }
               if (r && r.already && !(r.saved > 0)) throw new Error('Server skipped this file because it already has questions');
               var n = (r && r.saved) || 0;
               made += n; grand += n;
@@ -2563,6 +2558,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
           }
         }
       };
+              
           
       await Promise.all(Array.from({ length: GQ_BATCH_PAR }, runBatches));
       c._n = (c._n || 0) + made; c._need = Math.max(0, GQ_TOTAL - c._n);
