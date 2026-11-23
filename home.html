@@ -284,10 +284,10 @@ button.nav-item{background:none;border:none;font-family:inherit}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* Desktop */
-@media (min-width:1024px){
+@media (min-width:900px){
   .app{max-width:none;flex-direction:row;border-inline:0}
 .topbar{padding-inline:max(32px,calc((100% - 1200px)/2))}
-  .bottom-nav{display:none}
+  .bottom-nav{display:none!important}
   .content{padding-bottom:32px}
   .toast{bottom:20px}
   .wa-fab{right:28px;bottom:28px}
@@ -326,6 +326,23 @@ html, body { width: 100%; min-height: 100%; margin: 0; }
     gap: 20px;
   }
 }
+
+  /* ===== Laptop / desktop fix (900px and up) ===== */
+@media (min-width:900px){
+  .bottom-nav{display:none!important}
+  .site-menu{display:flex!important}
+  .app{max-width:none!important;width:100%!important;display:grid!important;grid-template-columns:260px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;border-inline:0!important}
+  .page{min-width:0;height:100%}
+  .topbar{padding-inline:clamp(24px,3vw,48px)}
+  .content{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-content:start;gap:20px;padding:28px clamp(24px,3vw,48px) 40px!important}
+  .span-all{grid-column:1/-1}
+  .toast{bottom:20px}
+  .wa-fab{right:28px;bottom:28px}
+}
+@media (min-width:1500px){
+  .content{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+  
 </style>
 </head>
 <body>
@@ -1189,7 +1206,6 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 </script>
 <script src="perf.js"></script>
-<script src="desktop-fix.js"></script>
 <script src="tier-badge.js"></script>
 </body>
 </html>
