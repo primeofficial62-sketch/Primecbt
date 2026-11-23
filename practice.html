@@ -91,6 +91,18 @@ svg{width:20px;height:20px;flex:none}
 .more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .more-tile{display:flex;align-items:center;gap:10px;padding:14px;background:#0D1424;border:1px solid #273852;border-radius:16px;color:var(--text);font-size:.9rem;font-weight:600}
 .more-tile svg{width:22px;height:22px;color:#31D3A2}
+
+  /* ===== Laptop fix ===== */
+@media (min-width:820px){
+  .bottom-nav{display:none!important}
+  .toast{bottom:24px}
+  .top{max-width:none;margin:0;padding-left:clamp(24px,3vw,48px);padding-right:clamp(24px,3vw,48px)}
+  .wrap{max-width:none;padding-bottom:40px;padding-left:clamp(24px,3vw,48px);padding-right:clamp(24px,3vw,48px)}
+  .list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .modes{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (min-width:1280px){.modes{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  
 </style>
 </head>
 <body>
@@ -292,6 +304,7 @@ loadCourses();
   sheet.addEventListener('click',function(e){if(e.target===sheet)sheet.classList.remove('open')});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')sheet.classList.remove('open')});
 })();
+  <script src="sidebar.js"></script>
 </script>
 </body>
 </html>
