@@ -167,6 +167,16 @@ button{font-family:inherit}
 .sk-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:16px;min-height:68px}
 .sk-card .sk-lines{flex:1;display:flex;flex-direction:column;gap:8px}
 @keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+/* ===== Laptop fix ===== */
+@media (min-width:820px) and (max-width:1079px){
+  .app{grid-template-columns:minmax(0,1fr)!important}
+  .pane-list{border-right:0!important}
+  .pane-chat{display:none}
+  .app.in-chat .pane-list{display:none}
+  .app.in-chat .pane-chat{display:flex}
+  .pane-chat:not(.has-chat) .chat-placeholder{display:none}
+  .chat-back{display:flex!important}
+}
 </style>
 </head>
 <body>
@@ -714,6 +724,7 @@ button{font-family:inherit}
     setInterval(heartbeat, HEARTBEAT_MS);
   })();
 })();
+<script src="sidebar.js"></script>
 </script>
 </body>
 </html>
