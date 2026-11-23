@@ -268,6 +268,12 @@ button.nav-item{background:none;border:none;font-family:inherit}
 .weak-bar i{display:block;height:100%;border-radius:99px;background:#fbbf24}
 .weak-pct{width:38px;text-align:right;font-size:.8rem;color:var(--mut);font-variant-numeric:tabular-nums}
 
+/* WhatsApp support: floating button */
+.wa-fab{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + var(--nav-h) + 28px);z-index:25;width:56px;height:56px;border-radius:50%;border:none;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(0,0,0,.5)}
+.wa-fab svg{width:30px;height:30px;fill:#fff}
+.wa-fab:active{transform:scale(.94)}
+.wa-btn{background:#25D366;box-shadow:none;color:#fff}
+
 @media (max-width:360px){
   .topbar{padding-inline:14px}.content{padding-inline:14px;gap:14px}
   .hello h1{font-size:1.45rem}.learn h2{font-size:1.2rem}
@@ -284,6 +290,7 @@ button.nav-item{background:none;border:none;font-family:inherit}
   .bottom-nav{display:none}
   .content{padding-bottom:32px}
   .toast{bottom:20px}
+  .wa-fab{right:28px;bottom:28px}
   .site-menu{display:flex;order:-1;width:260px;flex-shrink:0;height:100%;flex-direction:column;padding:28px 20px;background:rgba(14,25,47,.88);border-right:1px solid var(--bd);position:relative;z-index:2}
   .site-menu-header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--bd2);margin-bottom:16px}
   .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#31D3A2,#27B58A) center/cover no-repeat;color:#06101A;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
@@ -470,6 +477,11 @@ html, body { width: 100%; min-height: 100%; margin: 0; }
     </nav>
   </div>
 
+  <!-- Floating WhatsApp support button -->
+  <button type="button" class="wa-fab" id="waFab" aria-label="Chat with support on WhatsApp">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </button>
+
   <!-- Desktop sidebar -->
   <nav class="site-menu" id="siteMenu" aria-label="Sidebar">
     <div class="site-menu-header">
@@ -528,6 +540,11 @@ html, body { width: 100%; min-height: 100%; margin: 0; }
   <div class="sheet-backdrop" id="supportSheet">
     <div class="sheet" role="dialog" aria-modal="true" aria-label="Support and review">
       <div class="sheet-head"><b>Support &amp; Review</b><button type="button" class="link-btn" id="supportClose">Close</button></div>
+      <button type="button" class="card tool" id="waSupport">
+        <span class="cd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+        <span class="tool-body"><b>WhatsApp support</b><span>Chat with us directly</span></span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
       <div class="chip-row" id="catChips">
         <button type="button" class="chip active" data-cat="review">Review</button>
         <button type="button" class="chip" data-cat="bug">Report a bug</button>
@@ -539,6 +556,16 @@ html, body { width: 100%; min-height: 100%; margin: 0; }
       <textarea id="supportMsg" rows="4" maxlength="1000" placeholder="Tell us what you think..."></textarea>
       <div class="err" id="supportErr" hidden></div>
       <button type="button" class="btn-solid" id="supportSend">Send</button>
+    </div>
+  </div>
+
+  <!-- WhatsApp complaint sheet -->
+  <div class="sheet-backdrop" id="waSheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="WhatsApp support">
+      <div class="sheet-head"><b>WhatsApp support</b><button type="button" class="link-btn" id="waClose">Close</button></div>
+      <textarea id="waMsg" rows="4" maxlength="800" placeholder="Describe your complaint or issue..."></textarea>
+      <div class="err" id="waErr" hidden></div>
+      <button type="button" class="btn-solid wa-btn" id="waSend">Continue on WhatsApp</button>
     </div>
   </div>
 </div>
@@ -613,7 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('focusClose').addEventListener('click', () => focusSheet.classList.remove('open'));
   focusSheet.addEventListener('click', (e) => { if (e.target === focusSheet) focusSheet.classList.remove('open'); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { focusSheet.classList.remove('open'); sheet.classList.remove('open'); moreSheet.classList.remove('open'); }
+    if (e.key === 'Escape') { focusSheet.classList.remove('open'); sheet.classList.remove('open'); moreSheet.classList.remove('open'); $('waSheet').classList.remove('open'); }
   });
 
   // ----- Support & Review -----
@@ -1128,6 +1155,37 @@ document.addEventListener('DOMContentLoaded', function () {
     card.hidden = true; try { localStorage.setItem(KEY, Date.now()); } catch (e) {}
   });
   window.addEventListener('appinstalled', function () { card.hidden = true; dp = null; });
+})();
+</script>
+<script>
+// WhatsApp support: the typed complaint is auto-filled as the message in your WhatsApp DM.
+(function () {
+  var NUM = '2349059538257', name = '', email = '';
+  var $ = function (id) { return document.getElementById(id); };
+  supabaseClient.auth.getSession().then(function (r) {
+    var s = r.data && r.data.session; if (!s) return;
+    var m = s.user.user_metadata || {};
+    email = s.user.email || '';
+    name = m.full_name || m.name || email.split('@')[0] || '';
+  });
+  function openWa() {
+    $('waErr').hidden = true;
+    $('supportSheet').classList.remove('open');
+    $('waSheet').classList.add('open');
+    setTimeout(function () { $('waMsg').focus(); }, 80);
+  }
+  function closeWa() { $('waSheet').classList.remove('open'); }
+  $('waFab').addEventListener('click', openWa);
+  $('waSupport').addEventListener('click', openWa);
+  $('waClose').addEventListener('click', closeWa);
+  $('waSheet').addEventListener('click', function (e) { if (e.target === $('waSheet')) closeWa(); });
+  $('waSend').addEventListener('click', function () {
+    var msg = $('waMsg').value.trim();
+    if (msg.length < 5) { $('waErr').textContent = 'Please describe your issue first.'; $('waErr').hidden = false; return; }
+    var text = 'Hello PRIME-CBT Support 👋\n\nName: ' + name + '\nEmail: ' + email + '\n\nComplaint:\n' + msg;
+    window.open('https://wa.me/' + NUM + '?text=' + encodeURIComponent(text), '_blank');
+    $('waMsg').value = ''; closeWa();
+  });
 })();
 </script>
 <script src="perf.js"></script>
