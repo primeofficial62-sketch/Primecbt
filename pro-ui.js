@@ -13,7 +13,7 @@
 */
 (function () {
   'use strict';
-  var db = null, st = null, loading = null, resumed = false, mounts = [];
+  var VERSION = 'v3', db = null, st = null, loading = null, resumed = false, mounts = [];
   var REF_KEY = 'prime_pay_ref', REF_RE = /^PCBT_[A-Za-z0-9]{10,40}$/;
 
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -157,7 +157,7 @@
         '<ul class="pp-ul">' + (p.benefits || []).map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>' +
         '<button type="button" class="pp-btn pp-full" data-buy="' + esc(p.code) + '">Choose ' + esc(p.name) + '</button></div>';
     });
-    h += '<div class="pp-note">You pay securely on Paystack with card, bank transfer or USSD. Your plan starts as soon as payment is confirmed.</div></div>';
+    h += '<div class="pp-note">You pay securely on Paystack with card, bank transfer or USSD. Your plan starts as soon as payment is confirmed. <span style="opacity:.5">(' + VERSION + ')</span></div></div>';
     o.innerHTML = h;
     o.addEventListener('click', function (e) { if (e.target === o) o.remove(); });
     o.querySelector('#ppClose').onclick = function () { o.remove(); };
@@ -183,7 +183,8 @@
     } catch (e) {
       all.forEach(function (x) { x.disabled = false; });
       btn.textContent = label;
-      toast(e.message || 'Could not start payment. Try again.');
+      toast((e && e.message) || 'Could not start payment. Try again.');
+      try { console.error('PrimePro buy failed', code, e); } catch (x) { /* ignore */ }
     }
   }
 
@@ -194,12 +195,19 @@
     if (!ref) return;
     resumed = true;
 
-    var o = overlay('pp-wait');
-    o.innerHTML = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Confirming payment" style="text-align:center"><div class="pp-spin"></div><div class="pp-h" style="justify-content:center"><h2>Confirming your payment</h2></div><div class="pp-note" id="ppWaitMsg">Please wait while we check with Paystack. Do not close this page.</div></div>';
+    var fromUrl = /[?&]payment_ref=/.test(location.search);
+    var o = fromUrl ? overlay('pp-wait') : document.createElement('div');
+    o.innerHTML = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Confirming payment" style="text-align:center"><div class="pp-spin"></div><div class="pp-h" style="justify-content:center"><h2>Confirming your payment</h2></div><div class="pp-note" id="ppWaitMsg">Please wait while we check with Paystack.</div><button type="button" class="pp-btn pp-ghost pp-full" id="ppWaitCancel" style="margin-top:16px">Cancel</button><div class="pp-note">If you already paid, your plan still switches on automatically.</div></div>';
+
+    var cancelled = false;
+    o.querySelector('#ppWaitCancel').onclick = function () { cancelled = true; dropRef(); cleanUrl(); o.remove(); };
 
     var d = null, gone = false;
-    for (var i = 0; i < 8; i++) {
+    var tries = fromUrl ? 8 : 1;
+    for (var i = 0; i < tries; i++) {
+      if (cancelled) return;
       var r = await db.functions.invoke('paystack-verify', { body: { reference: ref } });
+      if (cancelled) return;
       if (r.error) {
         var status = r.error.context && r.error.context.status;
         if (status === 404 || status === 400) { gone = true; break; }   // not this user's payment, or a bad reference
@@ -208,9 +216,10 @@
         d = r.data || null;
         if (d && d.status !== 'initiated' && d.status !== 'pending') break;
       }
-      if (i < 7) await wait(4000);
+      if (i < tries - 1) await wait(4000);
     }
 
+    if (cancelled) return;
     if (gone) { dropRef(); cleanUrl(); o.remove(); return; }
 
     if (d && (d.status === 'success' || d.status === 'refunded')) {
@@ -233,8 +242,9 @@
       return;
     }
 
-    // still waiting (bank transfer and USSD can take a few minutes): keep the reference and check again next visit
-    cleanUrl();
+    // still waiting: stop re-checking on every page load, the Paystack webhook activates the plan by itself
+    dropRef(); cleanUrl();
+    if (!fromUrl) return;
     o.innerHTML = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Payment pending"><div class="pp-h"><h2>Payment still pending</h2></div>' +
       '<div class="pp-note" style="font-size:.88rem;color:#cbd5e1">We have not received confirmation from Paystack yet. If you already paid, your plan switches on automatically within a few minutes. You can close this page.</div>' +
       '<button type="button" class="pp-btn pp-full" id="ppWaitOk" style="margin-top:16px">OK</button></div>';
