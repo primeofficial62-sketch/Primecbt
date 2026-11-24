@@ -590,6 +590,7 @@ html, body { width: 100%; min-height: 100%; margin: 0; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="profile-gate.js"></script>
 <script>
+if (location.search.indexOf('payment_ref=') > -1) location.replace('home.html' + location.search);
 const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
 const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
