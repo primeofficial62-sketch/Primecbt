@@ -1,15 +1,20 @@
 /* PRIME-CBT Pro UI  ->  save as  pro-ui.js  in the project root (next to nav.js and quota.js)
-   Plan popup, congratulations splash, payment receipt, home card and profile banner.
+   Plan popup, Paystack checkout, congratulations splash, payment receipt, home card and profile banner.
    Everything is decided by the database function pro_status(), so a student who is not allowed to see Pro sees NOTHING.
 
    Add to a page (after its Supabase client exists):
      <script src="pro-ui.js"></script>
      <script> PrimePro.init(supabaseClient).then(function () { PrimePro.mount(document.getElementById('proCard')); }); </script>
    Profile page:  PrimePro.init(sb).then(function () { PrimePro.mount(document.getElementById('proBanner'), { compact: true }); });
+
+   Payment flow:  Choose plan -> edge function paystack-init -> Paystack page -> back to the site with ?payment_ref=...
+                  -> edge function paystack-verify (server asks Paystack) -> splash + receipt.
+   The page that Paystack returns to must load this file (see index.html redirect note).
 */
 (function () {
   'use strict';
-  var db = null, st = null, loading = null;
+  var db = null, st = null, loading = null, resumed = false, mounts = [];
+  var REF_KEY = 'prime_pay_ref', REF_RE = /^PCBT_[A-Za-z0-9]{10,40}$/;
 
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var naira = function (n) { return '\u20a6' + Number(n || 0).toLocaleString('en-NG'); };
@@ -17,6 +22,7 @@
   var dateTxt = function (d) { return d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' }) : ''; };
   var timeTxt = function (d) { return d ? new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : ''; };
   var monthsTxt = function (n) { return n + (Number(n) === 1 ? ' month' : ' months'); };
+  var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 
   /* ---------- styles ---------- */
   function css() {
@@ -46,6 +52,8 @@
       '.pp-full{width:100%;min-height:48px;font-size:.95rem}' +
       '.pp-note{font-size:.78rem;color:#94a3b8;text-align:center;margin-top:10px;line-height:1.5}' +
       '.pp-test{background:#1e293b;color:#fbbf24;font-size:.75rem;border-radius:8px;padding:8px 10px;margin-bottom:12px;text-align:center}' +
+      '.pp-spin{width:34px;height:34px;margin:6px auto 14px;border-radius:50%;border:3px solid #1e293b;border-top-color:#34d399;animation:ppSpin .8s linear infinite}' +
+      '@keyframes ppSpin{to{transform:rotate(360deg)}}' +
       /* splash */
       '.pp-splash{align-items:center;background:radial-gradient(circle at 50% 30%,#064e3b,#020617 70%);text-align:center;overflow:hidden}' +
       '.pp-splash .pp-in{max-width:360px;margin:auto;padding:28px 22px;position:relative;z-index:2}' +
@@ -57,7 +65,7 @@
       '@keyframes ppPop{0%{transform:scale(0)}100%{transform:scale(1)}}@keyframes ppDraw{to{stroke-dashoffset:0}}' +
       '@keyframes ppUp{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}' +
       '@keyframes ppFall{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(110vh) rotate(540deg)}}' +
-      '@media(prefers-reduced-motion:reduce){.pp-check,.pp-check svg,.pp-splash h1,.pp-splash p,.pp-splash .pp-acts{animation:none;opacity:1;stroke-dashoffset:0}.pp-conf{display:none}}' +
+      '@media(prefers-reduced-motion:reduce){.pp-check,.pp-check svg,.pp-splash h1,.pp-splash p,.pp-splash .pp-acts{animation:none;opacity:1;stroke-dashoffset:0}.pp-conf{display:none}.pp-spin{animation:none}}' +
       /* receipt */
       '.pp-rc{background:#0f172a;border:1px solid #334155;border-radius:18px;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
       '.pp-rc-top{background:linear-gradient(135deg,#10b981,#2dd4bf);padding:18px 18px;color:#022c22}' +
@@ -77,12 +85,24 @@
     loading = db.rpc('pro_status').then(function (r) { st = (r && r.data) || null; return st; }).catch(function () { st = null; return null; });
     return loading;
   }
-  function init(client) { db = client; css(); return load(true); }
+  function init(client) {
+    db = client; css();
+    return load(true).then(function (s) { resume(); return s; });
+  }
   function status() { return st; }
+
+  /* reload the status and redraw every card/banner that was mounted on this page */
+  function refresh() {
+    return load(true).then(function () {
+      mounts.forEach(function (m) { mount(m.el, m.opts); });
+      document.dispatchEvent(new CustomEvent('prime:pro-changed', { detail: st }));
+      return st;
+    });
+  }
 
   function toast(msg) {
     var t = document.createElement('div'); t.className = 'pp-toast'; t.textContent = msg;
-    document.body.appendChild(t); setTimeout(function () { t.remove(); }, 3200);
+    document.body.appendChild(t); setTimeout(function () { t.remove(); }, 3600);
   }
   function overlay(id, cls) {
     var old = document.getElementById(id); if (old) old.remove();
@@ -91,48 +111,134 @@
     return o;
   }
 
+  /* ---------- pending payment reference (survives the trip to Paystack) ---------- */
+  function keepRef(r) { try { localStorage.setItem(REF_KEY, r); } catch (e) { /* storage blocked */ } }
+  function dropRef() { try { localStorage.removeItem(REF_KEY); } catch (e) { /* ignore */ } }
+  function pendingRef() {
+    var q = '';
+    try { q = new URLSearchParams(location.search).get('payment_ref') || ''; } catch (e) { /* ignore */ }
+    if (!REF_RE.test(q)) { try { q = localStorage.getItem(REF_KEY) || ''; } catch (e) { q = ''; } }
+    return REF_RE.test(q) ? q : '';
+  }
+  function cleanUrl() {
+    try {
+      var u = new URL(location.href), had = false;
+      ['payment_ref', 'trxref', 'reference'].forEach(function (k) { if (u.searchParams.has(k)) { u.searchParams.delete(k); had = true; } });
+      if (had) history.replaceState(null, '', u.pathname + u.search + u.hash);
+    } catch (e) { /* ignore */ }
+  }
+
+  async function fnError(err, fallback) {
+    var code = '';
+    try { var b = await err.context.json(); code = b && b.error; } catch (e) { /* not JSON */ }
+    var map = {
+      rate_limited: 'Too many attempts. Wait a few minutes and try again.',
+      not_available: 'Prime CBT Pro is not available for your account right now.',
+      payments_not_configured: 'Payments are not set up yet.',
+      invalid_package: 'That plan is not available.',
+      gateway_error: 'Paystack could not start the payment. Try again.',
+      unauthorized: 'Please log in again.',
+      could_not_create_payment: 'Could not start the payment. Try again.'
+    };
+    return map[code] || fallback;
+  }
+
   /* ---------- plans popup ---------- */
   function openPlans() {
     if (!st || !(st.plans || []).length) { toast('Pro plans are not available right now.'); return; }
     var o = overlay('pp-plans');
     var test = st.mode === 'test';
     var h = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Prime CBT plans"><div class="pp-h"><h2>Choose your plan</h2><button type="button" class="pp-x" id="ppClose" aria-label="Close">&#10005;</button></div>';
-    if (test) h += '<div class="pp-test">TEST MODE: no real money is charged.</div>';
-    st.plans.forEach(function (p, i) {
+    if (test) h += '<div class="pp-test">TEST PHASE: only you can see this. Payments here are real.</div>';
+    st.plans.forEach(function (p) {
       h += '<div class="pp-plan' + (p.discount_percent ? ' pp-hot' : '') + '">' + (p.discount_percent ? '<div class="pp-badge">Save ' + p.discount_percent + '%</div>' : '') +
         '<div class="pp-name">Prime ' + esc(p.name) + '</div>' +
         '<div class="pp-price">' + naira(p.price) + (p.original_price ? '<span class="pp-was">' + naira(p.original_price) + '</span>' : '') + ' <span class="pp-per">for ' + monthsTxt(p.months) + '</span></div>' +
         '<ul class="pp-ul">' + (p.benefits || []).map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>' +
         '<button type="button" class="pp-btn pp-full" data-buy="' + esc(p.code) + '">Choose ' + esc(p.name) + '</button></div>';
     });
-    h += '<div class="pp-note">Your plan starts the moment payment succeeds, with every benefit unlocked and a receipt sent to your email.</div></div>';
+    h += '<div class="pp-note">You pay securely on Paystack with card, bank transfer or USSD. Your plan starts as soon as payment is confirmed.</div></div>';
     o.innerHTML = h;
     o.addEventListener('click', function (e) { if (e.target === o) o.remove(); });
     o.querySelector('#ppClose').onclick = function () { o.remove(); };
     o.querySelectorAll('[data-buy]').forEach(function (b) { b.onclick = function () { buy(b.getAttribute('data-buy'), b); }; });
   }
 
+  /* ---------- start a real Paystack payment ---------- */
   async function buy(code, btn) {
     if (!db) return;
     var plan = (st.plans || []).filter(function (p) { return p.code === code; })[0];
     if (!plan) return;
-    if (!(st.mode === 'test' && st.is_tester)) { toast('Online payment opens very soon.'); return; }   // the real Paystack payment replaces this later
-    var label = btn.textContent; btn.disabled = true; btn.textContent = 'Upgrading…';
+    var all = document.querySelectorAll('#pp-plans [data-buy]');
+    var label = btn.textContent;
+    all.forEach(function (x) { x.disabled = true; });
+    btn.textContent = 'Opening payment…';
     try {
-      var s = await db.auth.getSession();
-      var token = s && s.data && s.data.session && s.data.session.access_token;
-      var res = await fetch('/api/pro', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ action: 'test_buy', code: code }) });
-      var d = {}; try { d = await res.json(); } catch (e) { /* not JSON */ }
-      if (!res.ok || !d.receipt) throw new Error(d.error || 'Upgrade failed. Try again.');
-      var pl = document.getElementById('pp-plans'); if (pl) pl.remove();
-      await load(true);
-      if (window.PrimeQuota && window.PrimeQuota.usage) { try { window.PrimeQuota.usage(db, true); } catch (e) { /* ignore */ } }
-      document.dispatchEvent(new CustomEvent('prime:pro-changed', { detail: st }));
-      splash(d.receipt);
+      var r = await db.functions.invoke('paystack-init', { body: { package_code: code } });
+      if (r.error) throw new Error(await fnError(r.error, 'Could not start payment. Try again.'));
+      var d = r.data || {};
+      if (!d.authorization_url || !/^https:\/\//.test(d.authorization_url) || !REF_RE.test(d.reference || '')) throw new Error('Could not start payment. Try again.');
+      keepRef(d.reference);
+      window.location.href = d.authorization_url;   // Paystack payment page
     } catch (e) {
-      btn.disabled = false; btn.textContent = label;
-      toast(e.message || 'Upgrade failed.');
+      all.forEach(function (x) { x.disabled = false; });
+      btn.textContent = label;
+      toast(e.message || 'Could not start payment. Try again.');
     }
+  }
+
+  /* ---------- coming back from Paystack: confirm the payment on the server ---------- */
+  async function resume() {
+    if (resumed || !db) return;
+    var ref = pendingRef();
+    if (!ref) return;
+    resumed = true;
+
+    var o = overlay('pp-wait');
+    o.innerHTML = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Confirming payment" style="text-align:center"><div class="pp-spin"></div><div class="pp-h" style="justify-content:center"><h2>Confirming your payment</h2></div><div class="pp-note" id="ppWaitMsg">Please wait while we check with Paystack. Do not close this page.</div></div>';
+
+    var d = null, gone = false;
+    for (var i = 0; i < 8; i++) {
+      var r = await db.functions.invoke('paystack-verify', { body: { reference: ref } });
+      if (r.error) {
+        var status = r.error.context && r.error.context.status;
+        if (status === 404 || status === 400) { gone = true; break; }   // not this user's payment, or a bad reference
+        d = null;
+      } else {
+        d = r.data || null;
+        if (d && d.status !== 'initiated' && d.status !== 'pending') break;
+      }
+      if (i < 7) await wait(4000);
+    }
+
+    if (gone) { dropRef(); cleanUrl(); o.remove(); return; }
+
+    if (d && (d.status === 'success' || d.status === 'refunded')) {
+      dropRef(); cleanUrl(); o.remove();
+      if (d.status === 'refunded') { toast('This payment was refunded.'); await refresh(); return; }
+      var months = 0;
+      try { var q = await db.from('pro_payments').select('months').eq('reference', ref).maybeSingle(); months = q && q.data && q.data.months; } catch (e) { /* receipt shows a dash */ }
+      await refresh();
+      if (window.PrimeQuota && window.PrimeQuota.usage) { try { window.PrimeQuota.usage(db, true); } catch (e) { /* ignore */ } }
+      splash({
+        reference: d.reference, receipt_no: d.receipt_no, package_name: d.package_name, months: months,
+        amount_kobo: d.amount_kobo, paid_at: d.paid_at, expires_at: d.expires_at_plan || (st && st.expires_at), emailed: false
+      });
+      return;
+    }
+
+    if (d && d.status && d.status !== 'initiated' && d.status !== 'pending') {   // failed, abandoned, expired
+      dropRef(); cleanUrl(); o.remove();
+      toast('Payment was not completed. You can try again from the plans.');
+      return;
+    }
+
+    // still waiting (bank transfer and USSD can take a few minutes): keep the reference and check again next visit
+    cleanUrl();
+    o.innerHTML = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Payment pending"><div class="pp-h"><h2>Payment still pending</h2></div>' +
+      '<div class="pp-note" style="font-size:.88rem;color:#cbd5e1">We have not received confirmation from Paystack yet. If you already paid, your plan switches on automatically within a few minutes. You can close this page.</div>' +
+      '<button type="button" class="pp-btn pp-full" id="ppWaitOk" style="margin-top:16px">OK</button></div>';
+    o.querySelector('#ppWaitOk').onclick = function () { o.remove(); refresh(); };
   }
 
   /* ---------- congratulations splash ---------- */
@@ -159,12 +265,12 @@
     var row = function (k, v) { return '<div class="pp-row"><span>' + k + '</span><span>' + esc(v) + '</span></div>'; };
     o.innerHTML = '<div class="pp-sheet" role="dialog" aria-modal="true" aria-label="Payment receipt">' +
       '<div class="pp-h pp-noprint"><h2>Payment receipt</h2><button type="button" class="pp-x" id="ppRx" aria-label="Close">&#10005;</button></div>' +
-      '<div class="pp-rc"><div class="pp-rc-top"><small>PRIME CBT</small><b>Payment receipt</b><span>' + esc(r.receipt_no) + '</span></div>' +
+      '<div class="pp-rc"><div class="pp-rc-top"><small>PRIME CBT</small><b>Payment receipt</b><span>' + esc(r.receipt_no || r.reference) + '</span></div>' +
       '<div class="pp-rc-b">' +
-      row('Plan', 'Prime ' + r.package_name) + row('Duration', monthsTxt(r.months)) +
+      row('Plan', 'Prime ' + r.package_name) + row('Duration', r.months ? monthsTxt(r.months) : '-') +
       row('Paid on', dateTxt(r.paid_at) + ', ' + timeTxt(r.paid_at)) +
       (r.expires_at ? row('Valid until', dateTxt(r.expires_at)) : '') +
-      row('Reference', r.reference) + row('Receipt no.', r.receipt_no) +
+      row('Reference', r.reference) + row('Receipt no.', r.receipt_no || '-') +
       '<div class="pp-total"><span>Amount paid</span><span>' + nairaK(r.amount_kobo) + '</span></div>' +
       (test ? '<div class="pp-test" style="margin-top:14px;margin-bottom:0">TEST payment. No money was charged.</div>' : '') +
       '</div></div>' +
@@ -191,6 +297,7 @@
   function mount(el, opts) {
     if (!el) return;
     opts = opts || {};
+    if (!mounts.some(function (m) { return m.el === el; })) mounts.push({ el: el, opts: opts });
     var s = st;
     el.hidden = true; el.innerHTML = '';
     if (!s) return;   // not allowed to see Pro (or the check failed): show nothing at all
@@ -220,5 +327,10 @@
     el.hidden = false;
   }
 
-  window.PrimePro = { init: init, load: load, status: status, mount: mount, openPlans: openPlans, receipt: receipt, viewLatestReceipt: viewLatestReceipt };
+  /* coming back with the browser Back button from Paystack: do not leave the plans sheet frozen */
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) { var p = document.getElementById('pp-plans'); if (p) p.remove(); }
+  });
+
+  window.PrimePro = { init: init, load: load, refresh: refresh, status: status, mount: mount, openPlans: openPlans, receipt: receipt, viewLatestReceipt: viewLatestReceipt };
 })();
