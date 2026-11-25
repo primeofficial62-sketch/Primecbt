@@ -30,7 +30,7 @@
     {"@type": "Organization", "@id": "https://prime-cbt.name.ng/#organization", "name": "PRIME CBT", "alternateName": "PRIME-CBT", "url": "https://prime-cbt.name.ng/",
      "logo": {"@type": "ImageObject", "url": "https://prime-cbt.name.ng/34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png"}, "slogan": "Prepare. Practise. Pass.",
      "description": "PRIME CBT is an educational technology platform that makes academic learning and examination preparation easier through accessible digital learning tools.",
-     "founder": {"@type": "Person", "name": "Micheal Aliu"}},
+     "founder": {"@type": "Person", "@id": "https://prime-cbt.name.ng/founder/micheal-aliu#person", "name": "Micheal Aliu", "url": "https://prime-cbt.name.ng/founder/micheal-aliu"}},
     {"@type": "WebSite", "@id": "https://prime-cbt.name.ng/#website", "url": "https://prime-cbt.name.ng/", "name": "PRIME CBT", "alternateName": "PRIME-CBT", "inLanguage": "en-NG", "publisher": {"@id": "https://prime-cbt.name.ng/#organization"}},
     {"@type": "WebPage", "@id": "https://prime-cbt.name.ng/#webpage", "url": "https://prime-cbt.name.ng/", "name": "PRIME CBT | CBT Exam Practice & Study Platform for FUNAAB Students", "description": "PRIME CBT is an EdTech platform for CBT practice, course materials, AI learning help and progress tracking. Prepare. Practise. Pass. Built first for FUNAAB students.", "isPartOf": {"@id": "https://prime-cbt.name.ng/#website"}, "about": {"@id": "https://prime-cbt.name.ng/#organization"}, "inLanguage": "en-NG"}
   ]
@@ -373,6 +373,9 @@
     .footer-links a:hover { color: var(--emerald); }
     .footer-bottom { border-top: 1px solid var(--border); padding: 20px 0; text-align: center; }
     .footer-bottom p { color: #6F7F99; font-size: 13px; }
+    .footer-bottom .founder-credit { margin-top: 6px; }
+    .footer-bottom .founder-credit a { color: var(--emerald); text-decoration: none; }
+    .footer-bottom .founder-credit a:hover { text-decoration: underline; }
 
     /* ========== RESPONSIVE ========== */
     @media (max-width: 900px) {
@@ -806,6 +809,7 @@
         <div class="footer-links">
           <h4>Explore</h4>
           <a href="/about">About PRIME CBT</a>
+          <a href="/founder/micheal-aliu">Founder: Micheal Aliu</a>
           <a href="/funaab-cbt-practice">FUNAAB CBT practice</a>
           <a href="/funaab-past-questions">Practice questions</a>
           <a href="/online-exam-practice">Online exam practice</a>
@@ -830,6 +834,7 @@
     <div class="footer-bottom">
       <div class="container">
         <p>© 2026 PRIME-CBT. All rights reserved.</p>
+        <p class="founder-credit">Founded by <a href="/founder/micheal-aliu">Micheal Aliu</a></p>
       </div>
     </div>
   </footer>
