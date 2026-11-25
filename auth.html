@@ -2088,10 +2088,19 @@ switcher.dataset.mode = mode;
   document.addEventListener('click', (e) => {
     openDropdowns.forEach(d => { if (!d.wrap.contains(e.target)) d.close(); });
   });
-  window.addEventListener('resize', () => openDropdowns.forEach(d => d.close()));
+    let lastW = window.innerWidth;
+  window.addEventListener('resize', () => {
+    // the phone keyboard only changes the height, so ignore that
+    if (window.innerWidth === lastW) return;
+    lastW = window.innerWidth;
+    openDropdowns.forEach(d => d.close());
+  });
   document.addEventListener('scroll', (e) => {
-    // ignore the scroll a browser may do while focusing a field just after the list opens
-    openDropdowns.forEach(d => { if (Date.now() - d.openedAt > 350 && !d.wrap.contains(e.target)) d.close(); });
+    openDropdowns.forEach(d => {
+      // don't close while the user is typing in this dropdown's search box
+      if (d.wrap.contains(document.activeElement)) return;
+      if (Date.now() - d.openedAt > 350 && !d.wrap.contains(e.target)) d.close();
+    });
   }, true);
 
   function makeDropdown(select) {
