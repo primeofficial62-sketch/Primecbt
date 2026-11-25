@@ -1,9 +1,31 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://prime-cbt.name.ng/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://prime-cbt.name.ng/about</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://prime-cbt.name.ng/funaab-cbt-practice</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://prime-cbt.name.ng/funaab-past-questions</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://prime-cbt.name.ng/online-exam-practice</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://prime-cbt.name.ng/funaab-study-materials</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://prime-cbt.name.ng/legal.html</loc>
+    <lastmod>2026-11-25</lastmod>
   </url>
 </urlset>
