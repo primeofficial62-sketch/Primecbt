@@ -704,7 +704,7 @@
     .auth-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     .switcher { flex: none; margin-bottom: 16px; }
     .card-body {
-      flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+      flex: 1 1 auto; min-height: 0; overflow: visible; overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #2B4170 transparent;
       padding: 2px 3px 2px; margin: 0 -3px;
     }
@@ -803,7 +803,7 @@
   
     /* ===== no scrolling + roomier form on the later steps ===== */
     .stage { max-width: 460px; }
-    .card-body { overflow-y: auto; scrollbar-width: thin; }
+    .card-body { overflow: visible; scrollbar-width: none; }
     .reg-step .headline.sm { font-size: 22px; }
     .reg-step .headline.sm br { display: none; }
     .reg-step .headline.sm .accent { margin-left: .28em; }
@@ -918,8 +918,7 @@
 
 /* bigger main logo in the top bar */
 .topbrand { gap: 12px !important; }
-.topbrand img { width: clamp(60px, 11vw, 80px) !important; height: auto !important; max-height: 80px; }
-.brand-name { font-size: clamp(20px, 3.4vw, 24px) !important; }
+.topbrand img { width: clamp(90px, 18vw, 120px) !important; height: auto !important; max-height: 120px; }.brand-name { font-size: clamp(20px, 3.4vw, 24px) !important; }
 .brand-tag { font-size: clamp(12px, 2vw, 14px) !important; }
 .icon-btn { width: 48px; height: 48px; }
   /* move the Sign Up / Sign In switch down a little */
@@ -1304,9 +1303,6 @@
     
     <!-- ==================== LOGIN ==================== -->
     <div class="panel" id="panel-login">
-      <div class="card-head">
-        <p>Good to see you again. Enter your details below</p>
-      </div>
       <form class="form" id="loginForm" novalidate>
         <div class="field">
           <label class="field-label" for="loginEmail">Email</label>
