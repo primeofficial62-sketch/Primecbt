@@ -757,7 +757,13 @@
     .path-go { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--emerald); color: var(--emerald); display: grid; place-items: center; }
     .path-go svg { width: 16px; height: 16px; }
     .path-card.is-selected .path-go { background: var(--emerald); color: var(--on-emerald); }
-
+        .path-card.is-soon { opacity: .75; cursor: not-allowed; }
+    .path-card.is-soon:hover { background: rgba(5, 11, 28, .5); border-color: var(--emerald-line); }
+    .soon-badge {
+      flex: none; padding: 6px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+      color: var(--emerald); background: rgba(10, 227, 162, .13); border: 1px solid var(--emerald-line);
+      white-space: nowrap;
+    }
     .empty-state { font-size: 14px; color: var(--muted); line-height: 1.55; text-align: center; padding: 18px 12px; border: 1px dashed var(--border); border-radius: 18px; }
 
     .exam-list { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
@@ -1012,13 +1018,13 @@
       <!-- Screen 1: pathway -->
       <div class="reg-step active" data-step="path" data-index="0">
         <div class="path-list" id="pathList">
-          <button type="button" class="path-card" data-path="exam" aria-pressed="false">
+                    <button type="button" class="path-card is-soon" data-path="exam" data-soon="true" aria-disabled="true" aria-pressed="false">
             <span class="path-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg></span>
             <span class="path-txt">
               <span class="path-title">Exam Preparation</span>
               <span class="path-desc">Prepare for entrance examinations, secondary school examinations and other professional examinations.</span>
             </span>
-            <span class="path-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+            <span class="soon-badge">Coming soon</span>
           </button>
           <button type="button" class="path-card" data-path="inst" aria-pressed="false">
             <span class="path-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="M2 10l10-6 10 6z"/></svg></span>
@@ -2549,8 +2555,12 @@ switcher.dataset.mode = mode;
     saveProgress({ step: name, pathway });
   }
 
-  pathList.addEventListener('click', (e) => {
+    pathList.addEventListener('click', (e) => {
     const b = e.target.closest('.path-card');
+    if (b && b.dataset.soon === 'true') {
+      showToast('Exam Preparation is coming soon. Choose Institutional Learning for now.', 'success', 3500);
+      return;
+    }
     if (!b || b.hidden || !pathCfg[b.dataset.path]) return;
     pathway = b.dataset.path;
     markPath();
@@ -3098,7 +3108,7 @@ resendResetLink.addEventListener('click', async (e) => {
     if (v.matric)     f3.matric.value = v.matric;
 
     // Put them back on the screen they were on (pathway + exam picks included)
-    if (p.pathway === 'exam' || p.pathway === 'inst') pathway = p.pathway;
+    if (p.pathway === 'inst') pathway = p.pathway;
     if (Array.isArray(p.examSel)) examSel = p.examSel.filter(x => typeof x === 'string');
     if (pathway && flow().includes(p.step)) stepName = p.step;
     markPath();
