@@ -906,6 +906,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="analytics.js" defer></script>
 <script src="profile-gate.js"></script>
 <script>
   // ========== SUPABASE CLIENT ==========
@@ -1653,6 +1654,7 @@ switcher.dataset.mode = mode;
       return;
     }
 
+    if (window.PrimeAnalytics) PrimeAnalytics.track('login', { method: 'email' });
     markReturningUser();
     showToast('Logged in successfully!', 'success');
     setTimeout(goNext, 1000);
@@ -1735,6 +1737,7 @@ switcher.dataset.mode = mode;
     }
 
     // verifyOtp signs the user in, so go straight to the app
+    if (window.PrimeAnalytics) PrimeAnalytics.track('sign_up', { method: 'email' });
     markReturningUser();
     clearProgress();
     showToast('Account verified!', 'success');
@@ -2017,6 +2020,7 @@ resendResetLink.addEventListener('click', async (e) => {
   // (Authentication → Providers → Google) before this will work.
   document.querySelectorAll('.btn-oauth').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if (window.PrimeAnalytics) PrimeAnalytics.track('cta_clicked', { cta_id: 'google_auth', cta_location: '/auth.html' });
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin + '/auth.html' }
