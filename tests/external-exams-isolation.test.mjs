@@ -7,13 +7,17 @@ const read = (path) => readFile(new URL('../' + path, import.meta.url), 'utf8');
 
 test('External Exams has its own sign-up and login route without changing University auth', async () => {
   const auth = await read('external/auth.html');
+  const sharedAuth = await read('auth.html');
   const index = await read('index.html');
   const externalStart = index.indexOf('<section class="external" id="external-exams">');
   const externalEnd = index.indexOf('<!-- PLATFORM FEATURES -->', externalStart);
   assert.ok(externalStart >= 0 && externalEnd > externalStart);
   const externalSection = index.slice(externalStart, externalEnd);
-  assert.match(externalSection, /\/external\/auth\.html\?mode=register/);
-  assert.ok(externalSection.includes('/external/auth.html?mode=login'));
+  assert.match(externalSection, /\/auth\.html\?mode=register&next=%2Fexternal%2Fhome\.html/);
+  assert.ok(externalSection.includes('/auth.html?mode=login&next=%2Fexternal%2Fhome.html'));
+  assert.match(auth, /location\.replace\('\/auth\.html\?mode=login&next=%2Fexternal%2Fhome\.html'\)/);
+  assert.match(sharedAuth, /emailRedirectTo: window\.location\.origin \+ '\/auth\.html\?mode=login&next=%2Fexternal%2Fhome\.html'/);
+  assert.match(sharedAuth, /window\.location\.replace\('\/external\/home\.html'\)/);
   const universityStart = index.indexOf('<section class="university" id="university">');
   const universityEnd = index.indexOf('<!-- EXTERNAL EXAMINATIONS -->', universityStart);
   const universitySection = index.slice(universityStart, universityEnd);

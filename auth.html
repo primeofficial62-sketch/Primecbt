@@ -2723,7 +2723,7 @@ switcher.dataset.mode = mode;
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { data: meta }
+        options: { data: meta, emailRedirectTo: window.location.origin + '/auth.html?mode=login&next=%2Fexternal%2Fhome.html' }
       });
 
       setLoading(stepNext, false);
