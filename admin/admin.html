@@ -3068,7 +3068,182 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       };
     }
   }
+  /* ================= Exam preparation switch (coming soon / live) ================= */
+  async function renderExamPrep() {
+    var view = $('view');
+    view.innerHTML = '<div class="count">Loading…</div>';
+    var cur = 'coming_soon';
+    try {
+      var d = await api('list', { table: 'app_settings', filters: { id: 'exam_prep' }, limit: 1 });
+      if (d.rows && d.rows[0] && d.rows[0].value) cur = d.rows[0].value;
+    } catch (e) { view.innerHTML = emptyHtml(e.message, true); return; }
+    var opts = [
+      ['coming_soon', 'Coming soon', 'Students who pick Exam preparation on sign-up see a "Coming soon" message and cannot continue.'],
+      ['live', 'Live', 'Students can pick their exam (JAMB, WAEC, NECO and others), then register.']
+    ];
+    var h = '<div class="card stack" style="max-width:560px"><div class="h3">Exam preparation</div>' +
+      '<div class="count">Now: <span class="tag ' + (cur === 'live' ? 'green' : 'amber') + '">' + (cur === 'live' ? 'Live' : 'Coming soon') + '</span></div>';
+    opts.forEach(function (m) {
+      h += '<label class="fld check" style="align-items:flex-start;gap:10px"><input type="radio" name="epMode" value="' + m[0] + '"' + (cur === m[0] ? ' checked' : '') + '>' +
+        '<span><b>' + m[1] + '</b><br><span class="count">' + m[2] + '</span></span></label>';
+    });
+    h += '<button class="btn primary" id="epSave">Save</button></div>';
+    view.innerHTML = h;
+    $('epSave').onclick = async function () {
+      var sel = document.querySelector('input[name=epMode]:checked');
+      if (!sel || sel.value === cur) return;
+      if (sel.value === 'live') {
+        var ok = await confirmBox({ title: 'Make Exam preparation live?', text: 'Students will be able to choose Exam preparation and register.', yes: 'Go live' });
+        if (!ok) return;
+      }
+      try { await api('save', { table: 'app_settings', id: 'exam_prep', data: { value: sel.value } }); toast('Exam preparation is now ' + (sel.value === 'live' ? 'live' : 'coming soon')); renderExamPrep(); }
+      catch (e) { toast(e.message, true); }
+    };
+  }
 
+  /* ================= Universities > faculties/colleges > departments ================= */
+  async function renderUniversities(schoolId, unitId) {
+    var view = $('view');
+    view.innerHTML = '<div class="loading">Loading…</div>';
+    var schools = [], school = null, units = [], depts = [], unit = null;
+    try {
+      schools = (await fetchAllRows('schools')).rows;
+      school = schoolId ? (schools.filter(function (s) { return String(s.id) === String(schoolId); })[0] || null) : null;
+      if (school) {
+        units = (await fetchAllRows('faculties', { filters: { school_id: school.id } })).rows;
+        depts = (await fetchAllRows('departments', { filters: { school_id: school.id } })).rows;
+        if (unitId && unitId !== 'none') unit = units.filter(function (u) { return String(u.id) === String(unitId); })[0] || null;
+        if (unitId && unitId !== 'none' && !unit) unitId = null;
+      }
+    } catch (e) {
+      view.innerHTML = emptyHtml(e.message, true);
+      view.onclick = function (ev) { if (ev.target.closest('[data-retry]')) renderUniversities(schoolId, unitId); };
+      return;
+    }
+    var level = !school ? 1 : (!unitId ? 2 : 3);
+    var sortFn = function (a, b) { return ((a.sort_order || 0) - (b.sort_order || 0)) || azCompare(a.name, b.name); };
+    var word = school && school.unit_label === 'College' ? 'college' : 'faculty';
+    var Word = word.charAt(0).toUpperCase() + word.slice(1);
+    var plural = word === 'college' ? 'colleges' : 'faculties';
+    var again = function () { renderUniversities(school && school.id, unitId); };
+    var one = function (list, id) { return list.filter(function (x) { return String(x.id) === String(id); })[0]; };
+
+    var schoolSec = { id: 'uni', table: 'schools', noun: 'university', fields: [
+      { key: 'name', label: 'University name', type: 'text', required: true },
+      { key: 'unit_label', label: 'This university uses', type: 'select', opts: [['Faculty', 'Faculties'], ['College', 'Colleges']], def: 'Faculty', required: true, hint: 'Faculties or colleges sit between the university and its departments.' },
+      { key: 'sort_order', label: 'Order', type: 'number', def: 0 }
+    ] };
+    var unitSec = { id: 'unit', table: 'faculties', noun: word, fields: [
+      { key: 'name', label: Word + ' name', type: 'text', required: true },
+      { key: 'sort_order', label: 'Order', type: 'number', def: 0 }
+    ], beforeSave: function (d) { d.school_id = school.id; } };
+    var deptSec = { id: 'dept', table: 'departments', noun: 'department', fields: [
+      { key: 'faculty_id', label: Word, type: 'select', opts: units.slice().sort(sortFn).map(function (u) { return [u.id, u.name]; }), required: true, def: unit ? unit.id : '' },
+      { key: 'name', label: 'Department name', type: 'text', required: true },
+      { key: 'sort_order', label: 'Order', type: 'number', def: 0 }
+    ], beforeSave: function (d) { d.school_id = school.id; } };
+
+    function rowH(o) {
+      return '<div class="row' + (o.open ? ' tap' : '') + ' has-acts"' + (o.open ? ' data-open="' + esc(o.open) + '"' : '') + '><div class="row-main"><div class="row-title">' + esc(o.title) +
+        (o.tag ? '<span class="tag ' + (o.tagClass || '') + '">' + esc(o.tag) + '</span>' : '') + '</div>' + (o.sub ? '<div class="row-sub">' + esc(o.sub) + '</div>' : '') + '</div>' +
+        '<div class="row-actions">' + (o.id ? '<button class="btn small" data-edit="' + esc(o.id) + '">Edit</button><button class="btn small danger" data-del="' + esc(o.id) + '">Delete</button>' : '') + '</div></div>';
+    }
+    function head(title, sub, back, addLabel, canEditHead) {
+      return '<div class="card stack"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+        (back ? '<button class="btn small" data-back>\u2190 ' + esc(back) + '</button>' : '') +
+        '<div style="flex:1;min-width:140px"><div class="h3">' + esc(title) + '</div><div class="count">' + esc(sub) + '</div></div>' +
+        (canEditHead ? '<button class="btn small" data-hedit>Edit</button><button class="btn small danger" data-hdel>Delete</button>' : '') +
+        (addLabel ? '<button class="btn primary" data-add>' + icon('plus') + esc(addLabel) + '</button>' : '') + '</div>';
+    }
+    var plur = function (n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); };
+
+    if (level === 1) {
+      $('pageTitle').textContent = 'Universities';
+      var list = schools.slice().sort(sortFn);
+      view.innerHTML = head('Universities', plur(list.length, 'university').replace('universitys', 'universities') + ' in the sign-up list', '', 'Add university', false) +
+        '<div class="fld"><input id="uniQ" type="search" placeholder="Search universities"></div><div id="uniRows"></div></div>';
+      var paint = function () {
+        var q = ($('uniQ').value || '').trim().toLowerCase();
+        var rows = list.filter(function (s) { return !q || String(s.name).toLowerCase().indexOf(q) > -1; });
+        $('uniRows').innerHTML = rows.length ? rows.map(function (s) {
+          return rowH({ id: s.id, open: s.id, title: s.name, tag: s.unit_label === 'College' ? 'Colleges' : 'Faculties' });
+        }).join('') : emptyHtml(q ? 'No university matches your search.' : 'No universities yet. Add the first one.');
+      };
+      $('uniQ').oninput = paint; paint();
+    } else if (level === 2) {
+      $('pageTitle').textContent = school.name;
+      var loose = depts.filter(function (d) { return !d.faculty_id; }).length;
+      var rows2 = units.slice().sort(sortFn).map(function (u) {
+        var n = depts.filter(function (d) { return String(d.faculty_id) === String(u.id); }).length;
+        return rowH({ id: u.id, open: u.id, title: u.name, sub: plur(n, 'department') });
+      }).join('');
+      if (loose) rows2 += rowH({ open: 'none', title: 'Not yet in a ' + word, tag: 'Needs attention', tagClass: 'amber', sub: plur(loose, 'department') + '. Open to move each one into a ' + word + '.' });
+      view.innerHTML = head(school.name, 'Uses ' + plural + '. ' + plur(units.length, word).replace('facultys', 'faculties') + ', ' + plur(depts.length, 'department') + '.', 'All universities', 'Add ' + word, true) +
+        (rows2 || emptyHtml('No ' + plural + ' yet. Add the first one.')) + '</div>';
+    } else {
+      var isNone = unitId === 'none';
+      $('pageTitle').textContent = isNone ? 'Not yet in a ' + word : unit.name;
+      var mine = depts.filter(function (d) { return isNone ? !d.faculty_id : String(d.faculty_id) === String(unit.id); }).sort(sortFn);
+      view.innerHTML = head(isNone ? 'Not yet in a ' + word : unit.name, school.name + '. ' + plur(mine.length, 'department'), school.name, isNone ? '' : 'Add department', !isNone) +
+        (mine.length ? mine.map(function (d) { return rowH({ id: d.id, title: d.name }); }).join('') : emptyHtml('No departments here yet.')) + '</div>';
+    }
+
+    async function wipe(table, filters) {
+      var rows = (await fetchAllRows(table, { filters: filters })).rows;
+      for (var i = 0; i < rows.length; i += 10) await Promise.all(rows.slice(i, i + 10).map(function (r) { return api('remove', { table: table, id: r.id }); }));
+    }
+    async function removeSchool(s) {
+      var ok = await confirmBox({ title: 'Delete ' + s.name + '?', text: 'This also deletes all its faculties/colleges and departments. This cannot be undone.', yes: 'Delete', danger: true });
+      if (!ok) return;
+      try {
+        await wipe('departments', { school_id: s.id }); await wipe('faculties', { school_id: s.id });
+        await api('remove', { table: 'schools', id: s.id });
+        delete lookups.schools; delete lookups.departments; toast('University deleted'); renderUniversities();
+      } catch (e) { toast(e.message, true); }
+    }
+    async function removeUnit(u) {
+      var ok = await confirmBox({ title: 'Delete ' + u.name + '?', text: 'This also deletes every department inside it. This cannot be undone.', yes: 'Delete', danger: true });
+      if (!ok) return;
+      try {
+        await wipe('departments', { faculty_id: u.id });
+        await api('remove', { table: 'faculties', id: u.id });
+        delete lookups.departments; toast(Word + ' deleted'); renderUniversities(school.id);
+      } catch (e) { toast(e.message, true); }
+    }
+    async function removeDept(d) {
+      var ok = await confirmBox({ title: 'Delete ' + d.name + '?', text: 'This cannot be undone.', yes: 'Delete', danger: true });
+      if (!ok) return;
+      try { await api('remove', { table: 'departments', id: d.id }); delete lookups.departments; toast('Department deleted'); again(); }
+      catch (e) { toast(e.message, true); }
+    }
+
+    view.onclick = function (e) {
+      if (e.target.closest('[data-retry]')) return again();
+      if (e.target.closest('[data-back]')) return level === 3 ? renderUniversities(school.id) : renderUniversities();
+      if (e.target.closest('[data-add]')) return openForm(level === 1 ? schoolSec : level === 2 ? unitSec : deptSec, null, again);
+      if (e.target.closest('[data-hedit]')) return level === 2 ? openForm(schoolSec, school, again) : openForm(unitSec, unit, again);
+      if (e.target.closest('[data-hdel]')) return level === 2 ? removeSchool(school) : removeUnit(unit);
+      var ed = e.target.closest('[data-edit]');
+      if (ed) {
+        var id = ed.getAttribute('data-edit');
+        if (level === 1) openForm(schoolSec, one(schools, id), again);
+        else if (level === 2) openForm(unitSec, one(units, id), again);
+        else openForm(deptSec, one(depts, id), again);
+        return;
+      }
+      var del = e.target.closest('[data-del]');
+      if (del) {
+        var did = del.getAttribute('data-del');
+        if (level === 1) removeSchool(one(schools, did));
+        else if (level === 2) removeUnit(one(units, did));
+        else removeDept(one(depts, did));
+        return;
+      }
+      var op = e.target.closest('[data-open]');
+      if (op) { if (level === 1) renderUniversities(op.getAttribute('data-open')); else if (level === 2) renderUniversities(school.id, op.getAttribute('data-open')); }
+    };
+  }
+  
   /* ================= navigation ================= */
   var current = '';
 
@@ -3112,6 +3287,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       else if (sec.kind === 'security') renderSecurity();
       else if (sec.kind === 'maintenance') renderMaintenance();
       else if (sec.kind === 'pro') renderPro();
+      else if (sec.kind === 'examprep') await renderExamPrep();
+      else if (sec.kind === 'universities') await renderUniversities();
       else await renderList(sec);
     } catch (e) {
       if (current === id) $('view').innerHTML = emptyHtml(e.message || 'Something went wrong.', true);
@@ -3183,7 +3360,10 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
 
   SECTIONS.splice(SECTIONS.length - 1, 0, { id: 'maintenance', label: 'Maintenance', group: 'Security', kind: 'maintenance', icon: 'shield' });
   SECTIONS.splice(SECTIONS.length - 1, 0, { id: 'pro', label: 'Prime Pro', group: 'Security', kind: 'pro', icon: 'star' });
-
+    // Exam preparation switch + Universities manager, placed right after "Levels" in the menu
+  SECTIONS.splice(SECTIONS.map(function (s) { return s.id; }).indexOf('levels') + 1, 0,
+    { id: 'examprep', label: 'Exam preparation', group: 'Sign-up lists', kind: 'examprep', icon: 'book' },
+    { id: 'universities', label: 'Universities', group: 'Sign-up lists', kind: 'universities', icon: 'school' });
     // API Keys section (added just before Settings)
   SECTIONS.splice(SECTIONS.length - 1, 0, {
     id: 'apikeys', label: 'API Keys', group: 'Security', icon: 'lock', kind: 'list', table: 'api_keys', noun: 'API key', search: false,
