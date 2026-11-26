@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, "fix/**"]
+    branches: [main, "fix/**", "security/**"]
 
 permissions:
   contents: read
@@ -23,5 +23,11 @@ jobs:
         run: |
           node --check api/admin.js
           node --check api/assistant.js
-      - name: Run backend contract tests
-        run: node --test tests/backend-contract.test.mjs
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check PDF conversion Edge Function
+        run: deno check supabase/functions/convert-to-pdf/index.ts
+      - name: Run backend and security regression tests
+        run: node --test tests/*.test.mjs
