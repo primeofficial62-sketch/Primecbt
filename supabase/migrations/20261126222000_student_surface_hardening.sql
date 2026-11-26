@@ -173,7 +173,7 @@ BEGIN
   DELETE FROM public.leaderboard_events
   WHERE created_at < now() - interval '7 days';
 
-  RETURN COALESCE(NEW, OLD);
+  RETURN NEW;
 END;
 $function$;
 
