@@ -183,6 +183,7 @@ test('answer review uses the owner-checked result RPC instead of direct answer-k
   assert.doesNotMatch(review, /from\(T\.answers\)[\s\S]*?questions\(question,options,explanation\)/);
   assert.match(review, /item\.question_id/);
   assert.match(review, /item\.correct_index/);
+  assert.match(review, /String\(item\.question_id \|\| ''\) \+ ':' \+ String\(item\.position \|\| ''\)/);
 });
 
 
