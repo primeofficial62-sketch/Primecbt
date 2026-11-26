@@ -36,3 +36,21 @@ test('PRIME COMMAND approval decisions are pending-only and action-allowlisted',
   assert.match(block[0], /approval\.action_type === 'update_question'/);
   assert.match(block[0], /Approved action is not on the allowlist/);
 });
+
+test('maintenance settings are exposed only through the PIN-authenticated admin API', () => {
+  const getBlock = admin.match(/async maintenance_get\([\s\S]*?\n  },/);
+  const setBlock = admin.match(/async maintenance_set\([\s\S]*?\n  },/);
+  assert.ok(getBlock, 'maintenance_get action should exist');
+  assert.ok(setBlock, 'maintenance_set action should exist');
+  assert.match(getBlock[0], /await requireAuth\(req\)/);
+  assert.match(setBlock[0], /await requireAuth\(req\)/);
+  assert.match(setBlock[0], /Array\.isArray\(b\.p_emails\)/);
+  assert.match(setBlock[0], /allowed email addresses are invalid/);
+});
+
+test('admin maintenance UI no longer calls public maintenance RPCs directly', async () => {
+  const html = await readFile(new URL('../admin/admin.html', import.meta.url), 'utf8');
+  assert.match(html, /api\('maintenance_get'\)/);
+  assert.match(html, /api\('maintenance_set'/);
+  assert.doesNotMatch(html, /site_settings_set|site_settings_get|MM_APIKEY/);
+});
