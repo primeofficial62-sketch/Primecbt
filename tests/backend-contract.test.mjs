@@ -54,3 +54,14 @@ test('admin maintenance UI no longer calls public maintenance RPCs directly', as
   assert.match(html, /api\('maintenance_set'/);
   assert.doesNotMatch(html, /site_settings_set|site_settings_get|MM_APIKEY/);
 });
+
+test('assistant database and Gemini calls have bounded durations', () => {
+  assert.match(assistant, /AbortSignal\.timeout\(8000\)/);
+  assert.match(assistant, /AbortSignal\.timeout\(90000\)/);
+});
+
+test('maintenance RPC migration revokes public and authenticated access', async () => {
+  const migration = await readFile(new URL('../supabase/migrations/20261126194500_revoke_public_maintenance_settings_access.sql', import.meta.url), 'utf8');
+  assert.match(migration, /revoke execute on function public\.site_settings_get\(\) from public, anon, authenticated/i);
+  assert.match(migration, /revoke execute on function public\.site_settings_set\(boolean, text, text\[\]\) from public, anon, authenticated/i);
+});
