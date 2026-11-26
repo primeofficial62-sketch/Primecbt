@@ -175,3 +175,12 @@ test('study tools fail closed when the shared AI quota service is unavailable', 
   assert.match(studyTools, /if \(!q\.ok \|\| !q\.data \|\| typeof q\.data\.allowed !== 'boolean'\)[\s\S]*?throw new HttpError\(503/);
   assert.match(studyTools, /if \(q\.data\.allowed === false\)[\s\S]*?throw new HttpError\(429/);
 });
+
+
+test('answer review uses the owner-checked result RPC instead of direct answer-key joins', async () => {
+  const review = await read('../answer-review.html');
+  assert.match(review, /rpc\('get_practice_result', \{ p_result_id: state\.result\.id \}\)/);
+  assert.doesNotMatch(review, /from\(T\.answers\)[\s\S]*?questions\(question,options,explanation\)/);
+  assert.match(review, /item\.question_id/);
+  assert.match(review, /item\.correct_index/);
+});
