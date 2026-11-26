@@ -1795,7 +1795,7 @@ const actions = {
         reply=rows.length?'Found '+rows.length+' matching student profile(s):\\n'+rows.map(function(x){return '• '+(x.full_name||x.name||'Student')+' — '+(x.email||'No email')+' · '+(x.department||'Department unavailable')+' · '+(x.level||'Level unavailable');}).join('\\n'):'No matching student profiles found.';
         result={matches:rows.length};
       }
-    } else if (/\\b(overview|platform|dashboard|how many students|total students)\\b/.test(low)) {
+    } else if (/\\b(overview|platform|dashboard|how many|total students|registered students|student count)\\b/.test(low)) {
       const s=await actions.stats(req);
       reply='PRIME CBT live overview\\n• Registered students: '+s.students+'\\n• Online in last 5 minutes: '+s.online+'\\n• Examination attempts: '+s.tests+'\\n• Questions: '+s.questions+'\\n• Courses: '+s.courses+'\\n• Learning materials: '+s.materials+'\\n• Discussion posts: '+s.posts+'\\n• Open support tickets: '+s.tickets+'\\n• New reviews: '+s.reviews;
       result=s;
