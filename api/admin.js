@@ -47,11 +47,12 @@ const BUCKET = process.env.STORAGE_BUCKET || 'materials';
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
 const TARGET = Math.min(Math.max(parseInt(process.env.QUESTIONS_PER_PDF, 10) || 100, 10), 300);
 // Newest first. If a model is missing on your key or its free quota is used up, the next one is tried.
+// Keep the fallback list on stable Gemini Developer API models. The first model
+// is the current high-quality Flash model; the remaining IDs provide graceful fallback.
 const GEMINI_MODELS = [
   process.env.GEMINI_MODEL,
   'gemini-3.8-flash',
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
+  'gemini-3.5-flash',
   'gemini-3.5-flash-lite'
 ].filter(Boolean);
 const COOKIE = 'admin_session';
