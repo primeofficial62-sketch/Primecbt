@@ -999,17 +999,10 @@ async function compressPdf(file, onProgress) {
     setVal('f_size_bytes', f.size);
   }
   /* ---------- PowerPoint to PDF ---------- */
-  var CONVERT_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co/functions/v1/convert-to-pdf';
-  var CONVERT_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
   async function convertToPdf(fileUrl) {
-    var res = await fetch(CONVERT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: CONVERT_KEY, Authorization: 'Bearer ' + CONVERT_KEY },
-      body: JSON.stringify({ file_url: fileUrl })
-    });
-    var d = {};
-    try { d = await res.json(); } catch (e) {}
-        if (!res.ok || !d.pdf_url) { var er = new Error(d.error || 'Conversion failed (' + res.status + ')'); er.status = res.status; throw er; }
+    // The admin PIN cookie is sent same-origin; the server proxies with its service-role key.
+    var d = await api('convert_pdf', { file_url: fileUrl }, 180000);
+    if (!d || !d.pdf_url) throw new Error('Conversion failed: no PDF was returned.');
     try { var pdf = await pdfjsLib.getDocument({ url: d.pdf_url }).promise; d.pages = pdf.numPages; } catch (e) {}
     return d;
   }
