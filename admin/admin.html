@@ -325,6 +325,213 @@
     .mathprev { line-height: 1.7; overflow-wrap: anywhere; }
     .mathprev .mp-h { font-family: var(--display); font-weight: 700; font-size: .82rem; color: var(--muted); margin-bottom: 6px; }
     .mathprev .mp-opt { margin: 2px 0; }
+    
+/* ================= PRIME COMMAND ================= */
+
+.pcmd {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+.pcmd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pcmd-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pcmd-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.pcmd-brand h2 {
+  font-size: 1.25rem;
+}
+
+.pcmd-brand p {
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.pcmd-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--live);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.pcmd-status:before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pcmd-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.pcmd-messages {
+  min-height: 320px;
+  max-height: 58dvh;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pcmd-welcome {
+  margin: auto;
+  max-width: 480px;
+  text-align: center;
+  padding: 30px 12px;
+}
+
+.pcmd-welcome .symbol {
+  font-size: 34px;
+  margin-bottom: 12px;
+}
+
+.pcmd-welcome h3 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.pcmd-welcome p {
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.7;
+}
+
+.pcmd-message {
+  max-width: 88%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  line-height: 1.7;
+  font-size: .9rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pcmd-message.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-bottom-right-radius: 4px;
+}
+
+.pcmd-message.model {
+  align-self: flex-start;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 4px;
+}
+
+.pcmd-message small {
+  display: block;
+  font-size: .68rem;
+  font-weight: 800;
+  opacity: .7;
+  margin-bottom: 5px;
+}
+
+.pcmd-thinking {
+  color: var(--muted);
+  font-size: .82rem;
+  padding: 5px 0;
+}
+
+.pcmd-compose {
+  padding: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.pcmd-compose textarea {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+  min-height: 48px;
+  max-height: 140px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--surface-2);
+  outline: none;
+}
+
+.pcmd-compose textarea:focus {
+  border-color: var(--accent);
+}
+
+.pcmd-send {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 12px;
+  padding: 13px 17px;
+  font-weight: 800;
+  min-height: 48px;
+}
+
+.pcmd-send:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.pcmd-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pcmd-prompt {
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.pcmd-prompt:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media(max-width:600px) {
+  .pcmd-message { max-width: 96%; }
+  .pcmd-messages { padding: 12px; }
+  .pcmd-compose { padding: 10px; }
+  .pcmd-send { padding: 12px; }
+}
+
       </style>
 </head>
 <body>
@@ -3336,6 +3543,184 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     };
   }
   
+/* ================= PRIME COMMAND ================= */
+
+var primeCommandMessages = [];
+var primeCommandBusy = false;
+
+function renderPrimeCommand() {
+  $('view').innerHTML = `
+    <div class="pcmd">
+
+      <div class="pcmd-head">
+        <div class="pcmd-brand">
+          <div class="pcmd-mark">✦</div>
+          <div>
+            <h2>PRIME COMMAND</h2>
+            <p>Your AI operations assistant</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="pcmd-status">Assistant ready</span>
+          <button class="btn" id="pcmdNew">New chat</button>
+        </div>
+      </div>
+
+      <div class="pcmd-panel">
+
+        <div class="pcmd-messages" id="pcmdMessages">
+        </div>
+
+        <form class="pcmd-compose" id="pcmdForm">
+          <textarea
+            id="pcmdInput"
+            placeholder="Ask PRIME COMMAND anything..."
+            rows="2"
+            maxlength="6000"
+          ></textarea>
+
+          <button class="pcmd-send" id="pcmdSend" type="submit">
+            Send
+          </button>
+        </form>
+
+      </div>
+
+      <div>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">
+          Try asking
+        </p>
+
+        <div class="pcmd-prompts">
+          <button class="pcmd-prompt" data-prompt="What can you help me manage in PRIME CBT?">
+            What can you help me manage?
+          </button>
+
+          <button class="pcmd-prompt" data-prompt="Help me create a practical improvement plan for PRIME CBT.">
+            Plan PRIME CBT improvements
+          </button>
+
+          <button class="pcmd-prompt" data-prompt="Help me prepare a weekly administrative report template.">
+            Prepare a weekly report
+          </button>
+        </div>
+      </div>
+
+      <p style="font-size:.75rem;color:var(--muted)">
+        PRIME COMMAND is currently in chat-only mode.
+        Database access and administrative actions will be added in later phases.
+      </p>
+
+    </div>
+  `;
+
+  var chat = $('pcmdMessages');
+
+  function paintMessages() {
+    if (!primeCommandMessages.length) {
+      chat.innerHTML = `
+        <div class="pcmd-welcome">
+          <div class="symbol">✦</div>
+          <h3>Welcome to PRIME COMMAND</h3>
+          <p>
+            Your central AI assistant for planning, analysis,
+            organisation and the management of PRIME CBT.
+            What would you like to work on?
+          </p>
+        </div>
+      `;
+    } else {
+      chat.innerHTML = primeCommandMessages.map(function (m) {
+        return `
+          <div class="pcmd-message ${m.role === 'user' ? 'user' : 'model'}">
+            <small>${m.role === 'user' ? 'YOU' : 'PRIME COMMAND'}</small>
+            ${esc(m.text).replace(/\n/g, '<br>')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (primeCommandBusy) {
+      chat.innerHTML += '<div class="pcmd-thinking">PRIME COMMAND is thinking...</div>';
+    }
+
+    chat.scrollTop = chat.scrollHeight;
+
+    $('pcmdSend').disabled = primeCommandBusy;
+    $('pcmdInput').disabled = primeCommandBusy;
+  }
+
+  async function sendMessage(message) {
+    message = String(message || '').trim();
+
+    if (!message || primeCommandBusy) return;
+
+    var previousHistory = primeCommandMessages
+      .slice(-12)
+      .map(function (m) {
+        return {
+          role: m.role === 'user' ? 'user' : 'model',
+          text: m.text
+        };
+      });
+
+    primeCommandMessages.push({
+      role: 'user',
+      text: message
+    });
+
+    primeCommandBusy = true;
+    $('pcmdInput').value = '';
+    paintMessages();
+
+    try {
+      var result = await api(
+        'prime_command',
+        {
+          message: message,
+          history: previousHistory
+        },
+        90000
+      );
+
+      primeCommandMessages.push({
+        role: 'model',
+        text: result.reply || 'I could not generate a response.'
+      });
+
+    } catch (error) {
+      primeCommandMessages.push({
+        role: 'model',
+        text: 'I could not complete that request: ' + error.message
+      });
+    }
+
+    primeCommandBusy = false;
+    paintMessages();
+  }
+
+  $('pcmdForm').onsubmit = function (event) {
+    event.preventDefault();
+    sendMessage($('pcmdInput').value);
+  };
+
+  $('pcmdNew').onclick = function () {
+    if (primeCommandBusy) return;
+    primeCommandMessages = [];
+    paintMessages();
+    $('pcmdInput').focus();
+  };
+
+  document.querySelectorAll('[data-prompt]').forEach(function (button) {
+    button.onclick = function () {
+      sendMessage(button.getAttribute('data-prompt'));
+    };
+  });
+
+  paintMessages();
+}
+
   /* ================= navigation ================= */
   var current = '';
 
@@ -3381,7 +3766,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       else if (sec.kind === 'pro') renderPro();
       else if (sec.kind === 'examprep') await renderExamPrep();
       else if (sec.kind === 'universities') await renderUniversities();
-      else await renderList(sec);
+else if (sec.kind === 'primecommand') renderPrimeCommand();
+else await renderList(sec);
     } catch (e) {
       if (current === id) $('view').innerHTML = emptyHtml(e.message || 'Something went wrong.', true);
     }
@@ -3456,7 +3842,18 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
   SECTIONS.splice(SECTIONS.map(function (s) { return s.id; }).indexOf('levels') + 1, 0,
     { id: 'examprep', label: 'Exam preparation', group: 'Sign-up lists', kind: 'examprep', icon: 'book' },
     { id: 'universities', label: 'Universities', group: 'Sign-up lists', kind: 'universities', icon: 'school' });
-    // API Keys section (added just before Settings)
+  
+  // PRIME COMMAND section
+  SECTIONS.splice(SECTIONS.length - 1, 0, {
+    id: 'primecommand',
+    label: 'PRIME COMMAND',
+    group: 'PRIME COMMAND',
+    kind: 'primecommand',
+    icon: 'star'
+  });
+
+  
+  // API Keys section (added just before Settings)
   SECTIONS.splice(SECTIONS.length - 1, 0, {
     id: 'apikeys', label: 'API Keys', group: 'Security', icon: 'lock', kind: 'list', table: 'api_keys', noun: 'API key', search: false,
     empty: 'No API keys yet. Add your first Gemini key.',
