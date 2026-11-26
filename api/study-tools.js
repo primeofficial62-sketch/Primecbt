@@ -93,9 +93,13 @@ module.exports = async function handler(req, res) {
     if (action !== 'summary' && action !== 'flashcards') throw new HttpError(400, 'Unknown action.');
     if (!isId(String(b.material_id))) throw new HttpError(400, 'Choose a material first.');
 
-    // Daily limit (shared with the chat). Skipped if setup-ai.sql has not been run.
+    // Daily limit (shared with the chat). Never run expensive AI work when quota
+    // enforcement is unavailable or returns an unexpected response.
     const q = await supa('/rest/v1/rpc/ai_use_quota', token, { method: 'POST', body: { p_limit: DAILY_LIMIT } });
-    if (q.ok && q.data && q.data.allowed === false) {
+    if (!q.ok || !q.data || typeof q.data.allowed !== 'boolean') {
+      throw new HttpError(503, 'The usage-limit service is temporarily unavailable. Please try again shortly.');
+    }
+    if (q.data.allowed === false) {
       throw new HttpError(429, 'You have used your ' + (Number(q.data.limit) || DAILY_LIMIT) + ' assistant uses for today. Come back tomorrow.');
     }
 
