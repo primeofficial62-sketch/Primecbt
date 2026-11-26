@@ -1,4 +1,5 @@
-# The converter is protected by a server-to-server service-role check in its handler.
-# Do not enable browser access or send the service-role key to clients.
+project_id = "prime-cbt"
+
+# The converter uses a server-only service-role bearer check in its handler.
 [functions.convert-to-pdf]
 verify_jwt = false
