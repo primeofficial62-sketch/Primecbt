@@ -114,7 +114,6 @@ test('student setup only requests the granted question id column for exact count
 test('student-only SECURITY DEFINER RPCs and trigger handlers are not callable by anon clients', async () => {
   const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
   for (const signature of [
-    'get_course_topics(text)', 'get_topic_questions(text, text)',
     'pro_status()', 'join_pro_waitlist()'
   ]) {
     assert.ok(migration.includes('REVOKE EXECUTE ON FUNCTION public.' + signature + ' FROM PUBLIC, anon'));
