@@ -627,7 +627,7 @@
       if (error) throw error;
       const rows = data && Array.isArray(data.items) ? data.items : [];
       state.items = normalise(rows.map((item) => ({
-        id: item.question_id,
+        id: String(item.question_id || '') + ':' + String(item.position || ''),
         selected_index: item.selected_index,
         correct_index: item.correct_index,
         flagged: item.flagged,
