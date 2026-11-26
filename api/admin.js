@@ -1621,6 +1621,113 @@ const actions = {
     }
     return { added: rows.length };
   }
+  
+  // PRIME COMMAND — authenticated Gemini chat
+  async prime_command(req, res, b) {
+    await requireAuth(req);
+
+    const message = String(b.message || '').trim();
+
+    if (!message) {
+      throw new HttpError(400, 'Type a message first.');
+    }
+
+    if (message.length > 6000) {
+      throw new HttpError(400, 'Message is too long. Keep it under 6,000 characters.');
+    }
+
+    const history = Array.isArray(b.history) ? b.history.slice(-12) : [];
+
+    const contents = history
+      .filter(function (item) {
+        return item &&
+          (item.role === 'user' || item.role === 'model') &&
+          typeof item.text === 'string' &&
+          item.text.trim();
+      })
+      .map(function (item) {
+        return {
+          role: item.role,
+          parts: [{ text: item.text.slice(0, 6000) }]
+        };
+      });
+
+    contents.push({
+      role: 'user',
+      parts: [{ text: message }]
+    });
+
+    const body = {
+      systemInstruction: {
+        parts: [{
+          text:
+            'You are PRIME COMMAND, the AI operations assistant for PRIME CBT. ' +
+            'You help the administrator plan, analyse, organise and improve PRIME CBT. ' +
+            'Be professional, practical, accurate and concise. ' +
+            'Do not claim that you have accessed live database records, changed settings, ' +
+            'sent notifications, or performed administrative actions unless an authorised ' +
+            'tool has actually completed that action. ' +
+            'If information is unavailable, clearly say so. ' +
+            'You are currently operating in chat-only mode.'
+        }]
+      },
+      contents: contents,
+      generationConfig: {
+        temperature: 0.6,
+        maxOutputTokens: 3000
+      }
+    };
+
+    let lastStatus = 502;
+    let lastMessage = 'PRIME COMMAND could not get a response from Gemini.';
+
+    for (const model of GEMINI_MODELS) {
+      const result = await geminiCall(model, body);
+
+      if (result.res.ok) {
+        const candidate = (result.data.candidates || [])[0];
+
+        const reply = ((candidate && candidate.content &&
+          candidate.content.parts) || [])
+          .map(function (part) { return part.text || ''; })
+          .join('')
+          .trim();
+
+        if (!reply) {
+          throw new HttpError(502, 'Gemini returned an empty response. Try again.');
+        }
+
+        return {
+          ok: true,
+          reply: reply,
+          model: model
+        };
+      }
+
+      lastStatus = result.res.status;
+      lastMessage =
+        (result.data && result.data.error && result.data.error.message) ||
+        lastMessage;
+
+      if (
+        lastStatus === 403 ||
+        lastStatus === 404 ||
+        lastStatus === 429 ||
+        lastStatus === 503
+      ) {
+        continue;
+      }
+
+      throw new HttpError(502, lastMessage);
+    }
+
+    throw new HttpError(
+      lastStatus === 429 ? 429 : 502,
+      lastMessage
+    );
+  },
+
+  
 };
 
 module.exports = async function handler(req, res) {
