@@ -193,10 +193,10 @@ BEGIN
     RETURN 'busy';
   END IF;
 
-  INSERT INTO public.pdf_conversion_rate_limits(window_start, request_count)
+  INSERT INTO public.pdf_conversion_rate_limits AS current_window(window_start, request_count)
   VALUES (v_window, 1)
   ON CONFLICT (window_start)
-  DO UPDATE SET request_count = public.pdf_conversion_rate_limits.request_count + 1
+  DO UPDATE SET request_count = current_window.request_count + 1
   RETURNING request_count INTO v_count;
 
   DELETE FROM public.pdf_conversion_rate_limits
