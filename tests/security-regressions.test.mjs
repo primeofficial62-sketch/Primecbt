@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -12,6 +13,18 @@ test('active CBT question reads never request answer-key columns directly', asyn
   assert.match(cbt, /if \(instant\)/);
   assert.match(cbt, /restorePracticeFeedback\(\)/);
   assert.match(cbt, /rpc\(['"]submit_practice_session['"]/);
+  const scripts = [];
+  let cursor = 0;
+  while ((cursor = cbt.indexOf('<script', cursor)) >= 0) {
+    const open = cbt.indexOf('>', cursor);
+    const close = cbt.indexOf('</script>', open);
+    if (open < 0 || close < 0) break;
+    const source = cbt.slice(open + 1, close);
+    if (source.trim()) scripts.push(source);
+    cursor = close + 9;
+  }
+  assert.ok(scripts.length);
+  new vm.Script(scripts.at(-1));
 });
 
 test('question migration removes direct answer-key access and restricts answer RPCs', async () => {
