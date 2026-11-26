@@ -96,7 +96,7 @@ module.exports = async function handler(req, res) {
     // Daily limit (shared with the chat). Skipped if setup-ai.sql has not been run.
     const q = await supa('/rest/v1/rpc/ai_use_quota', token, { method: 'POST', body: { p_limit: DAILY_LIMIT } });
     if (q.ok && q.data && q.data.allowed === false) {
-      throw new HttpError(429, 'You have used your ' + DAILY_LIMIT + ' assistant uses for today. Come back tomorrow.');
+      throw new HttpError(429, 'You have used your ' + (Number(q.data.limit) || DAILY_LIMIT) + ' assistant uses for today. Come back tomorrow.');
     }
 
     // The material (the student's own access rules apply)
