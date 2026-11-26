@@ -380,7 +380,7 @@ async function hasKeys() { return (await getKeys()).length > 0; }
 
 // One Gemini request. Asks for low "thinking" (much faster); if a model rejects that setting, it is switched off for good.
 let thinkingOk = true;
-async function geminiCall(model, body) {
+async function geminiCall(model, body, timeoutMs) {
   const keys = await getKeys();
   if (!keys.length) return { res: { ok: false, status: 401 }, data: { error: { message: 'No API key. Add one in the API Keys section.' } } };
   // Every request has a time limit, so one slow answer can never use up the whole 5 minutes.
@@ -389,7 +389,7 @@ async function geminiCall(model, body) {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify(bd),
-      signal: AbortSignal.timeout(Math.min(75000, Math.max(timeLeft(), 5000)))
+      signal: AbortSignal.timeout(Math.min(timeoutMs || 75000, Math.max(timeLeft(), 5000)))
     }).catch(function () {
       return { ok: false, status: 503, json: async function () { return { error: { message: 'The question writer took too long to answer.' } }; } };
     });
@@ -1799,16 +1799,18 @@ const actions = {
       const s=await actions.stats(req);
       reply='PRIME CBT live overview\\n• Registered students: '+s.students+'\\n• Online in last 5 minutes: '+s.online+'\\n• Examination attempts: '+s.tests+'\\n• Questions: '+s.questions+'\\n• Courses: '+s.courses+'\\n• Learning materials: '+s.materials+'\\n• Discussion posts: '+s.posts+'\\n• Open support tickets: '+s.tickets+'\\n• New reviews: '+s.reviews;
       result=s;
+    } else if (/\\b(help|capabilities|what can you do|how can you help)\\b/.test(low)) {
+      reply='I can give you a live PRIME CBT overview, report exam attempts and average scores, find recently registered students, search student profiles, review and edit questions, prepare question generation, create question drafts and manage approvals. Changes to the question bank or generation queue always wait for your approval.';
+      result={mode:'help'};
     } else {
       const history=(Array.isArray(b.history)?b.history:[]).slice(-4).filter(function(x){return x&&(x.role==='user'||x.role==='model')&&typeof x.text==='string';}).map(function(x){return {role:x.role,parts:[{text:x.text.slice(0,1200)}]};});
-      const body={systemInstruction:{parts:[{text:'You are PRIME COMMAND, an assistant inside the PRIME CBT admin panel. Be concise and fast. Do not invent live platform figures or claim to perform actions. Common platform data, question generation and approvals are handled by the admin system. Explain how to use the available admin workflows when relevant.'}]},contents:history.concat([{role:'user',parts:[{text:message}]}]),generationConfig:{temperature:0.2,maxOutputTokens:700}};
+      const body={systemInstruction:{parts:[{text:'You are PRIME COMMAND, an assistant inside the PRIME CBT admin panel. Be concise and fast. Do not invent live platform figures or claim to perform actions. Common platform data, question generation and approvals are handled by the admin system. Explain how to use the available admin workflows when relevant.'}]},contents:history.concat([{role:'user',parts:[{text:message}]}]),generationConfig:{temperature:0.2,maxOutputTokens:500}};
       const model=GEMINI_MODELS[0];
-      const response=await geminiCall(model,body);
-      if(!response.res.ok) throw new HttpError(response.res.status===429?429:502,(response.data&&response.data.error&&response.data.error.message)||'The AI provider could not be reached.');
-      const parts=((response.data.candidates||[])[0]||{}).content;
+      const response=await geminiCall(model,body,12000);
+      const parts=response.res.ok?((response.data.candidates||[])[0]||{}).content:null;
       reply=parts&&parts.parts?parts.parts.map(function(p){return p.text||'';}).join('').trim():'';
-      if(!reply) reply='I can retrieve platform overview, exam statistics, search students, review the question bank, request question generation and manage approvals. What would you like to do?';
-      result={mode:'assistant'};
+      if(!reply) reply='I can quickly handle platform statistics, student searches, exam analytics, question-bank review and approval workflows. Ask me to perform one of those admin tasks.';
+      result={mode:response.res.ok?'assistant':'quick_fallback'};
     }
     logTask('command',message.slice(0,100), 'completed', result);
     return {ok:true,reply:reply,mode:result.mode||'direct',data:result};
