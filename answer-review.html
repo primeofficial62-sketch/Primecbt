@@ -621,12 +621,20 @@
     }
 
     async function loadAnswers() {
-      const { data, error } = await db.from(T.answers)
-        .select('id,q_order,selected_index,correct_index,flagged,questions(question,options,explanation)')
-        .eq('session_id', state.result.id)
-        .order('q_order', { ascending: true });
+      // The questions table intentionally does not grant direct SELECT on
+      // explanations/answer keys. Load review data through the owner-checked RPC.
+      const { data, error } = await db.rpc('get_practice_result', { p_result_id: state.result.id });
       if (error) throw error;
-      state.items = normalise(data || []);
+      const rows = data && Array.isArray(data.items) ? data.items : [];
+      state.items = normalise(rows.map((item) => ({
+        id: item.question_id,
+        selected_index: item.selected_index,
+        correct_index: item.correct_index,
+        flagged: item.flagged,
+        questions: item.question && item.question !== 'This question is no longer available'
+          ? { question: item.question, options: item.options, explanation: item.explanation }
+          : null
+      })));
     }
 
     function renderHeader() {
