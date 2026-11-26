@@ -949,6 +949,33 @@ async function processJobs(req) {
 
 /* ---------- actions ---------- */
 const actions = {
+  async maintenance_get(req) {
+    await requireAuth(req);
+    const rows = (await sb('/rest/v1/site_settings?id=eq.1&select=maintenance_mode,message,allowed_emails&limit=1')).data || [];
+    const row = rows[0];
+    if (!row) throw new HttpError(404, 'Maintenance settings were not found.');
+    return { ok: true, maintenance_mode: !!row.maintenance_mode, message: row.message || '', allowed_emails: Array.isArray(row.allowed_emails) ? row.allowed_emails : [] };
+  },
+
+  async maintenance_set(req, res, b) {
+    await requireAuth(req);
+    if (typeof b.p_enabled !== 'boolean') throw new HttpError(400, 'Choose whether maintenance mode is on or off.');
+    const message = String(b.p_message == null ? '' : b.p_message).trim();
+    if (message.length > 1000) throw new HttpError(400, 'The maintenance message must be 1,000 characters or fewer.');
+    if (!Array.isArray(b.p_emails) || b.p_emails.length > 100) throw new HttpError(400, 'Enter no more than 100 allowed email addresses.');
+    const emails = [...new Set(b.p_emails.map(function (email) { return String(email || '').trim().toLowerCase(); }).filter(Boolean))];
+    if (emails.some(function (email) { return email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email); })) {
+      throw new HttpError(400, 'One or more allowed email addresses are invalid.');
+    }
+    const rows = (await sb('/rest/v1/site_settings?id=eq.1', {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: { maintenance_mode: b.p_enabled, message: message || undefined, allowed_emails: emails }
+    })).data || [];
+    if (!rows.length) throw new HttpError(404, 'Maintenance settings were not updated.');
+    return { ok: true, maintenance_mode: !!rows[0].maintenance_mode };
+  },
+
   async status(req) {
     const cfg = await getConfig();
     const tok = readToken(req);
