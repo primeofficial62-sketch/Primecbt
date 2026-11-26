@@ -55,6 +55,11 @@ test('External CBT question answers are stored separately and cannot be read fro
   assert.match(migration, /security definer[\s\S]*?set search_path = pg_catalog, public/i);
 });
 
+test('External question answer-key access has an explicit deny policy', async () => {
+  const policyMigration = await read('supabase/migrations/20261126233000_external_exam_answer_key_deny_policy.sql');
+  assert.match(policyMigration, /for all to authenticated[\\s\\S]*?using \\(false\\)[\\s\\S]*?with check \\(false\\)/i);
+});
+
 test('External Exam data is isolated from University tables and policies', async () => {
   const migration = await read('supabase/migrations/20261126230900_external_exams_foundation.sql');
   assert.doesNotMatch(migration, /alter table public\.(profiles|questions|courses|practice_sessions)\b/i);
