@@ -891,7 +891,7 @@ async function runJob(req, job, t0) {
     let saved = job.saved, batchNo = job.batch_no, empty = job.empty_batches, fails = job.fails;
     while (saved < job.target) {
       const elapsed = Date.now() - t0;
-      if (elapsed > 200000) { await release({ saved: saved, batch_no: batchNo, empty_batches: empty }); return; }   // the next minute carries on
+      if (elapsed > 150000) { await release({ saved: saved, batch_no: batchNo, empty_batches: empty }); return; }   // the next minute carries on
       const cur = ((await sb('/rest/v1/question_jobs?id=eq.' + enc(job.id) + '&select=status')).data || [])[0];
       if (!cur || cur.status === 'cancelled') return;
       try {
@@ -899,7 +899,7 @@ async function runJob(req, job, t0) {
           course_id: job.course_id,
           count: Math.min(25, job.target - saved),
           batch_no: batchNo,
-          budget_ms: Math.min(240000, 280000 - elapsed)
+          budget_ms: Math.min(150000, 180000 - elapsed)
         });
         saved += r.saved; batchNo++; empty = r.saved ? 0 : empty + 1; fails = 0;
         if (empty >= 4) {
@@ -930,7 +930,7 @@ async function processJobs(req) {
   const busy = (await sb('/rest/v1/question_jobs?select=id&status=eq.running&locked_until=gt.' + enc(new Date().toISOString()) + '&limit=1')).data || [];
   if (busy.length) return { skipped: 'busy' };
   let worked = 0;
-  while (Date.now() - t0 < 200000) {
+  while (Date.now() - t0 < 150000) {
     const iso = new Date().toISOString();
     const cand = (await sb('/rest/v1/question_jobs?select=*&status=in.(pending,running)&or=(locked_until.is.null,locked_until.lt.' + enc(iso) + ')&order=created_at.asc&limit=10')).data || [];
     const job = cand.filter(function (j) { return !j.retry_at || new Date(j.retry_at) <= new Date(); })[0];
