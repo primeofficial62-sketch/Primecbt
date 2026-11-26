@@ -189,57 +189,42 @@ END;
 $publication$;
 
 
--- 3) The legacy AI quota RPC accepted p_limit from the browser. A student could
---    call it directly with an arbitrarily large value and bypass the configured
---    daily cap. Keep the argument for backwards compatibility, but never trust it.
-CREATE OR REPLACE FUNCTION public.ai_use_quota(p_limit integer DEFAULT 40)
+-- 3) The legacy AI quota RPC accepted a browser-supplied limit. Move quota
+--    consumption behind the server boundary: Vercel validates the student's
+--    session, then calls this RPC with the service-role key and its server limit.
+CREATE OR REPLACE FUNCTION public.consume_ai_quota(p_user_id uuid, p_limit integer)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = pg_catalog, public
 AS $function$
 DECLARE
-  uid uuid := auth.uid();
-  n integer;
-  lim integer;
-  user_plan text;
+  v_count integer;
+  v_limit integer := greatest(1, least(coalesce(p_limit, 40), 1000));
 BEGIN
-  IF uid IS NULL THEN
-    RETURN jsonb_build_object('allowed', false, 'used', 0, 'limit', 0);
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'Forbidden';
   END IF;
-
-  IF public.is_pro(uid) THEN
-    RETURN jsonb_build_object('allowed', true, 'used', 0, 'limit', null, 'unlimited', true);
-  END IF;
-
-  SELECT p.plan INTO user_plan
-  FROM public.profiles p
-  WHERE p.id = uid;
-
-  SELECT pl.daily_limit INTO lim
-  FROM public.plan_limits pl
-  WHERE pl.feature = 'ai'
-    AND pl.plan IN (coalesce(user_plan, 'free'), 'free')
-  ORDER BY (pl.plan = 'free') ASC
-  LIMIT 1;
-
-  -- Fail closed to a conservative default if the plan configuration is missing.
-  IF lim IS NULL OR lim < 1 THEN
-    lim := 3;
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'User id required';
   END IF;
 
   INSERT INTO public.ai_usage (user_id, day, count)
-  VALUES (uid, current_date, 1)
+  VALUES (p_user_id, current_date, 1)
   ON CONFLICT (user_id, day)
   DO UPDATE SET count = public.ai_usage.count + 1
-  RETURNING count INTO n;
+  RETURNING count INTO v_count;
 
-  RETURN jsonb_build_object('allowed', n <= lim, 'used', n, 'limit', lim);
+  RETURN jsonb_build_object('allowed', v_count <= v_limit, 'used', v_count, 'limit', v_limit);
 END;
 $function$;
 
-REVOKE EXECUTE ON FUNCTION public.ai_use_quota(integer) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.ai_use_quota(integer) TO authenticated;
+REVOKE ALL ON FUNCTION public.consume_ai_quota(uuid, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.consume_ai_quota(uuid, integer) TO service_role;
+
+-- Keep the old signature for backwards compatibility, but remove all client
+-- execution. Current Vercel routes use the server-only consume_ai_quota RPC.
+REVOKE ALL ON FUNCTION public.ai_use_quota(integer) FROM PUBLIC, anon, authenticated;
 
 -- Restrict feature-flag helpers to internal SECURITY DEFINER callers. They are
 -- not student-facing RPCs and return arbitrary flag state by key.
