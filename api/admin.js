@@ -213,7 +213,8 @@ async function sb(path, opts) {
   const res = await fetch(URL_ + path, {
     method: opts.method || 'GET',
     headers: Object.assign({ apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, opts.headers || {}),
-    body: opts.body == null ? undefined : JSON.stringify(opts.body)
+    body: opts.body == null ? undefined : JSON.stringify(opts.body),
+    signal: AbortSignal.timeout(20000)
   });
   const text = await res.text();
   let data = null;
@@ -948,6 +949,33 @@ async function processJobs(req) {
 
 /* ---------- actions ---------- */
 const actions = {
+  async maintenance_get(req) {
+    await requireAuth(req);
+    const rows = (await sb('/rest/v1/site_settings?id=eq.1&select=maintenance_mode,message,allowed_emails&limit=1')).data || [];
+    const row = rows[0];
+    if (!row) throw new HttpError(404, 'Maintenance settings were not found.');
+    return { ok: true, maintenance_mode: !!row.maintenance_mode, message: row.message || '', allowed_emails: Array.isArray(row.allowed_emails) ? row.allowed_emails : [] };
+  },
+
+  async maintenance_set(req, res, b) {
+    await requireAuth(req);
+    if (typeof b.p_enabled !== 'boolean') throw new HttpError(400, 'Choose whether maintenance mode is on or off.');
+    const message = String(b.p_message == null ? '' : b.p_message).trim();
+    if (message.length > 1000) throw new HttpError(400, 'The maintenance message must be 1,000 characters or fewer.');
+    if (!Array.isArray(b.p_emails) || b.p_emails.length > 100) throw new HttpError(400, 'Enter no more than 100 allowed email addresses.');
+    const emails = [...new Set(b.p_emails.map(function (email) { return String(email || '').trim().toLowerCase(); }).filter(Boolean))];
+    if (emails.some(function (email) { return email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); })) {
+      throw new HttpError(400, 'One or more allowed email addresses are invalid.');
+    }
+    const rows = (await sb('/rest/v1/site_settings?id=eq.1', {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: { maintenance_mode: b.p_enabled, message: message || undefined, allowed_emails: emails }
+    })).data || [];
+    if (!rows.length) throw new HttpError(404, 'Maintenance settings were not updated.');
+    return { ok: true, maintenance_mode: !!rows[0].maintenance_mode };
+  },
+
   async status(req) {
     const cfg = await getConfig();
     const tok = readToken(req);
@@ -1756,7 +1784,7 @@ const actions = {
       reply = data.questions.length ? 'Latest questions in the question bank:\\n' + data.questions.map(function(x,i){return (i+1)+'. ['+x.course_title+'] '+x.question+'\\n   Difficulty: '+(x.difficulty||'not set')+' · '+(Array.isArray(x.options)?x.options.length:0)+' options';}).join('\\n') : 'No questions were found in the question bank.';
       result = {questions:data.questions.length};
     } else if (/\\b(generate|write|create|add)\\b.*\\bquestions?\\b/.test(low)) {
-      const match = message.match(/\\b(?:for|in)\\s+(.+?)(?:\\s+(?:course|please|now))?\\s*$/i);
+      const match = message.match(/\\b(?:for|in)\s+(.+?)(?:\s+(?:course|please|now))?\s*$/i);
       const term = match ? clean(match[1]) : '';
       if (!term) {
         const courses = (await sb('/rest/v1/courses?select=id,title,code&order=title.asc&limit=100')).data || [];
@@ -1786,7 +1814,7 @@ const actions = {
       reply=rows.length?'Recently registered students:\\n'+rows.map(function(x){return '• '+(x.full_name||x.name||'Student')+' — '+(x.email||'No email')+' · '+(x.department||'Department unavailable')+' · '+(x.level||'Level unavailable')+' · '+(x.created_at?new Date(x.created_at).toLocaleDateString():'Date unavailable');}).join('\\n'):'No student profiles were found.';
       result={recent_students:rows.length};
     } else if (/\\b(student|students|learner|learners)\\b/.test(low) && /\\b(find|search|who|look up|named|called)\\b/.test(low)) {
-      const m=message.match(/\\b(?:find|search|look up|who is|who are|named|called)\\s+(?:student\\s+)?(.+?)\\s*$/i);
+      const m=message.match(/\\b(?:find|search|look up|who is|who are|named|called)\s+(?:student\s+)?(.+?)\s*$/i);
       const term=clean(m?m[1]:message.replace(/students?/ig,''));
       if(term.length<2) reply='Please include a student name, email, department or level to search.';
       else {

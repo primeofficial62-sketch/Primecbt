@@ -2983,19 +2983,6 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
   }
   
  /* ================= maintenance mode ================= */
-  var MM_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co/rest/v1/rpc/';
-  var MM_APIKEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
-  async function mmRpc(fn, body) {
-    var r = await fetch(MM_URL + fn, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: MM_APIKEY, Authorization: 'Bearer ' + MM_APIKEY },
-      body: JSON.stringify(body || {})
-    });
-    var d = {};
-    try { d = await r.json(); } catch (e) {}
-    if (!r.ok) throw new Error(d.message || 'Request failed (' + r.status + ')');
-    return d;
-  }
   async function renderMaintenance() {
     $('view').innerHTML = '<div class="card stack" style="max-width:560px"><div class="h3">Maintenance mode</div>' +
       '<div class="count">When ON, everyone except the allowed emails sees a maintenance screen.</div>' +
@@ -3006,7 +2993,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     var st = function (t) { if ($('mmSt')) $('mmSt').textContent = t; };
     async function load() {
       try {
-        var d = await mmRpc('site_settings_get');
+        var d = await api('maintenance_get');
         if (!d.ok) return st('Failed to load.');
         $('mmOn').checked = !!d.maintenance_mode;
         $('mmMsg').value = d.message || '';
@@ -3018,7 +3005,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       if (on && !confirm('Turn ON maintenance? All non-allowed users will be blocked.')) return;
       var emails = $('mmEm').value.split('\n').map(function (e) { return e.trim().toLowerCase(); }).filter(Boolean);
       try {
-        var d = await mmRpc('site_settings_set', { p_enabled: on, p_message: $('mmMsg').value, p_emails: emails });
+        var d = await api('maintenance_set', { p_enabled: on, p_message: $('mmMsg').value, p_emails: emails });
         if (!d.ok) return st('Failed.');
         st('Saved. Live for everyone.'); toast('Maintenance ' + (on ? 'ON' : 'OFF'));
       } catch (e) { st(e.message); }
