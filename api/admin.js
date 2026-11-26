@@ -213,7 +213,8 @@ async function sb(path, opts) {
   const res = await fetch(URL_ + path, {
     method: opts.method || 'GET',
     headers: Object.assign({ apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, opts.headers || {}),
-    body: opts.body == null ? undefined : JSON.stringify(opts.body)
+    body: opts.body == null ? undefined : JSON.stringify(opts.body),
+    signal: AbortSignal.timeout(20000)
   });
   const text = await res.text();
   let data = null;
