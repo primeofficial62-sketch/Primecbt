@@ -85,3 +85,41 @@ test('PDF conversion database locks are server-only and rate limited', async () 
   assert.match(migration, /v_count > 5/);
   assert.match(migration, /grant execute on function public\.claim_pdf_conversion_job\(text, text, text\) to service_role/i);
 });
+
+
+test('student public profiles use a safe RLS-protected table, not a definer view', async () => {
+  const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
+  const community = await read('../community.html');
+  const discussion = await read('../discussion.html');
+  assert.match(migration, /drop view if exists public\\.student_public_profiles/i);
+  assert.match(migration, /create table public\\.student_public_profiles/i);
+  assert.match(migration, /alter table public\\.student_public_profiles enable row level security/i);
+  assert.match(migration, /grant select on public\\.student_public_profiles to authenticated/i);
+  assert.match(migration, /create policy .*student public profiles.*for select to authenticated using \\(true\\)/i);
+  assert.match(migration, /create trigger .*student_public_profile.*after insert or update or delete on public\\.profiles/i);
+  assert.match(migration, /revoke all on function public\\.sync_student_public_profile\\(\\) from public, anon, authenticated/i);
+  assert.doesNotMatch(migration, /create or replace view public\\.student_public_profiles/i);
+  assert.match(community, /from\\('student_public_profiles'\\)/);
+  assert.match(discussion, /from\\('student_public_profiles'\\)/);
+});
+
+test('student setup only requests the granted question id column for exact counts', async () => {
+  const setup = await read('../practice-setup.html');
+  assert.match(setup, /from\\(T\\.questions\\)[\\s\\S]*?select\\('id', \\{ count: 'exact', head: true \\}\\)/);
+  assert.doesNotMatch(setup, /from\\(T\\.questions\\)[\\s\\S]{0,100}select\\('\\*'/);
+});
+
+test('student-only SECURITY DEFINER RPCs and trigger handlers are not callable by anon clients', async () => {
+  const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
+  for (const signature of [
+    'get_course_topics(text)', 'get_topic_questions(text, text)',
+    'pro_status()', 'join_pro_waitlist()'
+  ]) {
+    const escaped = signature.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
+    assert.match(migration, new RegExp('revoke execute on function public\\.' + escaped + ' from public, anon', 'i'));
+    assert.match(migration, new RegExp('grant execute on function public\\.' + escaped + ' to authenticated', 'i'));
+  }
+  for (const fn of ['enqueue_notification_email', 'notify_support_email', 'profiles_set_school_id', 'queue_topic_job', 'tag_new_question', 'tag_new_topic']) {
+    assert.match(migration, new RegExp('revoke all on function public\\.' + fn + '\\(\\) from public, anon, authenticated', 'i'));
+  }
+});
