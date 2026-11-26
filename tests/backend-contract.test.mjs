@@ -75,3 +75,12 @@ test('database performance migration preserves scoped RLS and adds missing FK in
   assert.match(migration, /using \(user_id = \(select auth\.uid\(\)\)\)/i);
   assert.match(migration, /drop policy if exists "Public can read schools"/i);
 });
+
+test('database migration pins function search paths and removes duplicate indexes', async () => {
+  const migration = await readFile(new URL('../supabase/migrations/20261126195500_backend_rls_and_fk_performance.sql', import.meta.url), 'utf8');
+  assert.match(migration, /alter function public\._norm_school\(text\) set search_path = pg_catalog/i);
+  assert.match(migration, /alter function public\.qt_text\(public\.questions\) set search_path = pg_catalog, public/i);
+  assert.match(migration, /alter function tex_tmp\.pw\(text\) set search_path = pg_catalog, tex_tmp/i);
+  assert.match(migration, /drop index if exists public\.departments_school_id_idx/i);
+  assert.match(migration, /drop index if exists public\.idx_faculties_school_id/i);
+});
