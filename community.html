@@ -383,7 +383,7 @@ button{font-family:inherit}
   }
   async function ensureProfile(id) {
     if (id === me.id || profiles.has(id)) return;
-    const { data } = await sb.from('profiles').select('*').eq('id', id).maybeSingle();
+    const { data } = await sb.from('student_public_profiles').select('*').eq('id', id).maybeSingle();
     if (data) profiles.set(id, data);
   }
   async function loadConversations() {
