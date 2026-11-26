@@ -87,14 +87,10 @@ CREATE TRIGGER sync_student_public_profile
   FOR EACH ROW
   EXECUTE FUNCTION public.sync_student_public_profile();
 
--- These RPCs serve authenticated student pages; anonymous callers have no reason
--- to enumerate course topics, topic question IDs, plan state, or waitlist status.
-REVOKE EXECUTE ON FUNCTION public.get_course_topics(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_course_topics(text) TO authenticated;
-
-REVOKE EXECUTE ON FUNCTION public.get_topic_questions(text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_topic_questions(text, text) TO authenticated;
-
+-- The practice catalogue is intentionally browsable before sign-in. These two
+-- SECURITY DEFINER RPCs expose only topic labels/counts and question IDs/difficulty;
+-- keep them public so practice.html and practice-setup.html retain guest discovery.
+-- Pro status and waitlist actions are account-specific and remain authenticated.
 REVOKE EXECUTE ON FUNCTION public.pro_status() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.pro_status() TO authenticated;
 
