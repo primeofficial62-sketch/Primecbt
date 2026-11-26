@@ -144,3 +144,21 @@ test('student performance rows stay private while leaderboard live updates use o
   assert.doesNotMatch(leaderboard, /table: 'profiles'/);
   assert.match(achievements, /db\.from\(T\.results\)\.select\('xp_earned,total_questions,correct_answers,created_at'\)[\s\S]*?\.eq\('user_id', state\.user\.id\)/);
 });
+
+
+test('AI quota RPC never trusts a student-supplied limit and plan badges are self-scoped', async () => {
+  const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
+  const assistant = await read('../api/assistant.js');
+  const studyTools = await read('../api/study-tools.js');
+  const tierBadge = await read('../tier-badge.js');
+  assert.match(migration, /create or replace function public\.ai_use_quota\(p_limit integer default 40\)[\s\S]*?from public\.plan_limits[\s\S]*?pl\.feature = 'ai'[\s\S]*?n <= lim/i);
+  assert.match(migration, /revoke execute on function public\.ai_use_quota\(integer\) from public, anon/i);
+  assert.match(migration, /grant execute on function public\.ai_use_quota\(integer\) to authenticated/i);
+  assert.match(migration, /uid is distinct from auth\.uid\(\)/i);
+  assert.match(migration, /revoke execute on function public\.plan_tier\(uuid\) from public, anon/i);
+  assert.match(assistant, /quota\.limit \|\| DAILY_LIMIT/);
+  assert.match(studyTools, /q\.data\.limit/);
+  assert.match(tierBadge, /rpc\('plan_tier', \{ uid: uid \}\)/);
+  assert.match(migration, /revoke all on function public\.flag_on\(text\) from public, anon, authenticated/i);
+  assert.match(migration, /revoke all on function public\.get_plan_tiers\(uuid\[\]\) from public, anon, authenticated/i);
+});
