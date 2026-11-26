@@ -1,1 +1,11 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PRIME-CBT Sign In</title></head><body><p>Redirecting to the existing PRIME-CBT sign-in… <a href="/auth.html?mode=login&amp;next=%2Fexternal%2Fhome.html">Continue</a></p><script>location.replace('/auth.html?mode=login&next=%2Fexternal%2Fhome.html');</script></body></html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Continue to PRIME-CBT</title></head><body><p>Taking you to the existing PRIME-CBT sign-in… <a id="continueLink" href="/auth.html?mode=login&amp;next=%2Fexternal%2Fhome.html">Continue</a></p><script>
+(function () {
+  // Compatibility only: this URL must never render a second authentication form.
+  var requestedMode = new URLSearchParams(window.location.search).get('mode');
+  var mode = requestedMode === 'register' ? 'register' : 'login';
+  var destination = '/auth.html?mode=' + mode + '&next=%2Fexternal%2Fhome.html';
+  document.getElementById('continueLink').href = destination;
+  window.location.replace(destination);
+})();
+</script></body></html>
