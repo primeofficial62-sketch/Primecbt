@@ -1775,13 +1775,17 @@ const actions = {
       const avg=possible?Math.round(earned/possible*1000)/10:null;
       reply='Examination activity\\n• Total attempts: '+total+'\\n• Attempts analysed: '+rows.length+'\\n• Weighted average score: '+(avg===null?'Unavailable':avg+'%')+'\\n• Most active courses: '+(Object.keys(courses).sort(function(a,b){return courses[b]-courses[a];}).slice(0,5).map(function(k){return k+' ('+courses[k]+')';}).join(', ')||'No course breakdown available')+(rows.length<total?'\\nNote: course and score breakdown uses the latest 500 attempts.':'');
       result={total_attempts:total,attempts_analysed:rows.length,average_score_percent:avg};
+    } else if (/\\b(recent|new|latest)\\b/.test(low) && /\\b(student|students|signups?|joined)\\b/.test(low)) {
+      const rows=(await sb('/rest/v1/profiles?select=*&order=created_at.desc&limit=8')).data||[];
+      reply=rows.length?'Recently registered students:\\n'+rows.map(function(x){return '• '+(x.full_name||x.name||'Student')+' — '+(x.email||'No email')+' · '+(x.department||'Department unavailable')+' · '+(x.level||'Level unavailable')+' · '+(x.created_at?new Date(x.created_at).toLocaleDateString():'Date unavailable');}).join('\\n'):'No student profiles were found.';
+      result={recent_students:rows.length};
     } else if (/\\b(student|students|learner|learners)\\b/.test(low) && /\\b(find|search|who|look up|named|called)\\b/.test(low)) {
       const m=message.match(/\\b(?:find|search|look up|who is|who are|named|called)\\s+(?:student\\s+)?(.+?)\\s*$/i);
       const term=clean(m?m[1]:message.replace(/students?/ig,''));
       if(term.length<2) reply='Please include a student name, email, department or level to search.';
       else {
         const pattern=enc(term);
-        const rows=(await sb('/rest/v1/profiles?select=id,full_name,name,email,department,level,institution,school,plan,created_at,last_seen&or=(full_name.ilike.*'+pattern+'*,name.ilike.*'+pattern+'*,email.ilike.*'+pattern+'*,department.ilike.*'+pattern+'*,level.ilike.*'+pattern+'*)&limit=8')).data||[];
+        const rows=(await sb('/rest/v1/profiles?select=*&or=(full_name.ilike.*'+pattern+'*,email.ilike.*'+pattern+'*,department.ilike.*'+pattern+'*,level.ilike.*'+pattern+'*)&limit=8')).data||[];
         reply=rows.length?'Found '+rows.length+' matching student profile(s):\\n'+rows.map(function(x){return '• '+(x.full_name||x.name||'Student')+' — '+(x.email||'No email')+' · '+(x.department||'Department unavailable')+' · '+(x.level||'Level unavailable');}).join('\\n'):'No matching student profiles found.';
         result={matches:rows.length};
       }
