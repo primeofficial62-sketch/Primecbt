@@ -50,18 +50,20 @@ async function getRows(path, token) {
   return r.json();
 }
 
-// Daily limit. If setup-ai.sql has not been run, this lets everyone through.
-async function useQuota(token) {
+// Server-only quota consumption. The student's JWT is validated before this
+// helper is called; the service-role credential never leaves the server.
+async function useQuota(userId) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || !userId) return { allowed: false, unavailable: true };
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/ai_use_quota`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/consume_ai_quota`, {
       method: 'POST',
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_limit: DAILY_LIMIT }),
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_user_id: userId, p_limit: DAILY_LIMIT }),
       signal: AbortSignal.timeout(10000),
     });
     if (!r.ok) return { allowed: false, unavailable: true };
     const result = await r.json();
-    if (typeof result === 'boolean') return { allowed: result };
     if (result && typeof result.allowed === 'boolean') return result;
     return { allowed: false, unavailable: true };
   } catch {
@@ -263,7 +265,7 @@ export default async function handler(request) {
   }
 
   // 3. Daily limit
-  const quota = await useQuota(token);
+  const quota = await useQuota(user.id);
   if (quota && quota.unavailable) {
     return json({ error: 'The assistant usage limit could not be checked. Please try again shortly.' }, 503);
   }
