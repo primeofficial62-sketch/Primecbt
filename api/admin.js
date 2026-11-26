@@ -193,7 +193,7 @@ const TABLES = {
   discussion_posts: { cols: ['title', 'body', 'is_pinned'], search: ['title', 'body'], order: 'created_at', del: true },
   discussion_replies: { cols: [], search: ['body'], order: 'created_at', asc: true, del: true },
   test_results: { cols: [], search: ['course_title', 'course_code'], order: 'created_at', del: false },
-  schools: { cols: ['name', 'unit_label', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
+  schools: { cols: ['name', 'institution_type', 'unit_label', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   departments: { cols: ['school_id', 'faculty_id', 'name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   faculties: { cols: ['school_id', 'name', 'sort_order'], search: ['name'], order: 'sort_order', asc: true, del: true },
   app_settings: { cols: ['value'], search: ['id'], order: 'id', asc: true, del: false },
