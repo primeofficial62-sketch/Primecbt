@@ -25,11 +25,13 @@ test('assistant sends only the fields needed for recent test-result context', ()
 
 
 test('PRIME COMMAND routes common admin requests instead of falling through to Gemini', () => {
-  const block = admin.match(/async prime_command\\([\\s\\S]*?\\n  },\\n\\n  \/\* ---------- API key rotation/);
-  assert.ok(block, 'prime_command handler should exist');
-  assert.match(block[0], /\\/\\\\b\\(question bank/);
-  assert.doesNotMatch(block[0], /\\\\\\\\b/);
-  const questionBankIntent = /\\b(question bank|recent questions|review questions|show questions|list questions)\\b/i;
+  const start = admin.indexOf('async prime_command(req, res, b) {');
+  const end = admin.indexOf('\n  },\n\n  /* ---------- API key rotation', start);
+  const block = admin.slice(start, end);
+  assert.ok(start >= 0 && end > start, 'prime_command handler should exist');
+  assert.match(block, /if \(\/\\b\(question bank/);
+  assert.doesNotMatch(block, /\\\\b/);
+  const questionBankIntent = /\b(question bank|recent questions|review questions|show questions|list questions)\b/i;
   assert.equal(questionBankIntent.test('Show me the latest questions in the question bank.'), true);
   assert.equal(questionBankIntent.test('Show latest questions'), false);
 });
