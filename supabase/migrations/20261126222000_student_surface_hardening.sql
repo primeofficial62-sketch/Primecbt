@@ -189,6 +189,135 @@ END;
 $publication$;
 
 
+
+-- Completed-session review endpoints return answer keys only for the session owner.
+-- Keep them explicit in migrations rather than relying on out-of-band DB state.
+CREATE OR REPLACE FUNCTION public.get_practice_result(p_result_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $function$
+DECLARE
+  v_session record;
+  v_course record;
+  v_items jsonb;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT s.* INTO v_session
+  FROM public.cbt_sessions s
+  WHERE s.id = p_result_id
+    AND s.user_id = auth.uid()
+    AND s.total_questions > 0;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT c.id, c.title, c.code INTO v_course
+  FROM public.courses c
+  WHERE c.id = v_session.course_id;
+
+  SELECT coalesce(jsonb_agg(
+    jsonb_build_object(
+      'position', a.q_order,
+      'question_id', a.question_id,
+      'question', coalesce(q.question, 'This question is no longer available'),
+      'options', coalesce(to_jsonb(q.options), '[]'::jsonb),
+      'correct_index', a.correct_index,
+      'selected_index', a.selected_index,
+      'explanation', q.explanation,
+      'flagged', a.flagged,
+      'topic', to_jsonb(q) ->> 'topic'
+    ) ORDER BY a.q_order
+  ), '[]'::jsonb)
+  INTO v_items
+  FROM public.cbt_session_answers a
+  LEFT JOIN public.questions q ON q.id = a.question_id
+  WHERE a.session_id = p_result_id;
+
+  RETURN jsonb_build_object(
+    'result_id', v_session.id,
+    'course_id', v_session.course_id,
+    'course_title', v_course.title,
+    'course_code', v_course.code,
+    'mode', v_session.mode,
+    'duration_seconds', v_session.duration_seconds,
+    'total', v_session.total_questions,
+    'correct', v_session.correct_count,
+    'wrong', v_session.wrong_count,
+    'unanswered', v_session.unanswered_count,
+    'percentage', v_session.score_percent,
+    'items', v_items
+  );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_retake_questions(p_session_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $function$
+DECLARE
+  v_session record;
+  v_items jsonb;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT s.* INTO v_session
+  FROM public.cbt_sessions s
+  WHERE s.id = p_session_id
+    AND s.user_id = auth.uid()
+    AND s.total_questions > 0;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT coalesce(jsonb_agg(
+    jsonb_build_object(
+      'position', r.new_pos,
+      'question_id', r.id,
+      'question', r.question,
+      'options', r.options,
+      'correct_index', r.correct_index,
+      'explanation', r.explanation,
+      'difficulty', r.difficulty,
+      'image_url', r.image_url,
+      'svg', r.svg
+    ) ORDER BY r.new_pos
+  ), '[]'::jsonb)
+  INTO v_items
+  FROM (
+    SELECT q.id, q.question, q.options, q.correct_index, q.explanation,
+           q.difficulty, q.image_url, q.svg,
+           (row_number() OVER (ORDER BY random()) - 1) AS new_pos
+    FROM public.cbt_session_answers a
+    JOIN public.questions q ON q.id = a.question_id
+    WHERE a.session_id = p_session_id
+  ) r;
+
+  RETURN jsonb_build_object(
+    'session_id', v_session.id,
+    'course_id', v_session.course_id,
+    'mode', v_session.mode,
+    'total', jsonb_array_length(v_items),
+    'items', v_items
+  );
+END;
+$function$;
+
+REVOKE EXECUTE ON FUNCTION public.get_practice_result(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_practice_result(uuid) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.get_retake_questions(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_retake_questions(uuid) TO authenticated;
+
 -- 3) The legacy AI quota RPC accepted a browser-supplied limit. Move quota
 --    consumption behind the server boundary: Vercel validates the student's
 --    session, then calls this RPC with the service-role key and its server limit.
