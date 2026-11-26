@@ -3,6 +3,7 @@
 //
 // Environment variables (Vercel -> Project -> Settings -> Environment Variables):
 //   GEMINI_API_KEY    required, from https://aistudio.google.com/apikey
+//   SUPABASE_SERVICE_ROLE_KEY required for server-only quota consumption
 //   GEMINI_MODEL      optional, tried first
 //   AI_DAILY_LIMIT    optional, messages per student per day (default 40). Needs setup-ai.sql.
 
