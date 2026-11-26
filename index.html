@@ -22,7 +22,7 @@
   <meta name="twitter:title" content="PRIME CBT | CBT Exam Practice &amp; Study Platform for FUNAAB Students">
   <meta name="twitter:description" content="PRIME CBT is an EdTech platform for CBT practice, course materials, AI learning help and progress tracking. Prepare. Practise. Pass. Built first for FUNAAB students.">
   <meta name="twitter:image" content="https://prime-cbt.name.ng/34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
-
+ 
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -38,7 +38,7 @@
   </script>
 
   <!-- PWA settings -->
-  <meta name="theme-color" content="#030D0C">
+  <meta name="theme-color" content="#070D1C">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/png" href="/34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
   <link rel="apple-touch-icon" href="/34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
@@ -71,16 +71,33 @@
   </script>
 
 <style>
-  :root {
-    --bg: #030D0C;
-    --card: linear-gradient(160deg, #0E1F1D 0%, #07130F 100%);
-    --line: rgba(34, 229, 143, .28);
-    --g: #22E58F;
-    --g-hi: #3DF0A2;
-    --g-lo: #10B36B;
-    --text: #F5F8F7;
-    --muted: #B4C2BE;
-    --on-g: #03110C;
+:root {
+  --bg: #070D1C;
+  --surface: #10192B;
+  --surface-2: #17233A;
+  --field: #10192B;
+  --border: #2A3850;
+  --inactive: #344256;
+  --text: #F4F6FC;
+  --muted: #9BA8BE;
+  --placeholder: #6F7F99;
+  --emerald: #31D3A2;
+  --emerald-hover: #4BE0B5;
+  --emerald-press: #27B98D;
+  --on-emerald: #070D1C;
+  --ring: rgba(49, 211, 162, 0.2);
+  --red: #F87171;
+  --amber: #E3A84A;
+
+  /* used by the landing page, built from your palette */
+  --card: linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+  --line: rgba(49, 211, 162, .28);
+
+  /* old names, so earlier code keeps working */
+  --g: var(--emerald);
+  --g-hi: var(--emerald-hover);
+  --g-lo: var(--emerald-press);
+  --on-g: var(--on-emerald);
   }
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
