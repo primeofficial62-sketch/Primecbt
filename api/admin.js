@@ -948,8 +948,60 @@ async function processJobs(req) {
   return { worked: worked };
 }
 
+/* ---------- PDF conversion validation ---------- */
+function validateConversionUrl(raw) {
+  if (typeof raw !== 'string' || !raw.trim() || raw.length > 4096) {
+    throw new HttpError(400, 'Choose a valid uploaded Office file.');
+  }
+  let target, base;
+  try { target = new URL(raw); base = new URL(URL_); }
+  catch (e) { throw new HttpError(400, 'The file URL is invalid.'); }
+  if (base.protocol !== 'https:' || target.protocol !== 'https:' ||
+      target.origin !== base.origin || target.username || target.password ||
+      target.search || target.hash) {
+    throw new HttpError(400, 'Only public files from this PRIME-CBT project can be converted.');
+  }
+  const prefix = '/storage/v1/object/public/';
+  if (!target.pathname.startsWith(prefix)) throw new HttpError(400, 'The file must be in the public materials bucket.');
+  let parts;
+  try { parts = target.pathname.slice(prefix.length).split('/').map(decodeURIComponent); }
+  catch (e) { throw new HttpError(400, 'The file path is invalid.'); }
+  const bucket = parts.shift() || '';
+  if (bucket !== BUCKET || !parts.length ||
+      parts.some(function (part) { return !part || part === '.' || part === '..' || /[\\/\u0000-\u001f]/.test(part); })) {
+    throw new HttpError(400, 'Only files from the configured materials bucket can be converted.');
+  }
+  const path = parts.join('/');
+  if (!/\.(pptx?|docx?|xlsx?)$/i.test(path)) {
+    throw new HttpError(400, 'Only PowerPoint, Word and Excel files can be converted.');
+  }
+  return raw;
+}
+
 /* ---------- actions ---------- */
 const actions = {
+  async convert_pdf(req, res, b) {
+    await requireAuth(req);
+    const fileUrl = validateConversionUrl(b.file_url);
+    const response = await fetch(URL_ + '/functions/v1/convert-to-pdf', {
+      method: 'POST',
+      headers: {
+        apikey: KEY,
+        Authorization: 'Bearer ' + KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ file_url: fileUrl }),
+      signal: AbortSignal.timeout(150000)
+    });
+    const data = await response.json().catch(function () { return {}; });
+    if (!response.ok) {
+      const status = response.status === 401 || response.status === 403 ? 502 : response.status;
+      throw new HttpError(status, data.error || 'The PDF conversion service could not complete the request.');
+    }
+    if (!data.pdf_url) throw new HttpError(502, 'The conversion service returned no PDF URL.');
+    return { ok: true, pdf_url: data.pdf_url, size: Number(data.size) || 0, cached: !!data.cached };
+  },
+
   async maintenance_get(req) {
     await requireAuth(req);
     const rows = (await sb('/rest/v1/site_settings?id=eq.1&select=maintenance_mode,message,allowed_emails&limit=1')).data || [];
