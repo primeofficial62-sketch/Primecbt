@@ -1849,7 +1849,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
       // External examination candidates must enter the separate External Exams app,
       // never the University home page. Keep explicit University routing unchanged.
       if (userMeta.prime_experience === 'external_exams' || userMeta.pathway === 'exam_preparation') {
-        dest = '/external/auth.html?mode=login';
+        dest = '/external/home.html';
       }
     } catch (err) { /* retain the safe requested destination */ }
     try { sessionStorage.removeItem(NEXT_KEY); } catch (e) {}
@@ -2733,7 +2733,7 @@ switcher.dataset.mode = mode;
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { data: meta }
+        options: { data: meta, emailRedirectTo: window.location.origin + '/auth.html?mode=login&next=%2Fexternal%2Fhome.html' }
       });
 
       setLoading(stepNext, false);
@@ -3217,7 +3217,7 @@ resendResetLink.addEventListener('click', async (e) => {
       userMeta.pathway === 'exam_preparation' ||
       nextUrl().startsWith('/external/');
     if (externalExamUser) {
-      window.location.replace('/external/auth.html?mode=login');
+      window.location.replace('/external/home.html');
       return;
     }
 
