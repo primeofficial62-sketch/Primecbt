@@ -376,7 +376,7 @@ button{font-family:inherit}
 
   /* Data loading */
   async function loadProfiles() {
-    const { data, error } = await sb.from('profiles').select('*').neq('id', me.id)
+    const { data, error } = await sb.from('student_public_profiles').select('*').neq('id', me.id)
       .order('last_seen', { ascending: false, nullsFirst: false }).limit(200);
     if (error) throw error;
     data.forEach((p) => profiles.set(p.id, p));
