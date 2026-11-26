@@ -26,7 +26,7 @@ test('assistant sends only the fields needed for recent test-result context', ()
 
 test('PRIME COMMAND routes common admin requests instead of falling through to Gemini', () => {
   const start = admin.indexOf('async prime_command(req, res, b) {');
-  const end = admin.indexOf('\n  },\n\n  /* ---------- API key rotation', start);
+  const end = admin.indexOf('\n  },', start);
   const block = admin.slice(start, end);
   assert.ok(start >= 0 && end > start, 'prime_command handler should exist');
   assert.match(block, /if \(\/\\b\(question bank/);
