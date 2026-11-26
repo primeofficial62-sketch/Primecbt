@@ -7,12 +7,15 @@ const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('active CBT question reads never request answer-key columns directly', async () => {
   const cbt = await read('../cbt.html');
+  const practice = await read('../practice.html');
   assert.doesNotMatch(cbt, /db\.from\(['"]questions['"]\)/);
   assert.match(cbt, /rpc\(['"]get_practice_questions['"]/);
   assert.match(cbt, /rpc\(['"]check_practice_answers['"]/);
   assert.match(cbt, /if \(instant\)/);
   assert.match(cbt, /restorePracticeFeedback\(\)/);
   assert.match(cbt, /rpc\(['"]submit_practice_session['"]/);
+  assert.match(practice, /rpc\(['"]question_counts['"]/);
+  assert.doesNotMatch(practice, /questions\(count\)/);
   const scripts = [];
   let cursor = 0;
   while ((cursor = cbt.indexOf('<script', cursor)) >= 0) {
