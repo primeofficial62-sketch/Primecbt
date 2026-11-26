@@ -2733,7 +2733,7 @@ switcher.dataset.mode = mode;
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { data: meta, emailRedirectTo: window.location.origin + '/auth.html?mode=login&next=%2Fexternal%2Fhome.html' }
+        options: { data: meta, emailRedirectTo: window.location.origin + (pathway === 'exam' ? '/auth.html?mode=login&next=%2Fexternal%2Fhome.html' : '/auth.html?mode=login') }
       });
 
       setLoading(stepNext, false);
@@ -3210,7 +3210,7 @@ resendResetLink.addEventListener('click', async (e) => {
     markReturningUser();
 
     // External Exams users must bypass University profile setup and enter
-    // the dedicated External Exams authentication hand-off first.
+    // the dedicated External Exams app directly.
     const userMeta = session.user?.user_metadata || {};
     const externalExamUser =
       userMeta.prime_experience === 'external_exams' ||
@@ -3279,7 +3279,7 @@ resendResetLink.addEventListener('click', async (e) => {
       if (window.PrimeAnalytics) PrimeAnalytics.track('cta_clicked', { cta_id: 'google_auth', cta_location: '/auth.html' });
       // Preserve the selected External Exams pathway across Google's redirect.
       if (pathway === 'exam') {
-        try { sessionStorage.setItem(NEXT_KEY, '/external/auth.html?mode=login'); } catch (e) {}
+        try { sessionStorage.setItem(NEXT_KEY, '/external/home.html'); } catch (e) {}
       }
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
