@@ -325,7 +325,23 @@
     .mathprev { line-height: 1.7; overflow-wrap: anywhere; }
     .mathprev .mp-h { font-family: var(--display); font-weight: 700; font-size: .82rem; color: var(--muted); margin-bottom: 6px; }
     .mathprev .mp-opt { margin: 2px 0; }
-      </style>
+      
+    .pc-intro{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.pc-intro h2{font-size:1.65rem;margin-bottom:5px}.pc-intro p,.pc-note{color:var(--muted);font-size:.86rem;line-height:1.55;max-width:640px}
+    .pc-status{color:var(--live);font-size:.78rem;font-weight:700;background:var(--live-soft);padding:7px 11px;border-radius:99px}
+    .pc-layout{display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:14px;align-items:start}.pc-chat{padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:min(680px,calc(100dvh - 190px))}
+    .pc-chat-head{display:flex;align-items:center;gap:11px;padding:15px 18px;border-bottom:1px solid var(--line)}.pc-orb{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:var(--accent-soft);color:var(--accent);font-weight:800}
+    .pc-chat-head b{display:block;font-size:.94rem}.pc-chat-head small{color:var(--muted);font-size:.78rem}.pc-messages{flex:1;overflow:auto;display:flex;flex-direction:column;gap:14px;padding:20px}
+    .pc-msg{max-width:min(760px,94%);display:flex;flex-direction:column;gap:5px;align-self:flex-start}.pc-msg.user{align-self:flex-end}.pc-msg .who{color:var(--muted);font-size:.72rem;font-weight:700}
+    .pc-msg .bubble{padding:12px 14px;border:1px solid var(--line);border-radius:13px 13px 13px 4px;background:var(--surface-2);white-space:pre-wrap;overflow-wrap:anywhere;font-size:.9rem;line-height:1.6}
+    .pc-msg.user .bubble{background:var(--accent);border-color:var(--accent);color:var(--on-accent);border-radius:13px 13px 4px 13px}.pc-msg .bubble.pending{color:var(--muted)}
+    .pc-compose{border-top:1px solid var(--line);padding:14px}.pc-compose form{display:flex;gap:9px;align-items:flex-end}.pc-compose textarea{min-height:48px;max-height:130px;resize:vertical;flex:1}
+    .pc-send{min-height:46px;padding:0 16px;border-radius:10px;background:var(--accent);color:var(--on-accent);font-weight:700}.pc-send:disabled{opacity:.5}
+    .pc-suggestions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.pc-suggest{border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:var(--muted);font-size:.76rem}
+    .pc-suggest:hover{border-color:var(--accent);color:var(--accent)}.pc-side{display:flex;flex-direction:column;gap:12px}.pc-side .card{padding:15px}.pc-side h3{font-size:.9rem;margin-bottom:9px}
+    .pc-cap{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}.pc-cap:first-of-type{border-top:0}.pc-cap i{color:var(--accent);font-style:normal}.pc-cap b{display:block;font-size:.8rem}.pc-cap small{display:block;color:var(--muted);font-size:.73rem;line-height:1.4;margin-top:2px}
+    @media(max-width:850px){.pc-layout{grid-template-columns:1fr}.pc-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.pc-chat{min-height:560px}}
+    @media(max-width:520px){.pc-side{grid-template-columns:1fr}.pc-chat{min-height:calc(100dvh - 220px)}.pc-messages{padding:14px}.pc-compose{padding:10px}.pc-send{padding:0 12px}}
+  </style>
 </head>
 <body>
 
@@ -1683,8 +1699,22 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       fields: [{ key: 'name', label: 'Level name', type: 'text', required: true, ph: 'e.g. 100 Level' }, { key: 'sort_order', label: 'Order', type: 'number', def: 0 }],
       row: function (r) { return { title: r.name, sub: 'Order ' + r.sort_order }; }
     },
+    { id: 'primecommand', label: 'PRIME COMMAND', group: 'Intelligence', kind: 'primecommand', icon: 'sparkles' },
     { id: 'security', label: 'Settings', group: 'Security', kind: 'security', icon: 'shield' }
   ];
+
+
+  /* ================= PRIME COMMAND ================= */
+  function renderPrimeCommand() {
+    var history=[],busy=false;
+    $('view').innerHTML='<div class="pc-intro"><div><h2>PRIME COMMAND</h2><p>Your AI operations assistant for PRIME CBT. Ask questions in plain language and retrieve live platform information without leaving the admin panel.</p></div><span class="pc-status">● Admin session active</span></div><div class="pc-layout"><section class="card pc-chat"><div class="pc-chat-head"><div class="pc-orb">P</div><div><b>PRIME COMMAND</b><small>AI operations · Read-only access in V1</small></div></div><div class="pc-messages" id="pcMessages" aria-live="polite"><div class="pc-msg"><span class="who">PRIME COMMAND</span><div class="bubble">Hello. I can retrieve live platform figures, search student records and analyse examination activity. What would you like to know?</div></div></div><div class="pc-compose"><form id="pcForm"><textarea id="pcInput" rows="1" maxlength="4000" aria-label="Your instruction" placeholder="Ask PRIME COMMAND anything about PRIME CBT…"></textarea><button class="pc-send" id="pcSend" type="submit">Send ↗</button></form><div class="pc-suggestions"><button class="pc-suggest" data-prompt="Give me a complete overview of PRIME CBT.">Platform overview</button><button class="pc-suggest" data-prompt="How many students are registered, and who joined recently?">Student activity</button><button class="pc-suggest" data-prompt="Analyse our examination activity and average scores.">Exam statistics</button></div></div></section><aside class="pc-side"><section class="card"><h3>Available capabilities</h3><div class="pc-cap"><i>◷</i><div><b>Platform overview</b><small>Live student, test, question and content counts</small></div></div><div class="pc-cap"><i>⌕</i><div><b>Student search</b><small>Find profiles by name, email, department or level</small></div></div><div class="pc-cap"><i>▥</i><div><b>Exam analytics</b><small>Attempts, average score and active courses</small></div></div></section><section class="card"><h3>Security boundary</h3><p class="pc-note">Uses your existing admin session. Tools execute on the server. Version 1 is read-only and cannot edit student records, publish questions, send notifications or delete data.</p></section><section class="card"><h3>Coming next</h3><p class="pc-note">Task history, approvals, question-bank workflows and controlled write actions will follow after the read-only tools are tested.</p></section></aside></div>';
+    var messages=$('pcMessages');
+    function add(role,text,pending){var w=document.createElement('div');w.className='pc-msg'+(role==='user'?' user':'');var who=document.createElement('span');who.className='who';who.textContent=role==='user'?'YOU':'PRIME COMMAND';var b=document.createElement('div');b.className='bubble'+(pending?' pending':'');b.textContent=text;w.appendChild(who);w.appendChild(b);messages.appendChild(w);messages.scrollTop=messages.scrollHeight;return b;}
+    async function send(text){text=String(text||'').trim();if(!text||busy)return;busy=true;$('pcInput').value='';$('pcSend').disabled=true;add('user',text);var pending=add('assistant','Checking PRIME CBT data…',true);try{var out=await api('prime_command',{message:text,history:history},90000);pending.classList.remove('pending');pending.textContent=out.reply||'No response received.';history.push({role:'user',text:text},{role:'model',text:out.reply||''});history=history.slice(-12);}catch(e){pending.classList.remove('pending');pending.textContent=e.message||'Something went wrong. Try again.';}finally{busy=false;$('pcSend').disabled=false;$('pcInput').focus();messages.scrollTop=messages.scrollHeight;}}
+    $('pcForm').addEventListener('submit',function(e){e.preventDefault();send($('pcInput').value);});
+    $('view').addEventListener('click',function(e){var s=e.target.closest('[data-prompt]');if(s)send(s.getAttribute('data-prompt'));});
+    $('pcInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send($('pcInput').value);}});
+  }
 
   /* ================= dashboard ================= */
   var dash = { metric: 'tests', days: 14, data: null };
@@ -3372,7 +3402,8 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     markActive();
     window.scrollTo(0, 0);
     try {
-      if (sec.kind === 'dashboard') await renderDashboard();
+      if (sec.kind === 'primecommand') renderPrimeCommand();
+      else if (sec.kind === 'dashboard') await renderDashboard();
       else if (sec.kind === 'students') await renderStudents();
       else if (sec.kind === 'notifications') await renderNotifications();
       else if (sec.kind === 'levels') await renderMaterialLevels();
