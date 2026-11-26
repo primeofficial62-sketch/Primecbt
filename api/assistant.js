@@ -10,10 +10,12 @@ export const config = { runtime: 'edge' };
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://xuofkjjhupgmrphzgyun.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
+// Use currently supported Gemini Developer API model IDs. Older 2.5 IDs were retired
+// on October 20, 2026 and returned 404s in production.
 const MODELS = [...new Set([
   process.env.GEMINI_MODEL,
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
+  'gemini-3.8-flash',
+  'gemini-3.5-flash',
   'gemini-3.5-flash-lite'
 ].filter(Boolean))];
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
