@@ -1,7 +1,7 @@
 // Vercel Node function: /api/study-tools   (summaries and flashcards from one PDF material)
 // Save as:  api/study-tools.js
 // Needs: "pdf-parse": "1.1.1" in package.json (you already have it for admin.js)
-//        GEMINI_API_KEY in Vercel environment variables
+//        GEMINI_API_KEY and SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables
 // Add to vercel.json:  "functions": { "api/study-tools.js": { "maxDuration": 60 } }
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || 'https://xuofkjjhupgmrphzgyun.supabase.co').replace(/\/$/, '');
