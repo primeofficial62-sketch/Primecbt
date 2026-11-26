@@ -45,6 +45,7 @@ test('External Exams homepage keeps the approved sections and does not put Marke
 
 test('External CBT question answers are stored separately and cannot be read from the public question bank', async () => {
   const migration = await read('supabase/migrations/20261126230900_external_exams_foundation.sql');
+  const followup = await read('supabase/migrations/20261126232000_external_exams_security_tidy.sql');
   assert.match(migration, /create table if not exists public\.external_exam_question_answers/i);
   assert.match(migration, /revoke all on public\.external_exam_question_answers from public, anon, authenticated/i);
   assert.match(migration, /grant select \(id, exam_code, exam_year, source_type, subject_id, topic_id, question_text, options, image_url, status, created_at\)/i);

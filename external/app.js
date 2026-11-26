@@ -82,21 +82,22 @@
     await boot('study');
     const subjectsEl=$('subjectsList'),resourcesEl=$('resourcesList'),search=$('resourceSearch'),exam=$('studyExam'),kind=$('resourceKind');
     if(!subjectsEl||!resourcesEl)return;
-    let subjects=[];
+    let subjects=[],selectedSubjectId=null;
     async function load(){
       let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,subject_id,external_url').eq('is_published',true).order('created_at',{ascending:false}).limit(50);
       if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);
       if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);
+      if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);
       const [r,s]=await Promise.all([q,db.from('external_exam_subjects').select('id,name,exam_code').eq('is_active',true).order('sort_order')]);
       subjects=s.data||[];
       const requestedType=new URLSearchParams(location.search).get('type');
       if(requestedType&&kind.value==='ALL'&&[...kind.options].some(o=>o.value===requestedType))kind.value=requestedType;
       const term=search.value.trim().toLowerCase();
       const rows=(r.data||[]).filter(x=>!term||(x.title+' '+(x.description||'')).toLowerCase().includes(term));
-      subjectsEl.innerHTML=subjects.length?subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value).map(x=>'<a class="chip" href="#resources" data-subject="'+x.id+'">'+esc(x.name)+'</a>').join(''):'<div class="empty-state"><strong>Subjects are being prepared</strong>Subjects will appear here as the syllabus is added.</div>';
+      subjectsEl.innerHTML=subjects.length?subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value).map(x=>'<a class="chip '+(selectedSubjectId===x.id?'active':'')+'" href="#resources" data-subject="'+x.id+'">'+esc(x.name)+'</a>').join(''):'<div class="empty-state"><strong>Subjects are being prepared</strong>Subjects will appear here as the syllabus is added.</div>';
       resourcesEl.innerHTML=rows.length?rows.map(x=>'<a class="list-card" href="'+(x.external_url?esc(x.external_url):'#')+'" '+(x.external_url?'target="_blank" rel="noopener"':'')+'><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.source_year?' · '+x.source_year:'')+'</p></span><span class="arrow">›</span></a>').join(''):'<div class="empty-state"><strong>No resources published yet</strong>We will show verified past questions, videos, workbooks, novels and lessons here once they are added to the question and learning library.</div>';
     }
-    subjectsEl.addEventListener('click',e=>{const a=e.target.closest('[data-subject]');if(!a)return;const selected=subjects.find(x=>x.id===a.dataset.subject);if(selected){search.value=selected.name;load();}});
+    subjectsEl.addEventListener('click',e=>{const a=e.target.closest('[data-subject]');if(!a)return;e.preventDefault();selectedSubjectId=selectedSubjectId===a.dataset.subject?null:a.dataset.subject;load();});
     [search,exam,kind].forEach(el=>el.addEventListener(el===search?'input':'change',load));
     await load();
   }
@@ -106,6 +107,8 @@
     if(!exam||!subjectBox)return;
     const requestedExam=new URLSearchParams(location.search).get('exam');
     if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
+    document.querySelectorAll('[data-exam-preset]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.examPreset&&[...exam.options].some(o=>o.value===b.dataset.examPreset))exam.value=b.dataset.examPreset;loadSubjects();$('examCode').scrollIntoView({behavior:'smooth',block:'center'});}));
+    document.querySelectorAll('[data-mode-preset]').forEach(b=>b.addEventListener('click',()=>{mode.value=b.dataset.modePreset;$('examMode').scrollIntoView({behavior:'smooth',block:'center'});}));
     async function loadSubjects(){
       const {data,error}=await db.from('external_exam_subjects').select('id,name').eq('exam_code',exam.value).eq('is_active',true).order('sort_order');
       if(error){toast('Could not load subjects. Please retry.',true);return;}
@@ -174,18 +177,22 @@
     await boot('chat');
     const tabs=[...document.querySelectorAll('[data-chat-tab]')],feed=$('chatFeed'),form=$('chatForm'),input=$('chatInput'),panel=$('chatPanel');
     let active=new URLSearchParams(location.search).get('tab')||'general';
+    let questionScope='my_question';
     async function showTab(tab){
       active=tab;tabs.forEach(b=>b.classList.toggle('active',b.dataset.chatTab===tab));
       if(tab==='mimi'){panel.innerHTML='<div class="empty-state"><strong>Mimi AI</strong>Mimi AI will be connected to the External Exams syllabus, approved learning resources and question explanations in a dedicated integration. It is not connected to the University assistant.</div>';feed.classList.add('hidden');form.classList.add('hidden');return;}
       form.classList.remove('hidden');feed.classList.toggle('hidden',tab==='groups');panel.innerHTML='';
+      if(tab==='question'){panel.innerHTML='<div class="tabbar question-scopes"><button data-question-scope="my_question" class="'+(questionScope==='my_question'?'active':'')+'">My Question</button><button data-question-scope="school_question" class="'+(questionScope==='school_question'?'active':'')+'">School Question</button><button data-question-scope="academic_question" class="'+(questionScope==='academic_question'?'active':'')+'">Academic Based</button></div>';}
       if(tab==='groups'){const {data}=await db.from('external_exam_groups').select('id,name,description,created_at').order('created_at',{ascending:false}).limit(30);panel.innerHTML='<form id="groupCreateForm" class="panel"><div class="field"><label for="groupName">Create a study group</label><input id="groupName" maxlength="70" minlength="3" placeholder="e.g. JAMB Biology revision" required></div><div class="field"><label for="groupDescription">Description (optional)</label><input id="groupDescription" maxlength="180" placeholder="What will your group study?"></div><button class="btn-primary" type="submit">Create group</button></form>'+((data||[]).length?(data||[]).map(g=>'<div class="list-card"><span class="feature-icon">'+icon('group')+'</span><span><h3>'+esc(g.name)+'</h3><p>'+esc(g.description||'Student study group')+'</p></span><button class="btn-secondary" data-join="'+g.id+'">Join</button></div>').join(''):'<div class="empty-state"><strong>No groups yet</strong>Create the first study group for external exam candidates.</div>');return;}
-      const {data,error}=await db.from('external_exam_chat_messages').select('id,channel,content,created_at').eq('channel',tab==='question'?'question':'general').order('created_at',{ascending:false}).limit(40);
+      let messageQuery=db.from('external_exam_chat_messages').select('id,channel,content,created_at,user_id').eq('channel',tab==='question'?questionScope:'general').order('created_at',{ascending:false}).limit(40);
+      if(tab==='question'&&questionScope==='my_question')messageQuery=messageQuery.eq('user_id',profile.user.id);
+      const {data,error}=await messageQuery;
       feed.innerHTML=error?'<div class="empty-state"><strong>Chat is unavailable</strong>Please try again later.</div>':(data||[]).length?(data||[]).reverse().map(m=>'<article class="message-card"><div class="message-meta"><span>PRIME-CBT student</span><span>'+new Date(m.created_at).toLocaleString()+'</span></div><p>'+esc(m.content)+'</p></article>').join(''):'<div class="empty-state"><strong>'+ (tab==='question'?'No questions posted yet':'No messages yet')+'</strong>Start a helpful conversation with other external exam students.</div>';
     }
     tabs.forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.chatTab)));
-    panel?.addEventListener('click',async e=>{const b=e.target.closest('[data-join]');if(!b)return;const {data:user}=await db.auth.getUser();const {error}=await db.from('external_exam_group_members').insert({group_id:b.dataset.join,user_id:user.user.id});toast(error?(error.code==='23505'?'You already joined this group.':error.message):'You joined the group.');});
+    panel?.addEventListener('click',async e=>{const scope=e.target.closest('[data-question-scope]');if(scope){questionScope=scope.dataset.questionScope;showTab('question');return;}const b=e.target.closest('[data-join]');if(!b)return;const {data:user}=await db.auth.getUser();const {error}=await db.from('external_exam_group_members').insert({group_id:b.dataset.join,user_id:user.user.id});toast(error?(error.code==='23505'?'You already joined this group.':error.message):'You joined the group.');});
     panel?.addEventListener('submit',async e=>{if(e.target.id!=='groupCreateForm')return;e.preventDefault();const {data:user}=await db.auth.getUser();const {data:group,error}=await db.from('external_exam_groups').insert({created_by:user.user.id,name:$('groupName').value.trim(),description:$('groupDescription').value.trim()}).select('id').single();if(error){toast(error.message,true);return;}const {error:joinError}=await db.from('external_exam_group_members').insert({group_id:group.id,user_id:user.user.id});if(joinError){toast('Group created, but membership could not be saved: '+joinError.message,true);return;}toast('Your study group has been created.');showTab('groups');});
-    form?.addEventListener('submit',async e=>{e.preventDefault();const content=input.value.trim();if(!content)return;const {data:user}=await db.auth.getUser();const {error}=await db.from('external_exam_chat_messages').insert({user_id:user.user.id,channel:active==='question'?'question':'general',content});if(error){toast(error.message,true);return;}input.value='';showTab(active);});
+    form?.addEventListener('submit',async e=>{e.preventDefault();const content=input.value.trim();if(!content)return;const {data:user}=await db.auth.getUser();const {error}=await db.from('external_exam_chat_messages').insert({user_id:user.user.id,channel:active==='question'?questionScope:'general',content});if(error){toast(error.message,true);return;}input.value='';showTab(active);});
     await showTab(active);
   }
   async function initMore(){
