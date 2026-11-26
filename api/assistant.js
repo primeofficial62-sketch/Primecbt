@@ -268,7 +268,7 @@ export default async function handler(request) {
     return json({ error: 'The assistant usage limit could not be checked. Please try again shortly.' }, 503);
   }
   if (quota && quota.allowed === false) {
-    return json({ error: `You have used your ${DAILY_LIMIT} assistant messages for today. Come back tomorrow.` }, 429);
+    return json({ error: `You have used your ${quota.limit || DAILY_LIMIT} assistant messages for today. Come back tomorrow.` }, 429);
   }
 
   const today = typeof body.today === 'string' && DATE_RE.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
