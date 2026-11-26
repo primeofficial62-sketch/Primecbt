@@ -33,7 +33,7 @@ test('External registration uses the shared auth page and routes to the External
   assert.ok(rootAuth.includes("window.location.replace('/external/home.html')"));
   assert.ok(rootAuth.includes("sessionStorage.setItem(NEXT_KEY, '/external/home.html')"));
   assert.ok(legacyAuth.includes('window.location.replace(destination)'));
-  assert.doesNotMatch(legacyAuth, /<form[\\s>]/i);
+  assert.doesNotMatch(legacyAuth, /<form/i);
   assert.match(rootAuth, /if \\(needsProfileSetup\\(session\\.user\\)\\)[\\s\\S]*?profile-setup\\.html/);
 });
 
