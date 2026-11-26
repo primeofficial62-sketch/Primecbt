@@ -3130,6 +3130,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
 
     var schoolSec = { id: 'uni', table: 'schools', noun: 'university', fields: [
       { key: 'name', label: 'University name', type: 'text', required: true },
+      { key: 'institution_type', label: 'Type', type: 'select', opts: [['University', 'University'], ['Polytechnic', 'Polytechnic'], ['College of Education', 'College of Education'], ['Other', 'Other']], def: 'University', required: true },
       { key: 'unit_label', label: 'This university uses', type: 'select', opts: [['Faculty', 'Faculties'], ['College', 'Colleges']], def: 'Faculty', required: true, hint: 'Faculties or colleges sit between the university and its departments.' },
       { key: 'sort_order', label: 'Order', type: 'number', def: 0 }
     ] };
@@ -3166,10 +3167,12 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
         var q = ($('uniQ').value || '').trim().toLowerCase();
         var rows = list.filter(function (s) { return !q || String(s.name).toLowerCase().indexOf(q) > -1; });
         $('uniRows').innerHTML = rows.length ? rows.map(function (s) {
-          return rowH({ id: s.id, open: s.id, title: s.name, tag: s.unit_label === 'College' ? 'Colleges' : 'Faculties' });
+                    return rowH({ id: s.id, open: s.id, title: s.name, tag: s.institution_type || 'University', sub: s.unit_label === 'College' ? 'Colleges' : 'Faculties' });
         }).join('') : emptyHtml(q ? 'No university matches your search.' : 'No universities yet. Add the first one.');
       };
       $('uniQ').oninput = paint; paint();
+      var addB = view.querySelector('[data-add]');
+      if (addB) addB.insertAdjacentHTML('beforebegin', '<button class="btn" data-import>' + icon('upload') + 'Import list</button>');
     } else if (level === 2) {
       $('pageTitle').textContent = school.name;
       var loose = depts.filter(function (d) { return !d.faculty_id; }).length;
@@ -3221,6 +3224,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       if (e.target.closest('[data-retry]')) return again();
       if (e.target.closest('[data-back]')) return level === 3 ? renderUniversities(school.id) : renderUniversities();
       if (e.target.closest('[data-add]')) return openForm(level === 1 ? schoolSec : level === 2 ? unitSec : deptSec, null, again);
+      if (e.target.closest('[data-import]')) return openUniImport(again);
       if (e.target.closest('[data-hedit]')) return level === 2 ? openForm(schoolSec, school, again) : openForm(unitSec, unit, again);
       if (e.target.closest('[data-hdel]')) return level === 2 ? removeSchool(school) : removeUnit(unit);
       var ed = e.target.closest('[data-edit]');
@@ -3241,6 +3245,94 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
       }
       var op = e.target.closest('[data-open]');
       if (op) { if (level === 1) renderUniversities(op.getAttribute('data-open')); else if (level === 2) renderUniversities(school.id, op.getAttribute('data-open')); }
+    };
+  }
+    /* ---------- import universities / polytechnics with faculties and departments ---------- */
+  // ## School name | University   (or Polytechnic, College of Education)
+  // # Faculty or college name     (optional)
+  // Department name               (one per line)
+  function parseUniList(text) {
+    var out = [], sch = null, fac = null;
+    String(text || '').replace(/\r/g, '').split('\n').forEach(function (raw) {
+      var line = raw.trim(), m; if (!line) return;
+      if ((m = line.match(/^##\s*(.+)$/))) {
+        var p = m[1].split('|');
+        sch = { name: p[0].trim(), type: (p[1] || '').trim() || 'University', units: [], loose: [] };
+        out.push(sch); fac = null;
+      } else if ((m = line.match(/^#\s*(.+)$/))) {
+        if (!sch) return;
+        fac = { name: m[1].trim(), depts: [] }; sch.units.push(fac);
+      } else if (sch) {
+        line = line.replace(/^(?:[-*\u2022]|\d+[.)])\s+/, '').trim();
+        if (line) (fac ? fac.depts : sch.loose).push(line);
+      }
+    });
+    return out;
+  }
+
+  function openUniImport(done) {
+    openSheet('Import universities',
+      '<div class="fld"><label for="uiText">List *</label><textarea id="uiText" rows="14" style="font-family:monospace;font-size:14px" placeholder="## Federal University of Agriculture, Abeokuta | University\n# College of Engineering\nCivil Engineering\nMechanical Engineering\n\n## Yaba College of Technology | Polytechnic\n# School of Engineering\nComputer Engineering"></textarea>' +
+      '<div class="hint">## starts a school (add | University, Polytechnic or College of Education). # starts a faculty or college. Every other line is a department. Names that already exist are skipped.</div></div>' +
+      '<div class="preview" id="uiPrev" hidden></div>',
+      '<button class="btn" id="uiCancel">Cancel</button><button class="btn primary" id="uiGo">Import</button>');
+    $('uiCancel').onclick = function () { closeSheet(); };
+    $('uiText').addEventListener('input', function () {
+      var l = parseUniList($('uiText').value), d = 0;
+      l.forEach(function (s) { d += s.loose.length; s.units.forEach(function (u) { d += u.depts.length; }); });
+      $('uiPrev').hidden = !l.length;
+      $('uiPrev').textContent = l.length + ' school(s), ' + d + ' department(s) found';
+    });
+    $('uiGo').onclick = async function () {
+      var list = parseUniList($('uiText').value);
+      if (!list.length) { toast('Start each school with ## on its own line.', true); return; }
+      var btn = $('uiGo'); btn.disabled = true;
+      var nS = 0, nF = 0, nD = 0, bad = 0, lastErr = '';
+      var find = function (arr, name) { return arr.filter(function (x) { return normName(x.name) === normName(name); })[0]; };
+      var schools = [];
+      try { schools = (await fetchAllRows('schools')).rows; } catch (e) { btn.disabled = false; toast(e.message, true); return; }
+      for (var i = 0; i < list.length; i++) {
+        var s = list[i];
+        btn.textContent = 'Importing ' + (i + 1) + ' of ' + list.length + '\u2026';
+        try {
+          var sRow = find(schools, s.name);
+          if (!sRow) {
+            await api('save', { table: 'schools', data: { name: s.name, institution_type: s.type, unit_label: 'Faculty', sort_order: 0 } });
+            schools = (await fetchAllRows('schools')).rows; sRow = find(schools, s.name); nS++;
+            if (!sRow) throw new Error('Could not create ' + s.name);
+          }
+          var units = (await fetchAllRows('faculties', { filters: { school_id: sRow.id } })).rows;
+          var depts = (await fetchAllRows('departments', { filters: { school_id: sRow.id } })).rows;
+          var groups = s.units.slice(); if (s.loose.length) groups.push({ name: '', depts: s.loose });
+          for (var gi = 0; gi < groups.length; gi++) {
+            var g = groups[gi], uRow = null;
+            if (g.name) {
+              uRow = find(units, g.name);
+              if (!uRow) {
+                await api('save', { table: 'faculties', data: { school_id: sRow.id, name: g.name, sort_order: 0 } });
+                units = (await fetchAllRows('faculties', { filters: { school_id: sRow.id } })).rows; uRow = find(units, g.name); nF++;
+              }
+            }
+            var fid = uRow ? uRow.id : null, seen = {}, todo = [];
+            g.depts.forEach(function (dn) {
+              var k = normName(dn);
+              if (seen[k]) return; seen[k] = 1;
+              if (depts.some(function (d) { return normName(d.name) === k && String(d.faculty_id || '') === String(fid || ''); })) return;
+              todo.push(dn);
+            });
+            for (var b = 0; b < todo.length; b += 6) {
+              await Promise.all(todo.slice(b, b + 6).map(function (dn) {
+                return api('save', { table: 'departments', data: { school_id: sRow.id, faculty_id: fid, name: dn, sort_order: 0 } });
+              }));
+              nD += Math.min(6, todo.length - b);
+            }
+          }
+        } catch (e) { bad++; lastErr = e.message; if (e.status === 401) break; }
+      }
+      delete lookups.schools; delete lookups.departments;
+      closeSheet(true);
+      toast('Added ' + nS + ' schools, ' + nF + ' faculties, ' + nD + ' departments' + (bad ? '. ' + bad + ' failed: ' + lastErr : ''), !!bad && !nD && !nS, 8000);
+      if (done) done();
     };
   }
   
