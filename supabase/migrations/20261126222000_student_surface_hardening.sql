@@ -110,4 +110,99 @@ REVOKE ALL ON FUNCTION public.queue_topic_job() FROM PUBLIC, anon, authenticated
 REVOKE ALL ON FUNCTION public.tag_new_question() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.tag_new_topic() FROM PUBLIC, anon, authenticated;
 
+
+-- 2) Student performance privacy. The leaderboard reads aggregates through the
+--    owner-checked get_leaderboard() RPC; raw attempts must remain private.
+DROP POLICY IF EXISTS "read attempts" ON public.exam_attempts;
+DROP POLICY IF EXISTS "students can read own attempts" ON public.exam_attempts;
+CREATE POLICY "students can read own attempts"
+  ON public.exam_attempts
+  FOR SELECT
+  TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
+
+REVOKE ALL ON public.exam_attempts FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT ON public.exam_attempts TO authenticated;
+
+-- The achievements page reads each student's own historical practice totals.
+-- Its table had RLS enabled without a SELECT policy, so the query silently returned
+-- no rows. Restore only owner-scoped reads; writes remain server-side.
+DROP POLICY IF EXISTS "students can read own practice results" ON public.practice_results;
+CREATE POLICY "students can read own practice results"
+  ON public.practice_results
+  FOR SELECT
+  TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
+
+REVOKE ALL ON public.practice_results FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.practice_results TO authenticated;
+
+-- Keep live leaderboard refreshes without exposing raw exam_attempts or profile rows
+-- through Realtime. Subscribers receive only an opaque event marker and reload the
+-- aggregated, authenticated get_leaderboard() RPC.
+CREATE TABLE IF NOT EXISTS public.leaderboard_events (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  event_type text NOT NULL CHECK (event_type IN ('attempt', 'profile')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS leaderboard_events_created_at_idx
+  ON public.leaderboard_events (created_at);
+
+ALTER TABLE public.leaderboard_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.leaderboard_events FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.leaderboard_events TO authenticated;
+
+DROP POLICY IF EXISTS "authenticated can read leaderboard event markers" ON public.leaderboard_events;
+CREATE POLICY "authenticated can read leaderboard event markers"
+  ON public.leaderboard_events
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE OR REPLACE FUNCTION public.emit_leaderboard_event()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $function$
+BEGIN
+  INSERT INTO public.leaderboard_events (event_type)
+  VALUES (CASE WHEN TG_TABLE_NAME = 'exam_attempts' THEN 'attempt' ELSE 'profile' END);
+
+  DELETE FROM public.leaderboard_events
+  WHERE created_at < now() - interval '7 days';
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.emit_leaderboard_event() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS emit_leaderboard_event_after_attempt ON public.exam_attempts;
+CREATE TRIGGER emit_leaderboard_event_after_attempt
+  AFTER INSERT ON public.exam_attempts
+  FOR EACH ROW
+  EXECUTE FUNCTION public.emit_leaderboard_event();
+
+DROP TRIGGER IF EXISTS emit_leaderboard_event_after_profile_update ON public.profiles;
+CREATE TRIGGER emit_leaderboard_event_after_profile_update
+  AFTER UPDATE OF full_name, level, department ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.emit_leaderboard_event();
+
+DO $publication$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime')
+     AND NOT EXISTS (
+       SELECT 1 FROM pg_publication_tables
+       WHERE pubname = 'supabase_realtime'
+         AND schemaname = 'public'
+         AND tablename = 'leaderboard_events'
+     ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.leaderboard_events;
+  END IF;
+END;
+$publication$;
+
 COMMIT;
