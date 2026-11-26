@@ -1968,6 +1968,7 @@ switcher.dataset.mode = mode;
 
   
   let lastAcadSchool = null;
+    const SCHOOL_ACADEMICS = {};   // filled from Admin > Universities
   function schoolCfg() { return SCHOOL_ACADEMICS[regSchool.value] || null; }
   function currentAcademics() { const c = schoolCfg(); return c ? c.list : academics; }
   
@@ -2103,9 +2104,28 @@ switcher.dataset.mode = mode;
     } catch (e) {
       academics = FALLBACK_ACADEMICS.map(([name, departments]) => ({ name, departments }));
     }
-    fillColleges();
+    await loadSchoolAcademics();
+    lastAcadSchool = null;
+    applySchoolMode();
   }
-
+  // Universities set up in Admin > Universities (university > faculty/college > department)
+  async function loadSchoolAcademics() {
+    try {
+      const [s, f, d] = await Promise.all([
+        supabaseClient.from('schools').select('id,name,unit_label'),
+        supabaseClient.from('faculties').select('id,school_id,name,sort_order'),
+        supabaseClient.from('departments').select('faculty_id,name,sort_order').not('faculty_id', 'is', null)
+      ]);
+      if (s.error || f.error || d.error || !s.data || !f.data || !d.data) return;
+      const bySort = (a, b) => ((a.sort_order ?? 999) - (b.sort_order ?? 999)) || a.name.localeCompare(b.name);
+      s.data.forEach(sc => {
+        const list = f.data.filter(x => x.school_id === sc.id).sort(bySort)
+          .map(fac => ({ name: fac.name, departments: d.data.filter(x => x.faculty_id === fac.id).sort(bySort).map(x => x.name) }))
+          .filter(fac => fac.departments.length);
+        if (list.length) SCHOOL_ACADEMICS[String(sc.name).trim()] = { label: sc.unit_label === 'College' ? 'College' : 'Faculty', list };
+      });
+    } catch (e) { /* keep the built-in lists */ }
+  }
   // ========== DROPDOWNS THAT ALWAYS OPEN DOWNWARD ==========
   // Phone browsers decide for themselves whether a native <select> list opens
   // up or down. These keep the real <select> (so all the logic below still
@@ -2434,13 +2454,25 @@ switcher.dataset.mode = mode;
 
   const examVisible = c => c.visible !== false && (c.coming_soon || c.enabled !== false);
   const examPickable = c => examVisible(c) && !c.coming_soon;
-
+  // Exam Preparation card: "Coming soon" by default, "Live" when Admin > Exam preparation says so
+  function applyExamSwitch(live) {
+    const card = pathList.querySelector('.path-card[data-path="exam"]');
+    if (!card || !live) return;
+    card.classList.remove('is-soon');
+    delete card.dataset.soon;
+    card.removeAttribute('aria-disabled');
+    const badge = card.querySelector('.soon-badge');
+    const arrow = pathList.querySelector('.path-card[data-path="inst"] .path-go');
+    if (badge && arrow) badge.replaceWith(arrow.cloneNode(true));
+  }
   async function loadRegConfig() {
     try {
-      const [p, e] = await Promise.all([
+            const [p, e, x] = await Promise.all([
         supabaseClient.from('registration_pathways').select('key,enabled'),
-        supabaseClient.from('exam_categories').select('code,title,description,icon,enabled,coming_soon,visible,sort_order')
+        supabaseClient.from('exam_categories').select('code,title,description,icon,enabled,coming_soon,visible,sort_order'),
+        supabaseClient.from('app_settings').select('value').eq('id', 'exam_prep').maybeSingle()
       ]);
+      if (!x.error && x.data) applyExamSwitch(x.data.value === 'live');
       if (!p.error && p.data && p.data.length) {
         p.data.forEach(r => {
           if (r.key === 'exam_preparation') pathCfg.exam = !!r.enabled;
