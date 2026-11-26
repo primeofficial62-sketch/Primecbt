@@ -1,0 +1,4 @@
+# The converter is protected by a server-to-server service-role check in its handler.
+# Do not enable browser access or send the service-role key to clients.
+[functions.convert-to-pdf]
+verify_jwt = false
