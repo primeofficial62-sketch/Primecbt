@@ -53,11 +53,15 @@ async function useQuota(token) {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_limit: DAILY_LIMIT }),
+      signal: AbortSignal.timeout(10000),
     });
-    if (!r.ok) return { allowed: true };
-    return await r.json();
+    if (!r.ok) return { allowed: false, unavailable: true };
+    const result = await r.json();
+    if (typeof result === 'boolean') return { allowed: result };
+    if (result && typeof result.allowed === 'boolean') return result;
+    return { allowed: false, unavailable: true };
   } catch {
-    return { allowed: true };
+    return { allowed: false, unavailable: true };
   }
 }
 
@@ -128,7 +132,7 @@ async function studentData(user, token, today) {
 // Recent test results. Every plain field of each row is passed on, so it works with your table as it is.
 async function resultsBlock(user, token) {
   try {
-    const rows = await getRows(`test_results?select=*&user_id=eq.${user.id}&order=created_at.desc&limit=20`, token);
+    const rows = await getRows(`test_results?select=score,total_questions,course_title,course_code,created_at&user_id=eq.${user.id}&order=created_at.desc&limit=20`, token);
     if (!rows.length) return 'Test results: the student has not taken any test yet.';
     const skip = new Set(['id', 'user_id', 'created_at', 'course_title', 'course_code', 'course_id']);
     const lines = rows.map((r) => {
@@ -207,6 +211,8 @@ ${notes ? `\nCOURSE MATERIAL NOTES:\n${notes}\n` : ''}`;
 // ====================================================================
 export default async function handler(request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
+  const contentLength = Number(request.headers.get('content-length') || 0);
+  if (contentLength > 3000000) return json({ error: 'This request is too large. Please send a smaller image or shorter message.' }, 413);
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return json({ error: 'The assistant is not set up yet (missing GEMINI_API_KEY on the server).' }, 500);
@@ -253,6 +259,9 @@ export default async function handler(request) {
 
   // 3. Daily limit
   const quota = await useQuota(token);
+  if (quota && quota.unavailable) {
+    return json({ error: 'The assistant usage limit could not be checked. Please try again shortly.' }, 503);
+  }
   if (quota && quota.allowed === false) {
     return json({ error: `You have used your ${DAILY_LIMIT} assistant messages for today. Come back tomorrow.` }, 429);
   }
