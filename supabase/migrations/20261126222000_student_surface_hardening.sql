@@ -205,4 +205,89 @@ BEGIN
 END;
 $publication$;
 
+
+-- 3) The legacy AI quota RPC accepted p_limit from the browser. A student could
+--    call it directly with an arbitrarily large value and bypass the configured
+--    daily cap. Keep the argument for backwards compatibility, but never trust it.
+CREATE OR REPLACE FUNCTION public.ai_use_quota(p_limit integer DEFAULT 40)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+DECLARE
+  uid uuid := auth.uid();
+  n integer;
+  lim integer;
+  user_plan text;
+BEGIN
+  IF uid IS NULL THEN
+    RETURN jsonb_build_object('allowed', false, 'used', 0, 'limit', 0);
+  END IF;
+
+  IF public.is_pro(uid) THEN
+    RETURN jsonb_build_object('allowed', true, 'used', 0, 'limit', null, 'unlimited', true);
+  END IF;
+
+  SELECT p.plan INTO user_plan
+  FROM public.profiles p
+  WHERE p.id = uid;
+
+  SELECT pl.daily_limit INTO lim
+  FROM public.plan_limits pl
+  WHERE pl.feature = 'ai'
+    AND pl.plan IN (coalesce(user_plan, 'free'), 'free')
+  ORDER BY (pl.plan = 'free') ASC
+  LIMIT 1;
+
+  -- Fail closed to a conservative default if the plan configuration is missing.
+  IF lim IS NULL OR lim < 1 THEN
+    lim := 3;
+  END IF;
+
+  INSERT INTO public.ai_usage (user_id, day, count)
+  VALUES (uid, current_date, 1)
+  ON CONFLICT (user_id, day)
+  DO UPDATE SET count = public.ai_usage.count + 1
+  RETURNING count INTO n;
+
+  RETURN jsonb_build_object('allowed', n <= lim, 'used', n, 'limit', lim);
+END;
+$function$;
+
+REVOKE EXECUTE ON FUNCTION public.ai_use_quota(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.ai_use_quota(integer) TO authenticated;
+
+-- Restrict feature-flag helpers to internal SECURITY DEFINER callers. They are
+-- not student-facing RPCs and return arbitrary flag state by key.
+REVOKE ALL ON FUNCTION public.flag_on(text) FROM PUBLIC, anon, authenticated;
+
+-- plan_tier is used by the signed-in student's own avatar badge. Do not let a
+-- student supply another student's UUID to inspect their plan.
+CREATE OR REPLACE FUNCTION public.plan_tier(uid uuid)
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+  SELECT CASE
+    WHEN auth.uid() IS NULL OR uid IS DISTINCT FROM auth.uid() THEN 'basic'
+    WHEN public.is_pro(uid) THEN 'pro'
+    WHEN EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = uid AND p.plan = 'premium'
+        AND (p.plan_expires_at IS NULL OR p.plan_expires_at > now())
+    ) THEN 'premium'
+    ELSE 'basic'
+  END;
+$function$;
+
+REVOKE EXECUTE ON FUNCTION public.plan_tier(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.plan_tier(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_plan_tiers(uuid[]) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public._admin_key_ok(text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.get_leaderboard(text, text, integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_leaderboard(text, text, integer) TO authenticated;
+
 COMMIT;
