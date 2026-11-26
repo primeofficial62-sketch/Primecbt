@@ -162,3 +162,10 @@ test('AI quota RPC never trusts a student-supplied limit and plan badges are sel
   assert.match(migration, /revoke all on function public\.flag_on\(text\) from public, anon, authenticated/i);
   assert.match(migration, /revoke all on function public\.get_plan_tiers\(uuid\[\]\) from public, anon, authenticated/i);
 });
+
+
+test('study tools fail closed when the shared AI quota service is unavailable', async () => {
+  const studyTools = await read('../api/study-tools.js');
+  assert.match(studyTools, /if \(!q\.ok \|\| !q\.data \|\| typeof q\.data\.allowed !== 'boolean'\)[\s\S]*?throw new HttpError\(503/);
+  assert.match(studyTools, /if \(q\.data\.allowed === false\)[\s\S]*?throw new HttpError\(429/);
+});
