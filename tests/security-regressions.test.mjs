@@ -87,26 +87,27 @@ test('PDF conversion database locks are server-only and rate limited', async () 
 });
 
 
+
 test('student public profiles use a safe RLS-protected table, not a definer view', async () => {
   const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
   const community = await read('../community.html');
   const discussion = await read('../discussion.html');
-  assert.match(migration, /drop view if exists public\\.student_public_profiles/i);
-  assert.match(migration, /create table public\\.student_public_profiles/i);
-  assert.match(migration, /alter table public\\.student_public_profiles enable row level security/i);
-  assert.match(migration, /grant select on public\\.student_public_profiles to authenticated/i);
-  assert.match(migration, /create policy .*student public profiles.*for select to authenticated using \\(true\\)/i);
-  assert.match(migration, /create trigger .*student_public_profile.*after insert or update or delete on public\\.profiles/i);
-  assert.match(migration, /revoke all on function public\\.sync_student_public_profile\\(\\) from public, anon, authenticated/i);
-  assert.doesNotMatch(migration, /create or replace view public\\.student_public_profiles/i);
-  assert.match(community, /from\\('student_public_profiles'\\)/);
-  assert.match(discussion, /from\\('student_public_profiles'\\)/);
+  assert.ok(migration.includes('DROP VIEW IF EXISTS public.student_public_profiles;'));
+  assert.ok(migration.includes('CREATE TABLE public.student_public_profiles'));
+  assert.ok(migration.includes('ALTER TABLE public.student_public_profiles ENABLE ROW LEVEL SECURITY'));
+  assert.ok(migration.includes('GRANT SELECT ON public.student_public_profiles TO authenticated'));
+  assert.match(migration, /CREATE POLICY "students can read public student cards"[\s\S]*?FOR SELECT[\s\S]*?TO authenticated[\s\S]*?USING \(true\)/i);
+  assert.match(migration, /CREATE TRIGGER sync_student_public_profile[\s\S]*?AFTER INSERT OR UPDATE OR DELETE ON public\.profiles/i);
+  assert.ok(migration.includes('REVOKE ALL ON FUNCTION public.sync_student_public_profile() FROM PUBLIC, anon, authenticated'));
+  assert.doesNotMatch(migration, /CREATE OR REPLACE VIEW public\.student_public_profiles/i);
+  assert.ok(community.includes(".from('student_public_profiles')"));
+  assert.ok(discussion.includes(".from('student_public_profiles')"));
 });
 
 test('student setup only requests the granted question id column for exact counts', async () => {
   const setup = await read('../practice-setup.html');
-  assert.match(setup, /from\\(T\\.questions\\)[\\s\\S]*?select\\('id', \\{ count: 'exact', head: true \\}\\)/);
-  assert.doesNotMatch(setup, /from\\(T\\.questions\\)[\\s\\S]{0,100}select\\('\\*'/);
+  assert.ok(setup.includes(".select('id', { count: 'exact', head: true })"));
+  assert.doesNotMatch(setup, /countQuestions\(difficulty\)[\s\S]*?select\('\*'/);
 });
 
 test('student-only SECURITY DEFINER RPCs and trigger handlers are not callable by anon clients', async () => {
@@ -115,11 +116,10 @@ test('student-only SECURITY DEFINER RPCs and trigger handlers are not callable b
     'get_course_topics(text)', 'get_topic_questions(text, text)',
     'pro_status()', 'join_pro_waitlist()'
   ]) {
-    const escaped = signature.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
-    assert.match(migration, new RegExp('revoke execute on function public\\.' + escaped + ' from public, anon', 'i'));
-    assert.match(migration, new RegExp('grant execute on function public\\.' + escaped + ' to authenticated', 'i'));
+    assert.ok(migration.includes('REVOKE EXECUTE ON FUNCTION public.' + signature + ' FROM PUBLIC, anon'));
+    assert.ok(migration.includes('GRANT EXECUTE ON FUNCTION public.' + signature + ' TO authenticated'));
   }
   for (const fn of ['enqueue_notification_email', 'notify_support_email', 'profiles_set_school_id', 'queue_topic_job', 'tag_new_question', 'tag_new_topic']) {
-    assert.match(migration, new RegExp('revoke all on function public\\.' + fn + '\\(\\) from public, anon, authenticated', 'i'));
+    assert.ok(migration.includes('REVOKE ALL ON FUNCTION public.' + fn + '() FROM PUBLIC, anon, authenticated'));
   }
 });
