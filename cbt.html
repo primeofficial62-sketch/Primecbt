@@ -156,7 +156,7 @@ const secsPerQ = parseInt(P.get('secsPerQ'), 10) || CONFIG.defaultSecsPerQ;
 const qMode = (window.PrimeQuota && !retakeId) ? PrimeQuota.modeFor(kind) : null;
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
 
-const S = { attemptId:null, qid:null, qp:null, user:null, course:null, qs:[], answers:{}, flags:new Set(), index:0, endAt:null, startedAt:Date.now(), submitting:false, done:false, retry:null };
+const S = { attemptId:null, qid:null, qp:null, user:null, course:null, qs:[], answers:{}, flags:new Set(), index:0, endAt:null, startedAt:Date.now(), submitting:false, checking:false, done:false, retry:null };
 
 let tT; const toast = (m) => { el.toast.textContent = m; el.toast.hidden = false; clearTimeout(tT); tT = setTimeout(() => { el.toast.hidden = true; }, 3500); };
 function showMessage(title, body, btnText, action, href) {
@@ -189,16 +189,18 @@ async function resolveCourse() {
   for (const col of ['title', 'code']) { const { data, error } = await db.from('courses').select('id,title,code').ilike(col, pat).limit(1); if (error) throw error; if (data && data[0]) return data[0]; }
   return null;
 }
-const QBASE = 'id,question,options,correct_index,explanation';
-let QCOLS = QBASE + ',image_url,svg';
-async function withCols(run) { let r = await run(QCOLS); if (r.error && QCOLS !== QBASE && /image_url|svg|column/i.test(r.error.message || '')) { QCOLS = QBASE; r = await run(QCOLS); } return r; }
 const valid = (r) => Array.isArray(r.options) && r.options.length >= 2;
 
+// Normal question reads never contain correct_index or explanation. Answer feedback is fetched
+// separately and only for practice mode; timed sessions keep the key on the server until submit.
 async function fetchByIds(ids) {
   const rows = [];
-  for (let i = 0; i < ids.length; i += 100) {            // chunks keep the request URL short
-    const { data, error } = await withCols((c) => db.from('questions').select(c).in('id', ids.slice(i, i + 100)));
-    if (error) throw error; rows.push(...(data || []));
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data, error } = await db.rpc('get_practice_questions', {
+      p_ids: ids.slice(i, i + 100), p_course_ids: null, p_difficulty: 'mixed', p_limit: 100
+    });
+    if (error) throw error;
+    rows.push(...(data || []));
   }
   const byId = new Map(rows.map(q => [q.id, q]));
   return ids.map(id => byId.get(id)).filter(q => q && valid(q));
@@ -207,8 +209,7 @@ async function fetchByIds(ids) {
 async function fetchQuestions(saved) {
   if (saved) return fetchByIds(saved.ids);
 
-  // RETAKE: the exact questions of a finished session, already shuffled into a new order by the server.
-  // Skips the "unseen questions first" rotation on purpose.
+  // A retake is available only from a completed session owned by this signed-in student.
   if (retakeId) {
     const { data, error } = await db.rpc('get_retake_questions', { p_session_id: retakeId });
     if (error) throw error;
@@ -216,23 +217,20 @@ async function fetchQuestions(saved) {
     return items.map(it => ({
       id: it.question_id, question: it.question, options: it.options,
       correct_index: it.correct_index, explanation: it.explanation,
-      image_url: it.image_url, svg: it.svg
+      difficulty: it.difficulty, image_url: it.image_url, svg: it.svg
     })).filter(valid);
   }
 
   if (idsParam.length) { const list = await fetchByIds(idsParam); return randomize ? shuffle(list) : list; }
 
-  const cids = courseIds.length ? courseIds : [S.course.id];   // courses sharing one code are practised together
-  const { data, error } = await withCols((c) => {
-    let q = db.from('questions').select(c).in('course_id', cids).limit(2000);
-    if (difficulty !== 'mixed') q = q.ilike('difficulty', difficulty);
-    if (!randomize) q = q.order('created_at', { ascending: true });
-    return q;
+  const cids = courseIds.length ? courseIds : [S.course.id];
+  const { data, error } = await db.rpc('get_practice_questions', {
+    p_ids: null, p_course_ids: cids, p_difficulty: difficulty, p_limit: 2000
   });
   if (error) throw error;
   const rows = (data || []).filter(valid);
 
-  // Rotation: unseen questions first, then the ones seen longest ago
+  // Rotation: unseen questions first, then the ones seen longest ago.
   let seenAt = new Map();
   try {
     const { data: s } = await db.from('user_seen_questions').select('question_id,seen_at').eq('user_id', S.user.id).in('course_id', cids).limit(5000);
@@ -242,6 +240,21 @@ async function fetchQuestions(saved) {
   let picked = (randomize ? shuffle(fresh) : fresh).slice(0, wantCount);
   if (picked.length < wantCount) picked = picked.concat(rows.filter(r => seenAt.has(r.id)).sort((a, b) => new Date(seenAt.get(a.id)) - new Date(seenAt.get(b.id))).slice(0, wantCount - picked.length));
   return randomize ? shuffle(picked) : picked;
+}
+
+async function restorePracticeFeedback() {
+  const pending = S.qs.filter(q => Object.prototype.hasOwnProperty.call(S.answers, q.id));
+  for (let i = 0; i < pending.length; i += 100) {
+    const batch = pending.slice(i, i + 100);
+    const { data, error } = await db.rpc('check_practice_answers', {
+      p_answers: batch.map(q => ({ question_id: q.id, selected_index: S.answers[q.id] }))
+    });
+    if (error) throw error;
+    (Array.isArray(data) ? data : []).forEach(item => {
+      const q = batch.find(x => x.id === item.question_id);
+      if (q) { q.correct_index = Number(item.correct_index); q.explanation = item.explanation || ''; }
+    });
+  }
 }
 
 function renderMath(root) {
@@ -264,7 +277,7 @@ function renderHeader() {
   document.title = `${topicName || S.course.title || 'Session'} — PRIME-CBT`;
 }
 function render(animate = true) {
-  const q = S.qs[S.index], locked = instant && answered(q), chosen = S.answers[q.id];
+  const q = S.qs[S.index], locked = instant && answered(q) && Number.isInteger(q.correct_index), chosen = S.answers[q.id];
   const card = document.createElement('section'); card.className = 'card'; if (!animate) card.style.animation = 'none';
   const meta = document.createElement('div'); meta.className = 'qm';
   const count = document.createElement('span'); count.className = 'qc'; count.textContent = `Question ${S.index + 1} of ${S.qs.length}`;
@@ -323,10 +336,33 @@ async function ensureSession() {
 }
 
 async function choose(i) {
-  const q = S.qs[S.index]; if (instant && answered(q)) return;
+  const q = S.qs[S.index];
+  if (S.checking || (instant && answered(q))) return;
   if (qMode && !S.qid && !(await ensureSession())) return;
-  if (instant && answered(q)) return;
-  if (!instant && S.answers[q.id] === i) delete S.answers[q.id]; else S.answers[q.id] = i;   // exam style: tap again to clear
+  if (instant) {
+    S.checking = true;
+    try {
+      const { data, error } = await db.rpc('check_practice_answers', {
+        p_answers: [{ question_id: q.id, selected_index: i }]
+      });
+      if (error) throw error;
+      const feedback = Array.isArray(data) ? data[0] : null;
+      if (!feedback) throw new Error('No feedback was returned.');
+      q.correct_index = Number(feedback.correct_index);
+      q.explanation = feedback.explanation || '';
+      S.answers[q.id] = i;
+    } catch (err) {
+      console.error('[cbt] practice feedback failed:', err);
+      toast('Could not check this answer. Please try again.');
+      return;
+    } finally {
+      S.checking = false;
+    }
+  } else if (S.answers[q.id] === i) {
+    delete S.answers[q.id];
+  } else {
+    S.answers[q.id] = i;
+  }
   save(); render(false);
 }
 function toggleFlag() { const q = S.qs[S.index]; S.flags.has(q.id) ? S.flags.delete(q.id) : S.flags.add(q.id); save(); render(false); }
@@ -427,6 +463,7 @@ async function init() {
       S.endAt = saved.endAt ? Math.min(saved.endAt, S.startedAt + totalSecs() * 1000 + 60000) : null;   // a resumed test never gets extra time
       toast('Resumed your session');
     }
+    if (instant && Object.keys(S.answers).length) await restorePracticeFeedback();
     renderHeader(); startTimer(); render(false); save();
   } catch (err) {
     console.error('[cbt] init failed:', err); el.sub.textContent = 'Connection problem';

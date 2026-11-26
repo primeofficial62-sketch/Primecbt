@@ -177,16 +177,19 @@ function groupByCode(list) {
 }
 
 async function loadCourses() {
-  let res = await sb.from('courses').select('*, questions(count)');
-  if (res.error) res = await sb.from('courses').select('*');
+  const [res, counts] = await Promise.all([
+    sb.from('courses').select('*'),
+    sb.rpc('question_counts')
+  ]);
   if (res.error) return showHomeError(res.error.message);
+  const countByCourse = new Map((counts.data || []).map(row => [String(row.course_id), Number(row.n)]));
   const pick = (r, ks) => { for (const k of ks) if (r[k] != null && r[k] !== '') return r[k]; return ''; };
   const all = (res.data || []).map(c => ({
     ...c,
     title: pick(c, ['title','name','course_name','course_title','subject']) || 'Untitled course',
     code: pick(c, ['code','course_code']),
     description: pick(c, ['description','desc','details','summary']),
-    count: Array.isArray(c.questions) && c.questions[0] ? Number(c.questions[0].count) : (c.questions ? 0 : null)
+    count: countByCourse.has(String(c.id)) ? countByCourse.get(String(c.id)) : (counts.error ? null : 0)
   }));
   courses = groupByCode(all);
   const label = c => String(c.code || c.title || '');
