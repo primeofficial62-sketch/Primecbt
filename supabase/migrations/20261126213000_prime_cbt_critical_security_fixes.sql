@@ -5,7 +5,7 @@
 REVOKE SELECT ON TABLE public.questions FROM PUBLIC, anon, authenticated;
 GRANT SELECT (
   id, course_id, question, options, difficulty, created_at,
-  image_url, svg, source_material_id, source_quote, ai_generated
+  image_url, svg
 ) ON TABLE public.questions TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_practice_questions(
