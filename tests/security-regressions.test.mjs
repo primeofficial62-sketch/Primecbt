@@ -106,8 +106,9 @@ test('student public profiles use a safe RLS-protected table, not a definer view
 
 test('student setup only requests the granted question id column for exact counts', async () => {
   const setup = await read('../practice-setup.html');
-  assert.ok(setup.includes(".select('id', { count: 'exact', head: true })"));
-  assert.doesNotMatch(setup, /countQuestions\(difficulty\)[\s\S]*?select\('\*'/);
+  const countBlock = setup.match(/async function countQuestions\(difficulty\)[\s\S]*?\n    }/)?.[0] || '';
+  assert.ok(countBlock.includes(".select('id', { count: 'exact', head: true })"));
+  assert.doesNotMatch(countBlock, /select\('\*'/);
 });
 
 test('student-only SECURITY DEFINER RPCs and trigger handlers are not callable by anon clients', async () => {
