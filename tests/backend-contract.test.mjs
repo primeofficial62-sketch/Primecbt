@@ -23,6 +23,19 @@ test('assistant sends only the fields needed for recent test-result context', ()
   assert.doesNotMatch(block[0], /select=\*/);
 });
 
+
+test('PRIME COMMAND routes common admin requests instead of falling through to Gemini', () => {
+  const start = admin.indexOf('async prime_command(req, res, b) {');
+  const end = admin.indexOf('\n  },', start);
+  const block = admin.slice(start, end);
+  assert.ok(start >= 0 && end > start, 'prime_command handler should exist');
+  assert.match(block, /if \(\/\\b\(question bank/);
+  assert.doesNotMatch(block, /\\\\b/);
+  const questionBankIntent = /\b(question bank|recent questions|review questions|show questions|list questions)\b/i;
+  assert.equal(questionBankIntent.test('Show me the latest questions in the question bank.'), true);
+  assert.equal(questionBankIntent.test('Show latest questions'), false);
+});
+
 test('admin Supabase requests have a bounded timeout', () => {
   assert.match(admin, /signal: AbortSignal\.timeout\(20000\)/);
 });

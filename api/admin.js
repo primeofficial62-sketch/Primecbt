@@ -1823,21 +1823,21 @@ const actions = {
       background(sb('/rest/v1/prime_command_tasks', {method:'POST',body:{task_type:type,title:title,instruction:message.slice(0,500),status:status,result:result||{}}}));
     };
     let reply = '', result = {};
-    if (/\\b(approval|approvals|pending approval)\\b/.test(low)) {
+    if (/\b(approval|approvals|pending approval)\b/.test(low)) {
       const data = await actions.pc_approvals(req);
       const pending = (data.approvals||[]).filter(function(x){return x.status==='pending';});
       reply = pending.length ? 'There are ' + pending.length + ' pending approval(s):\\n' + pending.map(function(x){return '• '+x.title+' — '+x.description;}).join('\\n') + '\\nOpen the Approvals panel to approve or reject each request.' : 'There are no pending approvals.';
       result = {pending_approvals:pending.length};
-    } else if (/\\b(task history|recent tasks|tasks)\\b/.test(low)) {
+    } else if (/\b(task history|recent tasks|tasks)\b/.test(low)) {
       const data = await actions.pc_task_history(req);
       reply = (data.tasks||[]).length ? 'Recent PRIME COMMAND activity:\\n' + data.tasks.slice(0,10).map(function(x){return '• '+x.title+' — '+x.status+' ('+new Date(x.created_at).toLocaleString()+')';}).join('\\n') : 'No task history yet.';
       result = {tasks:(data.tasks||[]).length};
-    } else if (/\\b(question bank|recent questions|review questions|show questions|list questions)\\b/.test(low)) {
+    } else if (/\b(question bank|recent questions|review questions|show questions|list questions)\b/.test(low)) {
       const data = await actions.pc_questions(req,res,{limit:12});
       reply = data.questions.length ? 'Latest questions in the question bank:\\n' + data.questions.map(function(x,i){return (i+1)+'. ['+x.course_title+'] '+x.question+'\\n   Difficulty: '+(x.difficulty||'not set')+' · '+(Array.isArray(x.options)?x.options.length:0)+' options';}).join('\\n') : 'No questions were found in the question bank.';
       result = {questions:data.questions.length};
-    } else if (/\\b(generate|write|create|add)\\b.*\\bquestions?\\b/.test(low)) {
-      const match = message.match(/\\b(?:for|in)\s+(.+?)(?:\s+(?:course|please|now))?\s*$/i);
+    } else if (/\b(generate|write|create|add)\b.*\bquestions?\b/.test(low)) {
+      const match = message.match(/\b(?:for|in)\s+(.+?)(?:\s+(?:course|please|now))?\s*$/i);
       const term = match ? clean(match[1]) : '';
       if (!term) {
         const courses = (await sb('/rest/v1/courses?select=id,title,code&order=title.asc&limit=100')).data || [];
@@ -1854,7 +1854,7 @@ const actions = {
           result = {matches:courses.length};
         }
       }
-    } else if (/\\b(exam|examination|test)\\b/.test(low) && /\\b(stat|average|attempt|performance|analytics|score|result)\\b/.test(low)) {
+    } else if (/\b(exam|examination|test)\b/.test(low) && /\b(stat|average|attempt|performance|analytics|score|result)\b/.test(low)) {
       const total = await safeCount('test_results');
       const rows = (await sb('/rest/v1/test_results?select=score,total_questions,course_title,course_code,created_at&order=created_at.desc&limit=500')).data || [];
       let earned=0, possible=0; const courses={};
@@ -1862,12 +1862,12 @@ const actions = {
       const avg=possible?Math.round(earned/possible*1000)/10:null;
       reply='Examination activity\\n• Total attempts: '+total+'\\n• Attempts analysed: '+rows.length+'\\n• Weighted average score: '+(avg===null?'Unavailable':avg+'%')+'\\n• Most active courses: '+(Object.keys(courses).sort(function(a,b){return courses[b]-courses[a];}).slice(0,5).map(function(k){return k+' ('+courses[k]+')';}).join(', ')||'No course breakdown available')+(rows.length<total?'\\nNote: course and score breakdown uses the latest 500 attempts.':'');
       result={total_attempts:total,attempts_analysed:rows.length,average_score_percent:avg};
-    } else if (/\\b(recent|new|latest)\\b/.test(low) && /\\b(student|students|signups?|joined)\\b/.test(low)) {
+    } else if (/\b(recent|new|latest)\b/.test(low) && /\b(student|students|signups?|joined)\b/.test(low)) {
       const rows=(await sb('/rest/v1/profiles?select=*&order=created_at.desc&limit=8')).data||[];
       reply=rows.length?'Recently registered students:\\n'+rows.map(function(x){return '• '+(x.full_name||x.name||'Student')+' — '+(x.email||'No email')+' · '+(x.department||'Department unavailable')+' · '+(x.level||'Level unavailable')+' · '+(x.created_at?new Date(x.created_at).toLocaleDateString():'Date unavailable');}).join('\\n'):'No student profiles were found.';
       result={recent_students:rows.length};
-    } else if (/\\b(student|students|learner|learners)\\b/.test(low) && /\\b(find|search|who|look up|named|called)\\b/.test(low)) {
-      const m=message.match(/\\b(?:find|search|look up|who is|who are|named|called)\s+(?:student\s+)?(.+?)\s*$/i);
+    } else if (/\b(student|students|learner|learners)\b/.test(low) && /\b(find|search|who|look up|named|called)\b/.test(low)) {
+      const m=message.match(/\b(?:find|search|look up|who is|who are|named|called)\s+(?:student\s+)?(.+?)\s*$/i);
       const term=clean(m?m[1]:message.replace(/students?/ig,''));
       if(term.length<2) reply='Please include a student name, email, department or level to search.';
       else {
@@ -1876,11 +1876,11 @@ const actions = {
         reply=rows.length?'Found '+rows.length+' matching student profile(s):\\n'+rows.map(function(x){return '• '+(x.full_name||x.name||'Student')+' — '+(x.email||'No email')+' · '+(x.department||'Department unavailable')+' · '+(x.level||'Level unavailable');}).join('\\n'):'No matching student profiles found.';
         result={matches:rows.length};
       }
-    } else if (/\\b(overview|platform|dashboard|how many|total students|registered students|student count)\\b/.test(low)) {
+    } else if (/\b(overview|platform|dashboard|how many|total students|registered students|student count)\b/.test(low)) {
       const s=await actions.stats(req);
       reply='PRIME CBT live overview\\n• Registered students: '+s.students+'\\n• Online in last 5 minutes: '+s.online+'\\n• Examination attempts: '+s.tests+'\\n• Questions: '+s.questions+'\\n• Courses: '+s.courses+'\\n• Learning materials: '+s.materials+'\\n• Discussion posts: '+s.posts+'\\n• Open support tickets: '+s.tickets+'\\n• New reviews: '+s.reviews;
       result=s;
-    } else if (/\\b(help|capabilities|what can you do|how can you help)\\b/.test(low)) {
+    } else if (/\b(help|capabilities|what can you do|how can you help)\b/.test(low)) {
       reply='I can give you a live PRIME CBT overview, report exam attempts and average scores, find recently registered students, search student profiles, review and edit questions, prepare question generation, create question drafts and manage approvals. Changes to the question bank or generation queue always wait for your approval.';
       result={mode:'help'};
     } else {
