@@ -10,6 +10,10 @@ create index if not exists prime_command_audit_approval_id_idx
 create index if not exists question_jobs_course_id_idx
   on public.question_jobs (course_id);
 
+-- Remove exact duplicate indexes, retaining the duplicate with observed scans.
+drop index if exists public.departments_school_id_idx;
+drop index if exists public.idx_faculties_school_id;
+
 -- These explicit anon/authenticated policies duplicate the equivalent PUBLIC policies.
 drop policy if exists "Public can read departments" on public.departments;
 drop policy if exists "Public can read faculties" on public.faculties;
@@ -41,5 +45,12 @@ create policy "authorized email writes topics" on public.material_topics
   for all to authenticated
   using (((select auth.jwt()) ->> 'email') = 'imodumicheal519@gmail.com')
   with check (((select auth.jwt()) ->> 'email') = 'imodumicheal519@gmail.com');
+
+-- Pin search_path on the remaining advisor-flagged helper functions.
+alter function public._norm_school(text) set search_path = pg_catalog;
+alter function public.qt_text(public.questions) set search_path = pg_catalog, public;
+alter function public.enforce_max_pro_packages() set search_path = pg_catalog, public;
+alter function tex_tmp.sup(text) set search_path = pg_catalog, tex_tmp;
+alter function tex_tmp.pw(text) set search_path = pg_catalog, tex_tmp;
 
 commit;
