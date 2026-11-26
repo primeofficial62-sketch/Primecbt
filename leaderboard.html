@@ -509,8 +509,7 @@
     /* ───── Realtime ───── */
     function startRealtime() {
       supabaseClient.channel('leaderboard')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'exam_attempts' }, scheduleRefresh)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, scheduleRefresh)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leaderboard_events' }, scheduleRefresh)
         .subscribe((status) => {
           const dot = $('liveDot');
           if (status === 'SUBSCRIBED') { dot.classList.remove('hidden'); dot.classList.add('flex'); showError(''); }
