@@ -2429,7 +2429,7 @@ switcher.dataset.mode = mode;
     { code: 'university',   title: 'University Examinations', description: 'Course tests and past questions for your degree.',            icon: 'clipboard', enabled: true,  coming_soon: false },
     { code: 'professional', title: 'Professional Examinations', description: 'Professional certification exams.',                          icon: 'briefcase', enabled: false, coming_soon: true }
   ];
-  let pathCfg = { exam: true, inst: true };
+  let pathCfg = { exam: false, inst: true };
   let examCats = DEFAULT_EXAMS.slice();
 
   const examVisible = c => c.visible !== false && (c.coming_soon || c.enabled !== false);
@@ -2437,9 +2437,10 @@ switcher.dataset.mode = mode;
 
   async function loadRegConfig() {
     try {
-      const [p, e] = await Promise.all([
+      const [p, e, s] = await Promise.all([
         supabaseClient.from('registration_pathways').select('key,enabled'),
-        supabaseClient.from('exam_categories').select('code,title,description,icon,enabled,coming_soon,visible,sort_order')
+        supabaseClient.from('exam_categories').select('code,title,description,icon,enabled,coming_soon,visible,sort_order'),
+        supabaseClient.from('app_settings').select('value').eq('id', 'exam_prep').limit(1)
       ]);
       if (!p.error && p.data && p.data.length) {
         p.data.forEach(r => {
@@ -2450,12 +2451,29 @@ switcher.dataset.mode = mode;
       if (!e.error && e.data && e.data.length) {
         examCats = e.data.slice().sort((a, b) => ((a.sort_order ?? 999) - (b.sort_order ?? 999)));
       }
+      // The Admin > Exam preparation switch is the source of truth for this pathway.
+      // app_settings is publicly readable (RLS SELECT policy); writes remain admin-only.
+      if (!s.error && s.data && s.data.length) {
+        pathCfg.exam = s.data[0].value === 'live';
+      }
     } catch (err) { /* keep defaults */ }
     applyConfig();
   }
 
   function applyConfig() {
-    pathList.querySelectorAll('.path-card').forEach(b => { b.hidden = !pathCfg[b.dataset.path]; });
+    pathList.querySelectorAll('.path-card').forEach(b => {
+      const isExam = b.dataset.path === 'exam';
+      if (isExam) {
+        const live = !!pathCfg.exam;
+        b.classList.toggle('is-soon', !live);
+        if (live) b.removeAttribute('data-soon');
+        else b.dataset.soon = 'true';
+        b.setAttribute('aria-disabled', String(!live));
+        const badge = b.querySelector('.soon-badge');
+        if (badge) badge.hidden = live;
+      }
+      b.hidden = !pathCfg[b.dataset.path];
+    });
     pathEmpty.hidden = pathCfg.exam || pathCfg.inst;
     // drop anything that is no longer available
     examSel = examSel.filter(code => examCats.some(c => c.code === code && examPickable(c)));
