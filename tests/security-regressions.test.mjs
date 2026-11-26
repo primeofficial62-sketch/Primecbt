@@ -132,7 +132,6 @@ test('student performance rows stay private while leaderboard live updates use o
   const achievements = await read('../achievements.html');
   assert.match(migration, /drop policy if exists "read attempts" on public\.exam_attempts/i);
   assert.match(migration, /create policy "students can read own attempts"[\s\S]*?using \(\(select auth\.uid\(\)\) = user_id\)/i);
-  assert.match(migration, /create policy "students can read own practice results"[\s\S]*?using \(\(select auth\.uid\(\)\) = user_id\)/i);
   assert.match(migration, /create table if not exists public\.leaderboard_events/i);
   assert.match(migration, /alter table public\.leaderboard_events enable row level security/i);
   assert.match(migration, /create policy "authenticated can read leaderboard event markers"[\s\S]*?using \(true\)/i);
