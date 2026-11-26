@@ -24,6 +24,16 @@ test('External Exams has its own sign-up and login route without changing Univer
   assert.match(auth, /external_exam_profiles/);
 });
 
+test('External registration and login are routed into the External Exams app, not University home', async () => {
+  const rootAuth = await read('auth.html');
+  assert.match(rootAuth, /prime_experience:\s*'external_exams'/);
+  assert.match(rootAuth, /userMeta\.pathway === 'exam_preparation'/);
+  assert.match(rootAuth, /dest = '\/external\/auth\.html\?mode=login'/);
+  assert.match(rootAuth, /externalExamUser[\s\S]*?window\.location\.replace\('\/external\/auth\.html\?mode=login'\)/);
+  assert.match(rootAuth, /sessionStorage\.setItem\(NEXT_KEY, '\/external\/auth\.html\?mode=login'\)/);
+  assert.match(rootAuth, /if \(needsProfileSetup\(session\.user\)\)[\s\S]*?profile-setup\.html/);
+});
+
 test('External Exams uses the existing PRIME-CBT brand palette and normal responsive mobile sizing', async () => {
   const css = await read('external/app.css');
   assert.match(css, /--bg:#070D1C/);

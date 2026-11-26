@@ -1841,8 +1841,17 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     if (!n) { try { n = safeNext(sessionStorage.getItem(NEXT_KEY)); } catch (e) {} }
     return n || 'home.html';
   }
-  function goNext(replace) {
-    const dest = nextUrl();
+  async function goNext(replace) {
+    let dest = nextUrl();
+    try {
+      const { data } = await supabaseClient.auth.getSession();
+      const userMeta = data?.session?.user?.user_metadata || {};
+      // External examination candidates must enter the separate External Exams app,
+      // never the University home page. Keep explicit University routing unchanged.
+      if (userMeta.prime_experience === 'external_exams' || userMeta.pathway === 'exam_preparation') {
+        dest = '/external/auth.html?mode=login';
+      }
+    } catch (err) { /* retain the safe requested destination */ }
     try { sessionStorage.removeItem(NEXT_KEY); } catch (e) {}
     if (replace) window.location.replace(dest); else window.location.href = dest;
   }
@@ -2696,7 +2705,8 @@ switcher.dataset.mode = mode;
 
       const meta = {
         full_name: fullname,
-        pathway: pathway === 'inst' ? 'institutional_learning' : 'exam_preparation'
+        pathway: pathway === 'inst' ? 'institutional_learning' : 'exam_preparation',
+        ...(pathway === 'exam' ? { prime_experience: 'external_exams' } : {})
       };
 
       if (pathway === 'inst') {
@@ -3199,8 +3209,19 @@ resendResetLink.addEventListener('click', async (e) => {
 
     markReturningUser();
 
-    // Every Google user is kept. If setup isn't finished, send them to it
-    // (whichever tab they used); otherwise straight to home.
+    // External Exams users must bypass University profile setup and enter
+    // the dedicated External Exams authentication hand-off first.
+    const userMeta = session.user?.user_metadata || {};
+    const externalExamUser =
+      userMeta.prime_experience === 'external_exams' ||
+      userMeta.pathway === 'exam_preparation' ||
+      nextUrl().startsWith('/external/');
+    if (externalExamUser) {
+      window.location.replace('/external/auth.html?mode=login');
+      return;
+    }
+
+    // University users retain the existing profile-setup and home routing.
     if (needsProfileSetup(session.user)) {
       window.location.replace('profile-setup.html');
       return;
@@ -3256,6 +3277,10 @@ resendResetLink.addEventListener('click', async (e) => {
   document.querySelectorAll('.btn-oauth').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (window.PrimeAnalytics) PrimeAnalytics.track('cta_clicked', { cta_id: 'google_auth', cta_location: '/auth.html' });
+      // Preserve the selected External Exams pathway across Google's redirect.
+      if (pathway === 'exam') {
+        try { sessionStorage.setItem(NEXT_KEY, '/external/auth.html?mode=login'); } catch (e) {}
+      }
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin + '/auth.html' }
