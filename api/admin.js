@@ -1635,6 +1635,12 @@ const actions = {
     return { approvals: rows };
   },
 
+  async pc_audit_history(req) {
+    await requireAuth(req);
+    const rows = (await sb('/rest/v1/prime_command_audit?select=id,approval_id,action_type,title,outcome,details,created_at&order=created_at.desc&limit=30')).data || [];
+    return { audit: rows };
+  },
+
   async pc_questions(req, res, b) {
     await requireAuth(req);
     const limit = Math.min(Math.max(parseInt(b.limit, 10) || 12, 1), 30);
