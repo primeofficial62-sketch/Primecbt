@@ -697,7 +697,14 @@ button{font-family:inherit}
     await sb.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', me.id);
   }
 
-  setInterval(() => { renderMembers(); updateChatHeader(); }, 30_000);
+  setInterval(async () => {
+    try {
+      // Other students' private profile rows are no longer readable; refresh their safe public cards.
+      await loadProfiles();
+      await Promise.all([...convos.keys()].map(ensureProfile));
+      renderMembers(); renderChats(); updateChatHeader();
+    } catch (_) {}
+  }, 30_000);
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible' || !me) return;
     heartbeat();
