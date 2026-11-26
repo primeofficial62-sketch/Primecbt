@@ -487,7 +487,7 @@
     async function ensureProfiles(ids) {
       const need = [...new Set(ids)].filter((id) => id && !profiles.has(id));
       if (!need.length) return;
-      const { data } = await supabaseClient.from('profiles')
+      const { data } = await supabaseClient.from('student_public_profiles')
         .select('id, full_name, department').in('id', need);
       (data || []).forEach((p) => profiles.set(p.id, p));
       need.forEach((id) => { if (!profiles.has(id)) profiles.set(id, { id, full_name: null, department: null }); });
