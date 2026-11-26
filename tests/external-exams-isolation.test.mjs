@@ -13,6 +13,7 @@ test('External Exams has its own sign-up and login route without changing Univer
   assert.ok(externalStart >= 0 && externalEnd > externalStart);
   const externalSection = index.slice(externalStart, externalEnd);
   assert.match(externalSection, /\/external\/auth\.html\?mode=register/);
+  assert.ok(externalSection.includes('/external/auth.html?mode=login'));
   const universityStart = index.indexOf('<section class="university" id="university">');
   const universityEnd = index.indexOf('<!-- EXTERNAL EXAMINATIONS -->', universityStart);
   const universitySection = index.slice(universityStart, universityEnd);
