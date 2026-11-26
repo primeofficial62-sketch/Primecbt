@@ -1,0 +1,5 @@
+project_id = "prime-cbt"
+
+# The converter uses a server-only service-role bearer check in its handler.
+[functions.convert-to-pdf]
+verify_jwt = false
