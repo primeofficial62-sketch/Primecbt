@@ -65,3 +65,13 @@ test('maintenance RPC migration revokes public and authenticated access', async 
   assert.match(migration, /revoke execute on function public\.site_settings_get\(\) from public, anon, authenticated/i);
   assert.match(migration, /revoke execute on function public\.site_settings_set\(boolean, text, text\[\]\) from public, anon, authenticated/i);
 });
+
+test('database performance migration preserves scoped RLS and adds missing FK indexes', async () => {
+  const migration = await readFile(new URL('../supabase/migrations/20261126195500_backend_rls_and_fk_performance.sql', import.meta.url), 'utf8');
+  assert.match(migration, /create index if not exists question_jobs_course_id_idx/i);
+  assert.match(migration, /create index if not exists prime_command_audit_approval_id_idx/i);
+  assert.match(migration, /create index if not exists payment_refunds_payment_id_idx/i);
+  assert.match(migration, /using \(\(select auth\.uid\(\)\) = user_id\)/i);
+  assert.match(migration, /using \(user_id = \(select auth\.uid\(\)\)\)/i);
+  assert.match(migration, /drop policy if exists "Public can read schools"/i);
+});
