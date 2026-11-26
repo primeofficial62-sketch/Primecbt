@@ -1987,8 +1987,36 @@ switcher.dataset.mode = mode;
         ['Faculty of Technology', ['Agricultural and Environmental Engineering', 'Civil Engineering', 'Electrical and Electronics Engineering', 'Food Technology', 'Industrial and Production Engineering', 'Mechanical Engineering', 'Petroleum Engineering', 'Wood Products Engineering']],
         ['Faculty of Veterinary Medicine', ['Veterinary Anatomy', 'Veterinary Medicine', 'Veterinary Microbiology', 'Veterinary Parasitology and Entomology', 'Veterinary Pathology', 'Veterinary Pharmacology and Toxicology', 'Veterinary Physiology and Biochemistry', 'Veterinary Public Health and Preventive Medicine', 'Veterinary Surgery and Radiology']]
       ].map(([name, departments]) => ({ name, departments }))
+     },
+
+     'University of Lagos': {
+      label: 'Faculty',
+      list: [
+        ['Faculty of Architecture', ['Architecture', 'Landscape Architecture and Urban Design', 'Interior Architecture and Design']],
+        ['Faculty of Arts', ['English', 'European Languages and Integration Studies', 'History and Strategic Studies', 'Linguistics, African and Asian Studies', 'Philosophy', 'Religious Studies']],
+        ['Faculty of Basic Clinical Sciences', ['Anatomic and Molecular Pathology', 'Haematology and Blood Transfusion', 'Medical Microbiology and Parasitology', 'Clinical Pathology', 'Clinical Pharmacology']],
+        ['Faculty of Basic Medical Sciences', ['Anatomy', 'Physiology', 'Medical Biochemistry', 'Pharmacology, Therapeutics and Toxicology']],
+        ['Faculty of Clinical Sciences', ['Anaesthesia', 'Community Health and Primary Care', 'Medicine', 'Obstetrics and Gynaecology', 'Ophthalmology', 'Paediatrics', 'Psychiatry', 'Radiation Biology, Radiotherapy and Radiodiagnosis', 'Surgery']],
+        ['Faculty of Communication and Media Studies', ['Mass Communication', 'Public Relations and Advertising', 'Journalism, Broadcasting and Media Studies']],
+        ['Faculty of Computing and Informatics', ['Computer Science', 'Intelligent Systems and Robotics', 'Cybersecurity and Software Engineering']],
+        ['Faculty of Creative Arts', ['Music and Sound Production', 'Theatre Arts and Film Studies', 'Fine and Applied Arts']],
+        ['Faculty of Dental Sciences', ['Child Dental Health', 'Oral and Maxillofacial Pathology/Biology', 'Oral and Maxillofacial Surgery', 'Preventive Dentistry', 'Restorative Dentistry']],
+        ['Faculty of Education', ['Adult Education', 'Arts Education', 'Educational Foundations', 'Educational Management', 'Human Kinetics and Health Education', 'Science Education', 'Social Sciences Education', 'Technology and Vocational Education']],
+        ['Faculty of Engineering', ['Biomedical Engineering', 'Chemical Engineering', 'Petroleum and Gas Engineering', 'Civil and Environmental Engineering', 'Electrical and Electronics Engineering', 'Mechanical Engineering', 'Metallurgical and Materials Engineering', 'Surveying and Geoinformatics', 'Systems Engineering']],
+        ['Faculty of Environmental Sciences', ['Building', 'Estate Management', 'Quantity Surveying', 'Urban and Regional Planning']],
+        ['Faculty of Health Professions', ['Medical Laboratory Science', 'Nursing Science', 'Physiotherapy', 'Radiography']],
+        ['Faculty of Law', ['Commercial and Industrial Law', 'Jurisprudence and International Law', 'Private and Property Law', 'Public Law']],
+        ['Faculty of Life Sciences', ['Biochemistry', 'Botany', 'Cell Biology and Genetics', 'Marine Science', 'Microbiology', 'Zoology', 'Fisheries and Aquaculture']],
+        ['Faculty of Management Sciences', ['Accounting', 'Actuarial Science and Insurance', 'Business Administration', 'Employment Relations and Human Resource Management', 'Finance']],
+        ['Faculty of Pharmacy', ['Clinical Pharmacy and Biopharmacy', 'Pharmaceutical Chemistry', 'Pharmaceutical Microbiology and Biotechnology', 'Pharmaceutics and Pharmaceutical Technology', 'Pharmacognosy']],
+        ['Faculty of Physical and Earth Sciences', ['Chemistry', 'Geosciences', 'Mathematics', 'Physics', 'Statistics']],
+        ['Faculty of Social Sciences', ['Economics', 'Geography', 'Library and Information Science', 'Political Science', 'Psychology', 'Social Work', 'Sociology']]
+      ].map(([name, departments]) => ({ name, departments }))
+  }
     }
   };
+
+  
   let lastAcadSchool = null;
   function schoolCfg() { return SCHOOL_ACADEMICS[regSchool.value] || null; }
   function currentAcademics() { const c = schoolCfg(); return c ? c.list : academics; }
@@ -2050,7 +2078,7 @@ switcher.dataset.mode = mode;
 
     function isFunaab() { return regSchool.value === FUNAAB_SCHOOL || !!SCHOOL_ACADEMICS[regSchool.value]; }
 
-  function applySchoolMode() {
+    function applySchoolMode() {
     const none = !regSchool.value;
     const funaab = isFunaab();
     fieldCollege.hidden = none || !funaab;
@@ -2058,6 +2086,12 @@ switcher.dataset.mode = mode;
     fieldCollegeOther.hidden = none || funaab;
     fieldDeptOther.hidden = none || funaab;
     fieldSchoolOther.hidden = regSchool.value !== NOT_LISTED;
+    // rebuild the faculty/college list whenever the school changes
+    if (lastAcadSchool !== regSchool.value) {
+      lastAcadSchool = regSchool.value;
+      regCollege.value = '';
+      fillColleges();
+    }
     syncDropdowns();
   }
 
@@ -2090,8 +2124,10 @@ switcher.dataset.mode = mode;
 
   function fillColleges() {
     const word = (schoolCfg() && schoolCfg().label) || 'College';
-    const lbl = document.querySelector('label[for="regCollege"]');
+        const lbl = fieldCollege.querySelector('.field-label');
     if (lbl) lbl.textContent = word;
+    const errEl = fieldCollege.querySelector('.field-error');
+    if (errEl) errEl.textContent = 'Please select your ' + word.toLowerCase();
     regCollege.innerHTML = '';
     regCollege.add(new Option('Select your ' + word.toLowerCase(), ''));
     (currentAcademics() || []).forEach(c => regCollege.add(new Option(c.name, c.name)));
@@ -2344,8 +2380,7 @@ switcher.dataset.mode = mode;
     new MutationObserver(render).observe(select, { childList: true, attributes: true, attributeFilter: ['disabled'] });
     render();
   }
-    if (lastAcadSchool !== regSchool.value) { lastAcadSchool = regSchool.value; fillColleges(); }
-  
+ 
   function syncDropdowns() {
     [regInstType, regSchool, regCollege, regDept].forEach(sel => { if (sel._ddRender) sel._ddRender(); });
   }
