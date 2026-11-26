@@ -1,0 +1,27 @@
+name: Backend checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "fix/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-and-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check backend JavaScript syntax
+        run: |
+          node --check api/admin.js
+          node --check api/assistant.js
+      - name: Run backend contract tests
+        run: node --test tests/backend-contract.test.mjs
