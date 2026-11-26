@@ -1998,6 +1998,12 @@ switcher.dataset.mode = mode;
     return out;
   }
   function currentAcademicsPlaceholder() {}
+    // faculties/colleges for the selected school: admin-set list first, else FUNAAB's built-in colleges
+  let lastAcadSchool = null;
+  function currentAcademics() {
+    const cfg = schoolCfg();
+    return cfg ? cfg.list : academics;
+  }
   const regSchool = document.getElementById('regSchool');
   const regCollege = document.getElementById('regCollege');
   const regDept = document.getElementById('regDept');
@@ -2009,9 +2015,7 @@ switcher.dataset.mode = mode;
   const fieldDeptOther = document.getElementById('fieldDeptOther');
 
   let academics = null;     // [{ name, departments: [name, ...] }]
-  let pendingAcad = null;   // saved college/department waiting for the lists to load
-
-  // ========== INSTITUTION LIST (from institutions.js) ==========
+  let pendingAcad = null;   // saved college/department waiting for the lists to load  // ========== INSTITUTION LIST (from institutions.js) ==========
   // Compiled from public NUC / NBTE / NCCE lists. Not an official register.
   const regInstType = document.getElementById('regInstType');
   const regSchoolOther = document.getElementById('regSchoolOther');
@@ -2114,8 +2118,6 @@ switcher.dataset.mode = mode;
     applyPendingAcad();
   }
 
-  async function loadAcademics() {
-    try {
     async function loadAcademics() {
     try {
       const [c, d] = await Promise.all([
