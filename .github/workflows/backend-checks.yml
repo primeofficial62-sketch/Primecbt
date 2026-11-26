@@ -23,6 +23,7 @@ jobs:
         run: |
           node --check api/admin.js
           node --check api/assistant.js
+          node --check api/study-tools.js
       - name: Set up Deno
         uses: denoland/setup-deno@v2
         with:

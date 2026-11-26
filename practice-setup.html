@@ -745,7 +745,7 @@
 
     async function countQuestions(difficulty) {
       let q = db.from(T.questions)
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .in(state.qCourseCol, courseIdsParam.length ? courseIdsParam : [state.course[C.courseId]]);
       if (difficulty && state.qDiffCol) q = q.ilike(state.qDiffCol, difficulty);
       const { count, error } = await q;

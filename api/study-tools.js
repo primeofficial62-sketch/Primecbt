@@ -1,11 +1,12 @@
 // Vercel Node function: /api/study-tools   (summaries and flashcards from one PDF material)
 // Save as:  api/study-tools.js
 // Needs: "pdf-parse": "1.1.1" in package.json (you already have it for admin.js)
-//        GEMINI_API_KEY in Vercel environment variables
+//        GEMINI_API_KEY and SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables
 // Add to vercel.json:  "functions": { "api/study-tools.js": { "maxDuration": 60 } }
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || 'https://xuofkjjhupgmrphzgyun.supabase.co').replace(/\/$/, '');
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 const MODELS = [...new Set([
@@ -37,6 +38,26 @@ async function supa(path, token, opts) {
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
   return { ok: true, status: res.status, data };
+}
+
+async function consumeQuota(userId) {
+  if (!SUPABASE_SERVICE_ROLE_KEY || !userId) return { ok: false, data: null };
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/consume_ai_quota', {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: 'Bearer ' + SUPABASE_SERVICE_ROLE_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ p_user_id: userId, p_limit: DAILY_LIMIT }),
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!res.ok) return { ok: false, data: null };
+    return { ok: true, data: await res.json() };
+  } catch (_) {
+    return { ok: false, data: null };
+  }
 }
 
 async function callGemini(system, prompt) {
@@ -93,10 +114,14 @@ module.exports = async function handler(req, res) {
     if (action !== 'summary' && action !== 'flashcards') throw new HttpError(400, 'Unknown action.');
     if (!isId(String(b.material_id))) throw new HttpError(400, 'Choose a material first.');
 
-    // Daily limit (shared with the chat). Skipped if setup-ai.sql has not been run.
-    const q = await supa('/rest/v1/rpc/ai_use_quota', token, { method: 'POST', body: { p_limit: DAILY_LIMIT } });
-    if (q.ok && q.data && q.data.allowed === false) {
-      throw new HttpError(429, 'You have used your ' + DAILY_LIMIT + ' assistant uses for today. Come back tomorrow.');
+    // Daily limit (shared with the chat). Never run expensive AI work when quota
+    // enforcement is unavailable or returns an unexpected response.
+    const q = await consumeQuota(who.data.id);
+    if (!q.ok || !q.data || typeof q.data.allowed !== 'boolean') {
+      throw new HttpError(503, 'The usage-limit service is temporarily unavailable. Please try again shortly.');
+    }
+    if (q.data.allowed === false) {
+      throw new HttpError(429, 'You have used your ' + (Number(q.data.limit) || DAILY_LIMIT) + ' assistant uses for today. Come back tomorrow.');
     }
 
     // The material (the student's own access rules apply)
