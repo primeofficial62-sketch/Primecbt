@@ -1733,7 +1733,7 @@ if (isPdf && f.size > PDF_INPUT_MAX) { st.textContent = 'That PDF is over 300 MB
     $('view').addEventListener('click',function(e){
       var s=e.target.closest('[data-prompt]');if(s){send(s.getAttribute('data-prompt'));return;}
       var ed=e.target.closest('[data-pc-edit]');
-      if(ed){var q=questionCache[ed.getAttribute('data-pc-edit')];if(q){editingQuestionId=q.id;$('pcQuestion').value=q.question||'';$('pcOptions').value=(q.options||[]).join(' | ');$('pcCorrect').value=String(q.correct_index||0);$('pcExplanation').value=q.explanation||'';toast('Edit the question, then submit it for approval.');}return;}
+      if(ed){var q=questionCache[ed.getAttribute('data-pc-edit')];if(q){editingQuestionId=q.id;$('pcCourse').value=String(q.course_id||'');$('pcQuestion').value=q.question||'';$('pcOptions').value=(q.options||[]).join(' | ');$('pcCorrect').value=String(q.correct_index||0);$('pcExplanation').value=q.explanation||'';toast('Edit the question, then submit it for approval.');}return;}
       var ap=e.target.closest('[data-pc-approve]'),rp=e.target.closest('[data-pc-reject]');
       if(ap||rp){var id=(ap||rp).getAttribute(ap?'data-pc-approve':'data-pc-reject');(async function(){try{await api('pc_decide_approval',{id:id,decision:ap?'approve':'reject'});toast(ap?'Approved and executed.':'Approval rejected.');refreshPanels();}catch(err){toast(err.message||'Could not process approval.',true);}})();return;}
       if(e.target.closest('#pcRefresh'))refreshPanels();
