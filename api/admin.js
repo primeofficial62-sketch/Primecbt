@@ -1620,7 +1620,7 @@ const actions = {
       } else throw e;
     }
     return { added: rows.length };
-  }
+  },
   
   // PRIME COMMAND — authenticated Gemini chat
   async prime_command(req, res, b) {
