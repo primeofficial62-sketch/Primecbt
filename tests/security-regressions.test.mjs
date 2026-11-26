@@ -196,6 +196,6 @@ test('completed-session review RPCs reveal answer keys only to the owning studen
   assert.match(migration, /revoke execute on function public\.get_practice_result\(uuid\) from public, anon/i);
   assert.match(migration, /revoke execute on function public\.get_retake_questions\(uuid\) from public, anon/i);
   assert.match(review, /rpc\('get_practice_result'/);
-  assert.match(results, /rpc\('get_practice_result'/);
+  assert.match(results, /RPC_NAME:\s*'get_practice_result'/);\n  assert.match(results, /db\.rpc\(CONFIG\.RPC_NAME/);
   assert.match(cbt, /rpc\('get_retake_questions'/);
 });
