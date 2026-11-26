@@ -32,6 +32,7 @@ async function countRows(path, token) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     method: 'HEAD',
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, Prefer: 'count=exact' },
+    signal: AbortSignal.timeout(8000),
   });
   if (!r.ok) throw new Error(`count ${r.status}`);
   const m = (r.headers.get('content-range') || '').match(/\/(\d+)$/);
@@ -41,6 +42,7 @@ async function countRows(path, token) {
 async function getRows(path, token) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(8000),
   });
   if (!r.ok) throw new Error(`rows ${r.status}`);
   return r.json();
@@ -225,6 +227,7 @@ export default async function handler(request) {
   try {
     const who = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(8000),
     });
     if (!who.ok) return json({ error: 'Your session has expired. Please sign in again.' }, 401);
     user = await who.json();
@@ -292,6 +295,7 @@ export default async function handler(request) {
           max_tokens: 2500,
           messages: [{ role: 'system', content: SYSTEM_PROMPT(data, results, notes) }, ...finalMessages],
         }),
+        signal: AbortSignal.timeout(90000),
       });
       if (upstream.ok || ![403, 404, 429, 503].includes(upstream.status)) break;
       console.error('Gemini model failed:', model, upstream.status);
