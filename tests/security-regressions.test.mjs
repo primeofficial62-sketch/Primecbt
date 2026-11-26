@@ -123,3 +123,24 @@ test('student-only SECURITY DEFINER RPCs and trigger handlers are not callable b
     assert.ok(migration.includes('REVOKE ALL ON FUNCTION public.' + fn + '() FROM PUBLIC, anon, authenticated'));
   }
 });
+
+
+test('student performance rows stay private while leaderboard live updates use opaque markers', async () => {
+  const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
+  const leaderboard = await read('../leaderboard.html');
+  const achievements = await read('../achievements.html');
+  assert.match(migration, /drop policy if exists "read attempts" on public\.exam_attempts/i);
+  assert.match(migration, /create policy "students can read own attempts"[\s\S]*?using \(\(select auth\.uid\(\)\) = user_id\)/i);
+  assert.match(migration, /create policy "students can read own practice results"[\s\S]*?using \(\(select auth\.uid\(\)\) = user_id\)/i);
+  assert.match(migration, /create table if not exists public\.leaderboard_events/i);
+  assert.match(migration, /alter table public\.leaderboard_events enable row level security/i);
+  assert.match(migration, /create policy "authenticated can read leaderboard event markers"[\s\S]*?using \(true\)/i);
+  assert.match(migration, /create trigger emit_leaderboard_event_after_attempt[\s\S]*?after insert on public\.exam_attempts/i);
+  assert.match(migration, /create trigger emit_leaderboard_event_after_profile_update[\s\S]*?after update of full_name, level, department on public\.profiles/i);
+  assert.match(migration, /revoke all on function public\.emit_leaderboard_event\(\) from public, anon, authenticated/i);
+  assert.match(migration, /alter publication supabase_realtime add table public\.leaderboard_events/i);
+  assert.match(leaderboard, /table: 'leaderboard_events'/);
+  assert.doesNotMatch(leaderboard, /table: 'exam_attempts'/);
+  assert.doesNotMatch(leaderboard, /table: 'profiles'/);
+  assert.match(achievements, /db\.from\(T\.results\)\.select\('xp_earned,total_questions,correct_answers,created_at'\)[\s\S]*?\.eq\('user_id', state\.user\.id\)/);
+});
