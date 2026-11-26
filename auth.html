@@ -1964,6 +1964,35 @@ switcher.dataset.mode = mode;
     ['College of Entrepreneurial and Development Studies', ['Accounting', 'Entrepreneurial Studies', 'Library and Information Science']]
   ];
 
+    // Per-school faculties/colleges + departments. Key = exact name from the institution list.
+  const SCHOOL_ACADEMICS = {
+    'University of Ibadan': {
+      label: 'Faculty',
+      list: [
+        ['Faculty of Agriculture', ['Agricultural Economics', 'Agricultural Extension and Rural Development', 'Agronomy', 'Animal Science', 'Crop Protection and Environmental Biology']],
+        ['Faculty of Arts', ['Arabic and Islamic Studies', 'Archaeology and Anthropology', 'Classics', 'Communication and Language Arts', 'English', 'European Studies', 'History', 'Linguistics and African Languages', 'Music', 'Philosophy', 'Religious Studies', 'Theatre Arts']],
+        ['Faculty of Basic Medical Sciences', ['Anatomy', 'Biochemistry', 'Medical Laboratory Science', 'Pharmacology and Therapeutics', 'Physiology']],
+        ['Faculty of Clinical Sciences', ['Anaesthesia', 'Medicine and Surgery (MBBS)', 'Nursing', 'Obstetrics and Gynaecology', 'Ophthalmology', 'Otorhinolaryngology', 'Paediatrics', 'Physiotherapy', 'Psychiatry', 'Radiology']],
+        ['Faculty of Computing', ['Computer Science and Artificial Intelligence', 'Data Science', 'Information and Communication Technology', 'Software Engineering']],
+        ['Faculty of Dentistry', ['Child Oral Health', 'Oral and Maxillofacial Surgery', 'Oral Pathology and Oral Medicine', 'Periodontology and Community Dentistry', 'Restorative Dentistry']],
+        ['Faculty of Economics and Management Sciences', ['Accounting', 'Banking and Finance', 'Economics', 'Marketing']],
+        ['Faculty of Education', ['Adult Education', 'Arts and Social Sciences Education', 'Counselling and Human Development Studies', 'Early Childhood and Educational Foundations', 'Educational Management', 'Human Kinetics and Health Education', 'Library, Archival and Information Studies', 'Science and Technology Education', 'Social Work', 'Special Education', 'Teacher Education']],
+        ['Faculty of Environmental Design and Management', ['Architecture', 'Estate Management', 'Quantity Surveying', 'Urban and Regional Planning']],
+        ['Faculty of Law', ['Jurisprudence and International Law', 'Private and Business Law', 'Public Law']],
+        ['Faculty of Pharmacy', ['Clinical Pharmacy and Pharmacy Administration', 'Pharmaceutical Chemistry', 'Pharmaceutical Microbiology', 'Pharmaceutics and Industrial Pharmacy', 'Pharmacognosy', 'Pharmacology and Toxicology']],
+        ['Faculty of Public Health', ['Environmental Health Sciences', 'Epidemiology and Medical Statistics', 'Health Policy and Management', 'Health Promotion and Education', 'Human Nutrition and Dietetics']],
+        ['Faculty of Renewable Natural Resources', ['Aquaculture and Fisheries Management', 'Forest Production and Products', 'Forest Resources Management', 'Social and Environmental Forestry', 'Wildlife and Ecotourism Management']],
+        ['Faculty of Science', ['Botany', 'Chemistry', 'Geology', 'Industrial Chemistry', 'Mathematics', 'Microbiology', 'Physics', 'Statistics', 'Zoology']],
+        ['Faculty of Social Sciences', ['Geography', 'Political Science', 'Psychology', 'Sociology']],
+        ['Faculty of Technology', ['Agricultural and Environmental Engineering', 'Civil Engineering', 'Electrical and Electronics Engineering', 'Food Technology', 'Industrial and Production Engineering', 'Mechanical Engineering', 'Petroleum Engineering', 'Wood Products Engineering']],
+        ['Faculty of Veterinary Medicine', ['Veterinary Anatomy', 'Veterinary Medicine', 'Veterinary Microbiology', 'Veterinary Parasitology and Entomology', 'Veterinary Pathology', 'Veterinary Pharmacology and Toxicology', 'Veterinary Physiology and Biochemistry', 'Veterinary Public Health and Preventive Medicine', 'Veterinary Surgery and Radiology']]
+      ].map(([name, departments]) => ({ name, departments }))
+    }
+  };
+  let lastAcadSchool = null;
+  function schoolCfg() { return SCHOOL_ACADEMICS[regSchool.value] || null; }
+  function currentAcademics() { const c = schoolCfg(); return c ? c.list : academics; }
+  
   const regSchool = document.getElementById('regSchool');
   const regCollege = document.getElementById('regCollege');
   const regDept = document.getElementById('regDept');
@@ -2019,7 +2048,7 @@ switcher.dataset.mode = mode;
     applySchoolMode();
   }
 
-  function isFunaab() { return regSchool.value === FUNAAB_SCHOOL; }
+    function isFunaab() { return regSchool.value === FUNAAB_SCHOOL || !!SCHOOL_ACADEMICS[regSchool.value]; }
 
   function applySchoolMode() {
     const none = !regSchool.value;
@@ -2032,11 +2061,12 @@ switcher.dataset.mode = mode;
     syncDropdowns();
   }
 
-  function fillDepartments(collegeName, selected) {
+    function fillDepartments(collegeName, selected) {
     regDept.innerHTML = '';
-    const col = (academics || []).find(c => c.name === collegeName);
+    const col = (currentAcademics() || []).find(c => c.name === collegeName);
     if (!col) {
-      regDept.add(new Option('Select your college first', ''));
+      const w = ((schoolCfg() && schoolCfg().label) || 'College').toLowerCase();
+      regDept.add(new Option('Select your ' + w + ' first', ''));
       regDept.disabled = true;
       return;
     }
@@ -2047,10 +2077,11 @@ switcher.dataset.mode = mode;
   }
 
   function applyPendingAcad() {
-    if (!pendingAcad || !academics) return;
+    const list = currentAcademics();
+    if (!pendingAcad || !list) return;
     const { college, department } = pendingAcad;
     pendingAcad = null;
-    if (college && academics.some(c => c.name === college)) {
+    if (college && list.some(c => c.name === college)) {
       regCollege.value = college;
       fillDepartments(college, department);
     }
@@ -2058,9 +2089,12 @@ switcher.dataset.mode = mode;
   }
 
   function fillColleges() {
+    const word = (schoolCfg() && schoolCfg().label) || 'College';
+    const lbl = document.querySelector('label[for="regCollege"]');
+    if (lbl) lbl.textContent = word;
     regCollege.innerHTML = '';
-    regCollege.add(new Option('Select your college', ''));
-    academics.forEach(c => regCollege.add(new Option(c.name, c.name)));
+    regCollege.add(new Option('Select your ' + word.toLowerCase(), ''));
+    (currentAcademics() || []).forEach(c => regCollege.add(new Option(c.name, c.name)));
     fillDepartments('');
     applyPendingAcad();
   }
@@ -2310,7 +2344,8 @@ switcher.dataset.mode = mode;
     new MutationObserver(render).observe(select, { childList: true, attributes: true, attributeFilter: ['disabled'] });
     render();
   }
-
+    if (lastAcadSchool !== regSchool.value) { lastAcadSchool = regSchool.value; fillColleges(); }
+  
   function syncDropdowns() {
     [regInstType, regSchool, regCollege, regDept].forEach(sel => { if (sel._ddRender) sel._ddRender(); });
   }
