@@ -1967,11 +1967,37 @@ switcher.dataset.mode = mode;
 
 
   
-  let lastAcadSchool = null;
-    const SCHOOL_ACADEMICS = {};   // filled from Admin > Universities
-  function schoolCfg() { return SCHOOL_ACADEMICS[regSchool.value] || null; }
-  function currentAcademics() { const c = schoolCfg(); return c ? c.list : academics; }
-  
+    const SCHOOL_ACADEMICS = {};   // key = normalised school name, filled from Admin
+  const ADMIN_SCHOOLS = [];      // schools added in Admin: [name, ownership, state, type]
+  const normName = s => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim();
+  function schoolCfg() { return SCHOOL_ACADEMICS[normName(regSchool.value)] || null; }
+
+  function isBuiltIn(name) {
+    const n = normName(name);
+    return Object.values(INST_DATA).some(arr => arr.some(r => normName(r[0]) === n));
+  }
+  function typeFromRow(sc) {
+    const raw = String(sc.type || sc.institution_type || sc.inst_type || sc.category || '').toLowerCase();
+    const nm = String(sc.name || '').toLowerCase();
+    if (raw.includes('poly') || nm.includes('polytechnic')) return 'polytechnic';
+    if (raw.includes('college') || raw.includes('education') || nm.includes('college')) return 'college';
+    return 'university';
+  }
+  // reads every row (Supabase returns max 1000 per request)
+  async function fetchAll(table, cols) {
+    const out = [], step = 1000;
+    for (let from = 0; ; from += step) {
+      let { data, error } = await supabaseClient.from(table).select(cols).order('id').range(from, from + step - 1);
+      if (error) {
+        ({ data, error } = await supabaseClient.from(table).select(cols).range(from, from + step - 1));
+        if (error) throw error;
+      }
+      out.push(...(data || []));
+      if (!data || data.length < step) break;
+    }
+    return out;
+  }
+  function currentAcademicsPlaceholder() {}
   const regSchool = document.getElementById('regSchool');
   const regCollege = document.getElementById('regCollege');
   const regDept = document.getElementById('regDept');
@@ -1998,9 +2024,12 @@ switcher.dataset.mode = mode;
   const REAL_TYPES = ['university', 'polytechnic', 'college'];
 
   // every institution as [name, ownership, state, type]
-  function rowsFor(type) {
+    function rowsFor(type) {
     const types = type === 'all' ? REAL_TYPES : [type];
-    return types.flatMap(t => (INST_DATA[t] || []).map(r => [r[0], r[1], r[2], t]));
+    return types.flatMap(t => [
+      ...(INST_DATA[t] || []).map(r => [r[0], r[1], r[2], t]),
+      ...ADMIN_SCHOOLS.filter(r => r[3] === t)
+    ]);
   }
   function typeOf(name) {
     const hit = rowsFor('all').find(r => r[0] === name);
@@ -2027,8 +2056,7 @@ switcher.dataset.mode = mode;
     applySchoolMode();
   }
 
-    function isFunaab() { return regSchool.value === FUNAAB_SCHOOL || !!SCHOOL_ACADEMICS[regSchool.value]; }
-
+        function isFunaab() { return regSchool.value === FUNAAB_SCHOOL || !!schoolCfg(); }
     function applySchoolMode() {
     const none = !regSchool.value;
     const funaab = isFunaab();
@@ -2088,16 +2116,20 @@ switcher.dataset.mode = mode;
 
   async function loadAcademics() {
     try {
+    async function loadAcademics() {
+    try {
       const [c, d] = await Promise.all([
-        supabaseClient.from('colleges').select('id,name,sort_order').eq('is_active', true),
-        supabaseClient.from('departments').select('name,college_id,sort_order').eq('is_active', true)
+        fetchAll('colleges', 'id,name,sort_order,is_active'),
+        fetchAll('departments', 'name,college_id,sort_order,is_active')
       ]);
-      if (c.error || d.error || !c.data || !c.data.length) throw (c.error || d.error || new Error('empty'));
+      const cols = c.filter(x => x.is_active === true);
+      const deps = d.filter(x => x.is_active === true);
+      if (!cols.length) throw new Error('empty');
       const bySort = (a, b) => ((a.sort_order ?? 999) - (b.sort_order ?? 999)) || a.name.localeCompare(b.name);
-      academics = c.data.slice().sort(bySort)
+      academics = cols.slice().sort(bySort)
         .map(col => ({
           name: col.name,
-          departments: d.data.filter(x => x.college_id === col.id).sort(bySort).map(x => x.name)
+          departments: deps.filter(x => x.college_id === col.id).sort(bySort).map(x => x.name)
         }))
         .filter(col => col.departments.length);
       if (!academics.length) throw new Error('no departments');
@@ -2106,25 +2138,45 @@ switcher.dataset.mode = mode;
     }
     await loadSchoolAcademics();
     lastAcadSchool = null;
-    applySchoolMode();
+    // rebuild the institution list now that admin schools are loaded
+    fillSchools(regSchool.value || window.__pendingSchool || '');
   }
-  // Universities set up in Admin > Universities (university > faculty/college > department)
+  // Schools set up in Admin (school > faculty/college/school > department)
   async function loadSchoolAcademics() {
     try {
       const [s, f, d] = await Promise.all([
-        supabaseClient.from('schools').select('id,name,unit_label'),
-        supabaseClient.from('faculties').select('id,school_id,name,sort_order'),
-        supabaseClient.from('departments').select('faculty_id,name,sort_order').not('faculty_id', 'is', null)
+        fetchAll('schools', '*'),
+        fetchAll('faculties', '*'),
+        fetchAll('departments', '*')
       ]);
-      if (s.error || f.error || d.error || !s.data || !f.data || !d.data) return;
-      const bySort = (a, b) => ((a.sort_order ?? 999) - (b.sort_order ?? 999)) || a.name.localeCompare(b.name);
-      s.data.forEach(sc => {
-        const list = f.data.filter(x => x.school_id === sc.id).sort(bySort)
-          .map(fac => ({ name: fac.name, departments: d.data.filter(x => x.faculty_id === fac.id).sort(bySort).map(x => x.name) }))
+      const live = x => x.is_active !== false;
+      const bySort = (a, b) => ((a.sort_order ?? 999) - (b.sort_order ?? 999)) || String(a.name).localeCompare(String(b.name));
+      const facs = f.filter(live);
+      const deps = d.filter(x => live(x) && x.faculty_id != null);
+
+      Object.keys(SCHOOL_ACADEMICS).forEach(k => delete SCHOOL_ACADEMICS[k]);
+      ADMIN_SCHOOLS.length = 0;
+
+      s.filter(live).forEach(sc => {
+        const name = String(sc.name || '').trim();
+        if (!name) return;
+        const type = typeFromRow(sc);
+        const list = facs.filter(x => x.school_id === sc.id).sort(bySort)
+          .map(fac => ({
+            name: fac.name,
+            departments: deps.filter(x => x.faculty_id === fac.id).sort(bySort).map(x => x.name)
+          }))
           .filter(fac => fac.departments.length);
-        if (list.length) SCHOOL_ACADEMICS[String(sc.name).trim()] = { label: sc.unit_label === 'College' ? 'College' : 'Faculty', list };
+        if (list.length) {
+          SCHOOL_ACADEMICS[normName(name)] = {
+            label: String(sc.unit_label || '').trim() || (type === 'polytechnic' ? 'School' : 'Faculty'),
+            list
+          };
+        }
+        // show it in the institution dropdown even if it isn't in institutions.js
+        if (!isBuiltIn(name)) ADMIN_SCHOOLS.push([name, '', sc.state || '', type]);
       });
-    } catch (e) { /* keep the built-in lists */ }
+    } catch (e) { console.warn('Admin sync failed:', e); }
   }
   // ========== DROPDOWNS THAT ALWAYS OPEN DOWNWARD ==========
   // Phone browsers decide for themselves whether a native <select> list opens
@@ -3148,6 +3200,7 @@ resendResetLink.addEventListener('click', async (e) => {
     if (v.fullname)   f1.fullname.value = v.fullname;
     if (v.email)      f1.email.value = v.email;
     if (v.instType && [...f2.inst_type.options].some(o => o.value === v.instType)) f2.inst_type.value = v.instType;
+    window.__pendingSchool = v.school;
     fillSchools(v.school);
     if (v.schoolOther) f2.school_other.value = v.schoolOther;
     applySchoolMode();
