@@ -184,3 +184,18 @@ test('answer review uses the owner-checked result RPC instead of direct answer-k
   assert.match(review, /item\.question_id/);
   assert.match(review, /item\.correct_index/);
 });
+
+
+test('completed-session review RPCs reveal answer keys only to the owning student', async () => {
+  const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
+  const review = await read('../answer-review.html');
+  const results = await read('../results.html');
+  const cbt = await read('../cbt.html');
+  assert.match(migration, /create or replace function public\.get_practice_result\(p_result_id uuid\)[\s\S]*?s\.user_id = auth\.uid\(\)[\s\S]*?s\.total_questions > 0/i);
+  assert.match(migration, /create or replace function public\.get_retake_questions\(p_session_id uuid\)[\s\S]*?s\.user_id = auth\.uid\(\)[\s\S]*?s\.total_questions > 0/i);
+  assert.match(migration, /revoke execute on function public\.get_practice_result\(uuid\) from public, anon/i);
+  assert.match(migration, /revoke execute on function public\.get_retake_questions\(uuid\) from public, anon/i);
+  assert.match(review, /rpc\('get_practice_result'/);
+  assert.match(results, /rpc\('get_practice_result'/);
+  assert.match(cbt, /rpc\('get_retake_questions'/);
+});
