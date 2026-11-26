@@ -124,19 +124,6 @@ CREATE POLICY "students can read own attempts"
 REVOKE ALL ON public.exam_attempts FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT ON public.exam_attempts TO authenticated;
 
--- The achievements page reads each student's own historical practice totals.
--- Its table had RLS enabled without a SELECT policy, so the query silently returned
--- no rows. Restore only owner-scoped reads; writes remain server-side.
-DROP POLICY IF EXISTS "students can read own practice results" ON public.practice_results;
-CREATE POLICY "students can read own practice results"
-  ON public.practice_results
-  FOR SELECT
-  TO authenticated
-  USING ((SELECT auth.uid()) = user_id);
-
-REVOKE ALL ON public.practice_results FROM PUBLIC, anon, authenticated;
-GRANT SELECT ON public.practice_results TO authenticated;
-
 -- Keep live leaderboard refreshes without exposing raw exam_attempts or profile rows
 -- through Realtime. Subscribers receive only an opaque event marker and reload the
 -- aggregated, authenticated get_leaderboard() RPC.
