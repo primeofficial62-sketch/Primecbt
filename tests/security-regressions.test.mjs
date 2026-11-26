@@ -145,18 +145,25 @@ test('student performance rows stay private while leaderboard live updates use o
 });
 
 
-test('AI quota RPC never trusts a student-supplied limit and plan badges are self-scoped', async () => {
+test('AI quota consumption is service-role-only and plan badges are self-scoped', async () => {
   const migration = await read('../supabase/migrations/20261126222000_student_surface_hardening.sql');
   const assistant = await read('../api/assistant.js');
   const studyTools = await read('../api/study-tools.js');
   const tierBadge = await read('../tier-badge.js');
-  assert.match(migration, /create or replace function public\.ai_use_quota\(p_limit integer default 40\)[\s\S]*?from public\.plan_limits[\s\S]*?pl\.feature = 'ai'[\s\S]*?n <= lim/i);
-  assert.match(migration, /revoke execute on function public\.ai_use_quota\(integer\) from public, anon/i);
-  assert.match(migration, /grant execute on function public\.ai_use_quota\(integer\) to authenticated/i);
+  assert.match(migration, /create or replace function public\.consume_ai_quota\(p_user_id uuid, p_limit integer\)[\s\S]*?auth\.role\(\) is distinct from 'service_role'[\s\S]*?v_count <= v_limit/i);
+  assert.match(migration, /revoke all on function public\.consume_ai_quota\(uuid, integer\) from public, anon, authenticated/i);
+  assert.match(migration, /grant execute on function public\.consume_ai_quota\(uuid, integer\) to service_role/i);
+  assert.match(migration, /revoke all on function public\.ai_use_quota\(integer\) from public, anon, authenticated/i);
   assert.match(migration, /uid is distinct from auth\.uid\(\)/i);
   assert.match(migration, /revoke execute on function public\.plan_tier\(uuid\) from public, anon/i);
-  assert.match(assistant, /quota\.limit \|\| DAILY_LIMIT/);
-  assert.match(studyTools, /q\.data\.limit/);
+  assert.match(assistant, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(assistant, /consume_ai_quota/);
+  assert.match(assistant, /useQuota\(user\.id\)/);
+  assert.doesNotMatch(assistant, /rpc\/ai_use_quota/);
+  assert.match(studyTools, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(studyTools, /consume_ai_quota/);
+  assert.match(studyTools, /consumeQuota\(who\.data\.id\)/);
+  assert.doesNotMatch(studyTools, /rpc\/ai_use_quota/);
   assert.match(tierBadge, /rpc\('plan_tier', \{ uid: uid \}\)/);
   assert.match(migration, /revoke all on function public\.flag_on\(text\) from public, anon, authenticated/i);
   assert.match(migration, /revoke all on function public\.get_plan_tiers\(uuid\[\]\) from public, anon, authenticated/i);
