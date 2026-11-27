@@ -76,11 +76,12 @@ test('Results page shows an empty state and the signed-in user’s own completed
 });
 
 
-test('Study page exposes official source portals with accurate source labels', async () => {
+test('Study page keeps lessons inside PRIME-CBT and avoids off-site study links', async () => {
   const study = await read('external/study.html');
-  assert.ok(study.includes('Verified study portals'));
-  assert.ok(study.includes('https://ibass.jamb.gov.ng/'));
-  assert.ok(study.includes('https://www.waeconline.org.ng/e-Learning/index.htm'));
-  assert.ok(study.includes('https://neco.gov.ng/exams'));
-  assert.ok(study.includes('Not a NECO-issued syllabus'));
+  const app = await read('external/app.js');
+  assert.ok(study.includes('studyReader'));
+  assert.ok(study.includes('Reviewed PRIME-CBT notes and lessons'));
+  assert.ok(!study.includes('href="https://') && !study.includes("href='https://"));
+  assert.ok(app.includes('content_markdown'));
+  assert.ok(app.includes('reader.showModal()'));
 });
