@@ -1,0 +1,2 @@
+# Keep Worker implementation private; it is bundled as code, not a public asset.
+src/
