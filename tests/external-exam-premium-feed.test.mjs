@@ -20,7 +20,7 @@ test('External Exams subject choices are compact while preserving accessible che
   const css = await read('external/app.css');
   assert.ok(app.includes("subjectBox.classList.add('subject-selection-grid')"));
   assert.ok(app.includes('class="option subject-option"'));
-  assert.match(css, /\.subject-selection-grid \.subject-option[\s\S]*?min-height:42px/);
+  assert.match(css, /\.subject-selection-grid \.subject-option[\s\S]*?min-height:36px/);
   assert.match(css, /\.subject-selection-grid \.subject-option input[\s\S]*?width:14px/);
 });
 
