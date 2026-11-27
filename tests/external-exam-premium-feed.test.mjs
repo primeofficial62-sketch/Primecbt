@@ -27,6 +27,9 @@ test('PRIME PRO activation is N3000 and premium cannot be self-granted by a brow
   const more = await read('external/more.html');
   const migration = await read('supabase/migrations/20261127100000_external_exam_premium_and_news_feed.sql');
   assert.ok(more.includes('₦3,000'));
+  assert.ok(more.includes('id="activatePrimePro"'));
+  assert.ok(migration.includes('external_exam_activation_payments'));
+  assert.ok(migration.includes('finalize_external_exam_activation'));
   assert.ok(migration.includes('premium_activated_at'));
   assert.match(migration, /revoke insert, update on public\.external_exam_profiles from authenticated/i);
   assert.match(migration, /grant update \(full_name, email, exam_interests, updated_at\)/i);
@@ -43,6 +46,12 @@ test('Trusted news feed is restricted to approved examination and education publ
   assert.ok(fn.includes('education.gov.ng'));
   assert.ok(fn.includes('hostAllowed(publisherUrl)'));
   assert.ok(fn.includes('onConflict: "source_item_id"'));
+  const init = await read('supabase/functions/external-exam-activation-init/index.ts');
+  const verify = await read('supabase/functions/external-exam-activation-verify/index.ts');
+  assert.ok(init.includes('amount: 300000'));
+  assert.ok(init.includes('prime-pro-external-exams'));
+  assert.ok(verify.includes('finalize_external_exam_activation'));
+  assert.ok(verify.includes('Number(data.amount) !== 300000'));
   assert.ok(app.includes("functions.invoke('external-exam-feed')"));
   assert.doesNotMatch(fn, /SUPABASE_SERVICE_ROLE_KEY.{0,80}localStorage/i);
 });
