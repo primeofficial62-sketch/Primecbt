@@ -71,6 +71,8 @@
   const subjectLabel=(s)=>s.name||'Subject';
   async function initHome() {
     const profile=await boot('home');if(!profile)return;
+    const browse=$('examBrowseList');
+    if(browse){const {data:catalog,error:catalogError}=await db.from('external_exam_subjects').select('id,name,exam_code').eq('is_active',true).order('sort_order').limit(18);browse.innerHTML=catalogError?'<div class="empty-state"><strong>Subjects are temporarily unavailable</strong>Please refresh in a moment.</div>':(catalog||[]).length?(catalog||[]).map(s=>'<a class="chip" href="study.html?exam='+encodeURIComponent(s.exam_code)+'&subject='+encodeURIComponent(s.id)+'">'+esc(s.exam_code)+' · '+esc(s.name)+'</a>').join(''):'<div class="empty-state"><strong>Subject catalogue is being prepared</strong>Verified subject lists will appear here as they are added.</div>';}
     const updates=await db.from('external_exam_updates').select('id,update_type,title,summary,starts_at,published_at').eq('is_published',true).order('published_at',{ascending:false}).limit(8);
     const events=(updates.data||[]).filter(x=>x.update_type==='event');
     const news=(updates.data||[]).filter(x=>x.update_type==='news');
@@ -79,26 +81,42 @@
     if(nw)nw.innerHTML=news.length?news.map(x=>'<article class="news-card"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'Examination news and announcements')+'</p></div></article>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No news published yet</strong>Verified examination updates will appear here.</div>';
   }
   async function initStudy() {
-    await boot('study');
-    const subjectsEl=$('subjectsList'),resourcesEl=$('resourcesList'),search=$('resourceSearch'),exam=$('studyExam'),kind=$('resourceKind');
+    const profile=await boot('study');if(!profile)return;
+    const subjectsEl=$('subjectsList'),topicsEl=$('topicsList'),resourcesEl=$('resourcesList'),countEl=$('subjectCount'),search=$('resourceSearch'),exam=$('studyExam'),kind=$('resourceKind');
     if(!subjectsEl||!resourcesEl)return;
-    let subjects=[],selectedSubjectId=null;
+    let subjects=[],selectedSubjectId=new URLSearchParams(location.search).get('subject')||null;
     async function load(){
-      let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,subject_id,external_url').eq('is_published',true).order('created_at',{ascending:false}).limit(50);
-      if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);
-      if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);
-      if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);
-      const [r,s]=await Promise.all([q,db.from('external_exam_subjects').select('id,name,exam_code').eq('is_active',true).order('sort_order')]);
-      subjects=s.data||[];
+      subjectsEl.innerHTML='<div class="empty-state">Loading subjects…</div>';
       const requestedType=new URLSearchParams(location.search).get('type');
       if(requestedType&&kind.value==='ALL'&&[...kind.options].some(o=>o.value===requestedType))kind.value=requestedType;
+      const requestedExam=new URLSearchParams(location.search).get('exam');
+      if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
+      const [s,r]=await Promise.all([
+        db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
+        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,external_url').eq('is_published',true).order('created_at',{ascending:false}).limit(60);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
+      ]);
+      if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
+      else{
+        subjects=s.data||[];
+        const visible=subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value);
+        if(countEl)countEl.textContent=visible.length+' subjects';
+        if(selectedSubjectId&&!visible.some(x=>x.id===selectedSubjectId))selectedSubjectId=null;
+        subjectsEl.innerHTML=visible.length?visible.map(x=>'<button type="button" class="chip '+(selectedSubjectId===x.id?'active':'')+'" data-subject="'+x.id+'">'+esc(x.name)+' <span class="muted">'+esc(x.exam_code)+'</span></button>').join(''):'<div class="empty-state"><strong>No subjects are listed for this examination yet</strong>Choose another examination or check back as the verified catalogue is expanded.</div>';
+      }
+      if(topicsEl){
+        if(selectedSubjectId){
+          const chosen=subjects.find(x=>x.id===selectedSubjectId);
+          const {data:topics,error:topicError}=await db.from('external_exam_topics').select('id,title,description').eq('subject_id',selectedSubjectId).eq('is_published',true).order('sort_order');
+          topicsEl.innerHTML=topicError?'<div class="empty-state"><strong>Topics could not be loaded</strong>'+esc(topicError.message)+'</div>':(topics||[]).length?'<div class="topic-heading"><strong>'+esc(chosen?.name||'Subject')+' topics</strong><span class="small muted">'+topics.length+' topics</span></div>'+(topics||[]).map(t=>'<article class="topic-item"><strong>'+esc(t.title)+'</strong>'+(t.description?'<p>'+esc(t.description)+'</p>':'')+'</article>').join(''):'<div class="empty-state"><strong>'+esc(chosen?.name||'This subject')+' is in the catalogue</strong>Its official topic outline is being checked against the current examination syllabus. We will publish topics only after source verification.</div>';
+        }else topicsEl.innerHTML='<div class="empty-state">Select a subject to see its verified topic outline.</div>';
+      }
+      if(r.error){resourcesEl.innerHTML='<div class="empty-state"><strong>Study resources could not be loaded</strong>'+esc(r.error.message)+'</div>';return;}
       const term=search.value.trim().toLowerCase();
-      const rows=(r.data||[]).filter(x=>!term||(x.title+' '+(x.description||'')).toLowerCase().includes(term));
-      subjectsEl.innerHTML=subjects.length?subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value).map(x=>'<a class="chip '+(selectedSubjectId===x.id?'active':'')+'" href="#resources" data-subject="'+x.id+'">'+esc(x.name)+'</a>').join(''):'<div class="empty-state"><strong>Subjects are being prepared</strong>Subjects will appear here as the syllabus is added.</div>';
-      resourcesEl.innerHTML=rows.length?rows.map(x=>'<a class="list-card" href="'+(x.external_url?esc(x.external_url):'#')+'" '+(x.external_url?'target="_blank" rel="noopener"':'')+'><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.source_year?' · '+x.source_year:'')+'</p></span><span class="arrow">›</span></a>').join(''):'<div class="empty-state"><strong>No resources published yet</strong>We will show verified past questions, videos, workbooks, novels and lessons here once they are added to the question and learning library.</div>';
+      const rows=(r.data||[]).filter(x=>!term||(x.title+' '+(x.description||'')+' '+(x.source_label||'')).toLowerCase().includes(term));
+      resourcesEl.innerHTML=rows.length?rows.map(x=>'<a class="list-card" href="'+(x.external_url?esc(x.external_url):'#')+'" '+(x.external_url?'target="_blank" rel="noopener"':'')+'><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.source_year?' · '+x.source_year:'')+(x.source_label?' · '+esc(x.source_label):'')+'</p></span><span class="arrow">›</span></a>').join(''):'<div class="empty-state"><strong>No study resources published yet</strong>The subject catalogue is separate from the question bank. Verified past questions, lessons and videos will appear here as reviewed resources are published.</div>';
     }
-    subjectsEl.addEventListener('click',e=>{const a=e.target.closest('[data-subject]');if(!a)return;e.preventDefault();selectedSubjectId=selectedSubjectId===a.dataset.subject?null:a.dataset.subject;load();});
-    [search,exam,kind].forEach(el=>el.addEventListener(el===search?'input':'change',load));
+    subjectsEl.addEventListener('click',e=>{const b=e.target.closest('[data-subject]');if(!b)return;selectedSubjectId=selectedSubjectId===b.dataset.subject?null:b.dataset.subject;load();});
+    [search,exam,kind].forEach(el=>el.addEventListener(el===search?'input':'change',()=>{selectedSubjectId=null;load();}));
     await load();
   }
   async function initTest() {
