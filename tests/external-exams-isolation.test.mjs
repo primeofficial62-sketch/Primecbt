@@ -16,6 +16,7 @@ test('External Exams uses the shared PRIME-CBT auth page and enters its own app'
   assert.match(externalSection, /\/auth\.html\?mode=register&next=%2Fexternal%2Fhome\.html/);
   assert.match(externalSection, /\/auth\.html\?mode=login&next=%2Fexternal%2Fhome\.html/);
   assert.ok(legacyAuth.includes('window.location.replace(destination)'));
+  assert.ok(legacyAuth.includes('experience=external'));
   assert.match(sharedAuth, /prime_experience:\s*'external_exams'/);
   assert.ok(sharedAuth.includes("emailRedirectTo: window.location.origin + (pathway === 'exam' ? '/auth.html?mode=login&next=%2Fexternal%2Fhome.html' : '/auth.html?mode=login')"));
   assert.match(sharedAuth, /window\.location\.replace\('\/external\/home\.html'\)/);
