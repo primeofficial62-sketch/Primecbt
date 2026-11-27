@@ -159,3 +159,14 @@
 .composer button{min-width:48px}
 .logout-section{margin:28px 0 18px;padding-top:18px;border-top:1px solid var(--border)}
 .logout-button{width:100%;min-height:44px;border-radius:13px;color:#ffb4b4;border:1px solid rgba(248,113,113,.28);background:rgba(248,113,113,.08)}
+
+.resource-library-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.resource-tile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;min-height:166px;padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);text-align:left}
+.resource-tile-meta{font-size:9px;font-weight:750;letter-spacing:.3px;color:var(--green)}
+.resource-tile-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:rgba(49,211,162,.12);color:var(--green)}
+.resource-tile-icon svg{width:17px;height:17px}
+.resource-tile>strong{font-size:12px;line-height:1.35}
+.resource-tile>p{font-size:10px;line-height:1.45;color:var(--muted);margin:0}
+.resource-tile-action{display:flex;align-items:center;gap:5px;margin-top:auto;color:var(--green);font-size:10px;font-weight:750}
+.resource-tile-action svg{width:13px;height:13px}
+@media(max-width:350px){.resource-library-grid{gap:6px}.resource-tile{padding:9px;min-height:158px}}
