@@ -23,5 +23,5 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run External Exams isolation and security regression tests
-        run: node --test tests/external-exams-isolation.test.mjs tests/external-exam-server-timing.test.mjs
+      - name: Run External Exams isolation, timing, and source-registry tests
+        run: node --test tests/external-exams-isolation.test.mjs tests/external-exam-server-timing.test.mjs tests/external-exam-source-registry.test.mjs
