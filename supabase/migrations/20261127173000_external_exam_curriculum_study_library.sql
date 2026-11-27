@@ -98,7 +98,7 @@ subjects as (
 new_topics as (
  insert into public.external_exam_topics
  (subject_id,title,description,learning_objectives,sort_order,is_published,review_status,reviewed_at,source_id,source_locator)
- select su.id,ts.title,ts.description,string_to_array(ts.objectives,','),ts.sort_order,true,'editorial_reviewed',now(),
+ select su.id,ts.title,ts.description,string_to_array(trim(both '{}' from ts.objectives),','),ts.sort_order,true,'editorial_reviewed',now(),
  (select id from public.external_exam_sources where source_url='https://nerdc.gov.ng/content_manager/new_senior_curriculum_home.html' limit 1),
  'Cross-curriculum reference only; not an examination-body syllabus'
  from subjects su join topic_seed ts on ts.family=su.family
@@ -142,7 +142,7 @@ select
  when 'Electricity, magnetism and electromagnetic induction' then E'# Electricity, magnetism and electromagnetic induction\n\n## Electric quantities\nCurrent I is the rate of flow of charge: I = Q/t. Potential difference is energy transferred per unit charge. Resistance measures opposition to current. Ohm’s law states V = IR for an ohmic conductor at constant physical conditions.\n\n## Circuits\nIn a series circuit, the current is the same through each component and supply voltage is shared. In a parallel circuit, each branch has the same potential difference and the total current is the sum of branch currents. For series resistors, Rₜ = R₁ + R₂; for parallel resistors, 1/Rₜ = 1/R₁ + 1/R₂.\n\n## Electrical power\nPower P = VI = I²R = V²/R. Electrical energy transferred is E = Pt. Use SI units: watts for power, joules for energy and seconds for time.\n\n## Magnetism\nA current-carrying conductor produces a magnetic field. The field direction around a straight wire can be found using the right-hand grip rule. A solenoid produces a field similar to that of a bar magnet.\n\n## Electromagnetic induction\nA changing magnetic flux through a coil induces an electromotive force. The induced effect opposes the change producing it (Lenz’s law). Generators use induction to convert mechanical energy into electrical energy.'
  else E'# Study guide\n\nThis original PRIME-CBT lesson introduces the topic and its key examination skills. Work through the definitions, understand the worked examples and practise applying each idea to unfamiliar situations.\n\n## How to study\nRead the learning objectives first. Write down important terms and formulae, then explain them in your own words. Work through examples without looking at the solution. Finally, attempt topic-based questions and review any errors.\n\n## Revision checklist\n- Define the key terms accurately.\n- Explain the process or principle in the correct order.\n- Apply the relevant formula or rule with units.\n- Interpret diagrams, tables and graphs carefully.\n- Check that your answer addresses the exact question asked.',
  array['Read the lesson and learning objectives before attempting questions','Write down key definitions and formulae','Practise with worked examples and explain each step','Check the final answer and units'],
- string_to_array((select objectives from topic_seed ts where ts.family=su.family and ts.title=t.title),','),
+ string_to_array(trim(both '{}' from (select objectives from topic_seed ts where ts.family=su.family and ts.title=t.title)),','),
  18,'editorial_reviewed',now(),'original','original_prime_cbt',2
 from subjects su
 join public.external_exam_topics t on t.subject_id=su.id and t.is_published
