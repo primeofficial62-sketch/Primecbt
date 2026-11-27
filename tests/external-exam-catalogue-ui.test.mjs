@@ -149,7 +149,8 @@ test('Licensed question-bank integration is server-only, year-filtered and time-
   const app = await read('external/app.js');
   assert.ok(api.includes('SDASHAPI_ACCESS_TOKEN'));
   assert.ok(api.includes('https://sdashapi.com/api/v1/q'));
-  assert.ok(api.includes('examYear < 2001'));
+  assert.ok(api.includes('examYear < 1990'));
+  assert.ok(api.includes('Math.ceil(perSubject / 50) + 2'));
   assert.ok(api.includes('startFromLocal'));
   assert.ok(api.includes('external_exam_questions'));
   assert.ok(api.includes('question_provider: "local"'));
