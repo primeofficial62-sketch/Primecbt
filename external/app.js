@@ -122,6 +122,7 @@
     const subjectsEl=$('subjectsList'),topicsEl=$('topicsList'),resourcesEl=$('resourcesList'),countEl=$('subjectCount'),search=$('resourceSearch'),exam=$('studyExam'),kind=$('resourceKind');
     if(!subjectsEl||!resourcesEl)return;
     let subjects=[],selectedSubjectId=new URLSearchParams(location.search).get('subject')||null;
+    if(selectedSubjectId)localStorage.setItem('primeExternalLastStudy',selectedSubjectId);
     async function load(){
       subjectsEl.innerHTML='<div class="empty-state">Loading subjects…</div>';
       const requestedType=new URLSearchParams(location.search).get('type');
