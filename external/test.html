@@ -1,11 +1,275 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#070D1C"><meta name="robots" content="noindex,nofollow"><title>General CBT Simulator | PRIME-CBT External Exams</title><link rel="stylesheet" href="app.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script defer src="app.js"></script></head><body data-page="test"><main class="app-shell">
-<header class="topbar"><a class="brand" href="home.html"><span class="brand-mark">P</span><span><span class="brand-name">PRIME-<span>CBT</span></span><span class="brand-caption">EXTERNAL EXAMINATIONS</span></span></a><a class="icon-button" href="more.html" aria-label="Profile">{{USER}}</a></header>
-<h1 class="page-title">General CBT Simulator</h1><p class="page-subtitle">Choose your examination, subjects and session settings to begin.</p>
-<section class="panel"><h2 style="font-size:17px;margin:0 0 4px">Set up your CBT</h2><p class="small muted">Only published and verified questions can be used in a live attempt.</p>
-<div class="field"><label for="examCode">Examination</label><select id="examCode"><option value="JAMB">JAMB / UTME</option><option value="WAEC">WAEC</option><option value="NECO">NECO</option><option value="GCE">GCE</option><option value="POST_UTME">Post-UTME</option></select></div>
-<div class="field"><label>Subjects</label><div id="examSubjects"><div class="empty-state">Loading available subjects…</div></div></div>
-<div class="field"><label for="examYear">Examination year</label><select id="examYear" required aria-describedby="examYearHelp"></select><small class="small muted" id="examYearHelp">Choose a year from 1990–2026. The provider documents core-subject coverage from 1988–2026; older or niche subject/year combinations may return fewer questions.</small></div>
-<div class="form-row"><div class="field"><label for="questionCount">Questions</label><select id="questionCount"><option value="20">20 questions</option><option value="40" selected>40 questions</option><option value="60">60 questions</option><option value="100">100 questions</option></select></div><div class="field"><label for="examDuration">Duration</label><select id="examDuration"><option value="1800">30 minutes</option><option value="3600">1 hour</option><option value="5400">1.5 hours</option><option value="7200" selected>2 hours</option><option value="10800">3 hours</option></select></div></div>
-<div class="field"><label for="examMode">Mode</label><select id="examMode"><option value="practice">Practice mode</option><option value="timed">Timed examination</option><option value="challenge">Challenge mode</option></select></div>
-<button class="btn-primary" id="startExam" style="width:100%">Start examination</button></section>
-<nav class="bottom-nav" id="bottomNav" aria-label="External Exams navigation"></nav><button id="logoutButton" class="hidden" type="button"></button></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070D1C">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Set up a JAMB, WAEC, NECO, GCE or Post-UTME practice exam on PRIME-CBT.">
+<title>General CBT Simulator | PRIME-CBT External Exams</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="app.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script defer src="app.js"></script>
+<style>
+  .panel-title{font-size:17px;margin:0 0 4px}
+  fieldset.field{border:0;padding:0;margin:0 0 16px;min-width:0}
+  fieldset.field>legend{padding:0;margin-bottom:6px}
+  .field-error{display:none;color:#ff8a8a;font-size:13px;margin-top:6px}
+  .field.invalid .field-error{display:block}
+  .field.invalid select,.field.invalid #examSubjects{outline:1px solid #ff8a8a;outline-offset:2px;border-radius:10px}
+  .subject-count{font-size:13px;margin-top:6px}
+  #startExam{width:100%}
+  #startExam[disabled]{opacity:.55;cursor:not-allowed}
+  .btn-primary:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid #5aa2ff;outline-offset:2px}
+  .skip-link{position:absolute;left:-999px;top:0}
+  .skip-link:focus{left:8px;top:8px;z-index:99;background:#fff;color:#000;padding:8px 12px;border-radius:8px}
+  .field[hidden]{display:none}
+  .duration-note{font-size:13px;margin-top:6px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-page="test">
+<a class="skip-link" href="#setup">Skip to exam setup</a>
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" href="home.html" aria-label="PRIME-CBT home">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span>
+        <span class="brand-name">PRIME-<span>CBT</span></span>
+        <span class="brand-caption">EXTERNAL EXAMINATIONS</span>
+      </span>
+    </a>
+    <a class="icon-button" id="profileLink" href="more.html" aria-label="Profile">P</a>
+  </header>
+
+  <main id="setup">
+    <h1 class="page-title">General CBT Simulator</h1>
+    <p class="page-subtitle">Choose your examination, subjects and session settings to begin.</p>
+
+    <section class="panel" aria-labelledby="setupTitle">
+      <h2 class="panel-title" id="setupTitle">Set up your CBT</h2>
+      <p class="small muted">Only published and verified questions can be used in a live attempt.</p>
+
+      <div class="field">
+        <label for="examCode">Examination</label>
+        <select id="examCode" name="examCode">
+          <option value="JAMB">JAMB / UTME</option>
+          <option value="WAEC">WAEC</option>
+          <option value="NECO">NECO</option>
+          <option value="GCE">GCE</option>
+          <option value="POST_UTME">Post-UTME</option>
+        </select>
+      </div>
+
+      <fieldset class="field" id="subjectField">
+        <legend>Subjects</legend>
+        <div id="examSubjects" aria-live="polite">
+          <div class="empty-state">Loading available subjects…</div>
+        </div>
+        <div class="subject-count small muted" id="subjectCount"></div>
+        <div class="field-error" id="subjectError" role="alert"></div>
+      </fieldset>
+
+      <div class="field" id="yearField">
+        <label for="examYear">Examination year</label>
+        <select id="examYear" name="examYear" required aria-describedby="examYearHelp">
+          <option value="" disabled selected>Select a year</option>
+        </select>
+        <small class="small muted" id="examYearHelp">Choose a year from 1990 to 2026. Older or niche subject and year combinations may return fewer questions.</small>
+        <div class="field-error" id="yearError" role="alert">Select an examination year.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="questionCount">Questions</label>
+          <select id="questionCount" name="questionCount">
+            <option value="20">20 questions</option>
+            <option value="40" selected>40 questions</option>
+            <option value="60">60 questions</option>
+            <option value="100">100 questions</option>
+          </select>
+        </div>
+        <div class="field" id="durationField">
+          <label for="examDuration">Duration</label>
+          <select id="examDuration" name="examDuration" aria-describedby="durationNote">
+            <option value="1800">30 minutes</option>
+            <option value="3600">1 hour</option>
+            <option value="5400">1.5 hours</option>
+            <option value="7200" selected>2 hours</option>
+            <option value="10800">3 hours</option>
+          </select>
+          <div class="duration-note small muted" id="durationNote"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="examMode">Mode</label>
+        <select id="examMode" name="examMode" aria-describedby="modeNote">
+          <option value="practice">Practice mode</option>
+          <option value="timed">Timed examination</option>
+          <option value="challenge">Challenge mode</option>
+        </select>
+        <small class="small muted" id="modeNote"></small>
+      </div>
+
+      <button class="btn-primary" id="startExam" type="button">Start examination</button>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" id="bottomNav" aria-label="External Exams navigation"></nav>
+  <button id="logoutButton" class="hidden" type="button" aria-hidden="true" tabindex="-1">Log out</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- Rules per exam ---------- */
+  var RULES = {
+    JAMB:      { min: 4, max: 4, note: 'JAMB uses exactly 4 subjects, including English.' },
+    WAEC:      { min: 1, max: 9, note: 'Pick up to 9 subjects.' },
+    NECO:      { min: 1, max: 9, note: 'Pick up to 9 subjects.' },
+    GCE:       { min: 1, max: 9, note: 'Pick up to 9 subjects.' },
+    POST_UTME: { min: 1, max: 4, note: 'Pick up to 4 subjects.' }
+  };
+  var MODE_NOTES = {
+    practice:  'No timer. Review answers as you go.',
+    timed:     'Full exam conditions. Results show after you submit.',
+    challenge: 'Strict timer, no going back after submission.'
+  };
+
+  /* ---------- Years: 1990 to 2026, newest first ---------- */
+  var yearSel = $('examYear');
+  if (yearSel && yearSel.options.length <= 1) {
+    for (var y = 2026; y >= 1990; y--) {
+      var o = document.createElement('option');
+      o.value = o.textContent = String(y);
+      yearSel.appendChild(o);
+    }
+  }
+
+  /* ---------- Profile initial (replaces broken {{USER}} placeholder) ---------- */
+  function setProfileInitial(name) {
+    var el = $('profileLink');
+    if (!el || !name) return;
+    el.textContent = String(name).trim().charAt(0).toUpperCase() || 'P';
+    el.setAttribute('aria-label', 'Profile: ' + name);
+  }
+  try {
+    var keys = Object.keys(localStorage).filter(function (k) { return /^sb-.*-auth-token$/.test(k); });
+    if (keys.length) {
+      var s = JSON.parse(localStorage.getItem(keys[0]) || '{}');
+      var u = s.user || (s.currentSession && s.currentSession.user) || {};
+      var m = u.user_metadata || {};
+      setProfileInitial(m.full_name || m.name || u.email);
+    }
+  } catch (e) { /* storage unavailable or malformed, keep default "P" */ }
+
+  /* ---------- Subject helpers ---------- */
+  function checkedSubjects() {
+    return Array.prototype.slice.call(
+      document.querySelectorAll('#examSubjects input[type="checkbox"]:checked, #examSubjects input[type="radio"]:checked')
+    );
+  }
+  function subjectBoxes() {
+    return Array.prototype.slice.call(document.querySelectorAll('#examSubjects input[type="checkbox"]'));
+  }
+  function ruleFor() { return RULES[$('examCode').value] || RULES.WAEC; }
+
+  function updateSubjectCount() {
+    var r = ruleFor(), n = checkedSubjects().length;
+    $('subjectCount').textContent = n + ' selected. ' + r.note;
+    var boxes = subjectBoxes();
+    boxes.forEach(function (b) { b.disabled = !b.checked && n >= r.max; });
+    $('subjectField').classList.remove('invalid');
+  }
+
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.closest && e.target.closest('#examSubjects')) updateSubjectCount();
+  });
+  var subjObserver = new MutationObserver(updateSubjectCount);
+  subjObserver.observe($('examSubjects'), { childList: true, subtree: true });
+
+  /* ---------- Duration vs questions vs mode ---------- */
+  function minutesNeeded() { return Math.ceil(Number($('questionCount').value) * 0.75); } // 45s per question minimum
+  function syncDuration() {
+    var mode = $('examMode').value;
+    var dur = $('examDuration'), note = $('durationNote');
+    $('modeNote').textContent = MODE_NOTES[mode] || '';
+    if (mode === 'practice') {
+      dur.disabled = true;
+      note.textContent = 'Not used in practice mode.';
+      return;
+    }
+    dur.disabled = false;
+    var need = minutesNeeded();
+    Array.prototype.forEach.call(dur.options, function (opt) {
+      opt.disabled = Number(opt.value) / 60 < need;
+    });
+    if (dur.options[dur.selectedIndex].disabled) {
+      var pick = Array.prototype.find.call(dur.options, function (opt) { return !opt.disabled; });
+      if (pick) dur.value = pick.value;
+    }
+    note.textContent = 'At least ' + need + ' minutes for ' + $('questionCount').value + ' questions.';
+  }
+  $('questionCount').addEventListener('change', syncDuration);
+  $('examMode').addEventListener('change', syncDuration);
+  $('examCode').addEventListener('change', function () {
+    subjectBoxes().forEach(function (b) { b.checked = false; });
+    updateSubjectCount();
+  });
+  syncDuration();
+  updateSubjectCount();
+
+  /* ---------- Validation (capture phase: runs before app.js's start handler) ---------- */
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest && e.target.closest('#startExam');
+    if (!btn) return;
+
+    var r = ruleFor(), n = checkedSubjects().length, ok = true;
+    var subjErr = $('subjectError'), yearErr = $('yearError');
+    $('subjectField').classList.remove('invalid');
+    $('yearField').classList.remove('invalid');
+
+    if (n < r.min || n > r.max) {
+      subjErr.textContent = r.min === r.max
+        ? 'Select exactly ' + r.min + ' subjects. You have selected ' + n + '.'
+        : 'Select between ' + r.min + ' and ' + r.max + ' subjects.';
+      $('subjectField').classList.add('invalid');
+      ok = false;
+    }
+    if (!yearSel.value) {
+      $('yearField').classList.add('invalid');
+      ok = false;
+    }
+    if (!ok) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      var first = document.querySelector('.invalid');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    /* Double-tap guard */
+    if (btn.dataset.busy === '1') { e.stopImmediatePropagation(); e.preventDefault(); return; }
+    btn.dataset.busy = '1';
+    setTimeout(function () { btn.dataset.busy = '0'; }, 2500);
+  }, true);
+
+  /* ---------- Fallback bottom nav if app.js leaves it empty ---------- */
+  window.addEventListener('load', function () {
+    var nav = $('bottomNav');
+    if (nav && !nav.children.length) {
+      var items = [['home.html', 'Home'], ['test.html', 'Test'], ['more.html', 'More']];
+      nav.innerHTML = items.map(function (i) {
+        var cur = location.pathname.split('/').pop() === i[0] ? ' aria-current="page"' : '';
+        return '<a href="' + i[0] + '"' + cur + '>' + i[1] + '</a>';
+      }).join('');
+    }
+  });
+})();
+</script>
+</body>
+</html>
