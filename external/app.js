@@ -223,13 +223,13 @@
       if(!ids.length){toast('Select at least one subject.',true);return;}
       if(!year?.value){toast('Choose an examination year.',true);return;}
       start.disabled=true;start.textContent='Preparing exam…';
-      const {data,error}=await db.rpc('start_external_exam_attempt',{
-        p_exam_code:exam.value,p_subject_ids:ids,p_question_count:Number(count.value),
-        p_duration_seconds:Number(duration.value),p_mode:mode.value,p_exam_year:Number(year?.value||2026)
-      });
+      const {data,error}=await db.functions.invoke('external-exam-question-bank',{body:{
+        action:'start',exam_code:exam.value,subject_ids:ids,question_count:Number(count.value),
+        duration_seconds:Number(duration.value),mode:mode.value,exam_year:Number(year?.value||2026)
+      }});
       start.disabled=false;start.textContent='Start examination';
-      if(error){toast(error.message.includes('No published questions')?'No published questions are available for this subject and year yet. Choose another year or check back when verified questions are added.':error.message,true);return;}
-      location.href='exam.html?attempt='+encodeURIComponent(data);
+      if(error||data?.error){toast(data?.error||error?.message||'The question bank is unavailable. Please try again.',true);return;}
+      location.href='exam.html?attempt='+encodeURIComponent(data.attempt_id);
     });
   }
   async function initExam(){
@@ -237,19 +237,38 @@
     const attemptId=new URLSearchParams(location.search).get('attempt');
     const title=$('examTitle'),question=$('questionContent'),options=$('answerOptions'),number=$('questionNumber'),prev=$('previousQuestion'),next=$('nextQuestion'),submit=$('submitExam'),timer=$('examTimer'),grid=$('questionGrid');
     if(!attemptId||!question||!options){location.replace('test.html');return;}
-    const {data:attempt,error}=await db.from('external_exam_attempts').select('*').eq('id',attemptId).maybeSingle();
+    const {data:attempt,error}=await db.from('external_exam_attempts').select('*').eq('id',attemptId).eq('user_id',profile.user.id).maybeSingle();
     if(error||!attempt){toast('Examination session not found.',true);location.replace('test.html');return;}
-    const {data:rows,error:loadError}=await db.from('external_exam_attempt_questions').select('position,question:external_exam_questions(id,question_text,options,image_url)').eq('attempt_id',attemptId).order('position');
-    if(loadError||!rows?.length){toast('Could not load examination questions.',true);return;}
-    const questions=rows.map(x=>({...x.question,position:x.position}));let current=0;const answers={};
-    const {data:savedAnswers}=await db.from('external_exam_attempt_answers').select('question_id,selected_option_index').eq('attempt_id',attemptId);
-    (savedAnswers||[]).forEach(a=>{answers[a.question_id]=a.selected_option_index;});
-    title.textContent=attempt.exam_code+' CBT Simulator';
+    let questions=[],savedAnswers=[],providerMode=attempt.question_provider==='sdashapi';
+    if(providerMode){
+      const {data,error:loadError}=await db.functions.invoke('external-exam-question-bank',{body:{action:'load',attempt_id:attemptId}});
+      if(loadError||data?.error||!data?.questions?.length){toast(data?.error||'Could not load the licensed question set.',true);return;}
+      questions=data.questions.map(x=>({...x,position:x.position}));
+      savedAnswers=data.answers||[];
+    }else{
+      const {data:rows,error:loadError}=await db.from('external_exam_attempt_questions').select('position,question:external_exam_questions(id,question_text,options,image_url)').eq('attempt_id',attemptId).order('position');
+      if(loadError||!rows?.length){toast('Could not load examination questions.',true);return;}
+      questions=rows.map(x=>({...x.question,position:x.position}));
+      const {data}=await db.from('external_exam_attempt_answers').select('question_id,selected_option_index').eq('attempt_id',attemptId);
+      savedAnswers=data||[];
+    }
+    let current=0;const answers={};
+    savedAnswers.forEach(a=>{answers[a.question_id]=a.selected_option_index;});
+    title.textContent=attempt.exam_code+' '+(attempt.exam_year||'')+' CBT Simulator';
     function draw(){
       const q=questions[current];number.textContent='Question '+(current+1)+' of '+questions.length;
-      question.textContent=q.question_text;
+      question.textContent=q.section?q.section+'\n\n'+q.question_text:q.question_text;
       options.innerHTML=(q.options||[]).map((opt,i)=>'<label class="option '+(answers[q.id]===i?'selected':'')+'"><input type="radio" name="answer" value="'+i+'" '+(answers[q.id]===i?'checked':'')+'><span><b>'+String.fromCharCode(65+i)+'.</b> '+esc(typeof opt==='string'?opt:opt.text||JSON.stringify(opt))+'</span></label>').join('');
-      options.querySelectorAll('input').forEach(input=>input.addEventListener('change',async()=>{answers[q.id]=Number(input.value);draw();const {error}=await db.rpc('save_external_exam_answer',{p_attempt_id:attemptId,p_question_id:q.id,p_selected_option_index:answers[q.id]});if(error)toast('Answer could not be saved: '+error.message,true);}));
+      options.querySelectorAll('input').forEach(input=>input.addEventListener('change',async()=>{
+        answers[q.id]=Number(input.value);draw();
+        if(providerMode){
+          const {error}=await db.functions.invoke('external-exam-question-bank',{body:{action:'answer',attempt_id:attemptId,question_id:q.id,selected_option_index:answers[q.id]}});
+          if(error)toast('Answer could not be saved. Check your connection and try again.',true);
+        }else{
+          const {error}=await db.rpc('save_external_exam_answer',{p_attempt_id:attemptId,p_question_id:q.id,p_selected_option_index:answers[q.id]});
+          if(error)toast('Answer could not be saved: '+error.message,true);
+        }
+      }));
       prev.disabled=current===0;next.disabled=current===questions.length-1;
       if(grid)grid.innerHTML=questions.map((item,i)=>'<button type="button" data-q="'+i+'" class="'+(i===current?'current ':'')+(answers[item.id]!==undefined?'answered':'')+'">'+(i+1)+'</button>').join('');
     }
@@ -257,15 +276,23 @@
     prev?.addEventListener('click',()=>{if(current>0){current--;draw();}});
     next?.addEventListener('click',()=>{if(current<questions.length-1){current++;draw();}});
     const deadline=new Date(attempt.started_at).getTime()+Number(attempt.duration_seconds)*1000;
+    let submitted=false;
+    async function submitExam(){
+      if(submit.disabled||submitted)return;submit.disabled=true;clearInterval(interval);
+      let error=null;
+      if(providerMode){
+        const result=await db.functions.invoke('external-exam-question-bank',{body:{action:'submit',attempt_id:attemptId}});
+        error=result.error|| (result.data?.error?new Error(result.data.error):null);
+      }else{
+        const payload=questions.filter(q=>answers[q.id]!==undefined).map(q=>({question_id:q.id,selected_option_index:answers[q.id]}));
+        const result=await db.rpc('grade_external_exam_attempt',{p_attempt_id:attemptId,p_answers:payload});
+        error=result.error;
+      }
+      if(error){submit.disabled=false;toast(error.message||'Your result could not be saved. Please try again.',true);return;}
+      submitted=true;location.replace('results.html?attempt='+encodeURIComponent(attemptId));
+    }
     function tick(){const left=Math.max(0,Math.floor((deadline-Date.now())/1000));timer.textContent=[Math.floor(left/3600),Math.floor(left%3600/60),left%60].map(n=>String(n).padStart(2,'0')).join(' : ');if(left===0)submitExam();}
     const interval=setInterval(tick,1000);tick();draw();
-    async function submitExam(){
-      if(submit.disabled)return;submit.disabled=true;clearInterval(interval);
-      const payload=questions.filter(q=>answers[q.id]!==undefined).map(q=>({question_id:q.id,selected_option_index:answers[q.id]}));
-      const {data,error}=await db.rpc('grade_external_exam_attempt',{p_attempt_id:attemptId,p_answers:payload});
-      if(error){submit.disabled=false;toast(error.message,true);return;}
-      location.replace('results.html?attempt='+encodeURIComponent(attemptId));
-    }
     submit?.addEventListener('click',()=>{if(confirm('Submit your examination now?'))submitExam();});
   }
   async function initResults(){
