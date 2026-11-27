@@ -10,7 +10,7 @@
 .section-intro{margin:-4px 0 12px}
 .hero-carousel{position:relative;min-height:260px;margin:0 0 26px;border-radius:24px;overflow:hidden;border:1px solid rgba(49,211,162,.25);background:#0d1e2b}
 .hero-track{position:relative;min-height:260px}
-.hero-slide{position:absolute;inset:0;padding:21px 20px 24px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;opacity:0;animation:primeHeroSlide 24s infinite;pointer-events:none}
+.hero-slide{position:absolute;inset:0;padding:21px 20px 24px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;opacity:0;visibility:hidden;animation:primeHeroSlide 24s infinite;pointer-events:auto}
 .hero-slide-one{background:radial-gradient(ellipse at 100% 0%,rgba(49,211,162,.2),transparent 45%),linear-gradient(140deg,#10392f,#10192b 78%);animation-delay:0s}
 .hero-slide-two{background:radial-gradient(ellipse at 100% 10%,rgba(56,142,160,.22),transparent 48%),linear-gradient(140deg,#102f3b,#10192b 78%);animation-delay:6s}
 .hero-slide-three{background:radial-gradient(ellipse at 100% 0%,rgba(81,128,190,.2),transparent 48%),linear-gradient(140deg,#172d48,#10192b 78%);animation-delay:12s}
@@ -20,7 +20,7 @@
 .hero-slide .btn-primary{min-height:42px}
 .hero-progress{height:2px;position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.08);overflow:hidden}
 .hero-progress span{display:block;width:25%;height:100%;background:var(--green);animation:primeHeroProgress 24s linear infinite}
-@keyframes primeHeroSlide{0%{opacity:0}2%{opacity:1}24%{opacity:1}26%{opacity:0}100%{opacity:0}}
+@keyframes primeHeroSlide{0%{opacity:0;visibility:hidden}2%{opacity:1;visibility:visible}24%{opacity:1;visibility:visible}26%{opacity:0;visibility:hidden}100%{opacity:0;visibility:hidden}}
 @keyframes primeHeroProgress{from{transform:translateX(0)}to{transform:translateX(400%)}}
 .progress-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 .stat-card{padding:13px 11px;background:var(--surface);border:1px solid var(--border);border-radius:16px;min-width:0}
@@ -77,4 +77,4 @@
 .news-page-card time{font-size:10px;color:var(--placeholder)}
 .news-page-card .news-thumb{width:48px;height:48px}
 @media(max-width:360px){.progress-grid{gap:6px}.stat-card{padding:11px 8px}.stat-card strong{font-size:20px}.stat-label,.stat-note{font-size:9px}.hero-slide h2{font-size:23px}.hero-carousel,.hero-track{min-height:270px}}
-@media(prefers-reduced-motion:reduce){.hero-slide{animation:none;display:none}.hero-slide-one{display:flex;position:relative;opacity:1}.hero-progress span{animation:none;width:100%;transform:none}}
+@media(prefers-reduced-motion:reduce){.hero-slide{animation:none;display:none;visibility:hidden}.hero-slide-one{display:flex;position:relative;opacity:1;visibility:visible}.hero-progress span{animation:none;width:100%;transform:none}}
