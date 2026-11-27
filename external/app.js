@@ -167,6 +167,11 @@
       if(requestedType&&kind.value==='ALL'&&[...kind.options].some(o=>o.value===requestedType))kind.value=requestedType;
       const requestedExam=new URLSearchParams(location.search).get('exam');
       if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
+    if(year){
+      year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');
+      const requestedYear=Number(params.get('year'));
+      year.value=requestedYear>=1990&&requestedYear<=2026?String(requestedYear):'2026';
+    }
     if(year){year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');year.value=params.get('year')&&Number(params.get('year'))>=1990&&Number(params.get('year'))<=2026?params.get('year'):'2026';}
       const [s,r]=await Promise.all([
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
