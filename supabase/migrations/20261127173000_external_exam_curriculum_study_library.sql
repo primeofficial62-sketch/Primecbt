@@ -144,8 +144,8 @@ select
  array['Read the lesson and learning objectives before attempting questions','Write down key definitions and formulae','Practise with worked examples and explain each step','Check the final answer and units'],
  string_to_array(trim(both '{}' from (select objectives from topic_seed ts where ts.family=su.family and ts.title=t.title)),','),
  18,'editorial_reviewed',now(),'original','original_prime_cbt',2
-from subjects su
-join public.external_exam_topics t on t.subject_id=su.id and t.is_published
+from new_topics t
+join subjects su on su.id=t.subject_id
 join topic_seed ts on ts.family=su.family and ts.title=t.title
 where not exists(select 1 from public.external_exam_resources r where r.topic_id=t.id and r.is_published);
 
