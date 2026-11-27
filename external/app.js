@@ -77,7 +77,7 @@
     const fab=$('quickPlus'),sheet=$('quickSheet');
     if(!fab||!sheet)return;
     fab.addEventListener('click',()=>{sheet.classList.toggle('hidden');fab.setAttribute('aria-expanded',String(!sheet.classList.contains('hidden')));});
-    sheet.addEventListener('click',e=>{const a=e.target.closest('[data-action]');if(!a)return;const action=a.dataset.action;const target={buy:'more.html#school-store',exam:'test.html',ask:'chat.html?tab=question',post:'chat.html?tab=question',group:'chat.html?tab=groups',mimi:'chat.html?tab=mimi'}[action];if(target)location.href=target;});
+    sheet.addEventListener('click',e=>{const a=e.target.closest('[data-action]');if(!a)return;const action=a.dataset.action;const target={buy:'more.html#school-store',exam:'test.html',ask:'chat.html?tab=question',post:'chat.html?tab=question',mimi:'chat.html?tab=mimi'}[action];if(target)location.href=target;});
   }
   async function boot(active) {
     const profile=await requireExternalProfile();
@@ -268,6 +268,7 @@
     await boot('chat');
     const tabs=[...document.querySelectorAll('[data-chat-tab]')],feed=$('chatFeed'),form=$('chatForm'),input=$('chatInput'),panel=$('chatPanel');
     let active=new URLSearchParams(location.search).get('tab')||'general';
+    if(active==='groups')active='general';
     let questionScope='my_question';
     async function showTab(tab){
       active=tab;tabs.forEach(b=>b.classList.toggle('active',b.dataset.chatTab===tab));
