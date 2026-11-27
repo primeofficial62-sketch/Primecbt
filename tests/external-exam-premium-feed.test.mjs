@@ -8,7 +8,7 @@ const read = (path) => readFile(new URL('../' + path, import.meta.url), 'utf8');
 test('External Exams uses real inline icons for every placeholder token, including inline arrows', async () => {
   const app = await read('external/app.js');
   const home = await read('external/home.html');
-  assert.match(app, /value\.replace\(\/\\\{\\\{\(\[A-Z_\]\+\)\\\}\}\/g/);
+  assert.ok(app.includes(String.raw`value.replace(/\{\{([A-Z_]+)\}\}/g`));
   assert.ok(app.includes("ARROW:'arrow'"));
   assert.ok(home.includes('{{ARROW}}'));
   new vm.Script(app);
