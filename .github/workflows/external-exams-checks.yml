@@ -1,0 +1,40 @@
+name: External Exams checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'external/**'
+      - 'supabase/functions/external-exam-*/**'
+      - 'supabase/migrations/*external_exam*'
+      - 'tests/external-exam*.test.mjs'
+      - '.github/workflows/external-exams-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'external/**'
+      - 'supabase/functions/external-exam-*/**'
+      - 'supabase/migrations/*external_exam*'
+      - 'tests/external-exam*.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  external-exams:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run External Exams regression tests
+        run: node --test tests/external-exams-isolation.test.mjs tests/external-exam-catalogue-ui.test.mjs tests/external-exam-source-registry.test.mjs tests/external-exam-premium-feed.test.mjs
+      - name: Type-check isolated External Exams Edge Functions
+        run: |
+          deno check supabase/functions/external-exam-feed/index.ts
+          deno check supabase/functions/external-exam-activation-init/index.ts
+          deno check supabase/functions/external-exam-activation-verify/index.ts
