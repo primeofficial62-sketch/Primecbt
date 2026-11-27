@@ -40,7 +40,7 @@ grant all on public.external_exam_feed_sync_state to service_role;
 -- Keep user-editable profile fields writable, but never let a browser user grant
 -- PRIME PRO to themselves by setting premium_activated_at.
 revoke insert, update on public.external_exam_profiles from authenticated;
-grant insert (user_id, full_name, email, exam_interests)
+grant insert (user_id, full_name, email, exam_interests, updated_at)
   on public.external_exam_profiles to authenticated;
 grant update (full_name, email, exam_interests, updated_at)
   on public.external_exam_profiles to authenticated;
