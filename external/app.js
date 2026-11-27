@@ -293,7 +293,7 @@
     const email=$('moreEmail');if(email)email.textContent=profile.user.email||'';
     const {data:preferences}=await db.from('external_exam_profiles').select('exam_interests,premium_activated_at').eq('user_id',profile.user.id).maybeSingle();
     (preferences?.exam_interests||[]).forEach(value=>{const input=document.querySelector('[data-interest][value="'+value+'"]');if(input)input.checked=true;});
-    const premiumActive=!!preferences?.premium_activated_at;
+    let premiumActive=!!preferences?.premium_activated_at;
     const premiumStatus=$('premiumStatus');if(premiumStatus)premiumStatus.textContent=premiumActive?'PRIME PRO is active on this account.':'Free account · PRIME PRO unlock is not active yet.';
     const activationInfo=$('activationInfo');activationInfo?.addEventListener('click',()=>toast(premiumActive?'Your PRIME PRO access is active.':'A one-time ₦3,000 Paystack payment unlocks premium study resources and learning features.'));
     const activateButton=$('activatePrimePro');
@@ -311,7 +311,7 @@
         toast(verification?.status==='pending'?'Payment is still processing. Check again shortly.':'Payment was not completed. You can try again.',verification?.status!=='pending');
       }
       if(activateButton){activateButton.disabled=false;activateButton.textContent=premiumActive?'PRIME PRO active':'Activate PRIME PRO · ₦3,000';}
-      history.replaceState(null,'','more.html');
+      if(!verificationError&&(verification?.activated||verification?.status==='failed'||verification?.status==='abandoned'))history.replaceState(null,'','more.html');
     }
     activateButton?.addEventListener('click',async()=>{
       if(premiumActive){toast('PRIME PRO is already active on this account.');return;}
