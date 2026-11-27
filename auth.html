@@ -410,6 +410,24 @@
     .toast.error { border-color: var(--red); }
     @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
 
+    /* Authentication pathway identity */
+    .login-pathway { margin: 0 0 22px; padding: 14px; border: 1px solid var(--emerald-line); border-radius: 16px; background: var(--card-grad); }
+    .login-pathway-label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
+    .login-pathway-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .login-path-option { min-width: 0; padding: 10px 9px; border: 1px solid var(--border); border-radius: 12px; background: var(--field); color: var(--text); text-align: left; font: inherit; cursor: pointer; transition: border-color .2s, background .2s; }
+    .login-path-option strong, .login-path-option span { display: block; }
+    .login-path-option strong { font-size: 12px; letter-spacing: .02em; }
+    .login-path-option span { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .login-path-option[aria-pressed="true"] { border-color: var(--emerald); background: rgba(49,211,162,.10); box-shadow: inset 0 0 0 1px var(--emerald-line); }
+    .login-pathway-note { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .path-title { letter-spacing: .01em; }
+    .path-card .path-title { font-size: 15px; font-weight: 800; }
+    .path-card .path-desc { line-height: 1.45; }
+    .cta { min-height: 50px; height: 50px; font-size: 15px; }
+    .btn-oauth { height: 50px; }
+    .switch-btn, .switch-thumb { height: 42px; }
+    @media (max-width: 400px) { .field input, .field select, .cta, .btn-oauth, .otp-row input { height: 50px; } .switch-btn, .switch-thumb { height: 42px; } }
+
     /* ========== RESPONSIVE ========== */
     @media (max-width: 360px) {
       .stage { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
@@ -493,6 +511,10 @@
     @media (min-width: 600px) {
       .stage { background: var(--card-grad); border-color: var(--emerald-line); }
     }
+
+    /* Final compact sizing override for all screen widths */
+    .cta, .btn-oauth { height: 50px; min-height: 50px; }
+    .switch-btn, .switch-thumb { height: 42px; }
 
     /* college / department dropdowns */
     .field select { text-overflow: ellipsis; }
@@ -1010,7 +1032,7 @@
 
       <div class="card-head">
         <h2>Choose Your Learning Pathway</h2>
-        <p>Select how you intend to use PRIME CBT. We'll personalise your experience based on your selection.</p>
+        <p>Choose the experience that matches what you want to do on PRIME-CBT.</p>
       </div>
 
       <div class="steps" id="steps" role="group" aria-label="Registration progress" hidden></div>
@@ -1021,16 +1043,16 @@
                     <button type="button" class="path-card is-soon" data-path="exam" data-soon="true" aria-disabled="true" aria-pressed="false">
             <span class="path-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg></span>
             <span class="path-txt">
-              <span class="path-title">Exam Preparation</span>
-              <span class="path-desc">Prepare for entrance examinations, secondary school examinations and other professional examinations.</span>
+              <span class="path-title">EXAM PREP</span>
+              <span class="path-desc">Prepare for JAMB, WAEC, NECO, Post-UTME and other external examinations with CBT practice and study resources.</span>
             </span>
             <span class="soon-badge">Coming soon</span>
           </button>
           <button type="button" class="path-card" data-path="inst" aria-pressed="false">
             <span class="path-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="M2 10l10-6 10 6z"/></svg></span>
             <span class="path-txt">
-              <span class="path-title">Institutional Learning</span>
-              <span class="path-desc">Access your institution's academic resources, departmental materials, faculty content and internal examinations.</span>
+              <span class="path-title">PRIME CAMPUS</span>
+              <span class="path-desc">For university and other tertiary institution students. Access courses, lecture materials, academic resources and internal CBT assessments.</span>
             </span>
             <span class="path-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
           </button>
@@ -1045,8 +1067,8 @@
 
       <!-- Exam pathway: category -->
       <div class="reg-step" data-step="exam" data-index="1">
-        <h2 class="headline sm">What are you<br><span class="accent">preparing for?</span></h2>
-        <p class="subtext">Pick your main exam. You can add others too.</p>
+        <h2 class="headline sm">EXAM PREP<br><span class="accent">Choose your exams</span></h2>
+        <p class="subtext">Prepare for JAMB, WAEC, NECO, Post-UTME and more. Pick your main exam; you can add others too.</p>
         <div class="exam-list" id="examList"></div>
         <p class="field-hint" id="examHint" style="margin-top:12px">Your first pick is your primary exam. Use &ldquo;Set primary&rdquo; to switch.</p>
         <span class="field-error" id="examError" role="alert" style="display:none;margin-top:8px">Select at least one examination to continue</span>
@@ -1054,8 +1076,8 @@
 
       <!-- Institutional pathway: find institution -->
       <div class="reg-step" data-step="inst" data-index="1">
-        <h2 class="headline sm">Find Your<br><span class="accent">Institution</span></h2>
-        <p class="subtext">Select your institution to access your academic environment.</p>
+        <h2 class="headline sm">PRIME CAMPUS<br><span class="accent">Your university</span></h2>
+        <p class="subtext">Select your university or tertiary institution to access its academic environment.</p>
 
         <form class="form" id="regForm2" style="margin-top:22px" novalidate>
           <div class="field">
@@ -1152,8 +1174,8 @@
 
       <!-- Final screen (both pathways): account -->
       <div class="reg-step" data-step="account" data-index="3">
-        <h2 class="headline sm">Almost<br><span class="accent">done.</span></h2>
-        <p class="subtext">Create your login details.</p>
+        <h2 class="headline sm">Create your<br><span class="accent">PRIME-CBT account</span></h2>
+        <p class="subtext" id="accountPathHint">Create your login details.</p>
 
         <form class="form" id="regForm1" style="margin-top:22px" novalidate>
           <div class="field">
@@ -1310,6 +1332,14 @@
     
     <!-- ==================== LOGIN ==================== -->
     <div class="panel" id="panel-login">
+      <div class="login-pathway" id="loginPathway" aria-label="Choose the area you want to sign in to">
+        <p class="login-pathway-label">What are you signing in to?</p>
+        <div class="login-pathway-options">
+          <button type="button" class="login-path-option" data-login-experience="campus" aria-pressed="true"><strong>PRIME CAMPUS</strong><span>University learning</span></button>
+          <button type="button" class="login-path-option" data-login-experience="external" aria-pressed="false"><strong>EXAM PREP</strong><span>JAMB, WAEC, NECO &amp; more</span></button>
+        </div>
+        <p class="login-pathway-note" id="loginPathwayNote">Sign in to your university learning space.</p>
+      </div>
       <form class="form" id="loginForm" novalidate>
         <div class="field">
           <label class="field-label" for="loginEmail">Email</label>
@@ -1828,8 +1858,30 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   // Only same-site .html pages are allowed (no other sites, no javascript: links).
   const NEXT_KEY = 'auth_next';
   const EXPERIENCE_KEY = 'auth_experience';
-  const requestedExperience = urlParams.get('experience') === 'external' ? 'external' : null;
+  const requestedExperience = urlParams.get('experience') === 'external' ? 'external' : (urlParams.get('experience') === 'campus' ? 'campus' : null);
+  let selectedAuthExperience = requestedExperience || 'campus';
+  let explicitExperienceChoice = !!requestedExperience;
   if (requestedExperience) { try { sessionStorage.setItem(EXPERIENCE_KEY, requestedExperience); } catch (e) {} }
+  const loginPathway = document.getElementById('loginPathway');
+  const loginPathwayNote = document.getElementById('loginPathwayNote');
+  function setAuthExperience(value, persistChoice = true) {
+    selectedAuthExperience = value === 'external' ? 'external' : 'campus';
+    if (persistChoice) explicitExperienceChoice = true;
+    if (loginPathway) loginPathway.querySelectorAll('[data-login-experience]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.loginExperience === selectedAuthExperience));
+    });
+    if (loginPathwayNote) loginPathwayNote.textContent = selectedAuthExperience === 'external'
+      ? 'Sign in to your external examination preparation space for JAMB, WAEC, NECO and more.'
+      : 'Sign in to your university learning space for courses, academic resources and internal assessments.';
+    try { sessionStorage.setItem(EXPERIENCE_KEY, selectedAuthExperience); } catch (e) {}
+    const url = new URL(window.location.href);
+    url.searchParams.set('experience', selectedAuthExperience);
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  }
+  if (loginPathway) {
+    loginPathway.querySelectorAll('[data-login-experience]').forEach(button => button.addEventListener('click', () => setAuthExperience(button.dataset.loginExperience)));
+    setAuthExperience(selectedAuthExperience, false);
+  }
   function safeNext(v) {
     if (!v) return null;
     v = String(v).trim();
@@ -2636,6 +2688,11 @@ switcher.dataset.mode = mode;
     }
     if (!b || b.hidden || !pathCfg[b.dataset.path]) return;
     pathway = b.dataset.path;
+    setAuthExperience(pathway === 'exam' ? 'external' : 'campus');
+    const pathHint = document.getElementById('accountPathHint');
+    if (pathHint) pathHint.textContent = pathway === 'exam'
+      ? 'EXAM PREP account — for JAMB, WAEC, NECO, Post-UTME and other external examinations.'
+      : 'PRIME CAMPUS account — for university courses, academic resources and internal assessments.';
     markPath();
     go(flow()[0]);
   });
@@ -2919,6 +2976,14 @@ switcher.dataset.mode = mode;
     }
 
     if (window.PrimeAnalytics) PrimeAnalytics.track('login', { method: 'email' });
+    const accountExperience = metadataExperience(data.user);
+    if (explicitExperienceChoice && accountExperience && ((accountExperience === 'external') !== (selectedAuthExperience === 'external'))) {
+      await supabaseClient.auth.signOut();
+      showToast(accountExperience === 'external'
+        ? 'This account is registered for EXAM PREP. Select EXAM PREP above and sign in again.'
+        : 'This account is registered for PRIME CAMPUS. Select PRIME CAMPUS above and sign in again.', 'error', 5500);
+      return;
+    }
     markReturningUser();
     showToast('Logged in successfully!', 'success');
     setTimeout(goNext, 1000);
@@ -3238,6 +3303,16 @@ resendResetLink.addEventListener('click', async (e) => {
     // Resolve the account's registered pathway before considering the entry link.
     // This prevents an old External Exams URL from hijacking a University account.
     const experience = await resolveExperience(session.user);
+    if (explicitExperienceChoice && (experience === 'external') !== (selectedAuthExperience === 'external')) {
+      routed = false;
+      await supabaseClient.auth.signOut();
+      showPage();
+      setMode('login');
+      showToast(experience === 'external'
+        ? 'This account belongs to EXAM PREP. Choose EXAM PREP above to continue.'
+        : 'This account belongs to PRIME CAMPUS. Choose PRIME CAMPUS above to continue.', 'error', 5500);
+      return;
+    }
     if (experience === 'external') {
       try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {}
       window.location.replace('/external/home.html');
@@ -3300,9 +3375,11 @@ resendResetLink.addEventListener('click', async (e) => {
   document.querySelectorAll('.btn-oauth').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (window.PrimeAnalytics) PrimeAnalytics.track('cta_clicked', { cta_id: 'google_auth', cta_location: '/auth.html' });
-      // Preserve the selected External Exams pathway across Google's redirect.
-      if (pathway === 'exam') {
+      // Preserve the selected pathway across Google's redirect.
+      if (selectedAuthExperience === 'external' || pathway === 'exam') {
         try { sessionStorage.setItem(NEXT_KEY, '/external/home.html'); } catch (e) {}
+      } else {
+        try { sessionStorage.setItem(EXPERIENCE_KEY, 'campus'); } catch (e) {}
       }
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
