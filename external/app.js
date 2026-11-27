@@ -145,9 +145,9 @@
     if(!subjectsEl||!resourcesEl)return;
     let subjects=[],resourceRows=[],selectedSubjectId=new URLSearchParams(location.search).get('subject')||null;
     function renderLesson(markdown){
-      const lines=String(markdown||'').split(/\\r?\\n/);let html='',list=[];
+      const lines=String(markdown||'').split(/\r?\n/);let html='',list=[];
       const flush=()=>{if(list.length){html+='<ul>'+list.map(x=>'<li>'+inline(x)+'</li>').join('')+'</ul>';list=[];}};
-      const inline=value=>esc(value).replace(/\\*\\*(.+?)\\*\\*/g,'<strong>$1</strong>');
+      const inline=value=>esc(value).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
       for(const raw of lines){const line=raw.trim();if(!line){flush();continue;}if(line.startsWith('- ')){list.push(line.slice(2));continue;}flush();if(line.startsWith('### '))html+='<h3>'+inline(line.slice(4))+'</h3>';else if(line.startsWith('## '))html+='<h2>'+inline(line.slice(3))+'</h2>';else if(line.startsWith('# '))html+='<h2>'+inline(line.slice(2))+'</h2>';else html+='<p>'+inline(line)+'</p>';}
       flush();return html;
     }
@@ -171,7 +171,8 @@
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
         (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(100);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
       ]);
-      resourceRows=r.data||[];\n      if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
+      resourceRows=r.data||[];
+      if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
       else{
         subjects=s.data||[];
         const visible=subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value);
@@ -187,7 +188,6 @@
         }else topicsEl.innerHTML='<div class="empty-state">Select a subject to see its topics and lessons.</div>';
       }
       if(r.error){resourcesEl.innerHTML='<div class="empty-state"><strong>Study resources could not be loaded</strong>'+esc(r.error.message)+'</div>';return;}
-      resourceRows=r.data||[];
       const term=search.value.trim().toLowerCase();
       const rows=resourceRows.filter(x=>!term||(x.title+' '+(x.description||'')+' '+(x.source_label||'')).toLowerCase().includes(term));
       resourcesEl.innerHTML=rows.length?rows.map(x=>'<button type="button" class="list-card resource-open" data-resource="'+x.id+'"><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span class="resource-card-copy"><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.estimated_minutes?' · '+x.estimated_minutes+' min':'')+(x.is_premium?' · PRIME PRO':'')+'</p></span><span class="arrow">'+icon('arrow')+'</span></button>').join(''):'<div class="empty-state"><strong>No matching lessons yet</strong>Choose another subject or exam. New reviewed lessons will appear here as the library grows.</div>';
