@@ -61,7 +61,7 @@ test('External Exams homepage keeps the approved sections and does not put Marke
   }
   assert.doesNotMatch(home, /Marketplace/);
   assert.match(home, /data-action="mimi"/);
-  assert.match(home, /data-action="group"/);
+  assert.doesNotMatch(home, /data-action="group"/);
 });
 
 test('External CBT question answers are stored separately and cannot be read from the public question bank', async () => {

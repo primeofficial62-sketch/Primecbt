@@ -78,3 +78,14 @@
 .news-page-card .news-thumb{width:48px;height:48px}
 @media(max-width:360px){.progress-grid{gap:6px}.stat-card{padding:11px 8px}.stat-card strong{font-size:20px}.stat-label,.stat-note{font-size:9px}.hero-slide h2{font-size:23px}.hero-carousel,.hero-track{min-height:270px}}
 @media(prefers-reduced-motion:reduce){.hero-slide{animation:none;display:none;visibility:hidden}.hero-slide-one{display:flex;position:relative;opacity:1;visibility:visible}.hero-progress span{animation:none;width:100%;transform:none}}
+
+/* Compact, accessible External Exams subject selection and real inline icons */
+.inline-icon{width:16px;height:16px;display:inline-block;vertical-align:-3px;flex:none;margin-left:4px}
+.btn-primary .inline-icon,.ai-link .inline-icon,.card-action .inline-icon{width:15px;height:15px;margin-left:3px}
+.subject-selection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.subject-selection-grid .subject-option{min-width:0;min-height:42px;margin:0;padding:9px 10px;align-items:center;gap:8px;border-radius:11px;font-size:11px;line-height:1.3}
+.subject-selection-grid .subject-option span{min-width:0;overflow-wrap:anywhere}
+.subject-selection-grid .subject-option input{width:16px;height:16px;flex:none;margin:0;accent-color:var(--green)}
+@media(max-width:360px){.subject-selection-grid{gap:6px}.subject-selection-grid .subject-option{padding:8px;font-size:10.5px}}
+
+.source-label{font-size:10px!important;color:var(--green)!important;margin:2px 0 6px!important}
