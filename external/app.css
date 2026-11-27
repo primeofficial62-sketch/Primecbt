@@ -4,3 +4,77 @@
 .quick-sheet{position:fixed;z-index:19;right:max(20px,calc((100vw - 520px)/2 + 20px));bottom:calc(150px + env(safe-area-inset-bottom));width:min(255px,calc(100vw - 40px));padding:9px;background:rgba(16,25,43,.98);border:1px solid var(--border);border-radius:18px;box-shadow:0 16px 45px #0009;display:grid;gap:3px}.quick-sheet a{padding:11px 12px;border-radius:11px;font-size:12px;font-weight:650;color:var(--text)}.quick-sheet a:active{background:var(--surface-2);color:var(--green)}
 
 .topic-browser{margin-top:12px}.topic-heading{display:flex;align-items:center;justify-content:space-between;padding:12px 2px 7px;font-size:13px}.topic-item{padding:12px 14px;margin:7px 0;background:var(--surface);border:1px solid var(--border);border-radius:13px}.topic-item strong{font-size:12px}.topic-item p{font-size:11px;color:var(--muted);margin:5px 0 0}.chips button.chip{color:var(--text);cursor:pointer}.chips button.chip.active{border-color:var(--green);background:rgba(49,211,162,.12);color:var(--green)}
+
+/* PRIME-CBT External Exams homepage refresh */
+.section-kicker,.section-intro{font-size:11px;color:var(--muted);margin:0}
+.section-intro{margin:-4px 0 12px}
+.hero-carousel{position:relative;min-height:260px;margin:0 0 26px;border-radius:24px;overflow:hidden;border:1px solid rgba(49,211,162,.25);background:#0d1e2b}
+.hero-track{position:relative;min-height:260px}
+.hero-slide{position:absolute;inset:0;padding:21px 20px 24px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;opacity:0;visibility:hidden;animation:primeHeroSlide 24s infinite;pointer-events:auto}
+.hero-slide-one{background:radial-gradient(ellipse at 100% 0%,rgba(49,211,162,.2),transparent 45%),linear-gradient(140deg,#10392f,#10192b 78%);animation-delay:0s}
+.hero-slide-two{background:radial-gradient(ellipse at 100% 10%,rgba(56,142,160,.22),transparent 48%),linear-gradient(140deg,#102f3b,#10192b 78%);animation-delay:6s}
+.hero-slide-three{background:radial-gradient(ellipse at 100% 0%,rgba(81,128,190,.2),transparent 48%),linear-gradient(140deg,#172d48,#10192b 78%);animation-delay:12s}
+.hero-slide-four{background:radial-gradient(ellipse at 100% 0%,rgba(95,164,132,.2),transparent 48%),linear-gradient(140deg,#17372f,#10192b 78%);animation-delay:18s}
+.hero-slide h2{font-size:25px;line-height:1.14;letter-spacing:-.8px;margin:13px 0 8px;max-width:310px}
+.hero-slide p{font-size:12px;line-height:1.55;color:#c1d0d8;max-width:310px;margin:0 0 18px}
+.hero-slide .btn-primary{min-height:42px}
+.hero-progress{height:2px;position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.08);overflow:hidden}
+.hero-progress span{display:block;width:25%;height:100%;background:var(--green);animation:primeHeroProgress 24s linear infinite}
+@keyframes primeHeroSlide{0%{opacity:0;visibility:hidden}2%{opacity:1;visibility:visible}24%{opacity:1;visibility:visible}26%{opacity:0;visibility:hidden}100%{opacity:0;visibility:hidden}}
+@keyframes primeHeroProgress{from{transform:translateX(0)}to{transform:translateX(400%)}}
+.progress-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.stat-card{padding:13px 11px;background:var(--surface);border:1px solid var(--border);border-radius:16px;min-width:0}
+.stat-label,.stat-note{display:block;color:var(--muted);font-size:10px;line-height:1.35}
+.stat-card strong{display:block;font-size:23px;letter-spacing:-.7px;margin:7px 0 4px;font-variant-numeric:tabular-nums}
+.continue-card{display:flex;align-items:center;gap:12px;padding:15px;background:var(--surface);border:1px solid var(--border);border-radius:17px}
+.continue-icon{width:43px;height:43px;flex:none;border-radius:13px;display:grid;place-items:center;background:rgba(49,211,162,.12);color:var(--green)}
+.continue-icon svg{width:21px;height:21px}
+.continue-copy{min-width:0;display:grid;gap:4px}
+.continue-copy strong{font-size:13px}
+.continue-copy small{font-size:11px;line-height:1.4;color:var(--muted)}
+.continue-arrow{margin-left:auto;color:var(--green);font-size:20px}
+.recent-results{display:grid;gap:8px}
+.result-row{display:flex;align-items:center;gap:11px;padding:12px 13px;border:1px solid var(--border);background:var(--surface);border-radius:14px}
+.result-mark{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:rgba(49,211,162,.12);color:var(--green);font-size:11px;font-weight:800}
+.result-copy{min-width:0;flex:1}
+.result-copy strong{display:block;font-size:12px}
+.result-copy small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.result-score{font-size:13px;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums}
+.challenge-card,.countdown-card{min-height:190px;padding:15px;border:1px solid var(--border);border-radius:18px;background:var(--surface);display:flex;flex-direction:column;align-items:flex-start}
+.challenge-card{background:linear-gradient(145deg,#123b33,#10192b 78%);border-color:rgba(49,211,162,.25)}
+.mini-label{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--green)}
+.challenge-mark{margin:12px 0 7px;color:var(--green)}
+.challenge-mark svg{width:24px;height:24px}
+.challenge-card h3{font-size:14px;margin:0 0 6px}
+.challenge-card p,.countdown-card p{font-size:11px;line-height:1.5;color:var(--muted);margin:0 0 12px}
+.challenge-card .card-action{margin-top:auto}
+.countdown-card strong{font-size:22px;line-height:1.2;margin:16px 0 7px;letter-spacing:-.5px}
+.countdown-card .section-link{margin-top:auto}
+.prime-ai-card{display:flex;gap:14px;align-items:flex-start;padding:17px;border:1px solid rgba(49,211,162,.28);border-radius:19px;background:linear-gradient(135deg,rgba(20,65,55,.72),var(--surface) 75%)}
+.prime-ai-icon{width:44px;height:44px;flex:none;border-radius:14px;display:grid;place-items:center;background:rgba(49,211,162,.14);color:var(--green)}
+.prime-ai-icon svg{width:23px;height:23px}
+.prime-ai-copy{min-width:0}
+.prime-ai-copy h2{font-size:17px;margin:5px 0}
+.prime-ai-copy p{font-size:11px;line-height:1.5;color:var(--muted);margin:0 0 10px}
+.ai-link{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-size:11px;font-weight:800}
+.ai-link svg{width:15px;height:15px}
+.simulator-card{min-height:168px}
+.quick-sheet{gap:7px;padding:10px}
+.quick-action-button{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid transparent;border-radius:12px;background:#121f32}
+.quick-action-button>span{width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:10px;background:rgba(49,211,162,.12);color:var(--green)}
+.quick-action-button>span svg{width:18px;height:18px}
+.quick-action-button strong{font-size:11px;font-weight:700;flex:1}
+.quick-action-button i{font-style:normal;color:var(--muted);font-size:18px}
+.quick-action-button:active{border-color:rgba(49,211,162,.45);background:#192b40}
+.bottom-nav{padding-top:10px;padding-bottom:calc(11px + env(safe-area-inset-bottom));background:rgba(7,13,28,.97);backdrop-filter:blur(14px)}
+.nav-item{min-height:44px;justify-content:center;gap:4px;border-radius:13px;transition:background .2s,color .2s}
+.nav-item.active{background:rgba(49,211,162,.1);color:var(--green)}
+.nav-item span{font-size:9px;letter-spacing:.1px}
+.news-page-list{display:grid;gap:10px}
+.news-page-card{display:flex;gap:12px;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:16px}
+.news-page-card h3{font-size:13px;line-height:1.35;margin:0 0 5px}
+.news-page-card p{font-size:11px;line-height:1.5;color:var(--muted);margin:0 0 7px}
+.news-page-card time{font-size:10px;color:var(--placeholder)}
+.news-page-card .news-thumb{width:48px;height:48px}
+@media(max-width:360px){.progress-grid{gap:6px}.stat-card{padding:11px 8px}.stat-card strong{font-size:20px}.stat-label,.stat-note{font-size:9px}.hero-slide h2{font-size:23px}.hero-carousel,.hero-track{min-height:270px}}
+@media(prefers-reduced-motion:reduce){.hero-slide{animation:none;display:none;visibility:hidden}.hero-slide-one{display:flex;position:relative;opacity:1;visibility:visible}.hero-progress span{animation:none;width:100%;transform:none}}

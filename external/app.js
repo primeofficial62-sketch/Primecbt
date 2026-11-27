@@ -25,7 +25,7 @@
     settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.5.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.6-1.4-2.4 1.4-1.1a8 8 0 0 1 0-1.8l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.5-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.5.9l1.7-.6 1.4 2.4-1.4 1.1a8 8 0 0 1 0 1.8z"/></svg>'
   })[name] || '';
   function hydrateIcons() {
-    const names={BELL:'bell',USER:'user',ARROW:'arrow',MONITOR:'monitor',BOOK:'book',STORE:'store',PLAY:'play',FILE:'file',SPARK:'spark',SEARCH:'search',GROUP:'group',SETTINGS:'settings',HOME:'home'};
+    const names={BELL:'bell',USER:'user',ARROW:'arrow',MONITOR:'monitor',BOOK:'book',STORE:'store',PLAY:'play',FILE:'file',SPARK:'spark',SEARCH:'search',GROUP:'group',SETTINGS:'settings',HOME:'home',CHAT:'chat'};
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
     const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
     nodes.forEach(node=>{const raw=node.nodeValue.trim();const key=raw.startsWith('{{')&&raw.endsWith('}}')?raw.slice(2,-2):'';if(!names[key])return;const template=document.createElement('template');template.innerHTML=icon(names[key]);const svg=template.content.firstElementChild;if(svg)node.replaceWith(svg);});
@@ -71,20 +71,58 @@
   const subjectLabel=(s)=>s.name||'Subject';
   async function initHome() {
     const profile=await boot('home');if(!profile)return;
-    const browse=$('examBrowseList');
-    if(browse){const {data:catalog,error:catalogError}=await db.from('external_exam_subjects').select('id,name,exam_code').eq('is_active',true).order('sort_order').limit(18);browse.innerHTML=catalogError?'<div class="empty-state"><strong>Subjects are temporarily unavailable</strong>Please refresh in a moment.</div>':(catalog||[]).length?(catalog||[]).map(s=>'<a class="chip" href="study.html?exam='+encodeURIComponent(s.exam_code)+'&subject='+encodeURIComponent(s.id)+'">'+esc(s.exam_code)+' · '+esc(s.name)+'</a>').join(''):'<div class="empty-state"><strong>Subject catalogue is being prepared</strong>Verified subject lists will appear here as they are added.</div>';}
-    const updates=await db.from('external_exam_updates').select('id,update_type,title,summary,starts_at,published_at').eq('is_published',true).order('published_at',{ascending:false}).limit(8);
-    const events=(updates.data||[]).filter(x=>x.update_type==='event');
-    const news=(updates.data||[]).filter(x=>x.update_type==='news');
+    const userId=profile.user.id;
+    const browse=$('examBrowseList'),recommended=$('recommendedSubjects');
+    const {data:catalog,error:catalogError}=await db.from('external_exam_subjects').select('id,name,exam_code').eq('is_active',true).order('sort_order').limit(40);
+    const subjects=catalog||[];
+    if(browse)browse.innerHTML=catalogError?'<div class="empty-state"><strong>Subjects are temporarily unavailable</strong>Please refresh in a moment.</div>':subjects.length?subjects.slice(0,18).map(s=>'<a class="chip" href="study.html?exam='+encodeURIComponent(s.exam_code)+'&subject='+encodeURIComponent(s.id)+'">'+esc(s.exam_code)+' · '+esc(s.name)+'</a>').join(''):'<div class="empty-state"><strong>Subject catalogue is being prepared</strong>Verified subject lists will appear here as they are added.</div>';
+    const {data:profilePrefs}=await db.from('external_exam_profiles').select('exam_interests').eq('user_id',userId).maybeSingle();
+    const interests=profilePrefs?.exam_interests||[];
+    const picks=subjects.filter(s=>interests.includes(s.exam_code)).slice(0,6);
+    const recommendations=(picks.length?picks:subjects).slice(0,6);
+    if(recommended)recommended.innerHTML=recommendations.length?recommendations.map(s=>'<a class="chip" href="study.html?exam='+encodeURIComponent(s.exam_code)+'&subject='+encodeURIComponent(s.id)+'">'+esc(s.name)+'</a>').join(''):'<a class="chip" href="study.html">Browse study subjects</a>';
+    const lastSubject=localStorage.getItem('primeExternalLastStudy');
+    const last=subjects.find(s=>s.id===lastSubject);
+    const continueLink=$('continueLearning'),continueDescription=$('continueDescription');
+    if(last&&continueLink){continueLink.href='study.html?exam='+encodeURIComponent(last.exam_code)+'&subject='+encodeURIComponent(last.id);if(continueDescription)continueDescription.textContent='Continue revising '+last.name+' · '+last.exam_code;}
+    const {data:attempts,error:attemptError}=await db.from('external_exam_attempts').select('id,exam_code,status,total_questions,score,started_at,submitted_at').eq('user_id',userId).order('started_at',{ascending:false}).limit(30);
+    const allAttempts=attempts||[],completed=allAttempts.filter(a=>a.status==='submitted');
+    const avg=completed.length?Math.round(completed.reduce((sum,a)=>sum+(Number(a.total_questions)>0?(Number(a.score||0)/Number(a.total_questions))*100:0),0)/completed.length):null;
+    if($('completedCount'))$('completedCount').textContent=attemptError?'—':String(completed.length);
+    if($('averageScore'))$('averageScore').textContent=attemptError||avg===null?'—':avg+'%';
+    const practiceDates=[...new Set(allAttempts.map(a=>new Date(a.started_at).toLocaleDateString('en-CA')))].sort().reverse();
+    let streak=0;
+    if(practiceDates.length){const today=new Date();today.setHours(0,0,0,0);const first=new Date(practiceDates[0]+'T00:00:00');const gap=Math.round((today-first)/86400000);if(gap<=1){let expected=new Date(first);for(const date of practiceDates){const day=new Date(date+'T00:00:00');if(Math.round((expected-day)/86400000)===0){streak++;expected.setDate(expected.getDate()-1);}else break;}}}
+    if($('studyStreak'))$('studyStreak').textContent=attemptError?'—':streak+' day'+(streak===1?'':'s');
+    const recent=$('recentResults');
+    if(recent)recent.innerHTML=attemptError?'<div class="empty-state"><strong>Results are temporarily unavailable</strong>Please try again later.</div>':completed.length?completed.slice(0,3).map(a=>{const pct=Number(a.total_questions)>0?Math.round(Number(a.score||0)/Number(a.total_questions)*100):0;return '<a class="result-row" href="results.html?attempt='+encodeURIComponent(a.id)+'"><span class="result-mark">'+esc(a.exam_code)+'</span><span class="result-copy"><strong>'+esc(a.exam_code)+' CBT result</strong><small>'+new Date(a.submitted_at||a.started_at).toLocaleDateString()+' · '+Number(a.score||0)+'/'+Number(a.total_questions||0)+' correct</small></span><span class="result-score">'+pct+'%</span></a>';}).join(''):'<div class="empty-state"><strong>No completed exams yet</strong>Your submitted CBT results will show here after your first attempt.</div>';
+    const [eventResult,newsResult]=await Promise.all([
+      db.from('external_exam_updates').select('id,title,summary,starts_at,published_at,target_url').eq('is_published',true).eq('update_type','event').order('starts_at',{ascending:true}).limit(8),
+      db.from('external_exam_updates').select('id,title,summary,published_at,target_url').eq('is_published',true).eq('update_type','news').order('published_at',{ascending:false}).limit(8)
+    ]);
+    const events=eventResult.data||[],news=newsResult.data||[];
     const ev=$('eventsList'),nw=$('newsList');
-    if(ev)ev.innerHTML=events.length?events.map(x=>'<article class="event-card"><div class="event-date">'+esc(x.starts_at?new Date(x.starts_at).toLocaleDateString():'UPCOMING')+'</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'PRIME-CBT examination update')+'</p></article>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No upcoming events yet</strong>New mock examinations and revision events will appear here.</div>';
-    if(nw)nw.innerHTML=news.length?news.map(x=>'<article class="news-card"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'Examination news and announcements')+'</p></div></article>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No news published yet</strong>Verified examination updates will appear here.</div>';
+    if(ev)ev.innerHTML=eventResult.error?'<div class="empty-state" style="min-width:100%">Events are temporarily unavailable.</div>':events.length?events.map(x=>'<article class="event-card"><div class="event-date">'+esc(x.starts_at?new Date(x.starts_at).toLocaleDateString():'DATE TO BE ANNOUNCED')+'</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'PRIME-CBT examination update')+'</p></article>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No upcoming events yet</strong>New mock examinations and revision events will appear here.</div>';
+    if(nw)nw.innerHTML=newsResult.error?'<div class="empty-state" style="min-width:100%">News is temporarily unavailable.</div>':news.length?news.slice(0,6).map(x=>'<a class="news-card" href="news.html"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'Education and examination update')+'</p></div></a>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No news published yet</strong>Verified education and examination updates will appear here.</div>';
+    const nextEvent=events.filter(x=>x.starts_at&&/(JAMB|WAEC|NECO|GCE|POST.?UTME|UTME)/i.test(x.title)&&new Date(x.starts_at).getTime()>=Date.now()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at))[0];
+    if($('examCountdown'))$('examCountdown').textContent=nextEvent?Math.max(0,Math.ceil((new Date(nextEvent.starts_at)-Date.now())/86400000))+' days':'To be announced';
+    if($('examCountdownDetail'))$('examCountdownDetail').textContent=nextEvent?nextEvent.title+' · '+new Date(nextEvent.starts_at).toLocaleDateString():'We will show a countdown when a verified examination date is published.';
+  }
+  async function initNews() {
+    const profile=await boot('more');if(!profile)return;
+    const list=$('newsPageList'),title=$('newsPageTitle');
+    const isEvents=new URLSearchParams(location.search).get('tab')==='events';
+    if(title)title.textContent=isEvents?'Upcoming Events':'Education & Exam News';
+    const {data,error}=await db.from('external_exam_updates').select('id,update_type,title,summary,image_url,target_url,starts_at,published_at').eq('is_published',true).eq('update_type',isEvents?'event':'news').order(isEvents?'starts_at':'published_at',{ascending:isEvents}).limit(50);
+    if(!list)return;
+    list.innerHTML=error?'<div class="empty-state"><strong>Updates could not be loaded</strong>Please try again later.</div>':(data||[]).length?(data||[]).map(item=>'<article class="news-page-card"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(item.title)+'</h3><p>'+esc(item.summary||'PRIME-CBT education and examination update')+'</p><time>'+new Date(item.starts_at||item.published_at).toLocaleString()+'</time>'+(item.target_url?'<p><a class="section-link" href="'+esc(item.target_url)+'" target="_blank" rel="noopener">Read source →</a></p>':'')+'</div></article>').join(''):'<div class="empty-state"><strong>No '+(isEvents?'upcoming events':'news')+' published yet</strong>New verified updates will appear here when they are added.</div>';
   }
   async function initStudy() {
     const profile=await boot('study');if(!profile)return;
     const subjectsEl=$('subjectsList'),topicsEl=$('topicsList'),resourcesEl=$('resourcesList'),countEl=$('subjectCount'),search=$('resourceSearch'),exam=$('studyExam'),kind=$('resourceKind');
     if(!subjectsEl||!resourcesEl)return;
     let subjects=[],selectedSubjectId=new URLSearchParams(location.search).get('subject')||null;
+    if(selectedSubjectId)localStorage.setItem('primeExternalLastStudy',selectedSubjectId);
     async function load(){
       subjectsEl.innerHTML='<div class="empty-state">Loading subjects…</div>';
       const requestedType=new URLSearchParams(location.search).get('type');
@@ -115,7 +153,7 @@
       const rows=(r.data||[]).filter(x=>!term||(x.title+' '+(x.description||'')+' '+(x.source_label||'')).toLowerCase().includes(term));
       resourcesEl.innerHTML=rows.length?rows.map(x=>'<a class="list-card" href="'+(x.external_url?esc(x.external_url):'#')+'" '+(x.external_url?'target="_blank" rel="noopener"':'')+'><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.source_year?' · '+x.source_year:'')+(x.source_label?' · '+esc(x.source_label):'')+'</p></span><span class="arrow">›</span></a>').join(''):'<div class="empty-state"><strong>No study resources published yet</strong>The subject catalogue is separate from the question bank. Verified past questions, lessons and videos will appear here as reviewed resources are published.</div>';
     }
-    subjectsEl.addEventListener('click',e=>{const b=e.target.closest('[data-subject]');if(!b)return;selectedSubjectId=selectedSubjectId===b.dataset.subject?null:b.dataset.subject;load();});
+    subjectsEl.addEventListener('click',e=>{const b=e.target.closest('[data-subject]');if(!b)return;selectedSubjectId=selectedSubjectId===b.dataset.subject?null:b.dataset.subject;if(selectedSubjectId)localStorage.setItem('primeExternalLastStudy',selectedSubjectId);load();});
     [search,exam,kind].forEach(el=>el.addEventListener(el===search?'input':'change',()=>{selectedSubjectId=null;load();}));
     await load();
   }
@@ -123,8 +161,11 @@
     await boot('test');
     const exam=$('examCode'),subjectBox=$('examSubjects'),start=$('startExam'),mode=$('examMode'),count=$('questionCount'),duration=$('examDuration');
     if(!exam||!subjectBox)return;
-    const requestedExam=new URLSearchParams(location.search).get('exam');
+    const params=new URLSearchParams(location.search);
+    const requestedExam=params.get('exam')||document.body.dataset.defaultExam;
     if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
+    const requestedMode=params.get('mode');
+    if(requestedMode&&[...mode.options].some(o=>o.value===requestedMode))mode.value=requestedMode;
     document.querySelectorAll('[data-exam-preset]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.examPreset&&[...exam.options].some(o=>o.value===b.dataset.examPreset))exam.value=b.dataset.examPreset;loadSubjects();$('examCode').scrollIntoView({behavior:'smooth',block:'center'});}));
     document.querySelectorAll('[data-mode-preset]').forEach(b=>b.addEventListener('click',()=>{mode.value=b.dataset.modePreset;$('examMode').scrollIntoView({behavior:'smooth',block:'center'});}));
     async function loadSubjects(){
@@ -198,7 +239,7 @@
     let questionScope='my_question';
     async function showTab(tab){
       active=tab;tabs.forEach(b=>b.classList.toggle('active',b.dataset.chatTab===tab));
-      if(tab==='mimi'){panel.innerHTML='<div class="empty-state"><strong>Mimi AI</strong>Mimi AI will be connected to the External Exams syllabus, approved learning resources and question explanations in a dedicated integration. It is not connected to the University assistant.</div>';feed.classList.add('hidden');form.classList.add('hidden');return;}
+      if(tab==='mimi'){panel.innerHTML='<div class="empty-state"><strong>PRIME AI</strong>PRIME AI will be connected to the External Exams syllabus, approved learning resources and question explanations in a dedicated integration. It is not connected to the University assistant.</div>';feed.classList.add('hidden');form.classList.add('hidden');return;}
       form.classList.remove('hidden');feed.classList.toggle('hidden',tab==='groups');panel.innerHTML='';
       if(tab==='question'){panel.innerHTML='<div class="tabbar question-scopes"><button data-question-scope="my_question" class="'+(questionScope==='my_question'?'active':'')+'">My Question</button><button data-question-scope="school_question" class="'+(questionScope==='school_question'?'active':'')+'">School Question</button><button data-question-scope="academic_question" class="'+(questionScope==='academic_question'?'active':'')+'">Academic Based</button></div>';}
       if(tab==='groups'){const {data}=await db.from('external_exam_groups').select('id,name,description,created_at').order('created_at',{ascending:false}).limit(30);panel.innerHTML='<form id="groupCreateForm" class="panel"><div class="field"><label for="groupName">Create a study group</label><input id="groupName" maxlength="70" minlength="3" placeholder="e.g. JAMB Biology revision" required></div><div class="field"><label for="groupDescription">Description (optional)</label><input id="groupDescription" maxlength="180" placeholder="What will your group study?"></div><button class="btn-primary" type="submit">Create group</button></form>'+((data||[]).length?(data||[]).map(g=>'<div class="list-card"><span class="feature-icon">'+icon('group')+'</span><span><h3>'+esc(g.name)+'</h3><p>'+esc(g.description||'Student study group')+'</p></span><button class="btn-secondary" data-join="'+g.id+'">Join</button></div>').join(''):'<div class="empty-state"><strong>No groups yet</strong>Create the first study group for external exam candidates.</div>');return;}
@@ -224,7 +265,7 @@
   }
   hydrateIcons();
   const page=document.body.dataset.page;
-  const routes={home:initHome,study:initStudy,test:initTest,exam:initExam,results:initResults,chat:initChat,more:initMore};
+  const routes={home:initHome,study:initStudy,test:initTest,exam:initExam,results:initResults,chat:initChat,more:initMore,news:initNews};
   if(routes[page])routes[page]().catch(err=>{console.error(err);toast('Something went wrong loading this page.',true);});
   window.PrimeExternal={db,toast,icon};
 })();
