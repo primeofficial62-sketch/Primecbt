@@ -141,9 +141,26 @@
   async function initStudy() {
     const profile=await boot('study');if(!profile)return;
     const subjectsEl=$('subjectsList'),topicsEl=$('topicsList'),resourcesEl=$('resourcesList'),countEl=$('subjectCount'),search=$('resourceSearch'),exam=$('studyExam'),kind=$('resourceKind');
+    const reader=$('studyReader'),readerTitle=$('studyReaderTitle'),readerMeta=$('studyReaderMeta'),readerBody=$('studyReaderBody'),readerClose=$('studyReaderClose');
     if(!subjectsEl||!resourcesEl)return;
-    let subjects=[],selectedSubjectId=new URLSearchParams(location.search).get('subject')||null;
-    if(selectedSubjectId)localStorage.setItem('primeExternalLastStudy',selectedSubjectId);
+    let subjects=[],resourceRows=[],selectedSubjectId=new URLSearchParams(location.search).get('subject')||null;
+    function renderLesson(markdown){
+      const lines=String(markdown||'').split(/\r?\n/);let html='',list=[];
+      const flush=()=>{if(list.length){html+='<ul>'+list.map(x=>'<li>'+inline(x)+'</li>').join('')+'</ul>';list=[];}};
+      const inline=value=>esc(value).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      for(const raw of lines){const line=raw.trim();if(!line){flush();continue;}if(line.startsWith('- ')){list.push(line.slice(2));continue;}flush();if(line.startsWith('### '))html+='<h3>'+inline(line.slice(4))+'</h3>';else if(line.startsWith('## '))html+='<h2>'+inline(line.slice(3))+'</h2>';else if(line.startsWith('# '))html+='<h2>'+inline(line.slice(2))+'</h2>';else html+='<p>'+inline(line)+'</p>';}
+      flush();return html;
+    }
+    function openResource(row){
+      if(!reader||!readerTitle||!readerBody)return;
+      readerTitle.textContent=row.title||'Study resource';
+      readerMeta.textContent=[row.exam_code,row.resource_type?.replaceAll('_',' '),row.estimated_minutes?row.estimated_minutes+' min':'',row.is_premium?'PRIME PRO':'Free lesson',row.review_status==='editorial_reviewed'?'Editorially reviewed':'Under review'].filter(Boolean).join(' · ');
+      const points=(row.key_points||[]).length?'<section class="lesson-key-points"><h3>Key points to remember</h3><ul>'+row.key_points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></section>':'';
+      readerBody.innerHTML=row.content_markdown?renderLesson(row.content_markdown)+points:'<div class="empty-state"><strong>This material is not available in the on-site library yet.</strong>We publish only resources that have been reviewed and prepared for reading inside PRIME-CBT.</div>';
+      if(typeof reader.showModal==='function')reader.showModal();else reader.setAttribute('open','');
+    }
+    readerClose?.addEventListener('click',()=>reader.close());
+    reader?.addEventListener('click',e=>{if(e.target===reader)reader.close();});
     async function load(){
       subjectsEl.innerHTML='<div class="empty-state">Loading subjects…</div>';
       const requestedType=new URLSearchParams(location.search).get('type');
@@ -152,8 +169,9 @@
       if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
       const [s,r]=await Promise.all([
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
-        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,external_url,is_premium').eq('is_published',true).order('created_at',{ascending:false}).limit(60);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
+        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(100);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
       ]);
+      resourceRows=r.data||[];
       if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
       else{
         subjects=s.data||[];
@@ -165,16 +183,18 @@
       if(topicsEl){
         if(selectedSubjectId){
           const chosen=subjects.find(x=>x.id===selectedSubjectId);
-          const {data:topics,error:topicError}=await db.from('external_exam_topics').select('id,title,description').eq('subject_id',selectedSubjectId).eq('is_published',true).order('sort_order');
-          topicsEl.innerHTML=topicError?'<div class="empty-state"><strong>Topics could not be loaded</strong>'+esc(topicError.message)+'</div>':(topics||[]).length?'<div class="topic-heading"><strong>'+esc(chosen?.name||'Subject')+' topics</strong><span class="small muted">'+topics.length+' topics</span></div>'+(topics||[]).map(t=>'<article class="topic-item"><strong>'+esc(t.title)+'</strong>'+(t.description?'<p>'+esc(t.description)+'</p>':'')+'</article>').join(''):'<div class="empty-state"><strong>'+esc(chosen?.name||'This subject')+' is in the catalogue</strong>Its official topic outline is being checked against the current examination syllabus. We will publish topics only after source verification.</div>';
-        }else topicsEl.innerHTML='<div class="empty-state">Select a subject to see its verified topic outline.</div>';
+          const {data:topics,error:topicError}=await db.from('external_exam_topics').select('id,title,description,learning_objectives').eq('subject_id',selectedSubjectId).eq('is_published',true).order('sort_order');
+          topicsEl.innerHTML=topicError?'<div class="empty-state"><strong>Topics could not be loaded</strong>'+esc(topicError.message)+'</div>':(topics||[]).length?'<div class="topic-heading"><strong>'+esc(chosen?.name||'Subject')+' topics</strong><span class="small muted">'+topics.length+' topics</span></div>'+(topics||[]).map(t=>{const lesson=resourceRows.find(x=>x.topic_id===t.id);return '<article class="topic-item"><strong>'+esc(t.title)+'</strong>'+(t.description?'<p>'+esc(t.description)+'</p>':'')+(lesson?'<button type="button" class="topic-open" data-resource="'+lesson.id+'">Read lesson '+icon('arrow')+'</button>':'<span class="small muted">Lesson coming soon</span>')+'</article>';}).join(''):'<div class="empty-state"><strong>'+esc(chosen?.name||'This subject')+' is in the catalogue</strong>More topic outlines are being verified before publication.</div>';
+        }else topicsEl.innerHTML='<div class="empty-state">Select a subject to see its topics and lessons.</div>';
       }
       if(r.error){resourcesEl.innerHTML='<div class="empty-state"><strong>Study resources could not be loaded</strong>'+esc(r.error.message)+'</div>';return;}
       const term=search.value.trim().toLowerCase();
-      const rows=(r.data||[]).filter(x=>!term||(x.title+' '+(x.description||'')+' '+(x.source_label||'')).toLowerCase().includes(term));
-      resourcesEl.innerHTML=rows.length?rows.map(x=>'<a class="list-card" href="'+(x.external_url?esc(x.external_url):'#')+'" '+(x.external_url?'target="_blank" rel="noopener"':'')+'><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.source_year?' · '+x.source_year:'')+(x.source_label?' · '+esc(x.source_label):'')+(x.is_premium?' · PRIME PRO':'')+'</p></span><span class="arrow">'+icon('arrow')+'</span></a>').join(''):'<div class="empty-state"><strong>No study resources published yet</strong>The subject catalogue is separate from the question bank. Verified past questions, lessons and videos will appear here as reviewed resources are published.</div>';
+      const rows=resourceRows.filter(x=>!term||(x.title+' '+(x.description||'')+' '+(x.source_label||'')).toLowerCase().includes(term));
+      resourcesEl.innerHTML=rows.length?rows.map(x=>'<button type="button" class="list-card resource-open" data-resource="'+x.id+'"><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span class="resource-card-copy"><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.estimated_minutes?' · '+x.estimated_minutes+' min':'')+(x.is_premium?' · PRIME PRO':'')+'</p></span><span class="arrow">'+icon('arrow')+'</span></button>').join(''):'<div class="empty-state"><strong>No matching lessons yet</strong>Choose another subject or exam. New reviewed lessons will appear here as the library grows.</div>';
     }
     subjectsEl.addEventListener('click',e=>{const b=e.target.closest('[data-subject]');if(!b)return;selectedSubjectId=selectedSubjectId===b.dataset.subject?null:b.dataset.subject;if(selectedSubjectId)localStorage.setItem('primeExternalLastStudy',selectedSubjectId);load();});
+    resourcesEl.addEventListener('click',e=>{const b=e.target.closest('[data-resource]');if(b){const row=resourceRows.find(x=>x.id===b.dataset.resource);if(row)openResource(row);}});
+    topicsEl?.addEventListener('click',e=>{const b=e.target.closest('[data-resource]');if(b){const row=resourceRows.find(x=>x.id===b.dataset.resource);if(row)openResource(row);}});
     [search,exam,kind].forEach(el=>el.addEventListener(el===search?'input':'change',()=>{selectedSubjectId=null;load();}));
     await load();
   }

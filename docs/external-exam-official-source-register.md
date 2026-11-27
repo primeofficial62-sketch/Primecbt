@@ -91,3 +91,14 @@ Never label an AI-generated or independently authored question as an official pa
 - WAEC's e-Learning pages expose subject resources, but they do not establish unrestricted bulk redistribution rights.
 - NECO's syllabus is listed as a paid item; no free complete syllabus download has been verified.
 - This register is a source map, not evidence that question banks have been populated.
+
+
+## PRIME-CBT in-site study library — starter release (reviewed 2026-11-27)
+
+- PRIME-CBT now stores original foundational lesson notes in its own External Exams resource table and renders them inside the Study page. Students do not need to leave the Study page to read these lessons.
+- Starter coverage: English, Mathematics, Biology, Chemistry and Physics across the currently matching JAMB, WAEC and NECO catalogue entries; 24 topic entries and 24 original lesson resources.
+- Lesson text is independently authored for PRIME-CBT. It is not copied from JAMB IBASS, WAEC e-Learning, NECO paid syllabus documents, or NERDC restricted study materials.
+- Status: `editorial_reviewed` means content/editorial review for this starter release. It does not claim independent teacher approval or certify that these ten foundation topics constitute a complete examination syllabus.
+- The starter lessons are free and are not marked PRIME PRO. The full syllabus coverage, additional subjects, downloadable packs and teacher-reviewed question resources remain to be built and reviewed.
+- NECO official homepage currently lists the 2027 SSCE Internal exam window (1 April–11 May 2027) and 2027 BECE window (19–31 May 2027). These dates are recorded as sourced events; subject-level timetables remain authoritative when published.
+- No 2027 JAMB UTME or WAEC WASSCE exam window is published as confirmed in this starter release. Proposed or media-reported dates must not be shown as official dates until the examination body confirms them.

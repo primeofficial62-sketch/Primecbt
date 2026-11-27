@@ -92,3 +92,28 @@
 
 /* Verified External Exams study portals */
 .source-library-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.source-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--surface);transition:border-color .18s,background .18s}.source-card:active{border-color:rgba(49,211,162,.55);background:var(--surface-2)}.source-card strong{font-size:12px;line-height:1.3}.source-card small{font-size:10px;line-height:1.45;color:var(--muted)}.source-card .source-go{display:flex;align-items:center;gap:5px;margin-top:auto;color:var(--green);font-size:10px;font-weight:750}.source-card .source-go .inline-icon{width:13px;height:13px;margin:0}.source-note{font-size:10px;line-height:1.5;color:var(--muted);margin:10px 1px 0}@media(max-width:360px){.source-library-grid{gap:7px}.source-card{padding:10px}.source-card strong{font-size:11px}}
+
+/* In-site External Exams lesson library */
+.resource-open{width:100%;text-align:left;color:var(--text);font:inherit;cursor:pointer}
+.resource-open .resource-card-copy{min-width:0;flex:1}
+.resource-open .resource-card-copy h3{font-size:13px;line-height:1.35;margin:0 0 4px}
+.resource-open .resource-card-copy p{font-size:10px;color:var(--muted);margin:0}
+.topic-open{display:inline-flex;align-items:center;gap:6px;margin-top:9px;padding:7px 9px;border:1px solid rgba(49,211,162,.25);border-radius:9px;background:rgba(49,211,162,.08);color:var(--green);font-size:10px;font-weight:750}
+.topic-open svg{width:13px;height:13px}
+.study-reader{width:min(520px,calc(100% - 24px));max-height:min(86svh,850px);padding:0;border:1px solid var(--border);border-radius:22px;background:#0b1425;color:var(--text);box-shadow:0 24px 80px #000a}
+.study-reader::backdrop{background:rgba(1,5,13,.78);backdrop-filter:blur(5px)}
+.study-reader-head{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 18px 13px;background:rgba(11,20,37,.97);border-bottom:1px solid var(--border)}
+.study-reader-head .eyebrow{margin:0;font-size:9px}
+.study-reader-head h2{font-size:20px;line-height:1.2;margin:8px 0 5px}
+.study-reader-head p{margin:0}
+.study-reader-body{padding:17px 19px 26px;font-size:13px;line-height:1.75;color:#dce5ef}
+.study-reader-body h2{font-size:17px;line-height:1.3;margin:20px 0 8px;color:#fff}
+.study-reader-body h3{font-size:14px;margin:18px 0 7px;color:#fff}
+.study-reader-body p{margin:0 0 12px}
+.study-reader-body ul{padding-left:20px;margin:5px 0 15px}
+.study-reader-body li{padding-left:3px;margin:5px 0}
+.lesson-key-points{margin-top:22px;padding:14px;border:1px solid rgba(49,211,162,.25);border-radius:14px;background:rgba(49,211,162,.07)}
+.lesson-key-points h3{margin:0 0 8px;color:var(--green)}
+.lesson-key-points ul{margin:0}
+@media(max-width:360px){.study-reader{width:calc(100% - 16px);max-height:88svh}.study-reader-body{padding:14px 15px 22px}}
+\n.pro-benefits{margin:14px 0 0;padding:13px;border:1px solid rgba(49,211,162,.24);border-radius:14px;background:rgba(4,14,24,.45)}.pro-benefits h3{font-size:12px;margin:0 0 8px;color:var(--green)}.pro-benefits ul{padding-left:18px;margin:0 0 10px}.pro-benefits li,.pro-benefits p{font-size:10px;line-height:1.55;color:#c3cedb;margin:5px 0}.pro-benefits strong{color:var(--text)}\n
