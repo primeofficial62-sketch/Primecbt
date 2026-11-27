@@ -2054,10 +2054,25 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     return null;
   }
   async function resolveExperience(user) {
-    // Account registration metadata is authoritative. The URL tag is only a
-    // fallback for legacy accounts that pre-date pathway tagging.
+    // Saved account metadata is authoritative whenever it exists.
     const tagged = metadataExperience(user);
     if (tagged) return tagged;
+
+    // An explicitly selected sign-in pathway must be checked before the
+    // University profile fallback. Legacy External Exams users may also have
+    // a University profile row; that row must not hijack their exam workspace.
+    let intent = requestedExperience;
+    if (!intent && explicitExperienceChoice) intent = selectedAuthExperience;
+    if (!intent) {
+      try {
+        const saved = sessionStorage.getItem(EXPERIENCE_KEY);
+        if (saved === 'external' || saved === 'campus') intent = saved;
+      } catch (e) {}
+    }
+    if (intent) return intent === 'external' ? 'external' : 'university';
+
+    // Infer University for older accounts only when no pathway was selected
+    // and no registration metadata is available.
     try {
       const { data: profile } = await supabaseClient
         .from('profiles')
@@ -2065,10 +2080,8 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
         .eq('id', user.id)
         .maybeSingle();
       if (profile && (profile.institution || profile.department || profile.level || profile.school_id)) return 'university';
-    } catch (err) { /* profile fallback is best-effort; auth metadata remains primary */ }
-    let intent = requestedExperience;
-    if (!intent) { try { intent = sessionStorage.getItem(EXPERIENCE_KEY) === 'external' ? 'external' : null; } catch (e) {} }
-    return intent || 'university';
+    } catch (err) { /* profile fallback is best-effort */ }
+    return 'university';
   }
   async function goNext(replace) {
     let dest = nextUrl();
