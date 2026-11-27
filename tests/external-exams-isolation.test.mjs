@@ -28,13 +28,13 @@ test('External Exams uses the shared PRIME-CBT auth page and enters its own app'
 test('External registration uses the shared auth page and routes to the External Exams home', async () => {
   const rootAuth = await read('auth.html');
   const legacyAuth = await read('external/auth.html');
-  assert.match(rootAuth, /prime_experience:\\s*'external_exams'/);
+  assert.match(rootAuth, /prime_experience:\s*'external_exams'/);
   assert.ok(rootAuth.includes("userMeta.pathway === 'exam_preparation'"));
   assert.ok(rootAuth.includes("window.location.replace('/external/home.html')"));
   assert.ok(rootAuth.includes("sessionStorage.setItem(NEXT_KEY, '/external/home.html')"));
   assert.ok(legacyAuth.includes('window.location.replace(destination)'));
   assert.doesNotMatch(legacyAuth, /<form/i);
-  assert.match(rootAuth, /if \\(needsProfileSetup\\(session\\.user\\)\\)[\\s\\S]*?profile-setup\\.html/);
+  assert.match(rootAuth, /if \(needsProfileSetup\(session\.user\)\)[\s\S]*?profile-setup\.html/);
 });
 
 test('External Exams uses the existing PRIME-CBT brand palette and normal responsive mobile sizing', async () => {
