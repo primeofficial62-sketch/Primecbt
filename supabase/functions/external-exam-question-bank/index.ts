@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
           if (!providerId || !q?.question || options.length < 2 || answerIndex < 0 || answerIndex >= options.length || seen.has(providerId)) continue;
           seen.add(providerId);
           fetched.push({
-            q: { ...q, option: Object.fromEntries(options.map((k, i) => [String(i), q.option?.[k]])) },
+            q,
             subject: subject.name,
             subjectId: subject.id
           });
@@ -143,9 +143,8 @@ Deno.serve(async (req: Request) => {
       if (attemptError || !attempt) return json({ error: "Could not create your examination session." }, 500);
 
       const publicRows = selected.map((item, index) => {
-        const optionKeys = Object.keys(item.q.option || {}).sort((a, b) => Number(a) - Number(b));
+        const optionKeys = ["a", "b", "c", "d", "e"].filter(k => item.q.option?.[k] !== undefined && item.q.option[k] !== null && String(item.q.option[k]).trim() !== "");
         const answerLetter = String(item.q.answer || "").toLowerCase().trim();
-        const originalKeys = ["a", "b", "c", "d", "e"].filter(k => item.q.option?.[k] !== undefined && item.q.option[k] !== null && String(item.q.option[k]).trim() !== "");
         return {
           attempt_id: attempt.id,
           provider_question_id: String(item.q.id),
@@ -154,9 +153,9 @@ Deno.serve(async (req: Request) => {
           exam_year: examYear,
           question_text: String(item.q.question),
           section: item.q.section ? String(item.q.section) : null,
-          options: optionKeys.map(k => String((item.q.option as Record<string, string>)[k])),
+          options: optionKeys.map(k => String(item.q.option?.[k])),
           image_url: item.q.image ? String(item.q.image) : null,
-          _answer: originalKeys.indexOf(answerLetter),
+          _answer: optionKeys.indexOf(answerLetter),
           _solution: item.q.solution ? String(item.q.solution) : null
         };
       });
