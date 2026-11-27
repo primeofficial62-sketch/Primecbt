@@ -86,8 +86,9 @@
         if (v && v.refresh_token) {
           var userMeta = v && v.user && v.user.user_metadata || {};
           var externalAccount = userMeta.prime_experience === 'external_exams' || userMeta.pathway === 'exam_preparation';
+          var universityAccount = userMeta.pathway === 'institutional_learning' || userMeta.prime_experience === 'university_learning' || userMeta.prime_experience === 'university';
           sessionStorage.setItem('pc_redirected', '1');
-          location.replace(externalAccount ? '/external/home.html' : 'home.html');
+          location.replace(externalAccount ? '/external/home.html' : universityAccount ? 'home.html' : '/auth.html?mode=login');
           return;
         }
       }
