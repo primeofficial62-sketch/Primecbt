@@ -69,7 +69,9 @@ async function startFromLocal(
   if (!chosen.length) return json({
     error: examYear < 2001
       ? "No verified questions are published for this year yet. The connected V1 provider documents 2001–2026; 1990–2000 needs a separate licensed archive."
-      : "No questions are available from the connected provider or the verified local archive for this selection."
+      : !Deno.env.get("SDASHAPI_ACCESS_TOKEN")
+        ? "No local questions are published for this selection yet, and the licensed provider token is not configured. Add SDASHAPI_ACCESS_TOKEN or import verified licensed questions."
+        : "No questions are available from the connected provider or the verified local archive for this selection."
   }, 404);
 
   const { data: attempt, error: attemptError } = await admin.from("external_exam_attempts").insert({
