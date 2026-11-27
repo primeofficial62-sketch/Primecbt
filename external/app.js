@@ -175,15 +175,17 @@
       if(requestedType&&kind.value==='ALL'&&[...kind.options].some(o=>o.value===requestedType))kind.value=requestedType;
       const requestedExam=new URLSearchParams(location.search).get('exam');
       if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
-      const [s,r]=await Promise.all([
+      const [s,r,t]=await Promise.all([
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
-        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,source_url,content_origin,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(500);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
+        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,source_url,content_origin,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(500);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})(),
+        db.from('external_exam_topics').select('subject_id').eq('is_published',true)
       ]);
       resourceRows=r.data||[];
-      if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
+      if(s.error||t.error){const err=s.error||t.error;subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(err.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
       else{
         subjects=s.data||[];
-        const visible=subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value);
+        const availableSubjectIds=new Set((t.data||[]).map(x=>x.subject_id));
+        const visible=subjects.filter(x=>(exam.value==='ALL'||x.exam_code===exam.value)&&availableSubjectIds.has(x.id));
         if(countEl)countEl.textContent=visible.length+' subjects';
         if(selectedSubjectId&&!visible.some(x=>x.id===selectedSubjectId))selectedSubjectId=null;
         subjectsEl.classList.add('study-subject-grid');
