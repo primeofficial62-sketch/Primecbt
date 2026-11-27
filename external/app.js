@@ -30,10 +30,10 @@
     const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
     nodes.forEach(node=>{
       const value=node.nodeValue||'';
-      if(!/\\{\\{[A-Z_]+\\}\\}/.test(value))return;
+      if(!/\{\{[A-Z_]+\}\}/.test(value))return;
       const fragment=document.createDocumentFragment();
       let cursor=0;
-      value.replace(/\\{\\{([A-Z_]+)\\}\\}/g,(match,key,offset)=>{
+      value.replace(/\{\{([A-Z_]+)\}\}/g,(match,key,offset)=>{
         if(offset>cursor)fragment.appendChild(document.createTextNode(value.slice(cursor,offset)));
         if(names[key]){
           const template=document.createElement('template');
@@ -117,12 +117,12 @@
     const recent=$('recentResults');
     if(recent)recent.innerHTML=attemptError?'<div class="empty-state"><strong>Results are temporarily unavailable</strong>Please try again later.</div>':completed.length?completed.slice(0,3).map(a=>{const pct=Number(a.total_questions)>0?Math.round(Number(a.score||0)/Number(a.total_questions)*100):0;return '<a class="result-row" href="results.html?attempt='+encodeURIComponent(a.id)+'"><span class="result-mark">'+esc(a.exam_code)+'</span><span class="result-copy"><strong>'+esc(a.exam_code)+' CBT result</strong><small>'+new Date(a.submitted_at||a.started_at).toLocaleDateString()+' · '+Number(a.score||0)+'/'+Number(a.total_questions||0)+' correct</small></span><span class="result-score">'+pct+'%</span></a>';}).join(''):'<div class="empty-state"><strong>No completed exams yet</strong>Your submitted CBT results will show here after your first attempt.</div>';
     const [eventResult,newsResult]=await Promise.all([
-      db.from('external_exam_updates').select('id,title,summary,starts_at,published_at,target_url,source_name,target_url').eq('is_published',true).eq('update_type','event').order('starts_at',{ascending:true}).limit(8),
+      db.from('external_exam_updates').select('id,title,summary,starts_at,published_at,target_url,source_name').eq('is_published',true).eq('update_type','event').order('starts_at',{ascending:true}).limit(8),
       db.from('external_exam_updates').select('id,title,summary,published_at,target_url,source_name').eq('is_published',true).eq('update_type','news').order('published_at',{ascending:false}).limit(8)
     ]);
     const events=eventResult.data||[],news=newsResult.data||[];
     const ev=$('eventsList'),nw=$('newsList');
-    if(ev)ev.innerHTML=eventResult.error?'<div class="empty-state" style="min-width:100%">Events are temporarily unavailable.</div>':events.length?events.map(x=>'<article class="event-card"><div class="event-date">'+esc(x.starts_at?new Date(x.starts_at).toLocaleDateString():'DATE TO BE ANNOUNCED')+'</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'PRIME-CBT examination update')+'</p></article>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No upcoming events yet</strong>New mock examinations and revision events will appear here.</div>';
+    if(ev)ev.innerHTML=eventResult.error?'<div class="empty-state" style="min-width:100%">Events are temporarily unavailable.</div>':events.length?events.map(x=>'<article class="event-card"><div class="event-date">'+esc(x.starts_at?new Date(x.starts_at).toLocaleDateString():'DATE TO BE ANNOUNCED')+'</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.source_name||'Verified examination source')+'</p>'+(x.target_url?'<a class="section-link" href="'+esc(x.target_url)+'" target="_blank" rel="noopener">Read notice →</a>':'')+'</article>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No upcoming events yet</strong>New mock examinations and revision events will appear here.</div>';
     if(nw)nw.innerHTML=newsResult.error?'<div class="empty-state" style="min-width:100%">News is temporarily unavailable.</div>':news.length?news.slice(0,6).map(x=>'<a class="news-card" href="'+esc(x.target_url||'news.html')+'" target="_blank" rel="noopener"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(x.title)+'</h3><p>'+esc(x.source_name||'Verified education source')+'</p></div></a>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No news published yet</strong>Verified education and examination updates will appear here.</div>';
     const nextEvent=events.filter(x=>x.starts_at&&/(JAMB|WAEC|NECO|GCE|POST.?UTME|UTME)/i.test(x.title)&&new Date(x.starts_at).getTime()>=Date.now()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at))[0];
     if($('examCountdown'))$('examCountdown').textContent=nextEvent?Math.max(0,Math.ceil((new Date(nextEvent.starts_at)-Date.now())/86400000))+' days':'To be announced';
