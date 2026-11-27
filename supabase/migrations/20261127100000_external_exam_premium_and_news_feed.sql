@@ -67,7 +67,7 @@ create policy "published external resources readable"
 create table if not exists public.external_exam_activation_payments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  reference text not null unique check (reference ~ '^PEXA_[A-Za-z0-9]{10,40}
+  reference text not null unique check (left(reference,5) = 'PEXA_' and char_length(reference) between 15 and 45),
   amount_kobo integer not null default 300000 check (amount_kobo = 300000),
   currency text not null default 'NGN' check (currency = 'NGN'),
   status text not null default 'initiated' check (status in ('initiated','pending','success','failed','abandoned','expired')),
