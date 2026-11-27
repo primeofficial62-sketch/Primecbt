@@ -295,7 +295,40 @@
     (preferences?.exam_interests||[]).forEach(value=>{const input=document.querySelector('[data-interest][value="'+value+'"]');if(input)input.checked=true;});
     const premiumActive=!!preferences?.premium_activated_at;
     const premiumStatus=$('premiumStatus');if(premiumStatus)premiumStatus.textContent=premiumActive?'PRIME PRO is active on this account.':'Free account · PRIME PRO unlock is not active yet.';
-    const activationInfo=$('activationInfo');activationInfo?.addEventListener('click',()=>toast(premiumActive?'Your PRIME PRO access is active.':'₦3,000 unlocks premium study resources and learning features. Secure checkout will be enabled after payment verification is configured.'));
+    const activationInfo=$('activationInfo');activationInfo?.addEventListener('click',()=>toast(premiumActive?'Your PRIME PRO access is active.':'A one-time ₦3,000 Paystack payment unlocks premium study resources and learning features.'));
+    const activateButton=$('activatePrimePro');
+    const activationRef=new URLSearchParams(location.search).get('activation_ref');
+    if(activationRef){
+      if(activateButton){activateButton.disabled=true;activateButton.textContent='Verifying payment…';}
+      const {data:verification,error:verificationError}=await db.functions.invoke('external-exam-activation-verify',{body:{reference:activationRef}});
+      if(!verificationError&&verification?.activated){
+        premiumActive=true;
+        if(premiumStatus)premiumStatus.textContent='PRIME PRO is active on this account.';
+        toast('Payment verified. PRIME PRO is now active.');
+      }else if(verificationError){
+        toast('We could not verify this payment yet. You can retry from this page.',true);
+      }else{
+        toast(verification?.status==='pending'?'Payment is still processing. Check again shortly.':'Payment was not completed. You can try again.',verification?.status!=='pending');
+      }
+      if(activateButton){activateButton.disabled=false;activateButton.textContent=premiumActive?'PRIME PRO active':'Activate PRIME PRO · ₦3,000';}
+      history.replaceState(null,'','more.html');
+    }
+    activateButton?.addEventListener('click',async()=>{
+      if(premiumActive){toast('PRIME PRO is already active on this account.');return;}
+      activateButton.disabled=true;activateButton.textContent='Preparing secure checkout…';
+      const {data,error}=await db.functions.invoke('external-exam-activation-init');
+      if(error||data?.error){
+        toast(data?.error==='payments_not_configured'?'Secure payments are not configured yet. Please contact support.':'Could not start activation. Please try again.',true);
+        activateButton.disabled=false;activateButton.textContent='Activate PRIME PRO · ₦3,000';return;
+      }
+      if(data?.already_active){
+        premiumActive=true;if(premiumStatus)premiumStatus.textContent='PRIME PRO is active on this account.';
+        activateButton.textContent='PRIME PRO active';activateButton.disabled=false;return;
+      }
+      if(data?.authorization_url){location.assign(data.authorization_url);return;}
+      toast('Secure checkout did not return a payment link.',true);
+      activateButton.disabled=false;activateButton.textContent='Activate PRIME PRO · ₦3,000';
+    });
     const settings=$('savePreferences');settings?.addEventListener('click',async()=>{const checks=[...document.querySelectorAll('[data-interest]:checked')].map(x=>x.value);const {error}=await db.from('external_exam_profiles').update({exam_interests:checks,updated_at:new Date().toISOString()}).eq('user_id',profile.user.id);toast(error?error.message:'Preferences saved.',!!error);});
   }
   hydrateIcons();
