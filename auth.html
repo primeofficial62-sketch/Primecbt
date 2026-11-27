@@ -954,7 +954,51 @@
 .icon-btn { width: 48px; height: 48px; }
   /* move the Sign Up / Sign In switch down a little */
 .switcher { margin-top: 14px !important; }
-</style>
+
+    /* AUTH PAGE SCROLL FIX
+       Let the document grow naturally on short screens and when the sign-in
+       form is taller than the viewport. The sign-in card must not trap or
+       disable vertical scrolling. */
+    html, body {
+      height: auto !important;
+      min-height: 100%;
+    }
+    body {
+      height: auto !important;
+      min-height: 100vh;
+      min-height: 100svh;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+    }
+    .stage {
+      height: auto !important;
+      min-height: 100vh;
+      min-height: 100svh;
+      overflow: visible !important;
+    }
+    .content {
+      flex: 0 0 auto;
+      min-height: auto !important;
+    }
+    .auth-card {
+      flex: 0 0 auto !important;
+      min-height: auto !important;
+    }
+    .card-body,
+    .card-body:has(#panel-login.active) {
+      flex: 0 0 auto !important;
+      height: auto !important;
+      max-height: none !important;
+      min-height: auto !important;
+      overflow: visible !important;
+      overscroll-behavior: auto !important;
+    }
+    @media (min-width: 600px) {
+      body { padding-bottom: 24px; }
+      .stage { margin-top: 0; margin-bottom: 0; }
+    }
+
+  </style>
   <script>
 (function () {
   try {
