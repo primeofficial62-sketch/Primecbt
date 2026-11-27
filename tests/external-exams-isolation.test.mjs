@@ -24,6 +24,12 @@ test('External Exams uses the shared PRIME-CBT auth page and enters its own app'
   assert.ok(sharedAuth.includes("urlParams.get('experience') === 'external'"));
   assert.ok(sharedAuth.includes("meta.pathway === 'institutional_learning'"));
   assert.ok(sharedAuth.includes("else if (dest.startsWith('/external/')) dest = 'home.html'"));
+  const resolverStart = sharedAuth.indexOf('async function resolveExperience(user)');
+  const resolverEnd = sharedAuth.indexOf('async function goNext(replace)', resolverStart);
+  const resolver = sharedAuth.slice(resolverStart, resolverEnd);
+  assert.ok(resolver.includes('if (!intent && explicitExperienceChoice) intent = selectedAuthExperience'));
+  assert.ok(resolver.indexOf('if (intent) return') < resolver.indexOf(".from('profiles')"),
+    'an explicitly selected sign-in pathway must win over a legacy University profile row');
   assert.doesNotMatch(sharedAuth, /nextUrl\(\)\.startsWith\('\/external\/'\)/);
   const universityStart = index.indexOf('<section class="university" id="university">');
   const universityEnd = index.indexOf('<!-- EXTERNAL EXAMINATIONS -->', universityStart);
