@@ -83,9 +83,12 @@
 .inline-icon{width:16px;height:16px;display:inline-block;vertical-align:-3px;flex:none;margin-left:4px}
 .btn-primary .inline-icon,.ai-link .inline-icon,.card-action .inline-icon{width:15px;height:15px;margin-left:3px}
 .subject-selection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-.subject-selection-grid .subject-option{min-width:0;min-height:42px;margin:0;padding:9px 10px;align-items:center;gap:8px;border-radius:11px;font-size:11px;line-height:1.3}
+.subject-selection-grid .subject-option{min-width:0;min-height:36px;margin:0;padding:7px 8px;align-items:center;gap:6px;border-radius:10px;font-size:10.5px;line-height:1.25}
 .subject-selection-grid .subject-option span{min-width:0;overflow-wrap:anywhere}
-.subject-selection-grid .subject-option input{width:16px;height:16px;flex:none;margin:0;accent-color:var(--green)}
+.subject-selection-grid .subject-option input{width:14px;height:14px;flex:none;margin:0;accent-color:var(--green)}
 @media(max-width:360px){.subject-selection-grid{gap:6px}.subject-selection-grid .subject-option{padding:8px;font-size:10.5px}}
 
 .source-label{font-size:10px!important;color:var(--green)!important;margin:2px 0 6px!important}
+
+/* Verified External Exams study portals */
+.source-library-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.source-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--surface);transition:border-color .18s,background .18s}.source-card:active{border-color:rgba(49,211,162,.55);background:var(--surface-2)}.source-card strong{font-size:12px;line-height:1.3}.source-card small{font-size:10px;line-height:1.45;color:var(--muted)}.source-card .source-go{display:flex;align-items:center;gap:5px;margin-top:auto;color:var(--green);font-size:10px;font-weight:750}.source-card .source-go .inline-icon{width:13px;height:13px;margin:0}.source-note{font-size:10px;line-height:1.5;color:var(--muted);margin:10px 1px 0}@media(max-width:360px){.source-library-grid{gap:7px}.source-card{padding:10px}.source-card strong{font-size:11px}}
