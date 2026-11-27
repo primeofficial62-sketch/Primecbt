@@ -38,6 +38,8 @@ test('Study library opens lessons inside PRIME-CBT and has no off-site study lin
   assert.ok(!study.includes('href="https://') && !study.includes("href='https://"));
   assert.ok(app.includes('content_markdown'));
   assert.ok(app.includes('reader.showModal()'));
+  assert.ok(app.includes('resource-tile'));
+  assert.ok(css.includes('.resource-library-grid'));
   assert.ok(app.includes('data-resource'));
   assert.ok(css.includes('.study-reader'));
 });
