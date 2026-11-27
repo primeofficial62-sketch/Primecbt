@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
     await db.from("external_exam_feed_sync_state").upsert({ singleton: true, last_synced_at: new Date().toISOString(), last_error: null, updated_at: new Date().toISOString() });
     return new Response(JSON.stringify({ ok: true, refreshed: true, imported: deduped.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    const message = String(error?.message || error).slice(0, 1000);
+    const message = String(error instanceof Error ? error.message : error).slice(0, 1000);
     await db.from("external_exam_feed_sync_state").upsert({ singleton: true, last_error: message, updated_at: new Date().toISOString() });
     return new Response(JSON.stringify({ error: "Unable to refresh trusted exam updates", detail: message }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
