@@ -103,7 +103,7 @@ new_topics as (
  'Cross-curriculum reference only; not an examination-body syllabus'
  from subjects su join topic_seed ts on ts.family=su.family
  where not exists(select 1 from public.external_exam_topics t where t.subject_id=su.id and t.title=ts.title)
- returning id,subject_id,title
+ returning id,subject_id,title,description
 )
 insert into public.external_exam_resources
 (subject_id,topic_id,exam_code,resource_type,title,description,source_year,source_label,source_url,is_published,is_premium,
