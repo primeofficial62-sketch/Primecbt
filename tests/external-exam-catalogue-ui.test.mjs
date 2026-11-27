@@ -108,3 +108,10 @@ test('Study subject catalogue uses a vertical two-column card grid', async () =>
   assert.ok(app.includes('study-subject-card'));
   assert.match(css, /\.study-subject-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
+
+test('External Exams logout is a deliberate bottom action with confirmation', async () => {
+  const more = await read('external/more.html');
+  const app = await read('external/app.js');
+  assert.ok(more.includes('id="logoutButton"'));
+  assert.ok(app.includes("window.confirm('Log out of PRIME-CBT External Exams?')"));
+});
