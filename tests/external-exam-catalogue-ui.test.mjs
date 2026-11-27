@@ -61,3 +61,46 @@ test('Study content migration stores original reviewed lessons and sourced futur
   assert.ok(migration.includes('NECO_2027_BECE_WINDOW'));
   assert.doesNotMatch(migration, /insert into public\\.external_exam_questions/i);
 });
+
+test('External Exams CBT setup selects a specific year and sends it to the server question bank', async () => {
+  const testPage = await read('external/test.html');
+  const app = await read('external/app.js');
+  const migration = await read('supabase/migrations/20261127161000_external_exam_year_scoped_question_selection.sql');
+  assert.ok(testPage.includes('id="examYear"'));
+  assert.ok(app.includes('length:37'));
+  assert.ok(app.includes('p_exam_year:Number(year?.value||2026)'));
+  assert.match(migration, /q\.exam_year\s*=\s*p_exam_year/i);
+  assert.match(migration, /exam_year\s+integer/i);
+  assert.match(migration, /1990/);
+  assert.match(migration, /2026/);
+});
+
+test('External Exams chat has a shared General Chat and a separate PRIME AI tutor', async () => {
+  const chat = await read('external/chat.html');
+  const app = await read('external/app.js');
+  const ai = await read('supabase/functions/external-exam-ai/index.ts');
+  assert.ok(chat.includes('General Chat'));
+  assert.ok(chat.includes('PRIME AI'));
+  assert.ok(!chat.includes('Ask Question'));
+  assert.ok(app.includes("eq('channel','general')"));
+  assert.ok(app.includes("functions.invoke('external-exam-ai'"));
+  assert.ok(ai.includes('GEMINI_API_KEY'));
+  assert.ok(ai.includes('You are PRIME AI'));
+});
+
+test('External Exams event cards match news cards and More has a bottom logout action', async () => {
+  const css = await read('external/app.css');
+  const more = await read('external/more.html');
+  assert.match(css, /\.event-card\{width:245px;min-width:245px;max-width:245px/);
+  assert.match(css, /\.news-card\{width:245px;min-width:245px/);
+  assert.ok(more.includes('class="logout-button" id="logoutButton"'));
+  assert.ok(!more.includes('aria-label="Log out">↗'));
+});
+
+test('Study subject catalogue uses a vertical two-column card grid', async () => {
+  const app = await read('external/app.js');
+  const css = await read('external/app.css');
+  assert.ok(app.includes('study-subject-grid'));
+  assert.ok(app.includes('study-subject-card'));
+  assert.match(css, /\.study-subject-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
