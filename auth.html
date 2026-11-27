@@ -1827,6 +1827,9 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   // ========== SAFE "NEXT" DESTINATION ==========
   // Only same-site .html pages are allowed (no other sites, no javascript: links).
   const NEXT_KEY = 'auth_next';
+  const EXPERIENCE_KEY = 'auth_experience';
+  const requestedExperience = urlParams.get('experience') === 'external' ? 'external' : null;
+  if (requestedExperience) { try { sessionStorage.setItem(EXPERIENCE_KEY, requestedExperience); } catch (e) {} }
   function safeNext(v) {
     if (!v) return null;
     v = String(v).trim();
@@ -1841,18 +1844,41 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     if (!n) { try { n = safeNext(sessionStorage.getItem(NEXT_KEY)); } catch (e) {} }
     return n || 'home.html';
   }
+  function metadataExperience(user) {
+    const meta = user?.user_metadata || {};
+    if (meta.prime_experience === 'external_exams' || meta.pathway === 'exam_preparation') return 'external';
+    if (meta.pathway === 'institutional_learning' || meta.prime_experience === 'university_learning' || meta.prime_experience === 'university') return 'university';
+    return null;
+  }
+  async function resolveExperience(user) {
+    // Account registration metadata is authoritative. The URL tag is only a
+    // fallback for legacy accounts that pre-date pathway tagging.
+    const tagged = metadataExperience(user);
+    if (tagged) return tagged;
+    try {
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('institution, department, level, school_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (profile && (profile.institution || profile.department || profile.level || profile.school_id)) return 'university';
+    } catch (err) { /* profile fallback is best-effort; auth metadata remains primary */ }
+    let intent = requestedExperience;
+    if (!intent) { try { intent = sessionStorage.getItem(EXPERIENCE_KEY) === 'external' ? 'external' : null; } catch (e) {} }
+    return intent || 'university';
+  }
   async function goNext(replace) {
     let dest = nextUrl();
     try {
       const { data } = await supabaseClient.auth.getSession();
-      const userMeta = data?.session?.user?.user_metadata || {};
-      // External examination candidates must enter the separate External Exams app,
-      // never the University home page. Keep explicit University routing unchanged.
-      if (userMeta.prime_experience === 'external_exams' || userMeta.pathway === 'exam_preparation') {
-        dest = '/external/home.html';
+      const user = data?.session?.user;
+      if (user) {
+        const experience = await resolveExperience(user);
+        if (experience === 'external') dest = '/external/home.html';
+        else if (dest.startsWith('/external/')) dest = 'home.html';
       }
-    } catch (err) { /* retain the safe requested destination */ }
-    try { sessionStorage.removeItem(NEXT_KEY); } catch (e) {}
+    } catch (err) { /* keep the safe requested destination if account lookup fails */ }
+    try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {}
     if (replace) window.location.replace(dest); else window.location.href = dest;
   }
   // An explicit ?mode= always wins. Otherwise returning users land on Log In.
@@ -2733,7 +2759,7 @@ switcher.dataset.mode = mode;
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { data: meta, emailRedirectTo: window.location.origin + (pathway === 'exam' ? '/auth.html?mode=login&next=%2Fexternal%2Fhome.html' : '/auth.html?mode=login') }
+        options: { data: meta, emailRedirectTo: window.location.origin + (pathway === 'exam' ? '/auth.html?mode=login&next=%2Fexternal%2Fhome.html&experience=external' : '/auth.html?mode=login') }
       });
 
       setLoading(stepNext, false);
@@ -3209,14 +3235,11 @@ resendResetLink.addEventListener('click', async (e) => {
 
     markReturningUser();
 
-    // External Exams users must bypass University profile setup and enter
-    // the dedicated External Exams app directly.
-    const userMeta = session.user?.user_metadata || {};
-    const externalExamUser =
-      userMeta.prime_experience === 'external_exams' ||
-      userMeta.pathway === 'exam_preparation' ||
-      nextUrl().startsWith('/external/');
-    if (externalExamUser) {
+    // Resolve the account's registered pathway before considering the entry link.
+    // This prevents an old External Exams URL from hijacking a University account.
+    const experience = await resolveExperience(session.user);
+    if (experience === 'external') {
+      try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {}
       window.location.replace('/external/home.html');
       return;
     }
@@ -3241,7 +3264,7 @@ resendResetLink.addEventListener('click', async (e) => {
 
   // While Supabase is still exchanging the Google code for a session, keep the
   // page hidden so the user never sees the Sign Up form flash up again.
-  if (!nextFromUrl && !isOAuthReturn) { try { sessionStorage.removeItem(NEXT_KEY); } catch (e) {} }
+  if (!nextFromUrl && !requestedExperience && !isOAuthReturn) { try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {} }
   setTimeout(showPage, isOAuthReturn ? 8000 : 4000);
 
   if (isOAuthReturn) {

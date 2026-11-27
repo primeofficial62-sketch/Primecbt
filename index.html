@@ -84,8 +84,11 @@
         var v = JSON.parse(localStorage.getItem(k) || '{}');
 
         if (v && v.refresh_token) {
+          var userMeta = v && v.user && v.user.user_metadata || {};
+          var externalAccount = userMeta.prime_experience === 'external_exams' || userMeta.pathway === 'exam_preparation';
+          var universityAccount = userMeta.pathway === 'institutional_learning' || userMeta.prime_experience === 'university_learning' || userMeta.prime_experience === 'university';
           sessionStorage.setItem('pc_redirected', '1');
-          location.replace('home.html');
+          location.replace(externalAccount ? '/external/home.html' : universityAccount ? 'home.html' : '/auth.html?mode=login');
           return;
         }
       }
@@ -1727,8 +1730,8 @@ img {
 
     <div style="display:flex;justify-content:center;margin:22px 0 28px;">
       <div style="text-align:center;">
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html" class="btn">Enter External Exams →</a>
-        <p style="margin-top:12px;font-size:14px;">Already registered for External Exams? <a href="/auth.html?mode=login&next=%2Fexternal%2Fhome.html" style="color:var(--green);font-weight:700;">Log in</a></p>
+        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external" class="btn">Enter External Exams →</a>
+        <p style="margin-top:12px;font-size:14px;">Already registered for External Exams? <a href="/auth.html?mode=login&next=%2Fexternal%2Fhome.html&experience=external" style="color:var(--green);font-weight:700;">Log in</a></p>
       </div>
     </div>
 
@@ -1738,42 +1741,42 @@ img {
         <span class="exam-code">UTME</span>
         <h3>JAMB Preparation</h3>
         <p>Prepare for the Unified Tertiary Matriculation Examination with subject-based practice and revision.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html">Get Started →</a>
+        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
       </article>
 
       <article class="exam-card">
         <span class="exam-code">WAEC</span>
         <h3>WAEC Preparation</h3>
         <p>Strengthen your knowledge and revise key subjects ahead of your West African examinations.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html">Get Started →</a>
+        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
       </article>
 
       <article class="exam-card">
         <span class="exam-code">NECO</span>
         <h3>NECO Preparation</h3>
         <p>Build confidence with focused subject revision and examination practice.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html">Get Started →</a>
+        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
       </article>
 
       <article class="exam-card">
         <span class="exam-code">POST-UTME</span>
         <h3>Post-UTME Preparation</h3>
         <p>Get ready for university admission screening with relevant practice and revision.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html">Get Started →</a>
+        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
       </article>
 
       <article class="exam-card">
         <span class="exam-code">GCE</span>
         <h3>GCE Preparation</h3>
         <p>Support your examination preparation with structured learning and subject revision.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html">Get Started →</a>
+        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
       </article>
 
       <article class="exam-card">
         <span class="exam-code">MORE</span>
         <h3>Other Examinations</h3>
         <p>Explore a growing learning platform designed to accommodate different examination needs.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html">Join PRIME CBT →</a>
+        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Join PRIME CBT →</a>
       </article>
 
     </div>
