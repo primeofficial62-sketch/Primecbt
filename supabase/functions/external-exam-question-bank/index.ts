@@ -46,6 +46,48 @@ type ProviderQuestion = {
   examyear?: string | number;
 };
 
+async function startFromLocal(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  examCode: string,
+  examYear: number,
+  subjectIds: string[],
+  questionCount: number,
+  durationSeconds: number,
+  mode: string
+) {
+  const { data: available, error: questionError } = await admin
+    .from("external_exam_questions")
+    .select("id")
+    .eq("exam_code", examCode)
+    .eq("exam_year", examYear)
+    .eq("status", "published")
+    .in("subject_id", subjectIds)
+    .limit(Math.min(600, questionCount * 4));
+  if (questionError) return json({ error: "Could not check the verified local archive." }, 500);
+  const chosen = (available || []).sort(() => Math.random() - 0.5).slice(0, questionCount);
+  if (!chosen.length) return json({
+    error: examYear < 2001
+      ? "No verified questions are published for this year yet. The connected V1 provider documents 2001–2026; 1990–2000 needs a separate licensed archive."
+      : "No questions are available from the connected provider or the verified local archive for this selection."
+  }, 404);
+
+  const { data: attempt, error: attemptError } = await admin.from("external_exam_attempts").insert({
+    user_id: userId, exam_code: examCode, exam_year: examYear, question_provider: "local",
+    mode, duration_seconds: durationSeconds, total_questions: chosen.length
+  }).select("id").single();
+  if (attemptError || !attempt) return json({ error: "Could not create your examination session." }, 500);
+
+  const { error: linkError } = await admin.from("external_exam_attempt_questions").insert(
+    chosen.map((q, index) => ({ attempt_id: attempt.id, question_id: q.id, position: index + 1 }))
+  );
+  if (linkError) {
+    await admin.from("external_exam_attempts").delete().eq("id", attempt.id).eq("user_id", userId);
+    return json({ error: "The verified question set could not be prepared." }, 500);
+  }
+  return json({ attempt_id: attempt.id, question_count: chosen.length, exam_year: examYear, source: "local" });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -79,9 +121,6 @@ Deno.serve(async (req: Request) => {
       if (examYear < 2001) return json({ error: "The currently documented SdashAPI V1 archive starts at 2001. Questions for 1990–2000 need a separately verified archive before they can be shown as past questions." }, 422);
       if (!subjectIds.length || subjectIds.length > 8) return json({ error: "Select between one and eight subjects." }, 400);
 
-      const providerToken = Deno.env.get("SDASHAPI_ACCESS_TOKEN");
-      if (!providerToken) return json({ error: "The licensed question-bank connection is not configured yet. Add SDASHAPI_ACCESS_TOKEN in Supabase Edge Function secrets." }, 503);
-
       const { data: subjects, error: subjectError } = await admin
         .from("external_exam_subjects")
         .select("id,name,exam_code")
@@ -90,6 +129,11 @@ Deno.serve(async (req: Request) => {
         .eq("is_active", true);
       if (subjectError) return json({ error: "Could not validate the selected subjects." }, 500);
       if (!subjects?.length || subjects.length !== subjectIds.length) return json({ error: "One or more selected subjects are not valid for this examination." }, 400);
+
+      const providerToken = Deno.env.get("SDASHAPI_ACCESS_TOKEN");
+      if (examYear < 2001 || !providerToken) {
+        return await startFromLocal(admin,user.id,examCode,examYear,subjectIds,questionCount,durationSeconds,mode);
+      }
 
       const perSubject = Math.min(50, Math.ceil(questionCount / subjects.length));
       const fetched: Array<{ q: ProviderQuestion; subject: string; subjectId: string }> = [];
@@ -129,7 +173,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const selected = fetched.slice(0, questionCount);
-      if (!selected.length) return json({ error: "No questions were found for this subject selection and year in the connected archive. Try another year or subject." }, 404);
+      if (!selected.length) return await startFromLocal(admin,user.id,examCode,examYear,subjectIds,questionCount,durationSeconds,mode);
 
       const { data: attempt, error: attemptError } = await admin.from("external_exam_attempts").insert({
         user_id: user.id,
