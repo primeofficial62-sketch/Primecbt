@@ -67,11 +67,9 @@ async function startFromLocal(
   if (questionError) return json({ error: "Could not check the verified local archive." }, 500);
   const chosen = (available || []).sort(() => Math.random() - 0.5).slice(0, questionCount);
   if (!chosen.length) return json({
-    error: examYear < 2001
-      ? "No verified questions are published for this year yet. The connected V1 provider documents 2001–2026; 1990–2000 needs a separate licensed archive."
-      : !Deno.env.get("SDASHAPI_ACCESS_TOKEN")
-        ? "No local questions are published for this selection yet, and the licensed provider token is not configured. Add SDASHAPI_ACCESS_TOKEN or import verified licensed questions."
-        : "No questions are available from the connected provider or the verified local archive for this selection."
+    error: !Deno.env.get("SDASHAPI_ACCESS_TOKEN")
+      ? "No local questions are published for this selection yet, and the licensed provider token is not configured. Add SDASHAPI_ACCESS_TOKEN or import verified licensed questions."
+      : "No questions are available from the connected provider or the verified local archive for this selection. Some subjects have sparse coverage in older years."
   }, 404);
 
   const { data: attempt, error: attemptError } = await admin.from("external_exam_attempts").insert({
@@ -120,7 +118,6 @@ Deno.serve(async (req: Request) => {
 
       if (!examTypes[examCode]) return json({ error: "This question provider currently supports JAMB, WAEC, NECO and Post-UTME. GCE is not available in this feed yet." }, 422);
       if (!Number.isInteger(examYear) || examYear < 1990 || examYear > 2026) return json({ error: "Choose an examination year from 1990 to 2026." }, 400);
-      if (examYear < 2001) return json({ error: "The currently documented SdashAPI V1 archive starts at 2001. Questions for 1990–2000 need a separately verified archive before they can be shown as past questions." }, 422);
       if (!subjectIds.length || subjectIds.length > 8) return json({ error: "Select between one and eight subjects." }, 400);
 
       const { data: subjects, error: subjectError } = await admin
@@ -133,44 +130,53 @@ Deno.serve(async (req: Request) => {
       if (!subjects?.length || subjects.length !== subjectIds.length) return json({ error: "One or more selected subjects are not valid for this examination." }, 400);
 
       const providerToken = Deno.env.get("SDASHAPI_ACCESS_TOKEN");
-      if (examYear < 2001 || !providerToken) {
+      if (!providerToken) {
         return await startFromLocal(admin,user.id,examCode,examYear,subjectIds,questionCount,durationSeconds,mode);
       }
 
-      const perSubject = Math.min(50, Math.ceil(questionCount / subjects.length));
+      const perSubject = Math.ceil(questionCount / subjects.length);
       const fetched: Array<{ q: ProviderQuestion; subject: string; subjectId: string }> = [];
       const seen = new Set<string>();
       const providerType = examTypes[examCode];
 
       for (const subject of subjects) {
-        const params = new URLSearchParams({
-          type: providerType,
-          subject: slugFor(subject.name),
-          year: String(examYear),
-          limit: String(perSubject)
-        });
-        const response = await fetch("https://sdashapi.com/api/v1/q?" + params.toString(), {
-          headers: { "AccessToken": providerToken, "Accept": "application/json" }
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || (payload?.status && Number(payload.status) !== 200)) {
-          if (response.status === 404) continue;
-          const message = String(payload?.message || payload?.error || "The past-question provider is temporarily unavailable.").slice(0, 220);
-          return json({ error: message }, response.status === 429 ? 429 : 502);
-        }
-        const rows = Array.isArray(payload?.data) ? payload.data : payload?.data ? [payload.data] : [];
-        for (const q of rows as ProviderQuestion[]) {
-          const providerId = String(q?.id ?? "");
-          const options = ["a", "b", "c", "d", "e"].filter(k => q?.option?.[k] !== undefined && q.option[k] !== null && String(q.option[k]).trim() !== "");
-          const answerKey = String(q?.answer ?? "").toLowerCase().trim();
-          const answerIndex = ["a", "b", "c", "d", "e"].indexOf(answerKey);
-          if (!providerId || !q?.question || options.length < 2 || answerIndex < 0 || answerIndex >= options.length || seen.has(providerId)) continue;
-          seen.add(providerId);
-          fetched.push({
-            q,
-            subject: subject.name,
-            subjectId: subject.id
+        let subjectCount = 0;
+        let calls = 0;
+        const maxCalls = Math.ceil(perSubject / 50) + 2;
+        while (subjectCount < perSubject && calls < maxCalls) {
+          const limit = Math.min(50, perSubject - subjectCount);
+          const params = new URLSearchParams({
+            type: providerType,
+            subject: slugFor(subject.name),
+            year: String(examYear),
+            limit: String(limit)
           });
+          const response = await fetch("https://sdashapi.com/api/v1/q?" + params.toString(), {
+            headers: { "AccessToken": providerToken, "Accept": "application/json" }
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || (payload?.status && Number(payload.status) !== 200)) {
+            if (response.status === 404) break;
+            const message = String(payload?.message || payload?.error || "The past-question provider is temporarily unavailable.").slice(0, 220);
+            return json({ error: message }, response.status === 429 ? 429 : 502);
+          }
+          const rows = Array.isArray(payload?.data) ? payload.data : payload?.data ? [payload.data] : [];
+          if (!rows.length) break;
+          let added = 0;
+          for (const q of rows as ProviderQuestion[]) {
+            const providerId = String(q?.id ?? "");
+            const optionKeys = ["a", "b", "c", "d", "e"].filter(k => q?.option?.[k] !== undefined && q.option[k] !== null && String(q.option[k]).trim() !== "");
+            const answerKey = String(q?.answer ?? "").toLowerCase().trim();
+            const answerIndex = optionKeys.indexOf(answerKey);
+            if (!providerId || !q?.question || optionKeys.length < 2 || answerIndex < 0 || seen.has(providerId)) continue;
+            seen.add(providerId);
+            fetched.push({ q, subject: subject.name, subjectId: subject.id });
+            subjectCount++;
+            added++;
+            if (subjectCount >= perSubject) break;
+          }
+          calls++;
+          if (rows.length < limit || added === 0) break;
         }
       }
 
