@@ -1,0 +1,27 @@
+name: External Exams regression tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "auth.html"
+      - "external/**"
+      - "supabase/migrations/**"
+      - "tests/**"
+      - ".github/workflows/external-exams-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  external-exams-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run External Exams isolation and security regression tests
+        run: node --test tests/external-exams-isolation.test.mjs tests/external-exam-server-timing.test.mjs
