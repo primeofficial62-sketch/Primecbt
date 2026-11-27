@@ -85,7 +85,8 @@ test('External Exams chat has a shared General Chat and a separate PRIME AI tuto
   assert.ok(!chat.includes('Ask Question'));
   assert.ok(app.includes("eq('channel','general')"));
   assert.ok(app.includes("functions.invoke('external-exam-ai'"));
-  assert.ok(ai.includes('GEMINI_API_KEY'));
+  assert.ok(ai.includes('from("api_keys")'));
+  assert.ok(ai.includes('auth.getUser(token)'));
   assert.ok(ai.includes('You are PRIME AI'));
 });
 
