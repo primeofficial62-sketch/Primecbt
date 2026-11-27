@@ -36,6 +36,28 @@ Last reviewed: 2026-11-27
 - Ingestion status: Official source located; complete syllabus content not publicly verified as freely downloadable.
 - Import rule: Do not scrape candidate portals or bypass payment, authentication, or access controls. Record edition, purchase/permission evidence, and source metadata.
 
+
+## NECO — free curriculum reference (not the NECO syllabus)
+
+- Publisher: Nigerian Educational Research and Development Council (NERDC), a Federal Government education agency.
+- Official revised Senior Secondary Education Curriculum landing page: https://www.nerdc.gov.ng/content_manager/new_senior_curriculum_home.html
+- Public curriculum subject/topic browser: https://nerdc.org.ng/CurriculumView.aspx
+- Public subject listings: https://nerdc.org.ng/SubjectListings.aspx
+- Federal Ministry of Education / NERDC approved subject-list notice: https://education.gov.ng/wp-content/uploads/2026/11/FME-APPROVED-GUIDELINES.pdf
+- Access status: Publicly viewable curriculum listings and selected topic outlines are available without the NECO syllabus purchase.
+- Critical distinction: NERDC curriculum is a national school curriculum reference, not a NECO-issued examination syllabus. Do not label it “NECO official syllabus” or assume every listed subject/topic is examinable in the current NECO session.
+- Rights/access note: NERDC's e-Curriculum portal states that posted syllabi, lecture recordings, slides, and learning materials are for personal study. Public visibility is not permission to bulk-copy or commercially republish them. Obtain written permission or a suitable licence before importing full text into PRIME-CBT or redistributing it.
+- Safe use in PRIME-CBT: Store source metadata and subject taxonomy references; use the curriculum as a provisional cross-reference for research and educator review. Do not publish copied curriculum text or map it as NECO coverage until the examination-body alignment and reuse rights are verified.
+- Example topic view: the public General Mathematics curriculum browser exposes SSS-level themes including Number and Numeration, Algebraic Process, Geometry, and Statistics. This is a curriculum-browser example, not a verified NECO topic list.
+
+## NECO free-source research outcome (reviewed 2026-11-27)
+
+- NECO's 2027 SSCE Internal page explicitly lists the syllabus at ₦2,000 per copy: https://neco.gov.ng/exams/ssce-internal
+- The 2027 SSCE Internal registration guidelines repeat the ₦2,000 price: https://neco.gov.ng/2027%20SSCE%20INTERNAL%20REGISTRATION%20GUIDELINES.pdf
+- The public 2027 guidelines and examination timetable are free administrative documents; neither is the full subject syllabus.
+- No complete free official NECO SSCE syllabus download was verified during this research. Do not use a third-party PDF merely because it is labelled “NECO syllabus”.
+- Free official alternative found: NERDC's public revised SSS curriculum portal, subject listings, and selected curriculum views. Use only as a clearly labelled curriculum reference and respect the personal-study restriction above.
+
 ## Question provenance requirements
 
 Every imported question must carry:
