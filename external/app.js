@@ -154,9 +154,10 @@
     function openResource(row){
       if(!reader||!readerTitle||!readerBody)return;
       readerTitle.textContent=row.title||'Study resource';
-      readerMeta.textContent=[row.exam_code,row.resource_type?.replaceAll('_',' '),row.estimated_minutes?row.estimated_minutes+' min':'',row.is_premium?'PRIME PRO':'Free lesson',row.review_status==='editorial_reviewed'?'Editorially reviewed':'Under review'].filter(Boolean).join(' · ');
+      readerMeta.textContent=[row.exam_code,row.resource_type?.replaceAll('_',' '),row.estimated_minutes?row.estimated_minutes+' min':'',row.is_premium?'PRIME PRO':'Free lesson',row.review_status==='teacher_approved'?'Teacher approved':row.review_status==='editorial_reviewed'?'Editorially reviewed':'Under review'].filter(Boolean).join(' · ');
       const points=(row.key_points||[]).length?'<section class="lesson-key-points"><h3>Key points to remember</h3><ul>'+row.key_points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></section>':'';
-      readerBody.innerHTML=row.content_markdown?renderLesson(row.content_markdown)+points:'<div class="empty-state"><strong>This material is not available in the on-site library yet.</strong>We publish only resources that have been reviewed and prepared for reading inside PRIME-CBT.</div>';
+      const source=row.source_label?'<aside class="lesson-source"><strong>About this material</strong><p>'+esc(row.source_label)+'</p>'+(row.source_url?'<a href="'+esc(row.source_url)+'" target="_blank" rel="noopener noreferrer">View curriculum reference '+icon('arrow')+'</a>':'')+'</aside>':'';
+      readerBody.innerHTML=row.content_markdown?renderLesson(row.content_markdown)+points+source:'<div class="empty-state"><strong>This material is not available in the on-site library yet.</strong>We publish only resources that have been reviewed and prepared for reading inside PRIME-CBT.</div>';
       if(typeof reader.showModal==='function')reader.showModal();else reader.setAttribute('open','');
     }
     readerClose?.addEventListener('click',()=>reader.close());
@@ -167,15 +168,9 @@
       if(requestedType&&kind.value==='ALL'&&[...kind.options].some(o=>o.value===requestedType))kind.value=requestedType;
       const requestedExam=new URLSearchParams(location.search).get('exam');
       if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
-    if(year){
-      year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');
-      const requestedYear=Number(params.get('year'));
-      year.value=requestedYear>=1990&&requestedYear<=2026?String(requestedYear):'2026';
-    }
-    if(year){year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');year.value=params.get('year')&&Number(params.get('year'))>=1990&&Number(params.get('year'))<=2026?params.get('year'):'2026';}
       const [s,r]=await Promise.all([
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
-        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(100);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
+        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,source_url,content_origin,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(500);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
       ]);
       resourceRows=r.data||[];
       if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
