@@ -512,6 +512,10 @@
       .stage { background: var(--card-grad); border-color: var(--emerald-line); }
     }
 
+    /* Final compact sizing override for all screen widths */
+    .cta, .btn-oauth { height: 50px; min-height: 50px; }
+    .switch-btn, .switch-thumb { height: 42px; }
+
     /* college / department dropdowns */
     .field select { text-overflow: ellipsis; }
     .field select:disabled { opacity: .55; cursor: not-allowed; }
@@ -2682,6 +2686,7 @@ switcher.dataset.mode = mode;
     }
     if (!b || b.hidden || !pathCfg[b.dataset.path]) return;
     pathway = b.dataset.path;
+    setAuthExperience(pathway === 'exam' ? 'external' : 'campus');
     const pathHint = document.getElementById('accountPathHint');
     if (pathHint) pathHint.textContent = pathway === 'exam'
       ? 'EXAM PREP account — for JAMB, WAEC, NECO, Post-UTME and other external examinations.'
@@ -3296,6 +3301,16 @@ resendResetLink.addEventListener('click', async (e) => {
     // Resolve the account's registered pathway before considering the entry link.
     // This prevents an old External Exams URL from hijacking a University account.
     const experience = await resolveExperience(session.user);
+    if ((experience === 'external') !== (selectedAuthExperience === 'external')) {
+      routed = false;
+      await supabaseClient.auth.signOut();
+      showPage();
+      setMode('login');
+      showToast(experience === 'external'
+        ? 'This account belongs to EXAM PREP. Choose EXAM PREP above to continue.'
+        : 'This account belongs to PRIME CAMPUS. Choose PRIME CAMPUS above to continue.', 'error', 5500);
+      return;
+    }
     if (experience === 'external') {
       try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {}
       window.location.replace('/external/home.html');
