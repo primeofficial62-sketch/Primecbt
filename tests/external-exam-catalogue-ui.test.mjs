@@ -50,3 +50,14 @@ test('PRIME PRO benefits are described without activating a wider paywall', asyn
   assert.ok(more.includes('paywall will not be switched on'));
   assert.ok(app.includes('Activate PRIME PRO · ₦3,000'));
 });
+
+
+test('Study content migration stores original reviewed lessons and sourced future events', async () => {
+  const migration = await read('supabase/migrations/20261127142603_external_study_library_lessons_and_verified_events.sql');
+  assert.ok(migration.includes('content_markdown'));
+  assert.ok(migration.includes("'original'"));
+  assert.ok(migration.includes("'editorial_reviewed'"));
+  assert.ok(migration.includes('NECO_2027_SSCE_INTERNAL_WINDOW'));
+  assert.ok(migration.includes('NECO_2027_BECE_WINDOW'));
+  assert.doesNotMatch(migration, /insert into public\\.external_exam_questions/i);
+});
