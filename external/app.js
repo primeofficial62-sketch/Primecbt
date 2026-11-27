@@ -167,6 +167,7 @@
       if(requestedType&&kind.value==='ALL'&&[...kind.options].some(o=>o.value===requestedType))kind.value=requestedType;
       const requestedExam=new URLSearchParams(location.search).get('exam');
       if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
+    if(year){year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');year.value=params.get('year')&&Number(params.get('year'))>=1990&&Number(params.get('year'))<=2026?params.get('year'):'2026';}
       const [s,r]=await Promise.all([
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
         (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(100);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
@@ -178,7 +179,8 @@
         const visible=subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value);
         if(countEl)countEl.textContent=visible.length+' subjects';
         if(selectedSubjectId&&!visible.some(x=>x.id===selectedSubjectId))selectedSubjectId=null;
-        subjectsEl.innerHTML=visible.length?visible.map(x=>'<button type="button" class="chip '+(selectedSubjectId===x.id?'active':'')+'" data-subject="'+x.id+'">'+esc(x.name)+' <span class="muted">'+esc(x.exam_code)+'</span></button>').join(''):'<div class="empty-state"><strong>No subjects are listed for this examination yet</strong>Choose another examination or check back as the verified catalogue is expanded.</div>';
+        subjectsEl.classList.add('study-subject-grid');
+        subjectsEl.innerHTML=visible.length?visible.map(x=>'<button type="button" class="study-subject-card '+(selectedSubjectId===x.id?'active':'')+'" data-subject="'+x.id+'"><span class="study-subject-icon">'+icon('book')+'</span><span class="study-subject-copy"><strong>'+esc(x.name)+'</strong><small>'+esc(x.exam_code)+'</small></span><span class="study-subject-chevron">'+icon('arrow')+'</span></button>').join(''):'<div class="empty-state"><strong>No subjects are listed for this examination yet</strong>Choose another examination or check back as the verified catalogue is expanded.</div>';
       }
       if(topicsEl){
         if(selectedSubjectId){
@@ -200,7 +202,7 @@
   }
   async function initTest() {
     await boot('test');
-    const exam=$('examCode'),subjectBox=$('examSubjects'),start=$('startExam'),mode=$('examMode'),count=$('questionCount'),duration=$('examDuration');
+    const exam=$('examCode'),subjectBox=$('examSubjects'),start=$('startExam'),mode=$('examMode'),count=$('questionCount'),duration=$('examDuration'),year=$('examYear');
     if(!exam||!subjectBox)return;
     const params=new URLSearchParams(location.search);
     const requestedExam=params.get('exam')||document.body.dataset.defaultExam;
@@ -219,13 +221,14 @@
     start?.addEventListener('click',async()=>{
       const ids=[...subjectBox.querySelectorAll('input:checked')].map(x=>x.value);
       if(!ids.length){toast('Select at least one subject.',true);return;}
+      if(!year?.value){toast('Choose an examination year.',true);return;}
       start.disabled=true;start.textContent='Preparing exam…';
       const {data,error}=await db.rpc('start_external_exam_attempt',{
         p_exam_code:exam.value,p_subject_ids:ids,p_question_count:Number(count.value),
-        p_duration_seconds:Number(duration.value),p_mode:mode.value
+        p_duration_seconds:Number(duration.value),p_mode:mode.value,p_exam_year:Number(year?.value||2026)
       });
       start.disabled=false;start.textContent='Start examination';
-      if(error){toast(error.message.includes('No published questions')?'Questions for this selection are not available yet. Please try another subject later.':error.message,true);return;}
+      if(error){toast(error.message.includes('No published questions')?'No published questions are available for this subject and year yet. Choose another year or check back when verified questions are added.':error.message,true);return;}
       location.href='exam.html?attempt='+encodeURIComponent(data);
     });
   }
@@ -285,26 +288,50 @@
     $('resultExam').textContent=data.exam_code+' examination';
   }
   async function initChat(){
-    await boot('chat');
+    const profile=await boot('chat');if(!profile)return;
     const tabs=[...document.querySelectorAll('[data-chat-tab]')],feed=$('chatFeed'),form=$('chatForm'),input=$('chatInput'),panel=$('chatPanel');
     let active=new URLSearchParams(location.search).get('tab')||'general';
     if(active==='groups')active='general';
-    let questionScope='my_question';
+    let aiHistory=[];
+    function addAiMessage(role,content){
+      const item=document.createElement('article');item.className='message-card ai-message '+(role==='model'?'ai-response':'ai-user-message');
+      const meta=document.createElement('div');meta.className='message-meta';meta.textContent=role==='model'?'PRIME AI':'You';
+      const body=document.createElement('p');body.textContent=content;
+      item.append(meta,body);feed.appendChild(item);feed.scrollTop=feed.scrollHeight;
+    }
     async function showTab(tab){
-      active=tab;tabs.forEach(b=>b.classList.toggle('active',b.dataset.chatTab===tab));
-      if(tab==='mimi'){panel.innerHTML='<div class="empty-state"><strong>PRIME AI</strong>PRIME AI will be connected to the External Exams syllabus, approved learning resources and question explanations in a dedicated integration. It is not connected to the University assistant.</div>';feed.classList.add('hidden');form.classList.add('hidden');return;}
-      form.classList.remove('hidden');feed.classList.toggle('hidden',tab==='groups');panel.innerHTML='';
-      if(tab==='question'){panel.innerHTML='<div class="tabbar question-scopes"><button data-question-scope="my_question" class="'+(questionScope==='my_question'?'active':'')+'">My Question</button><button data-question-scope="school_question" class="'+(questionScope==='school_question'?'active':'')+'">School Question</button><button data-question-scope="academic_question" class="'+(questionScope==='academic_question'?'active':'')+'">Academic Based</button></div>';}
-      if(tab==='groups'){const {data}=await db.from('external_exam_groups').select('id,name,description,created_at').order('created_at',{ascending:false}).limit(30);panel.innerHTML='<form id="groupCreateForm" class="panel"><div class="field"><label for="groupName">Create a study group</label><input id="groupName" maxlength="70" minlength="3" placeholder="e.g. JAMB Biology revision" required></div><div class="field"><label for="groupDescription">Description (optional)</label><input id="groupDescription" maxlength="180" placeholder="What will your group study?"></div><button class="btn-primary" type="submit">Create group</button></form>'+((data||[]).length?(data||[]).map(g=>'<div class="list-card"><span class="feature-icon">'+icon('group')+'</span><span><h3>'+esc(g.name)+'</h3><p>'+esc(g.description||'Student study group')+'</p></span><button class="btn-secondary" data-join="'+g.id+'">Join</button></div>').join(''):'<div class="empty-state"><strong>No groups yet</strong>Create the first study group for external exam candidates.</div>');return;}
-      let messageQuery=db.from('external_exam_chat_messages').select('id,channel,content,created_at,user_id').eq('channel',tab==='question'?questionScope:'general').order('created_at',{ascending:false}).limit(40);
-      if(tab==='question'&&questionScope==='my_question')messageQuery=messageQuery.eq('user_id',profile.user.id);
-      const {data,error}=await messageQuery;
-      feed.innerHTML=error?'<div class="empty-state"><strong>Chat is unavailable</strong>Please try again later.</div>':(data||[]).length?(data||[]).reverse().map(m=>'<article class="message-card"><div class="message-meta"><span>PRIME-CBT student</span><span>'+new Date(m.created_at).toLocaleString()+'</span></div><p>'+esc(m.content)+'</p></article>').join(''):'<div class="empty-state"><strong>'+ (tab==='question'?'No questions posted yet':'No messages yet')+'</strong>Start a helpful conversation with other external exam students.</div>';
+      active=tab==='mimi'?'mimi':'general';
+      tabs.forEach(b=>b.classList.toggle('active',b.dataset.chatTab===active));
+      feed.classList.remove('hidden');form.classList.remove('hidden');
+      if(active==='mimi'){
+        panel.innerHTML='<section class="prime-ai-welcome"><span class="prime-ai-orb">'+icon('spark')+'</span><div><span class="mini-label">YOUR EXAM STUDY TUTOR</span><h2>PRIME AI</h2><p>Ask questions, understand difficult topics, work through calculations and prepare for JAMB, WAEC and NECO.</p></div></section>';
+        if(!feed.dataset.aiStarted){feed.innerHTML='<div class="empty-state ai-empty"><strong>What are you studying today?</strong>Ask PRIME AI to explain a topic, solve a problem step by step or create practice questions.</div>';feed.dataset.aiStarted='true';}
+        input.placeholder='Ask PRIME AI a study question…';
+        return;
+      }
+      panel.innerHTML='<section class="group-chat-heading"><span class="feature-icon">'+icon('group')+'</span><div><strong>General Chat</strong><p>One shared conversation for External Exams students. Everyone can see the messages posted here.</p></div></section>';
+      input.placeholder='Message the student community…';
+      const {data,error}=await db.from('external_exam_chat_messages').select('id,channel,content,created_at,user_id').eq('channel','general').order('created_at',{ascending:false}).limit(80);
+      feed.innerHTML=error?'<div class="empty-state"><strong>General Chat is unavailable</strong>Please try again later.</div>':(data||[]).length?(data||[]).reverse().map(m=>'<article class="message-card"><div class="message-meta"><span>'+(m.user_id===profile.user.id?'You':'PRIME-CBT student')+'</span><span>'+new Date(m.created_at).toLocaleString()+'</span></div><p>'+esc(m.content)+'</p></article>').join(''):'<div class="empty-state"><strong>Welcome to General Chat</strong>Start the first conversation with other External Exams students.</div>';
     }
     tabs.forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.chatTab)));
-    panel?.addEventListener('click',async e=>{const scope=e.target.closest('[data-question-scope]');if(scope){questionScope=scope.dataset.questionScope;showTab('question');return;}const b=e.target.closest('[data-join]');if(!b)return;const {data:user}=await db.auth.getUser();const {error}=await db.from('external_exam_group_members').insert({group_id:b.dataset.join,user_id:user.user.id});toast(error?(error.code==='23505'?'You already joined this group.':error.message):'You joined the group.');});
-    panel?.addEventListener('submit',async e=>{if(e.target.id!=='groupCreateForm')return;e.preventDefault();const {data:user}=await db.auth.getUser();const {data:group,error}=await db.from('external_exam_groups').insert({created_by:user.user.id,name:$('groupName').value.trim(),description:$('groupDescription').value.trim()}).select('id').single();if(error){toast(error.message,true);return;}const {error:joinError}=await db.from('external_exam_group_members').insert({group_id:group.id,user_id:user.user.id});if(joinError){toast('Group created, but membership could not be saved: '+joinError.message,true);return;}toast('Your study group has been created.');showTab('groups');});
-    form?.addEventListener('submit',async e=>{e.preventDefault();const content=input.value.trim();if(!content)return;const {data:user}=await db.auth.getUser();const {error}=await db.from('external_exam_chat_messages').insert({user_id:user.user.id,channel:active==='question'?questionScope:'general',content});if(error){toast(error.message,true);return;}input.value='';showTab(active);});
+    form?.addEventListener('submit',async e=>{
+      e.preventDefault();const content=input.value.trim();if(!content)return;
+      const send=form.querySelector('button[type="submit"]');if(send)send.disabled=true;
+      if(active==='mimi'){
+        const empty=feed.querySelector('.ai-empty');if(empty)empty.remove();
+        addAiMessage('user',content);input.value='';
+        const thinking=document.createElement('article');thinking.className='message-card ai-thinking';thinking.textContent='PRIME AI is thinking…';feed.appendChild(thinking);
+        const {data,error}=await db.functions.invoke('external-exam-ai',{body:{message:content,history:aiHistory,exam:'JAMB, WAEC and NECO',subject:'General study'}});
+        thinking.remove();
+        if(error||data?.error){addAiMessage('model',data?.error||'PRIME AI is temporarily unavailable. Please try again.');}
+        else {aiHistory.push({role:'user',text:content},{role:'model',text:data.answer});aiHistory=aiHistory.slice(-8);addAiMessage('model',data.answer||'I could not prepare an answer. Please try again.');}
+      }else{
+        const {error}=await db.from('external_exam_chat_messages').insert({user_id:profile.user.id,channel:'general',content});
+        if(error)toast(error.message,true);else{input.value='';await showTab('general');}
+      }
+      if(send)send.disabled=false;
+    });
     await showTab(active);
   }
   async function initMore(){
