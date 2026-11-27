@@ -84,7 +84,7 @@
     if(!profile)return null;
     mountNav(active);mountQuickActions();
     const name=$('studentName');if(name)name.textContent=profile.user.user_metadata?.full_name||profile.user.email?.split('@')[0]||'Student';
-    const logout=$('logoutButton');if(logout)logout.addEventListener('click',async()=>{await db.auth.signOut();location.replace('auth.html?mode=login');});
+    const logout=$('logoutButton');if(logout)logout.addEventListener('click',async()=>{if(!window.confirm('Log out of PRIME-CBT External Exams?'))return;logout.disabled=true;logout.textContent='Logging out…';const {error}=await db.auth.signOut();if(error){logout.disabled=false;logout.textContent='Log out';toast('Could not log out. Please try again.',true);return;}location.replace('auth.html?mode=login');});
     return profile;
   }
   const subjectLabel=(s)=>s.name||'Subject';
