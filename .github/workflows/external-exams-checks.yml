@@ -35,6 +35,6 @@ jobs:
         run: node --test tests/external-exams-isolation.test.mjs tests/external-exam-catalogue-ui.test.mjs tests/external-exam-source-registry.test.mjs tests/external-exam-premium-feed.test.mjs
       - name: Type-check isolated External Exams Edge Functions
         run: |
-          deno check supabase/functions/external-exam-feed/index.ts
+          deno check --node-modules-dir=auto supabase/functions/external-exam-feed/index.ts
           deno check supabase/functions/external-exam-activation-init/index.ts
           deno check supabase/functions/external-exam-activation-verify/index.ts
