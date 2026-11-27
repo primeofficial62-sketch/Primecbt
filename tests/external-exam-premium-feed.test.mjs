@@ -80,7 +80,8 @@ test('Study page keeps lessons inside PRIME-CBT and avoids off-site study links'
   const study = await read('external/study.html');
   const app = await read('external/app.js');
   assert.ok(study.includes('studyReader'));
-  assert.ok(study.includes('Reviewed PRIME-CBT notes and lessons'));
+  assert.ok(study.includes('Available learning materials'));
+  assert.ok(study.includes('Inside the PRIME-CBT learning library'));
   assert.ok(!study.includes('href="https://') && !study.includes("href='https://"));
   assert.ok(app.includes('content_markdown'));
   assert.ok(app.includes('reader.showModal()'));
