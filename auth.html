@@ -1860,11 +1860,13 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   const EXPERIENCE_KEY = 'auth_experience';
   const requestedExperience = urlParams.get('experience') === 'external' ? 'external' : (urlParams.get('experience') === 'campus' ? 'campus' : null);
   let selectedAuthExperience = requestedExperience || 'campus';
+  let explicitExperienceChoice = !!requestedExperience;
   if (requestedExperience) { try { sessionStorage.setItem(EXPERIENCE_KEY, requestedExperience); } catch (e) {} }
   const loginPathway = document.getElementById('loginPathway');
   const loginPathwayNote = document.getElementById('loginPathwayNote');
-  function setAuthExperience(value) {
+  function setAuthExperience(value, persistChoice = true) {
     selectedAuthExperience = value === 'external' ? 'external' : 'campus';
+    if (persistChoice) explicitExperienceChoice = true;
     if (loginPathway) loginPathway.querySelectorAll('[data-login-experience]').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.loginExperience === selectedAuthExperience));
     });
@@ -1878,7 +1880,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   }
   if (loginPathway) {
     loginPathway.querySelectorAll('[data-login-experience]').forEach(button => button.addEventListener('click', () => setAuthExperience(button.dataset.loginExperience)));
-    setAuthExperience(selectedAuthExperience);
+    setAuthExperience(selectedAuthExperience, false);
   }
   function safeNext(v) {
     if (!v) return null;
@@ -2975,7 +2977,7 @@ switcher.dataset.mode = mode;
 
     if (window.PrimeAnalytics) PrimeAnalytics.track('login', { method: 'email' });
     const accountExperience = metadataExperience(data.user);
-    if (accountExperience && ((accountExperience === 'external') !== (selectedAuthExperience === 'external'))) {
+    if (explicitExperienceChoice && accountExperience && ((accountExperience === 'external') !== (selectedAuthExperience === 'external'))) {
       await supabaseClient.auth.signOut();
       showToast(accountExperience === 'external'
         ? 'This account is registered for EXAM PREP. Select EXAM PREP above and sign in again.'
@@ -3301,7 +3303,7 @@ resendResetLink.addEventListener('click', async (e) => {
     // Resolve the account's registered pathway before considering the entry link.
     // This prevents an old External Exams URL from hijacking a University account.
     const experience = await resolveExperience(session.user);
-    if ((experience === 'external') !== (selectedAuthExperience === 'external')) {
+    if (explicitExperienceChoice && (experience === 'external') !== (selectedAuthExperience === 'external')) {
       routed = false;
       await supabaseClient.auth.signOut();
       showPage();
