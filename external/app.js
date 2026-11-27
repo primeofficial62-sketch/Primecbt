@@ -154,7 +154,7 @@
     function openResource(row){
       if(!reader||!readerTitle||!readerBody)return;
       readerTitle.textContent=row.title||'Study resource';
-      readerMeta.textContent=[row.exam_code,row.resource_type?.replaceAll('_',' '),row.estimated_minutes?row.estimated_minutes+' min':'',row.is_premium?'PRIME PRO':'Free lesson'].filter(Boolean).join(' · ');
+      readerMeta.textContent=[row.exam_code,row.resource_type?.replaceAll('_',' '),row.estimated_minutes?row.estimated_minutes+' min':'',row.is_premium?'PRIME PRO':'Free lesson',row.review_status==='editorial_reviewed'?'Editorially reviewed':'Under review'].filter(Boolean).join(' · ');
       const points=(row.key_points||[]).length?'<section class="lesson-key-points"><h3>Key points to remember</h3><ul>'+row.key_points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></section>':'';
       readerBody.innerHTML=row.content_markdown?renderLesson(row.content_markdown)+points:'<div class="empty-state"><strong>This material is not available in the on-site library yet.</strong>We publish only resources that have been reviewed and prepared for reading inside PRIME-CBT.</div>';
       if(typeof reader.showModal==='function')reader.showModal();else reader.setAttribute('open','');
