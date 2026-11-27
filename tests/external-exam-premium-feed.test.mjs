@@ -11,6 +11,7 @@ test('External Exams uses real inline icons for every placeholder token, includi
   assert.ok(app.includes(String.raw`value.replace(/\{\{([A-Z_]+)\}\}/g`));
   assert.ok(app.includes("ARROW:'arrow'"));
   assert.ok(home.includes('{{ARROW}}'));
+  assert.ok(app.includes("icon('arrow')+'</a>'"));
   new vm.Script(app);
 });
 
@@ -20,7 +21,7 @@ test('External Exams subject choices are compact while preserving accessible che
   assert.ok(app.includes("subjectBox.classList.add('subject-selection-grid')"));
   assert.ok(app.includes('class="option subject-option"'));
   assert.match(css, /\.subject-selection-grid \.subject-option[\s\S]*?min-height:42px/);
-  assert.match(css, /\.subject-selection-grid \.subject-option input[\s\S]*?width:16px/);
+  assert.match(css, /\.subject-selection-grid \.subject-option input[\s\S]*?width:14px/);
 });
 
 test('PRIME PRO activation is N3000 and premium cannot be self-granted by a browser user', async () => {
@@ -72,4 +73,14 @@ test('Results page shows an empty state and the signed-in user’s own completed
   assert.ok(html.includes('id="resultHistory"'));
   assert.ok(app.includes("eq('user_id',profile.user.id).eq('status','submitted')"));
   assert.ok(app.includes('No completed exams yet'));
+});
+
+
+test('Study page exposes official source portals with accurate source labels', async () => {
+  const study = await read('external/study.html');
+  assert.ok(study.includes('Verified study portals'));
+  assert.ok(study.includes('https://ibass.jamb.gov.ng/'));
+  assert.ok(study.includes('https://www.waeconline.org.ng/e-Learning/index.htm'));
+  assert.ok(study.includes('https://neco.gov.ng/exams'));
+  assert.ok(study.includes('Not a NECO-issued syllabus'));
 });
