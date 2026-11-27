@@ -63,7 +63,7 @@
     const meta=user.user_metadata||{};
     const name=String(meta.full_name||meta.name||user.email?.split('@')[0]||'Student').slice(0,100);
     const {error:profileError}=await db.from('external_exam_profiles').upsert({
-      user_id:user.id,full_name:name,email:user.email||null,updated_at:new Date().toISOString()
+      user_id:user.id,full_name:name,email:user.email||null
     },{onConflict:'user_id',ignoreDuplicates:true});
     if(profileError){console.error('[external] profile bootstrap failed',profileError);toast('We could not prepare your External Exams profile. Please try again.',true);return null;}
     return {user,session};
@@ -117,13 +117,13 @@
     const recent=$('recentResults');
     if(recent)recent.innerHTML=attemptError?'<div class="empty-state"><strong>Results are temporarily unavailable</strong>Please try again later.</div>':completed.length?completed.slice(0,3).map(a=>{const pct=Number(a.total_questions)>0?Math.round(Number(a.score||0)/Number(a.total_questions)*100):0;return '<a class="result-row" href="results.html?attempt='+encodeURIComponent(a.id)+'"><span class="result-mark">'+esc(a.exam_code)+'</span><span class="result-copy"><strong>'+esc(a.exam_code)+' CBT result</strong><small>'+new Date(a.submitted_at||a.started_at).toLocaleDateString()+' · '+Number(a.score||0)+'/'+Number(a.total_questions||0)+' correct</small></span><span class="result-score">'+pct+'%</span></a>';}).join(''):'<div class="empty-state"><strong>No completed exams yet</strong>Your submitted CBT results will show here after your first attempt.</div>';
     const [eventResult,newsResult]=await Promise.all([
-      db.from('external_exam_updates').select('id,title,summary,starts_at,published_at,target_url').eq('is_published',true).eq('update_type','event').order('starts_at',{ascending:true}).limit(8),
-      db.from('external_exam_updates').select('id,title,summary,published_at,target_url').eq('is_published',true).eq('update_type','news').order('published_at',{ascending:false}).limit(8)
+      db.from('external_exam_updates').select('id,title,summary,starts_at,published_at,target_url,source_name,target_url').eq('is_published',true).eq('update_type','event').order('starts_at',{ascending:true}).limit(8),
+      db.from('external_exam_updates').select('id,title,summary,published_at,target_url,source_name').eq('is_published',true).eq('update_type','news').order('published_at',{ascending:false}).limit(8)
     ]);
     const events=eventResult.data||[],news=newsResult.data||[];
     const ev=$('eventsList'),nw=$('newsList');
     if(ev)ev.innerHTML=eventResult.error?'<div class="empty-state" style="min-width:100%">Events are temporarily unavailable.</div>':events.length?events.map(x=>'<article class="event-card"><div class="event-date">'+esc(x.starts_at?new Date(x.starts_at).toLocaleDateString():'DATE TO BE ANNOUNCED')+'</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'PRIME-CBT examination update')+'</p></article>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No upcoming events yet</strong>New mock examinations and revision events will appear here.</div>';
-    if(nw)nw.innerHTML=newsResult.error?'<div class="empty-state" style="min-width:100%">News is temporarily unavailable.</div>':news.length?news.slice(0,6).map(x=>'<a class="news-card" href="news.html"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary||'Education and examination update')+'</p></div></a>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No news published yet</strong>Verified education and examination updates will appear here.</div>';
+    if(nw)nw.innerHTML=newsResult.error?'<div class="empty-state" style="min-width:100%">News is temporarily unavailable.</div>':news.length?news.slice(0,6).map(x=>'<a class="news-card" href="'+esc(x.target_url||'news.html')+'" target="_blank" rel="noopener"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(x.title)+'</h3><p>'+esc(x.source_name||'Verified education source')+'</p></div></a>').join(''):'<div class="empty-state" style="min-width:100%"><strong>No news published yet</strong>Verified education and examination updates will appear here.</div>';
     const nextEvent=events.filter(x=>x.starts_at&&/(JAMB|WAEC|NECO|GCE|POST.?UTME|UTME)/i.test(x.title)&&new Date(x.starts_at).getTime()>=Date.now()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at))[0];
     if($('examCountdown'))$('examCountdown').textContent=nextEvent?Math.max(0,Math.ceil((new Date(nextEvent.starts_at)-Date.now())/86400000))+' days':'To be announced';
     if($('examCountdownDetail'))$('examCountdownDetail').textContent=nextEvent?nextEvent.title+' · '+new Date(nextEvent.starts_at).toLocaleDateString():'We will show a countdown when a verified examination date is published.';
@@ -134,7 +134,7 @@
     const list=$('newsPageList'),title=$('newsPageTitle');
     const isEvents=new URLSearchParams(location.search).get('tab')==='events';
     if(title)title.textContent=isEvents?'Upcoming Events':'Education & Exam News';
-    const {data,error}=await db.from('external_exam_updates').select('id,update_type,title,summary,image_url,target_url,starts_at,published_at').eq('is_published',true).eq('update_type',isEvents?'event':'news').order(isEvents?'starts_at':'published_at',{ascending:isEvents}).limit(50);
+    const {data,error}=await db.from('external_exam_updates').select('id,update_type,title,summary,image_url,target_url,starts_at,published_at,source_name').eq('is_published',true).eq('update_type',isEvents?'event':'news').order(isEvents?'starts_at':'published_at',{ascending:isEvents}).limit(50);
     if(!list)return;
     list.innerHTML=error?'<div class="empty-state"><strong>Updates could not be loaded</strong>Please try again later.</div>':(data||[]).length?(data||[]).map(item=>'<article class="news-page-card"><div class="news-thumb">'+icon('file')+'</div><div><h3>'+esc(item.title)+'</h3><p>'+esc(item.summary||'PRIME-CBT education and examination update')+'</p><time>'+new Date(item.starts_at||item.published_at).toLocaleString()+'</time>'+(item.target_url?'<p><a class="section-link" href="'+esc(item.target_url)+'" target="_blank" rel="noopener">Read source →</a></p>':'')+'</div></article>').join(''):'<div class="empty-state"><strong>No '+(isEvents?'upcoming events':'news')+' published yet</strong>New verified updates will appear here when they are added.</div>';
   }
@@ -152,7 +152,7 @@
       if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
       const [s,r]=await Promise.all([
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
-        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,external_url').eq('is_published',true).order('created_at',{ascending:false}).limit(60);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
+        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,external_url,is_premium').eq('is_published',true).order('created_at',{ascending:false}).limit(60);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
       ]);
       if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
       else{
@@ -172,7 +172,7 @@
       if(r.error){resourcesEl.innerHTML='<div class="empty-state"><strong>Study resources could not be loaded</strong>'+esc(r.error.message)+'</div>';return;}
       const term=search.value.trim().toLowerCase();
       const rows=(r.data||[]).filter(x=>!term||(x.title+' '+(x.description||'')+' '+(x.source_label||'')).toLowerCase().includes(term));
-      resourcesEl.innerHTML=rows.length?rows.map(x=>'<a class="list-card" href="'+(x.external_url?esc(x.external_url):'#')+'" '+(x.external_url?'target="_blank" rel="noopener"':'')+'><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.source_year?' · '+x.source_year:'')+(x.source_label?' · '+esc(x.source_label):'')+'</p></span><span class="arrow">›</span></a>').join(''):'<div class="empty-state"><strong>No study resources published yet</strong>The subject catalogue is separate from the question bank. Verified past questions, lessons and videos will appear here as reviewed resources are published.</div>';
+      resourcesEl.innerHTML=rows.length?rows.map(x=>'<a class="list-card" href="'+(x.external_url?esc(x.external_url):'#')+'" '+(x.external_url?'target="_blank" rel="noopener"':'')+'><span class="feature-icon">'+icon(x.resource_type==='video_lesson'||x.resource_type==='topic_video'?'play':x.resource_type==='workbook'?'book':'file')+'</span><span><h3>'+esc(x.title)+'</h3><p>'+esc(x.exam_code)+' · '+esc(x.resource_type.replaceAll('_',' '))+(x.source_year?' · '+x.source_year:'')+(x.source_label?' · '+esc(x.source_label):'')+(x.is_premium?' · PRIME PRO':'')+'</p></span><span class="arrow">›</span></a>').join(''):'<div class="empty-state"><strong>No study resources published yet</strong>The subject catalogue is separate from the question bank. Verified past questions, lessons and videos will appear here as reviewed resources are published.</div>';
     }
     subjectsEl.addEventListener('click',e=>{const b=e.target.closest('[data-subject]');if(!b)return;selectedSubjectId=selectedSubjectId===b.dataset.subject?null:b.dataset.subject;if(selectedSubjectId)localStorage.setItem('primeExternalLastStudy',selectedSubjectId);load();});
     [search,exam,kind].forEach(el=>el.addEventListener(el===search?'input':'change',()=>{selectedSubjectId=null;load();}));
