@@ -170,3 +170,9 @@
 .resource-tile-action{display:flex;align-items:center;gap:5px;margin-top:auto;color:var(--green);font-size:10px;font-weight:750}
 .resource-tile-action svg{width:13px;height:13px}
 @media(max-width:350px){.resource-library-grid{gap:6px}.resource-tile{padding:9px;min-height:158px}}
+
+.lesson-source{margin-top:22px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2)}
+.lesson-source strong{display:block;font-size:11px;margin-bottom:5px}
+.lesson-source p{font-size:10px;line-height:1.5;color:var(--muted);margin:0 0 8px}
+.lesson-source a{display:inline-flex;align-items:center;gap:5px;color:var(--green);font-size:10px;font-weight:750;text-decoration:none}
+.lesson-source a svg{width:13px;height:13px}

@@ -49,6 +49,13 @@
       node.replaceWith(fragment);
     });
   }
+  async function invokeQuestionBank(body){
+    const result=await db.functions.invoke('external-exam-question-bank',{body});
+    if(result.error&&!result.data&&result.error.context?.clone){
+      try{return {data:await result.error.context.clone().json(),error:result.error};}catch(_){}
+    }
+    return result;
+  }
   function toast(message, error=false) {
     let el = $('toast');
     if (!el) { el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el); }
@@ -154,9 +161,10 @@
     function openResource(row){
       if(!reader||!readerTitle||!readerBody)return;
       readerTitle.textContent=row.title||'Study resource';
-      readerMeta.textContent=[row.exam_code,row.resource_type?.replaceAll('_',' '),row.estimated_minutes?row.estimated_minutes+' min':'',row.is_premium?'PRIME PRO':'Free lesson',row.review_status==='editorial_reviewed'?'Editorially reviewed':'Under review'].filter(Boolean).join(' · ');
+      readerMeta.textContent=[row.exam_code,row.resource_type?.replaceAll('_',' '),row.estimated_minutes?row.estimated_minutes+' min':'',row.is_premium?'PRIME PRO':'Free lesson',row.review_status==='teacher_approved'?'Teacher approved':row.review_status==='editorial_reviewed'?'Editorially reviewed':'Under review'].filter(Boolean).join(' · ');
       const points=(row.key_points||[]).length?'<section class="lesson-key-points"><h3>Key points to remember</h3><ul>'+row.key_points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></section>':'';
-      readerBody.innerHTML=row.content_markdown?renderLesson(row.content_markdown)+points:'<div class="empty-state"><strong>This material is not available in the on-site library yet.</strong>We publish only resources that have been reviewed and prepared for reading inside PRIME-CBT.</div>';
+      const source=row.source_label?'<aside class="lesson-source"><strong>About this material</strong><p>'+esc(row.source_label)+'</p>'+(row.source_url?'<a href="'+esc(row.source_url)+'" target="_blank" rel="noopener noreferrer">View curriculum reference '+icon('arrow')+'</a>':'')+'</aside>':'';
+      readerBody.innerHTML=row.content_markdown?renderLesson(row.content_markdown)+points+source:'<div class="empty-state"><strong>This material is not available in the on-site library yet.</strong>We publish only resources that have been reviewed and prepared for reading inside PRIME-CBT.</div>';
       if(typeof reader.showModal==='function')reader.showModal();else reader.setAttribute('open','');
     }
     readerClose?.addEventListener('click',()=>reader.close());
@@ -167,21 +175,17 @@
       if(requestedType&&kind.value==='ALL'&&[...kind.options].some(o=>o.value===requestedType))kind.value=requestedType;
       const requestedExam=new URLSearchParams(location.search).get('exam');
       if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
-    if(year){
-      year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');
-      const requestedYear=Number(params.get('year'));
-      year.value=requestedYear>=1990&&requestedYear<=2026?String(requestedYear):'2026';
-    }
-    if(year){year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');year.value=params.get('year')&&Number(params.get('year'))>=1990&&Number(params.get('year'))<=2026?params.get('year'):'2026';}
-      const [s,r]=await Promise.all([
+      const [s,r,t]=await Promise.all([
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
-        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(100);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
+        (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,source_url,content_origin,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(500);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})(),
+        db.from('external_exam_topics').select('subject_id').eq('is_published',true)
       ]);
       resourceRows=r.data||[];
-      if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
+      if(s.error||t.error){const err=s.error||t.error;subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(err.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
       else{
         subjects=s.data||[];
-        const visible=subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value);
+        const availableSubjectIds=new Set((t.data||[]).map(x=>x.subject_id));
+        const visible=subjects.filter(x=>(exam.value==='ALL'||x.exam_code===exam.value)&&availableSubjectIds.has(x.id));
         if(countEl)countEl.textContent=visible.length+' subjects';
         if(selectedSubjectId&&!visible.some(x=>x.id===selectedSubjectId))selectedSubjectId=null;
         subjectsEl.classList.add('study-subject-grid');
@@ -212,6 +216,11 @@
     const params=new URLSearchParams(location.search);
     const requestedExam=params.get('exam')||document.body.dataset.defaultExam;
     if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
+    if(year){
+      year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');
+      const requestedYear=Number(params.get('year'));
+      year.value=requestedYear>=1990&&requestedYear<=2026?String(requestedYear):'2026';
+    }
     const requestedMode=params.get('mode');
     if(requestedMode&&[...mode.options].some(o=>o.value===requestedMode))mode.value=requestedMode;
     document.querySelectorAll('[data-exam-preset]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.examPreset&&[...exam.options].some(o=>o.value===b.dataset.examPreset))exam.value=b.dataset.examPreset;loadSubjects();$('examCode').scrollIntoView({behavior:'smooth',block:'center'});}));
@@ -228,13 +237,13 @@
       if(!ids.length){toast('Select at least one subject.',true);return;}
       if(!year?.value){toast('Choose an examination year.',true);return;}
       start.disabled=true;start.textContent='Preparing exam…';
-      const {data,error}=await db.rpc('start_external_exam_attempt',{
-        p_exam_code:exam.value,p_subject_ids:ids,p_question_count:Number(count.value),
-        p_duration_seconds:Number(duration.value),p_mode:mode.value,p_exam_year:Number(year?.value||2026)
+      const {data,error}=await invokeQuestionBank({
+        action:'start',exam_code:exam.value,subject_ids:ids,question_count:Number(count.value),
+        duration_seconds:Number(duration.value),mode:mode.value,exam_year:Number(year?.value||2026)
       });
       start.disabled=false;start.textContent='Start examination';
-      if(error){toast(error.message.includes('No published questions')?'No published questions are available for this subject and year yet. Choose another year or check back when verified questions are added.':error.message,true);return;}
-      location.href='exam.html?attempt='+encodeURIComponent(data);
+      if(error||data?.error){toast(data?.error||error?.message||'The question bank is unavailable. Please try again.',true);return;}
+      location.href='exam.html?attempt='+encodeURIComponent(data.attempt_id);
     });
   }
   async function initExam(){
@@ -242,19 +251,38 @@
     const attemptId=new URLSearchParams(location.search).get('attempt');
     const title=$('examTitle'),question=$('questionContent'),options=$('answerOptions'),number=$('questionNumber'),prev=$('previousQuestion'),next=$('nextQuestion'),submit=$('submitExam'),timer=$('examTimer'),grid=$('questionGrid');
     if(!attemptId||!question||!options){location.replace('test.html');return;}
-    const {data:attempt,error}=await db.from('external_exam_attempts').select('*').eq('id',attemptId).maybeSingle();
+    const {data:attempt,error}=await db.from('external_exam_attempts').select('*').eq('id',attemptId).eq('user_id',profile.user.id).maybeSingle();
     if(error||!attempt){toast('Examination session not found.',true);location.replace('test.html');return;}
-    const {data:rows,error:loadError}=await db.from('external_exam_attempt_questions').select('position,question:external_exam_questions(id,question_text,options,image_url)').eq('attempt_id',attemptId).order('position');
-    if(loadError||!rows?.length){toast('Could not load examination questions.',true);return;}
-    const questions=rows.map(x=>({...x.question,position:x.position}));let current=0;const answers={};
-    const {data:savedAnswers}=await db.from('external_exam_attempt_answers').select('question_id,selected_option_index').eq('attempt_id',attemptId);
-    (savedAnswers||[]).forEach(a=>{answers[a.question_id]=a.selected_option_index;});
-    title.textContent=attempt.exam_code+' CBT Simulator';
+    let questions=[],savedAnswers=[],providerMode=attempt.question_provider==='sdashapi';
+    if(providerMode){
+      const {data,error:loadError}=await invokeQuestionBank({action:'load',attempt_id:attemptId});
+      if(loadError||data?.error||!data?.questions?.length){toast(data?.error||'Could not load the licensed question set.',true);return;}
+      questions=data.questions.map(x=>({...x,position:x.position}));
+      savedAnswers=data.answers||[];
+    }else{
+      const {data:rows,error:loadError}=await db.from('external_exam_attempt_questions').select('position,question:external_exam_questions(id,question_text,options,image_url)').eq('attempt_id',attemptId).order('position');
+      if(loadError||!rows?.length){toast('Could not load examination questions.',true);return;}
+      questions=rows.map(x=>({...x.question,position:x.position}));
+      const {data}=await db.from('external_exam_attempt_answers').select('question_id,selected_option_index').eq('attempt_id',attemptId);
+      savedAnswers=data||[];
+    }
+    let current=0;const answers={};
+    savedAnswers.forEach(a=>{answers[a.question_id]=a.selected_option_index;});
+    title.textContent=attempt.exam_code+' '+(attempt.exam_year||'')+' CBT Simulator';
     function draw(){
       const q=questions[current];number.textContent='Question '+(current+1)+' of '+questions.length;
-      question.textContent=q.question_text;
+      question.textContent=q.section?q.section+'\n\n'+q.question_text:q.question_text;
       options.innerHTML=(q.options||[]).map((opt,i)=>'<label class="option '+(answers[q.id]===i?'selected':'')+'"><input type="radio" name="answer" value="'+i+'" '+(answers[q.id]===i?'checked':'')+'><span><b>'+String.fromCharCode(65+i)+'.</b> '+esc(typeof opt==='string'?opt:opt.text||JSON.stringify(opt))+'</span></label>').join('');
-      options.querySelectorAll('input').forEach(input=>input.addEventListener('change',async()=>{answers[q.id]=Number(input.value);draw();const {error}=await db.rpc('save_external_exam_answer',{p_attempt_id:attemptId,p_question_id:q.id,p_selected_option_index:answers[q.id]});if(error)toast('Answer could not be saved: '+error.message,true);}));
+      options.querySelectorAll('input').forEach(input=>input.addEventListener('change',async()=>{
+        answers[q.id]=Number(input.value);draw();
+        if(providerMode){
+          const {error}=await invokeQuestionBank({action:'answer',attempt_id:attemptId,question_id:q.id,selected_option_index:answers[q.id]});
+          if(error)toast('Answer could not be saved. Check your connection and try again.',true);
+        }else{
+          const {error}=await db.rpc('save_external_exam_answer',{p_attempt_id:attemptId,p_question_id:q.id,p_selected_option_index:answers[q.id]});
+          if(error)toast('Answer could not be saved: '+error.message,true);
+        }
+      }));
       prev.disabled=current===0;next.disabled=current===questions.length-1;
       if(grid)grid.innerHTML=questions.map((item,i)=>'<button type="button" data-q="'+i+'" class="'+(i===current?'current ':'')+(answers[item.id]!==undefined?'answered':'')+'">'+(i+1)+'</button>').join('');
     }
@@ -262,15 +290,23 @@
     prev?.addEventListener('click',()=>{if(current>0){current--;draw();}});
     next?.addEventListener('click',()=>{if(current<questions.length-1){current++;draw();}});
     const deadline=new Date(attempt.started_at).getTime()+Number(attempt.duration_seconds)*1000;
+    let submitted=false;
+    async function submitExam(){
+      if(submit.disabled||submitted)return;submit.disabled=true;clearInterval(interval);
+      let error=null;
+      if(providerMode){
+        const result=await invokeQuestionBank({action:'submit',attempt_id:attemptId});
+        error=result.error|| (result.data?.error?new Error(result.data.error):null);
+      }else{
+        const payload=questions.filter(q=>answers[q.id]!==undefined).map(q=>({question_id:q.id,selected_option_index:answers[q.id]}));
+        const result=await db.rpc('grade_external_exam_attempt',{p_attempt_id:attemptId,p_answers:payload});
+        error=result.error;
+      }
+      if(error){submit.disabled=false;toast(error.message||'Your result could not be saved. Please try again.',true);return;}
+      submitted=true;location.replace('results.html?attempt='+encodeURIComponent(attemptId));
+    }
     function tick(){const left=Math.max(0,Math.floor((deadline-Date.now())/1000));timer.textContent=[Math.floor(left/3600),Math.floor(left%3600/60),left%60].map(n=>String(n).padStart(2,'0')).join(' : ');if(left===0)submitExam();}
     const interval=setInterval(tick,1000);tick();draw();
-    async function submitExam(){
-      if(submit.disabled)return;submit.disabled=true;clearInterval(interval);
-      const payload=questions.filter(q=>answers[q.id]!==undefined).map(q=>({question_id:q.id,selected_option_index:answers[q.id]}));
-      const {data,error}=await db.rpc('grade_external_exam_attempt',{p_attempt_id:attemptId,p_answers:payload});
-      if(error){submit.disabled=false;toast(error.message,true);return;}
-      location.replace('results.html?attempt='+encodeURIComponent(attemptId));
-    }
     submit?.addEventListener('click',()=>{if(confirm('Submit your examination now?'))submitExam();});
   }
   async function initResults(){
