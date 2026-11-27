@@ -117,7 +117,7 @@ Never label an AI-generated or independently authored question as an official pa
 - The provider's Developer Terms state that an eligible paid plan permits display in a commercial student-facing application, while bulk dataset mirroring, raw exports and sublicensing are not included. The free Sandbox plan is described as testing/development only.
 - Production integration uses a server-side secret named `SDASHAPI_ACCESS_TOKEN`; never put the provider token in browser code or Git.
 - PRIME-CBT stores question snapshots only inside an individual student's active attempt and automatically expires those snapshots after 30 days. Attempt score/history remains; the provider's question bank is not permanently mirrored.
-- Integration status: Edge Function adapter deployed; provider token and an eligible production plan have not yet been configured. The 1990–2000 archive is not available from the V1 coverage stated in the docs and needs a separate licensed source or written confirmation of a supported higher API version.
+- Integration status: Edge Function adapter deployed; provider token and an eligible production plan have not yet been configured. The CBT can also use locally imported questions when they have verified provenance and are published. The 1990–2000 archive is not available from the V1 coverage stated in the docs and needs a separate licensed source or written confirmation of a supported higher API version.
 
 ## PRIME-CBT original study guides
 
