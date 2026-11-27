@@ -87,3 +87,5 @@
 .subject-selection-grid .subject-option span{min-width:0;overflow-wrap:anywhere}
 .subject-selection-grid .subject-option input{width:16px;height:16px;flex:none;margin:0;accent-color:var(--green)}
 @media(max-width:360px){.subject-selection-grid{gap:6px}.subject-selection-grid .subject-option{padding:8px;font-size:10.5px}}
+
+.source-label{font-size:10px!important;color:var(--green)!important;margin:2px 0 6px!important}
