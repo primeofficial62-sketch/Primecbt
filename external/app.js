@@ -49,6 +49,13 @@
       node.replaceWith(fragment);
     });
   }
+  async function invokeQuestionBank(body){
+    const result=await db.functions.invoke('external-exam-question-bank',{body});
+    if(result.error&&!result.data&&result.error.context?.clone){
+      try{return {data:await result.error.context.clone().json(),error:result.error};}catch(_){}
+    }
+    return result;
+  }
   function toast(message, error=false) {
     let el = $('toast');
     if (!el) { el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el); }
@@ -223,10 +230,10 @@
       if(!ids.length){toast('Select at least one subject.',true);return;}
       if(!year?.value){toast('Choose an examination year.',true);return;}
       start.disabled=true;start.textContent='Preparing exam…';
-      const {data,error}=await db.functions.invoke('external-exam-question-bank',{body:{
+      const {data,error}=await invokeQuestionBank({
         action:'start',exam_code:exam.value,subject_ids:ids,question_count:Number(count.value),
         duration_seconds:Number(duration.value),mode:mode.value,exam_year:Number(year?.value||2026)
-      }});
+      });
       start.disabled=false;start.textContent='Start examination';
       if(error||data?.error){toast(data?.error||error?.message||'The question bank is unavailable. Please try again.',true);return;}
       location.href='exam.html?attempt='+encodeURIComponent(data.attempt_id);
@@ -241,7 +248,7 @@
     if(error||!attempt){toast('Examination session not found.',true);location.replace('test.html');return;}
     let questions=[],savedAnswers=[],providerMode=attempt.question_provider==='sdashapi';
     if(providerMode){
-      const {data,error:loadError}=await db.functions.invoke('external-exam-question-bank',{body:{action:'load',attempt_id:attemptId}});
+      const {data,error:loadError}=await invokeQuestionBank({action:'load',attempt_id:attemptId});
       if(loadError||data?.error||!data?.questions?.length){toast(data?.error||'Could not load the licensed question set.',true);return;}
       questions=data.questions.map(x=>({...x,position:x.position}));
       savedAnswers=data.answers||[];
@@ -262,7 +269,7 @@
       options.querySelectorAll('input').forEach(input=>input.addEventListener('change',async()=>{
         answers[q.id]=Number(input.value);draw();
         if(providerMode){
-          const {error}=await db.functions.invoke('external-exam-question-bank',{body:{action:'answer',attempt_id:attemptId,question_id:q.id,selected_option_index:answers[q.id]}});
+          const {error}=await invokeQuestionBank({action:'answer',attempt_id:attemptId,question_id:q.id,selected_option_index:answers[q.id]});
           if(error)toast('Answer could not be saved. Check your connection and try again.',true);
         }else{
           const {error}=await db.rpc('save_external_exam_answer',{p_attempt_id:attemptId,p_question_id:q.id,p_selected_option_index:answers[q.id]});
@@ -281,7 +288,7 @@
       if(submit.disabled||submitted)return;submit.disabled=true;clearInterval(interval);
       let error=null;
       if(providerMode){
-        const result=await db.functions.invoke('external-exam-question-bank',{body:{action:'submit',attempt_id:attemptId}});
+        const result=await invokeQuestionBank({action:'submit',attempt_id:attemptId});
         error=result.error|| (result.data?.error?new Error(result.data.error):null);
       }else{
         const payload=questions.filter(q=>answers[q.id]!==undefined).map(q=>({question_id:q.id,selected_option_index:answers[q.id]}));
