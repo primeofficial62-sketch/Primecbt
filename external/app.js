@@ -214,6 +214,11 @@
     const params=new URLSearchParams(location.search);
     const requestedExam=params.get('exam')||document.body.dataset.defaultExam;
     if(requestedExam&&[...exam.options].some(o=>o.value===requestedExam))exam.value=requestedExam;
+    if(year){
+      year.innerHTML=Array.from({length:37},(_,i)=>2026-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('');
+      const requestedYear=Number(params.get('year'));
+      year.value=requestedYear>=1990&&requestedYear<=2026?String(requestedYear):'2026';
+    }
     const requestedMode=params.get('mode');
     if(requestedMode&&[...mode.options].some(o=>o.value===requestedMode))mode.value=requestedMode;
     document.querySelectorAll('[data-exam-preset]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.examPreset&&[...exam.options].some(o=>o.value===b.dataset.examPreset))exam.value=b.dataset.examPreset;loadSubjects();$('examCode').scrollIntoView({behavior:'smooth',block:'center'});}));
