@@ -102,3 +102,28 @@ Never label an AI-generated or independently authored question as an official pa
 - The starter lessons are free and are not marked PRIME PRO. The full syllabus coverage, additional subjects, downloadable packs and teacher-reviewed question resources remain to be built and reviewed.
 - NECO official homepage currently lists the 2027 SSCE Internal exam window (1 April–11 May 2027) and 2027 BECE window (19–31 May 2027). These dates are recorded as sourced events; subject-level timetables remain authoritative when published.
 - No 2027 JAMB UTME or WAEC WASSCE exam window is published as confirmed in this starter release. Proposed or media-reported dates must not be shown as official dates until the examination body confirms them.
+
+## Licensed third-party past-question feed (not an exam-body source)
+
+- Provider: SdashAPI
+- Documentation: https://sdashapi.com/docs
+- Developer terms: https://sdashapi.com/Terms-of-Service
+- Pricing: https://sdashapi.com/pricing
+- API endpoint: `GET https://sdashapi.com/api/v1/q`
+- Supported types documented for V1: UTME/JAMB, WASSCE/WAEC, NECO and Post-UTME.
+- V1 documentation states year coverage of **2001–2026**. The provider's marketing page has broader historical wording, so do not assume 1990–2000 coverage until the provider confirms the relevant API version and dataset in writing.
+- V1 requests support subject, exam type, year and a maximum of 50 questions per request. The response can include question, options, correct answer, explanation, image, exam type and year.
+- The provider is independent and is **not JAMB, WAEC or NECO**. Label these as third-party supplied past questions, never as an official examination-body API.
+- The provider's Developer Terms state that an eligible paid plan permits display in a commercial student-facing application, while bulk dataset mirroring, raw exports and sublicensing are not included. The free Sandbox plan is described as testing/development only.
+- Production integration uses a server-side secret named `SDASHAPI_ACCESS_TOKEN`; never put the provider token in browser code or Git.
+- PRIME-CBT stores question snapshots only inside an individual student's active attempt and automatically expires those snapshots after 30 days. Attempt score/history remains; the provider's question bank is not permanently mirrored.
+- Integration status: Edge Function adapter deployed; provider token and an eligible production plan have not yet been configured. The 1990–2000 archive is not available from the V1 coverage stated in the docs and needs a separate licensed source or written confirmation of a supported higher API version.
+
+## PRIME-CBT original study guides
+
+- The replacement Study library contains original PRIME-CBT foundational guides for English, Mathematics, Biology, Chemistry and Physics across JAMB, WAEC and NECO subject catalogues.
+- Topic selection uses the NERDC revised Senior Secondary curriculum as a high-level cross-curriculum reference only. It is not represented as the official JAMB, WAEC or NECO syllabus.
+- JAMB IBASS remains an interactive official syllabus source and must be checked directly before a topic is marked JAMB-aligned.
+- WAEC e-Learning is a useful official reference for examiners' observations and subject preparation, but its pages carry WAEC copyright notices; no WAEC question text or examiner-report content was copied into the new lessons.
+- NECO lists its syllabus as a paid publication. The new notes are independent foundational material, not a reproduction of NECO's paid syllabus.
+- Current coverage: five topic modules per core subject for each of the three exam catalogues (75 in-site lessons total). These are a structured starter library, not complete syllabus coverage and not teacher-approved. The syllabus alignment records remain `needs_clarification` until reviewed against each examination body's current subject syllabus.
