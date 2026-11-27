@@ -117,3 +117,45 @@
 .lesson-key-points ul{margin:0}
 @media(max-width:360px){.study-reader{width:calc(100% - 16px);max-height:88svh}.study-reader-body{padding:14px 15px 22px}}
 \n.pro-benefits{margin:14px 0 0;padding:13px;border:1px solid rgba(49,211,162,.24);border-radius:14px;background:rgba(4,14,24,.45)}.pro-benefits h3{font-size:12px;margin:0 0 8px;color:var(--green)}.pro-benefits ul{padding-left:18px;margin:0 0 10px}.pro-benefits li,.pro-benefits p{font-size:10px;line-height:1.55;color:#c3cedb;margin:5px 0}.pro-benefits strong{color:var(--text)}\n
+/* External Exams polish: compact matching event/news cards */
+.event-card{width:245px;min-width:245px;max-width:245px;min-height:82px;padding:10px 11px;border-radius:16px;display:flex;flex-direction:column;gap:3px}
+.event-card h3{font-size:12px;line-height:1.3;margin:3px 0 1px}
+.event-card p{font-size:10px;line-height:1.35}
+.event-card .section-link{font-size:10px;margin-top:3px}
+.news-card{width:245px;min-width:245px;min-height:82px;padding:10px 11px}
+.section-head>.section-link{flex:none;white-space:nowrap;font-size:12px;line-height:1.2;padding:5px 0}
+.news-page-card .section-link{display:inline-flex;align-items:center;min-height:28px;font-size:11px;padding:4px 0}
+
+/* Study subjects: vertical two-column cards */
+.study-subject-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0 18px}
+.study-subject-card{display:flex;align-items:center;gap:9px;min-width:0;min-height:66px;padding:10px;border:1px solid var(--border);border-radius:15px;background:var(--surface);color:var(--text);text-align:left}
+.study-subject-card.active{border-color:var(--green);background:rgba(49,211,162,.09)}
+.study-subject-icon{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:11px;background:rgba(49,211,162,.12);color:var(--green)}
+.study-subject-icon svg{width:17px;height:17px}
+.study-subject-copy{display:grid;gap:3px;min-width:0}
+.study-subject-copy strong{font-size:11px;line-height:1.25;overflow-wrap:anywhere}
+.study-subject-copy small{font-size:9px;color:var(--muted)}
+.study-subject-chevron{margin-left:auto;color:var(--green);flex:none}
+.study-subject-chevron svg{width:14px;height:14px}
+.resource-library-intro{padding:13px;border:1px solid rgba(49,211,162,.2);border-radius:15px;background:linear-gradient(135deg,rgba(49,211,162,.08),var(--surface));margin:12px 0}
+.resource-library-intro strong{display:block;font-size:12px;margin-bottom:4px}
+.resource-library-intro p{font-size:10px;line-height:1.5;color:var(--muted);margin:0}
+@media(max-width:350px){.study-subject-grid{gap:6px}.study-subject-card{padding:8px;gap:6px}.study-subject-icon{width:29px;height:29px}}
+
+/* PRIME AI and shared community conversation */
+.prime-ai-welcome,.group-chat-heading{display:flex;align-items:flex-start;gap:12px;padding:14px;margin:12px 0;border:1px solid rgba(49,211,162,.22);border-radius:17px;background:linear-gradient(135deg,rgba(49,211,162,.09),var(--surface) 75%)}
+.prime-ai-orb{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:14px;background:rgba(49,211,162,.15);color:var(--green)}
+.prime-ai-orb svg{width:22px;height:22px}
+.prime-ai-welcome h2{font-size:16px;margin:4px 0}
+.prime-ai-welcome p,.group-chat-heading p{font-size:10px;line-height:1.5;color:var(--muted);margin:0}
+.group-chat-heading .feature-icon{flex:none}
+.group-chat-heading strong{display:block;font-size:13px;margin:2px 0 4px}
+.ai-message p{white-space:pre-wrap;line-height:1.65}
+.ai-response{border-color:rgba(49,211,162,.25);background:rgba(49,211,162,.055)}
+.ai-user-message{margin-left:22px;background:var(--surface-2)}
+.ai-thinking{font-size:11px;color:var(--green);padding:12px}
+#chatFeed{max-height:calc(100svh - 310px);overflow:auto;padding:2px 0 12px;scroll-behavior:smooth}
+.composer{bottom:calc(68px + env(safe-area-inset-bottom));}
+.composer button{min-width:48px}
+.logout-section{margin:28px 0 18px;padding-top:18px;border-top:1px solid var(--border)}
+.logout-button{width:100%;min-height:44px;border-radius:13px;color:#ffb4b4;border:1px solid rgba(248,113,113,.28);background:rgba(248,113,113,.08)}
