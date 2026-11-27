@@ -998,6 +998,76 @@
       .stage { margin-top: 0; margin-bottom: 0; }
     }
 
+  
+
+/* FINAL SIGN-IN SCROLL FIX
+   Make the document itself scroll. Do not rely on the inner card scroller:
+   mobile browsers can otherwise leave the Sign In form visually trapped. */
+html,
+html body {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: auto !important;
+}
+html body {
+  position: static !important;
+  align-items: initial !important;
+  justify-content: initial !important;
+}
+html body .stage {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  max-height: none !important;
+  margin: 0 auto !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+}
+html body .content {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+html body .auth-card {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+html body .card-body,
+html body .card-body:has(#panel-login.active) {
+  display: block !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-y: visible !important;
+  overscroll-behavior: auto !important;
+}
+html body #panel-login.active {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
   </style>
   <script>
 (function () {
