@@ -34,7 +34,7 @@ test('External registration uses the shared auth page and routes to the External
   assert.ok(rootAuth.includes("sessionStorage.setItem(NEXT_KEY, '/external/home.html')"));
   assert.ok(legacyAuth.includes('window.location.replace(destination)'));
   assert.doesNotMatch(legacyAuth, /<form/i);
-  assert.match(rootAuth, /if \\(needsProfileSetup\\(session\\.user\\)\\)[\\s\\S]*?profile-setup\\.html/);
+  assert.match(rootAuth, /if \(needsProfileSetup\(session\.user\)\)[\s\S]*?profile-setup\.html/);
 });
 
 test('External Exams uses the existing PRIME-CBT brand palette and normal responsive mobile sizing', async () => {
