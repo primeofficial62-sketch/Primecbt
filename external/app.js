@@ -1,5 +1,25 @@
 (() => {
   'use strict';
+
+  // Recover gracefully when the primary Supabase CDN is blocked or unavailable.
+  // The retry re-enters this file only after the fallback bundle has loaded.
+  if (!window.supabase?.createClient) {
+    if (window.__primeExternalSupabaseFallbackStarted) return;
+    window.__primeExternalSupabaseFallbackStarted = true;
+    const fallback = document.createElement('script');
+    fallback.src = 'https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+    fallback.onload = () => {
+      const retry = document.createElement('script');
+      retry.src = new URL('app.js?supabase-fallback=1', location.href).href;
+      document.body.appendChild(retry);
+    };
+    fallback.onerror = () => {
+      const shell = document.querySelector('.app-shell') || document.body;
+      shell.innerHTML = '<section role="alert" style="max-width:440px;margin:15vh auto;padding:24px;color:#F4F6FC;font:15px/1.6 system-ui;text-align:center"><h1 style="font-size:22px">External Exams could not start</h1><p>The secure connection library could not be loaded. Check your internet connection, then reload this page.</p><button type="button" onclick="location.reload()" style="min-height:44px;padding:0 18px;border:0;border-radius:12px;background:#31D3A2;color:#07131c;font-weight:700">Reload page</button></section>';
+    };
+    document.head.appendChild(fallback);
+    return;
+  }
   const SUPABASE_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
