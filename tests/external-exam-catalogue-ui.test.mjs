@@ -71,7 +71,9 @@ test('External Exams CBT setup selects a specific year and sends it to the serve
   const migration = await read('supabase/migrations/20261127161000_external_exam_year_scoped_question_selection.sql');
   assert.ok(testPage.includes('id="examYear"'));
   assert.ok(app.includes('length:37'));
-  assert.ok(app.includes('p_exam_year:Number(year?.value||2026)'));
+  assert.ok(app.includes('exam_year:Number(year?.value||2026)'));
+  assert.ok(app.includes("action:'start'"));
+  assert.ok(app.includes("invokeQuestionBank({action:'load'"));
   assert.match(migration, /q\.exam_year\s*=\s*p_exam_year/i);
   assert.match(migration, /exam_year\s+integer/i);
   assert.match(migration, /1990/);
@@ -114,4 +116,46 @@ test('External Exams logout is a deliberate bottom action with confirmation', as
   const app = await read('external/app.js');
   assert.ok(more.includes('id="logoutButton"'));
   assert.ok(app.includes("window.confirm('Log out of PRIME-CBT External Exams?')"));
+});
+
+test('Study page no longer contains the broken year-selector reference and shows source provenance', async () => {
+  const app = await read('external/app.js');
+  const start = app.indexOf('async function initStudy()');
+  const end = app.indexOf('async function initTest()', start);
+  const studyCode = app.slice(start, end);
+  assert.ok(!studyCode.includes('if(year)'));
+  assert.ok(!studyCode.includes('params.get(\'year\')'));
+  assert.ok(app.includes('source_url'));
+  assert.ok(app.includes('lesson-source'));
+  assert.ok(app.includes('.limit(500)'));
+});
+
+test('Study library replaces the shallow starter batch with original curriculum-referenced guides', async () => {
+  const library = await read('supabase/migrations/20261127173000_external_exam_curriculum_study_library.sql');
+  const waec = await read('supabase/migrations/20261127174500_external_exam_waec_science_library.sql');
+  assert.ok(library.includes('Number systems, sets and numerical reasoning'));
+  assert.ok(library.includes('Cell biology and organisation'));
+  assert.ok(library.includes('Mole concept and chemical calculations'));
+  assert.ok(library.includes('Electricity, magnetism and electromagnetic induction'));
+  assert.ok(library.includes('needs_clarification'));
+  assert.ok(waec.includes("('WAEC','Biology','biology'"));
+  assert.ok(waec.includes("'Reading comprehension and inference'"));
+});
+
+test('Licensed question-bank integration is server-only, year-filtered and time-limited', async () => {
+  const api = await read('supabase/functions/external-exam-question-bank/index.ts');
+  const migration = await read('supabase/migrations/20261127180000_external_exam_api_attempts.sql');
+  const retention = await read('supabase/migrations/20261127181500_external_exam_question_snapshot_retention.sql');
+  const app = await read('external/app.js');
+  assert.ok(api.includes('SDASHAPI_ACCESS_TOKEN'));
+  assert.ok(api.includes('https://sdashapi.com/api/v1/q'));
+  assert.ok(api.includes('examYear < 2001'));
+  assert.ok(api.includes('external_exam_api_question_answers'));
+  assert.ok(api.includes('auth.getUser(accessToken)'));
+  assert.ok(migration.includes('question_provider'));
+  assert.ok(migration.includes('external_exam_api_attempt_questions'));
+  assert.ok(migration.includes('external api attempt questions owner read'));
+  assert.ok(retention.includes("interval '30 days'"));
+  assert.ok(retention.includes('external-exam-api-question-retention'));
+  assert.ok(app.includes("invokeQuestionBank({action:'submit'"));
 });
