@@ -111,7 +111,7 @@ Never label an AI-generated or independently authored question as an official pa
 - Pricing: https://sdashapi.com/pricing
 - API endpoint: `GET https://sdashapi.com/api/v1/q`
 - Supported types documented for V1: UTME/JAMB, WASSCE/WAEC, NECO and Post-UTME.
-- V1 documentation states year coverage of **2001–2026**. The provider's marketing page has broader historical wording, so do not assume 1990–2000 coverage until the provider confirms the relevant API version and dataset in writing.
+- V1 documentation and the provider's year-filtering guide state historical coverage from **1988–2026** for core subjects. The provider warns that niche subjects may be sparse in early years; the app therefore requests the exact subject and year and displays only questions actually returned.
 - V1 requests support subject, exam type, year and a maximum of 50 questions per request. The response can include question, options, correct answer, explanation, image, exam type and year.
 - The provider is independent and is **not JAMB, WAEC or NECO**. Label these as third-party supplied past questions, never as an official examination-body API.
 - The provider's Developer Terms state that an eligible paid plan permits display in a commercial student-facing application, while bulk dataset mirroring, raw exports and sublicensing are not included. The free Sandbox plan is described as testing/development only.
