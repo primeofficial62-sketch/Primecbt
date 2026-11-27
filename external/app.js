@@ -171,7 +171,7 @@
         db.from('external_exam_subjects').select('id,name,exam_code,syllabus_version').eq('is_active',true).order('sort_order'),
         (()=>{let q=db.from('external_exam_resources').select('id,title,description,exam_code,resource_type,source_year,source_label,subject_id,topic_id,is_premium,content_markdown,key_points,learning_objectives,estimated_minutes,review_status').eq('is_published',true).order('created_at',{ascending:false}).limit(100);if(exam.value!=='ALL')q=q.eq('exam_code',exam.value);if(kind.value!=='ALL')q=q.eq('resource_type',kind.value);if(selectedSubjectId)q=q.eq('subject_id',selectedSubjectId);return q;})()
       ]);
-      if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
+      resourceRows=r.data||[];\n      if(s.error){subjectsEl.innerHTML='<div class="empty-state"><strong>Could not load the subject catalogue</strong>'+esc(s.error.message)+'</div>';if(countEl)countEl.textContent='Unavailable';}
       else{
         subjects=s.data||[];
         const visible=subjects.filter(x=>exam.value==='ALL'||x.exam_code===exam.value);
