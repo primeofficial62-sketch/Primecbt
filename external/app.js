@@ -28,7 +28,26 @@
     const names={BELL:'bell',USER:'user',ARROW:'arrow',MONITOR:'monitor',BOOK:'book',STORE:'store',PLAY:'play',FILE:'file',SPARK:'spark',SEARCH:'search',GROUP:'group',SETTINGS:'settings',HOME:'home',CHAT:'chat'};
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
     const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
-    nodes.forEach(node=>{const raw=node.nodeValue.trim();const key=raw.startsWith('{{')&&raw.endsWith('}}')?raw.slice(2,-2):'';if(!names[key])return;const template=document.createElement('template');template.innerHTML=icon(names[key]);const svg=template.content.firstElementChild;if(svg)node.replaceWith(svg);});
+    nodes.forEach(node=>{
+      const value=node.nodeValue||'';
+      if(!/\\{\\{[A-Z_]+\\}\\}/.test(value))return;
+      const fragment=document.createDocumentFragment();
+      let cursor=0;
+      value.replace(/\\{\\{([A-Z_]+)\\}\\}/g,(match,key,offset)=>{
+        if(offset>cursor)fragment.appendChild(document.createTextNode(value.slice(cursor,offset)));
+        if(names[key]){
+          const template=document.createElement('template');
+          template.innerHTML=icon(names[key]);
+          const svg=template.content.firstElementChild;
+          if(svg){svg.setAttribute('aria-hidden','true');svg.classList.add('inline-icon');fragment.appendChild(svg);}
+          else fragment.appendChild(document.createTextNode(match));
+        }else fragment.appendChild(document.createTextNode(match));
+        cursor=offset+match.length;
+        return match;
+      });
+      if(cursor<value.length)fragment.appendChild(document.createTextNode(value.slice(cursor)));
+      node.replaceWith(fragment);
+    });
   }
   function toast(message, error=false) {
     let el = $('toast');
@@ -71,6 +90,7 @@
   const subjectLabel=(s)=>s.name||'Subject';
   async function initHome() {
     const profile=await boot('home');if(!profile)return;
+    await db.functions.invoke('external-exam-feed').catch(err=>console.warn('[external] feed refresh skipped',err));
     const userId=profile.user.id;
     const browse=$('examBrowseList'),recommended=$('recommendedSubjects');
     const {data:catalog,error:catalogError}=await db.from('external_exam_subjects').select('id,name,exam_code').eq('is_active',true).order('sort_order').limit(40);
@@ -110,6 +130,7 @@
   }
   async function initNews() {
     const profile=await boot('more');if(!profile)return;
+    await db.functions.invoke('external-exam-feed').catch(err=>console.warn('[external] feed refresh skipped',err));
     const list=$('newsPageList'),title=$('newsPageTitle');
     const isEvents=new URLSearchParams(location.search).get('tab')==='events';
     if(title)title.textContent=isEvents?'Upcoming Events':'Education & Exam News';
@@ -171,7 +192,8 @@
     async function loadSubjects(){
       const {data,error}=await db.from('external_exam_subjects').select('id,name').eq('exam_code',exam.value).eq('is_active',true).order('sort_order');
       if(error){toast('Could not load subjects. Please retry.',true);return;}
-      subjectBox.innerHTML=(data||[]).length?(data||[]).map(s=>'<label class="option"><input type="checkbox" value="'+s.id+'"><span>'+esc(s.name)+'</span></label>').join(''):'<div class="empty-state"><strong>No subjects are available yet</strong>Subject lists will appear when the official syllabus data is loaded.</div>';
+      subjectBox.classList.add('subject-selection-grid');
+      subjectBox.innerHTML=(data||[]).length?(data||[]).map(s=>'<label class="option subject-option"><input type="checkbox" value="'+s.id+'"><span>'+esc(s.name)+'</span></label>').join(''):'<div class="empty-state"><strong>No subjects are available yet</strong>Subject lists will appear when the official syllabus data is loaded.</div>';
     }
     exam.addEventListener('change',loadSubjects);await loadSubjects();
     start?.addEventListener('click',async()=>{
@@ -224,10 +246,20 @@
     submit?.addEventListener('click',()=>{if(confirm('Submit your examination now?'))submitExam();});
   }
   async function initResults(){
-    await boot('test');
-    const id=new URLSearchParams(location.search).get('attempt');if(!id)return;
-    const {data,error}=await db.from('external_exam_attempts').select('*').eq('id',id).maybeSingle();
-    if(error||!data){toast('Result not found.',true);return;}
+    const profile=await boot('test');if(!profile)return;
+    const id=new URLSearchParams(location.search).get('attempt');
+    const detail=$('resultPanel'),history=$('resultHistory');
+    if(!id){
+      if(detail)detail.classList.add('hidden');
+      if(history){
+        const {data,error}=await db.from('external_exam_attempts').select('id,exam_code,total_questions,score,started_at,submitted_at').eq('user_id',profile.user.id).eq('status','submitted').order('submitted_at',{ascending:false}).limit(50);
+        history.innerHTML=error?'<div class="empty-state"><strong>Results are temporarily unavailable</strong>Please try again later.</div>':(data||[]).length?(data||[]).map(a=>{const pct=Number(a.total_questions)>0?Math.round(Number(a.score||0)/Number(a.total_questions)*100):0;return '<a class="result-row" href="results.html?attempt='+encodeURIComponent(a.id)+'"><span class="result-mark">'+esc(a.exam_code)+'</span><span class="result-copy"><strong>'+esc(a.exam_code)+' examination</strong><small>'+new Date(a.submitted_at||a.started_at).toLocaleDateString()+' · '+Number(a.score||0)+'/'+Number(a.total_questions||0)+' correct</small></span><span class="result-score">'+pct+'%</span></a>';}).join(''):'<div class="empty-state"><strong>No completed exams yet</strong>Finish and submit a CBT session to see your results here.</div>';
+      }
+      return;
+    }
+    if(history)history.classList.add('hidden');
+    const {data,error}=await db.from('external_exam_attempts').select('*').eq('id',id).eq('user_id',profile.user.id).maybeSingle();
+    if(error||!data||data.status!=='submitted'){toast('Completed result not found.',true);if(detail)detail.classList.add('hidden');return;}
     $('resultScore').textContent=data.score??0;$('resultTotal').textContent=data.total_questions??0;
     $('resultPercent').textContent=(data.total_questions?Math.round((Number(data.score||0)/data.total_questions)*100):0)+'%';
     $('resultExam').textContent=data.exam_code+' examination';
@@ -258,9 +290,11 @@
     const profile=await boot('more');if(!profile)return;
     const name=$('moreName');if(name)name.textContent=profile.user.user_metadata?.full_name||profile.user.email||'External Exams student';
     const email=$('moreEmail');if(email)email.textContent=profile.user.email||'';
-    const {data:preferences}=await db.from('external_exam_profiles').select('exam_interests').eq('user_id',profile.user.id).maybeSingle();
+    const {data:preferences}=await db.from('external_exam_profiles').select('exam_interests,premium_activated_at').eq('user_id',profile.user.id).maybeSingle();
     (preferences?.exam_interests||[]).forEach(value=>{const input=document.querySelector('[data-interest][value="'+value+'"]');if(input)input.checked=true;});
-    const activationInfo=$('activationInfo');activationInfo?.addEventListener('click',()=>toast('Device activation will be enabled after the payment flow is connected.'));
+    const premiumActive=!!preferences?.premium_activated_at;
+    const premiumStatus=$('premiumStatus');if(premiumStatus)premiumStatus.textContent=premiumActive?'PRIME PRO is active on this account.':'Free account · PRIME PRO unlock is not active yet.';
+    const activationInfo=$('activationInfo');activationInfo?.addEventListener('click',()=>toast(premiumActive?'Your PRIME PRO access is active.':'₦3,000 unlocks premium study resources and learning features. Secure checkout will be enabled after payment verification is configured.'));
     const settings=$('savePreferences');settings?.addEventListener('click',async()=>{const checks=[...document.querySelectorAll('[data-interest]:checked')].map(x=>x.value);const {error}=await db.from('external_exam_profiles').update({exam_interests:checks,updated_at:new Date().toISOString()}).eq('user_id',profile.user.id);toast(error?error.message:'Preferences saved.',!!error);});
   }
   hydrateIcons();
