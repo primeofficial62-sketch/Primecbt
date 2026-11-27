@@ -34,7 +34,7 @@ test('Study library opens lessons inside PRIME-CBT and has no off-site study lin
   const css = await read('external/app.css');
   assert.ok(study.includes('studyReader'));
   assert.ok(study.includes('PRIME-CBT notes and lessons'));
-  assert.ok(!/href=["']https?:\\/\\//i.test(study));
+  assert.ok(!/href=["']https?:\/\//i.test(study));
   assert.ok(app.includes('content_markdown'));
   assert.ok(app.includes('reader.showModal()'));
   assert.ok(app.includes('data-resource'));
