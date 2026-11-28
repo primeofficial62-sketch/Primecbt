@@ -829,7 +829,6 @@
     .reg-step .headline.sm { font-size: 22px; }
     .reg-step .headline.sm br { display: none; }
     .reg-step .headline.sm .accent { margin-left: .28em; }
-    .reg-step[data-step="exam"] .subtext { display: none; }
     .reg-step .subtext { margin-top: 6px; font-size: 13.5px; }
     .reg-step .form { margin-top: 14px !important; }
     .steps { margin-bottom: 14px; }
@@ -3378,12 +3377,6 @@ resendResetLink.addEventListener('click', async (e) => {
   document.querySelectorAll('.btn-oauth').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (window.PrimeAnalytics) PrimeAnalytics.track('cta_clicked', { cta_id: 'google_auth', cta_location: '/auth.html' });
-      // Preserve the selected pathway across Google's redirect.
-      if (selectedAuthExperience === 'external' || pathway === 'exam') {
-        try { sessionStorage.setItem(NEXT_KEY, '/external/home.html'); } catch (e) {}
-      } else {
-        try { sessionStorage.setItem(EXPERIENCE_KEY, 'campus'); } catch (e) {}
-      }
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin + '/auth.html' }
