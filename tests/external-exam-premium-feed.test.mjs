@@ -10,7 +10,8 @@ test('External Exams uses real inline icons for every placeholder token, includi
   const home = await read('external/home.html');
   assert.ok(app.includes(String.raw`value.replace(/\{\{([A-Z_]+)\}\}/g`));
   assert.ok(app.includes("ARROW:'arrow'"));
-  assert.ok(home.includes('{{ARROW}}'));
+  assert.ok(home.includes('id="i-arrow"'));
+  assert.ok(app.includes("ARROW:'arrow'"));
   assert.ok(app.includes("icon('arrow')+'</a>'"));
   new vm.Script(app);
 });
@@ -57,13 +58,14 @@ test('Trusted news feed is restricted to approved examination and education publ
   assert.doesNotMatch(fn, /SUPABASE_SERVICE_ROLE_KEY.{0,80}localStorage/i);
 });
 
-test('External Exams authentication supports email/password and Google without changing University routing', async () => {
+test('University authentication is separate and does not route to the External Exams app', async () => {
   const auth = await read('auth.html');
   const isolation = await read('tests/external-exams-isolation.test.mjs');
   assert.ok(auth.includes('signInWithPassword'));
   assert.ok(auth.includes('signUp'));
   assert.ok(auth.includes("provider: 'google'"));
-  assert.ok(auth.includes("window.location.replace('/external/home.html')"));
+  assert.ok(auth.includes('This is an older External Exams account'));
+  assert.ok(!auth.includes("window.location.replace('/external/home.html')"));
   assert.ok(isolation.includes("meta.pathway === 'institutional_learning'"));
 });
 
