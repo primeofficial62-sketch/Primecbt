@@ -1946,9 +1946,15 @@ window.PRIME_INSTITUTIONS = { data: {"university":[["Abdulkadir Kure University,
   // ========== SUPABASE CLIENT ==========
   const SUPABASE_URL = "https://xuofkjjhupgmrphzgyun.supabase.co";
 const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
-  const supabaseClient = (window.supabase && window.supabase.createClient)
+  const initialAuthExperience = (new URLSearchParams(window.location.search).get('experience') === 'external' || (() => { try { return sessionStorage.getItem('auth_experience') === 'external'; } catch (e) { return false; } })()) ? 'external' : 'campus';
+  const campusSupabaseClient = (window.supabase && window.supabase.createClient)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-    : (function () {
+    : null;
+  const externalSupabaseClient = (window.supabase && window.supabase.createClient)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storageKey: 'prime-external-auth-v1', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+    : null;
+  let supabaseClient = initialAuthExperience === 'external' ? externalSupabaseClient : campusSupabaseClient;
+  if (!supabaseClient) supabaseClient = (function () {
         const fail = () => Promise.resolve({ data: null, error: { message: 'Failed to fetch' } });
         const q = { select: () => q, eq: () => q, then: (ok) => fail().then(ok) };
         return { from: () => q, auth: new Proxy({ onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }), getSession: () => Promise.resolve({ data: { session: null } }) }, { get: (t, k) => k in t ? t[k] : fail }) };
@@ -2017,6 +2023,8 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   const loginPathwayNote = document.getElementById('loginPathwayNote');
   function setAuthExperience(value, persistChoice = true) {
     selectedAuthExperience = value === 'external' ? 'external' : 'campus';
+    supabaseClient = selectedAuthExperience === 'external' ? externalSupabaseClient : campusSupabaseClient;
+    if (!supabaseClient) supabaseClient = campusSupabaseClient;
     if (persistChoice) explicitExperienceChoice = true;
     if (loginPathway) loginPathway.querySelectorAll('[data-login-experience]').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.loginExperience === selectedAuthExperience));
