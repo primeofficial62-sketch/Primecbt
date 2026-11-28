@@ -15,11 +15,9 @@ test('External Exams uses the shared PRIME-CBT auth page and enters its own app'
   const externalSection = index.slice(externalStart, externalEnd);
   assert.match(externalSection, /\/auth\.html\?mode=register&next=%2Fexternal%2Fhome\.html&experience=external/);
   assert.match(externalSection, /\/auth\.html\?mode=login&next=%2Fexternal%2Fhome\.html&experience=external/);
-  assert.ok(legacyAuth.includes("prime-external-auth-v1"));
-  assert.ok(legacyAuth.includes("prime_experience:'external_exams'"));
-  assert.ok(legacyAuth.includes("pathway:'exam_preparation'"));
-  assert.ok(legacyAuth.includes("auth.html?mode=register"));
-  assert.ok(legacyAuth.includes("Your University session has not been changed"));
+  assert.match(legacyAuth, /location\.replace\('\/auth\.html'/);
+  assert.ok(legacyAuth.includes("params.set('experience', 'external')"));
+  assert.ok(sharedAuth.includes("storageKey: 'prime-external-auth-v1'"));
   assert.ok((await read('external/app.js')).includes("storageKey: 'prime-external-auth-v1'"));
   assert.ok((await read('external/app.js')).includes("if (!belongsToExternal)"));
   assert.ok(index.includes("universityAccount ? 'home.html' : '/auth.html?mode=login'"));
@@ -50,10 +48,9 @@ test('External registration uses the shared auth page and routes to the External
   assert.ok(rootAuth.includes('const experience = await resolveExperience(session.user)'));
   assert.ok(rootAuth.includes("window.location.replace('/external/home.html')"));
   assert.ok(rootAuth.includes("sessionStorage.setItem(NEXT_KEY, '/external/home.html')"));
-  assert.match(legacyAuth, /prime-external-auth-v1/);
-  assert.match(legacyAuth, /prime_experience:'external_exams'/);
-  assert.match(legacyAuth, /signInWithPassword/);
-  assert.match(legacyAuth, /signInWithOAuth/);
+  assert.match(legacyAuth, /location\.replace\('\/auth\.html'/);
+  assert.match(rootAuth, /externalSupabaseClient/);
+  assert.match(rootAuth, /selectedAuthExperience === 'external' \? externalSupabaseClient/);
   assert.match(rootAuth, /if \(needsProfileSetup\(session\.user\)\)[\s\S]*?profile-setup\.html/);
 });
 
