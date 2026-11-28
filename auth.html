@@ -411,15 +411,6 @@
     @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
 
     /* Authentication pathway identity */
-    .login-pathway { margin: 0 0 22px; padding: 14px; border: 1px solid var(--emerald-line); border-radius: 16px; background: var(--card-grad); }
-    .login-pathway-label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
-    .login-pathway-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .login-path-option { min-width: 0; padding: 10px 9px; border: 1px solid var(--border); border-radius: 12px; background: var(--field); color: var(--text); text-align: left; font: inherit; cursor: pointer; transition: border-color .2s, background .2s; }
-    .login-path-option strong, .login-path-option span { display: block; }
-    .login-path-option strong { font-size: 12px; letter-spacing: .02em; }
-    .login-path-option span { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.35; }
-    .login-path-option[aria-pressed="true"] { border-color: var(--emerald); background: rgba(49,211,162,.10); box-shadow: inset 0 0 0 1px var(--emerald-line); }
-    .login-pathway-note { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .path-title { letter-spacing: .01em; }
     .path-card .path-title { font-size: 15px; font-weight: 800; }
     .path-card .path-desc { line-height: 1.45; }
@@ -1185,8 +1176,8 @@ html body #panel-login.active {
     <div class="panel active" id="panel-register">
 
       <div class="card-head">
-        <h2>Choose Your Learning Pathway</h2>
-        <p>Choose the experience that matches what you want to do on PRIME-CBT.</p>
+        <h2>Create your PRIME CBT account</h2>
+        <p>Set up your university learning profile to get started.</p>
       </div>
 
       <div class="steps" id="steps" role="group" aria-label="Registration progress" hidden></div>
@@ -1483,14 +1474,6 @@ html body #panel-login.active {
     
     <!-- ==================== LOGIN ==================== -->
     <div class="panel" id="panel-login">
-      <div class="login-pathway" id="loginPathway" aria-label="Choose the area you want to sign in to">
-        <p class="login-pathway-label">What are you signing in to?</p>
-        <div class="login-pathway-options">
-          <button type="button" class="login-path-option" data-login-experience="campus" aria-pressed="true"><strong>PRIME CAMPUS</strong><span>University learning</span></button>
-          <button type="button" class="login-path-option" data-login-experience="external" aria-pressed="false"><strong>EXAM PREP</strong><span>JAMB, WAEC, NECO &amp; more</span></button>
-        </div>
-        <p class="login-pathway-note" id="loginPathwayNote">Sign in to your university learning space.</p>
-      </div>
       <form class="form" id="loginForm" novalidate>
         <div class="field">
           <label class="field-label" for="loginEmail">Email</label>
@@ -2008,31 +1991,7 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
   // ========== SAFE "NEXT" DESTINATION ==========
   // Only same-site .html pages are allowed (no other sites, no javascript: links).
   const NEXT_KEY = 'auth_next';
-  const EXPERIENCE_KEY = 'auth_experience';
-  const requestedExperience = urlParams.get('experience') === 'external' ? 'external' : (urlParams.get('experience') === 'campus' ? 'campus' : null);
-  let selectedAuthExperience = requestedExperience || 'campus';
-  let explicitExperienceChoice = !!requestedExperience;
-  if (requestedExperience) { try { sessionStorage.setItem(EXPERIENCE_KEY, requestedExperience); } catch (e) {} }
-  const loginPathway = document.getElementById('loginPathway');
-  const loginPathwayNote = document.getElementById('loginPathwayNote');
-  function setAuthExperience(value, persistChoice = true) {
-    selectedAuthExperience = value === 'external' ? 'external' : 'campus';
-    if (persistChoice) explicitExperienceChoice = true;
-    if (loginPathway) loginPathway.querySelectorAll('[data-login-experience]').forEach(button => {
-      button.setAttribute('aria-pressed', String(button.dataset.loginExperience === selectedAuthExperience));
-    });
-    if (loginPathwayNote) loginPathwayNote.textContent = selectedAuthExperience === 'external'
-      ? 'Sign in to your external examination preparation space for JAMB, WAEC, NECO and more.'
-      : 'Sign in to your university learning space for courses, academic resources and internal assessments.';
-    try { sessionStorage.setItem(EXPERIENCE_KEY, selectedAuthExperience); } catch (e) {}
-    const url = new URL(window.location.href);
-    url.searchParams.set('experience', selectedAuthExperience);
-    history.replaceState(null, '', url.pathname + url.search + url.hash);
-  }
-  if (loginPathway) {
-    loginPathway.querySelectorAll('[data-login-experience]').forEach(button => button.addEventListener('click', () => setAuthExperience(button.dataset.loginExperience)));
-    setAuthExperience(selectedAuthExperience, false);
-  }
+  const NEXT_KEY = 'auth_next';
   function safeNext(v) {
     if (!v) return null;
     v = String(v).trim();
@@ -2047,54 +2006,11 @@ const SUPABASE_KEY = "sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh";
     if (!n) { try { n = safeNext(sessionStorage.getItem(NEXT_KEY)); } catch (e) {} }
     return n || 'home.html';
   }
-  function metadataExperience(user) {
-    const meta = user?.user_metadata || {};
-    if (meta.prime_experience === 'external_exams' || meta.pathway === 'exam_preparation') return 'external';
-    if (meta.pathway === 'institutional_learning' || meta.prime_experience === 'university_learning' || meta.prime_experience === 'university') return 'university';
-    return null;
-  }
-  async function resolveExperience(user) {
-    // Saved account metadata is authoritative whenever it exists.
-    const tagged = metadataExperience(user);
-    if (tagged) return tagged;
-
-    // An explicitly selected sign-in pathway must be checked before the
-    // University profile fallback. Legacy External Exams users may also have
-    // a University profile row; that row must not hijack their exam workspace.
-    let intent = requestedExperience;
-    if (!intent && explicitExperienceChoice) intent = selectedAuthExperience;
-    if (!intent) {
-      try {
-        const saved = sessionStorage.getItem(EXPERIENCE_KEY);
-        if (saved === 'external' || saved === 'campus') intent = saved;
-      } catch (e) {}
-    }
-    if (intent) return intent === 'external' ? 'external' : 'university';
-
-    // Infer University for older accounts only when no pathway was selected
-    // and no registration metadata is available.
-    try {
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('institution, department, level, school_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (profile && (profile.institution || profile.department || profile.level || profile.school_id)) return 'university';
-    } catch (err) { /* profile fallback is best-effort */ }
-    return 'university';
-  }
   async function goNext(replace) {
     let dest = nextUrl();
-    try {
-      const { data } = await supabaseClient.auth.getSession();
-      const user = data?.session?.user;
-      if (user) {
-        const experience = await resolveExperience(user);
-        if (experience === 'external') dest = '/external/home.html';
-        else if (dest.startsWith('/external/')) dest = 'home.html';
-      }
-    } catch (err) { /* keep the safe requested destination if account lookup fails */ }
-    try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {}
+    // This application serves University Learning only.
+    if (dest.startsWith('/external/')) dest = 'home.html';
+    try { sessionStorage.removeItem(NEXT_KEY); } catch (e) {}
     if (replace) window.location.replace(dest); else window.location.href = dest;
   }
   // An explicit ?mode= always wins. Otherwise returning users land on Log In.
@@ -2648,11 +2564,11 @@ switcher.dataset.mode = mode;
     i.addEventListener('input', () => setFieldError(i, false)));
 
   // ----- state -----
-  let pathway = null;          // 'exam' | 'inst'
-  let examSel = [];            // exam codes, examSel[0] is the primary exam
-  let stepName = 'path';
-  const FLOWS = { exam: ['exam', 'account'], inst: ['inst', 'acad', 'account'] };
-  const flow = () => FLOWS[pathway] || [];
+  let pathway = 'inst';
+  let examSel = [];
+  let stepName = 'inst';
+  const FLOWS = { inst: ['inst', 'acad', 'account'] };
+  const flow = () => FLOWS.inst;
 
   // ----- icons (fixed set; the admin picks one by name) -----
   const ICONS = {
@@ -2671,65 +2587,27 @@ switcher.dataset.mode = mode;
   // Read from the public `registration_pathways` and `exam_categories` tables
   // (see registration-config.sql). If the tables don't exist yet, or the
   // request fails, these built-in defaults are used so sign-up never breaks.
-  const DEFAULT_EXAMS = [
-    { code: 'jamb',         title: 'JAMB/UTME',              description: 'Practise for the Unified Tertiary Matriculation Examination.', icon: 'monitor',   enabled: true,  coming_soon: false },
-    { code: 'waec',         title: 'WAEC/SSCE',              description: 'West African Senior School Certificate Examination.',          icon: 'book',      enabled: true,  coming_soon: false },
-    { code: 'neco',         title: 'NECO',                   description: 'National Examinations Council senior school exams.',          icon: 'file',      enabled: true,  coming_soon: false },
-    { code: 'post-utme',    title: 'Post-UTME',              description: 'Screening practice for your university of choice.',           icon: 'target',    enabled: true,  coming_soon: false },
-    { code: 'ncee',         title: 'NCEE',                   description: 'National Common Entrance Examination for Unity Colleges.',    icon: 'users',     enabled: true,  coming_soon: false },
-    { code: 'university',   title: 'University Examinations', description: 'Course tests and past questions for your degree.',            icon: 'clipboard', enabled: true,  coming_soon: false },
-    { code: 'professional', title: 'Professional Examinations', description: 'Professional certification exams.',                          icon: 'briefcase', enabled: false, coming_soon: true }
-  ];
   let pathCfg = { exam: false, inst: true };
-  let examCats = DEFAULT_EXAMS.slice();
+  let examCats = [];
 
   const examVisible = c => c.visible !== false && (c.coming_soon || c.enabled !== false);
   const examPickable = c => examVisible(c) && !c.coming_soon;
 
   async function loadRegConfig() {
-    try {
-      const [p, e, s] = await Promise.all([
-        supabaseClient.from('registration_pathways').select('key,enabled'),
-        supabaseClient.from('exam_categories').select('code,title,description,icon,enabled,coming_soon,visible,sort_order'),
-        supabaseClient.from('app_settings').select('value').eq('id', 'exam_prep').limit(1)
-      ]);
-      if (!p.error && p.data && p.data.length) {
-        p.data.forEach(r => {
-          if (r.key === 'exam_preparation') pathCfg.exam = !!r.enabled;
-          if (r.key === 'institutional_learning') pathCfg.inst = !!r.enabled;
-        });
-      }
-      if (!e.error && e.data && e.data.length) {
-        examCats = e.data.slice().sort((a, b) => ((a.sort_order ?? 999) - (b.sort_order ?? 999)));
-      }
-      // The Admin > Exam preparation switch is the source of truth for this pathway.
-      // app_settings is publicly readable (RLS SELECT policy); writes remain admin-only.
-      if (!s.error && s.data && s.data.length) {
-        pathCfg.exam = s.data[0].value === 'live';
-      }
-    } catch (err) { /* keep defaults */ }
+    // External examination registration is no longer part of this application.
+    pathCfg = { exam: false, inst: true };
+    examCats = [];
     applyConfig();
   }
 
   function applyConfig() {
-    pathList.querySelectorAll('.path-card').forEach(b => {
-      const isExam = b.dataset.path === 'exam';
-      if (isExam) {
-        const live = !!pathCfg.exam;
-        b.classList.toggle('is-soon', !live);
-        if (live) b.removeAttribute('data-soon');
-        else b.dataset.soon = 'true';
-        b.setAttribute('aria-disabled', String(!live));
-        const badge = b.querySelector('.soon-badge');
-        if (badge) badge.hidden = live;
-      }
-      b.hidden = !pathCfg[b.dataset.path];
+    pathList.querySelectorAll('.path-card').forEach(button => {
+      button.hidden = button.dataset.path !== 'inst';
     });
-    pathEmpty.hidden = pathCfg.exam || pathCfg.inst;
-    // drop anything that is no longer available
-    examSel = examSel.filter(code => examCats.some(c => c.code === code && examPickable(c)));
-    if (pathway && !pathCfg[pathway]) { pathway = null; stepName = 'path'; }
-    if (pathway && !flow().includes(stepName)) stepName = 'path';
+    pathEmpty.hidden = true;
+    examSel = [];
+    pathway = 'inst';
+    if (!flow().includes(stepName)) stepName = 'inst';
     markPath();
     renderExams();
     updateSteps();
@@ -2852,7 +2730,6 @@ switcher.dataset.mode = mode;
     }
     if (!b || b.hidden || !pathCfg[b.dataset.path]) return;
     pathway = b.dataset.path;
-    setAuthExperience(pathway === 'exam' ? 'external' : 'campus');
     const pathHint = document.getElementById('accountPathHint');
     if (pathHint) pathHint.textContent = pathway === 'exam'
       ? 'EXAM PREP account — for JAMB, WAEC, NECO, Post-UTME and other external examinations.'
@@ -2864,7 +2741,7 @@ switcher.dataset.mode = mode;
   stepBack.addEventListener('click', () => {
     const fl = flow();
     const i = fl.indexOf(stepName);
-    go(i > 0 ? fl[i - 1] : 'path');   // first screen of a pathway goes back to the pathway choice
+    go(i > 0 ? fl[i - 1] : fl[0]);
   });
 
   stepNext.addEventListener('click', async () => {
