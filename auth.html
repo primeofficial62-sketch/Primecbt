@@ -779,7 +779,7 @@
     .path-card.is-selected .path-go { background: var(--emerald); color: var(--on-emerald); }
     .empty-state { font-size: 14px; color: var(--muted); line-height: 1.55; text-align: center; padding: 18px 12px; border: 1px dashed var(--border); border-radius: 18px; }
 
-    /* compact cards so both pathways are visible together on phones */
+    /* compact PRIME CAMPUS registration card on phones */
     .path-card { padding: 12px; gap: 12px; }
     .path-ico { width: 46px; height: 46px; }
     .path-ico svg { width: 23px; height: 23px; }
@@ -809,9 +809,7 @@
     .steps { margin-bottom: 14px; }
     .reg-actions { margin-top: 14px; }
     .form { gap: 12px; }
-    @media (max-height: 840px) {
-    }
-    @media (min-width: 600px) { .stage { max-width: 520px; height: min(900px, calc(100dvh - 32px)); } }
+        @media (min-width: 600px) { .stage { max-width: 520px; height: min(900px, calc(100dvh - 32px)); } }
 
 /* ===== BIGGER AUTH FORM ON PHONES ===== */
 /* PRIME-CBT: auth form sized like the earlier design (card ~87% of screen width,
@@ -1190,7 +1188,7 @@ html body #panel-login.active {
 
       <div class="steps" id="steps" role="group" aria-label="Registration progress" hidden></div>
 
-      <!-- Screen 1: pathway -->
+      <!-- Screen 1: University entry -->
       <div class="reg-step active" data-step="path" data-index="0">
         <div class="path-list" id="pathList">
                     <button type="button" class="path-card" data-path="inst" aria-pressed="false">
