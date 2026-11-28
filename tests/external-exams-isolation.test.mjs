@@ -5,56 +5,30 @@ import vm from 'node:vm';
 
 const read = (path) => readFile(new URL('../' + path, import.meta.url), 'utf8');
 
-test('External Exams uses the shared PRIME-CBT auth page and enters its own app', async () => {
-  const legacyAuth = await read('external/auth.html');
-  const sharedAuth = await read('auth.html');
+test('PRIME-CBT University landing page contains University learning only', async () => {
   const index = await read('index.html');
-  const externalStart = index.indexOf('<section class="external" id="external-exams">');
-  const externalEnd = index.indexOf('<!-- PLATFORM FEATURES -->', externalStart);
-  assert.ok(externalStart >= 0 && externalEnd > externalStart);
-  const externalSection = index.slice(externalStart, externalEnd);
-  assert.match(externalSection, /\/auth\.html\?mode=register&next=%2Fexternal%2Fhome\.html&experience=external/);
-  assert.match(externalSection, /\/auth\.html\?mode=login&next=%2Fexternal%2Fhome\.html&experience=external/);
-  assert.ok(legacyAuth.includes("prime-external-auth-v1"));
-  assert.ok(legacyAuth.includes("prime_experience:'external_exams'"));
-  assert.ok(legacyAuth.includes("pathway:'exam_preparation'"));
-  assert.ok(legacyAuth.includes("auth.html?mode=register"));
-  assert.ok(legacyAuth.includes("Your University session has not been changed"));
-  assert.ok((await read('external/app.js')).includes("storageKey: 'prime-external-auth-v1'"));
-  assert.ok((await read('external/app.js')).includes("if (!belongsToExternal)"));
-  assert.ok(index.includes("universityAccount ? 'home.html' : '/auth.html?mode=login'"));
-  assert.match(sharedAuth, /prime_experience:\s*'external_exams'/);
-  assert.ok(sharedAuth.includes("emailRedirectTo: window.location.origin + (pathway === 'exam' ? '/auth.html?mode=login&next=%2Fexternal%2Fhome.html&experience=external' : '/auth.html?mode=login')"));
-  assert.match(sharedAuth, /window\.location\.replace\('\/external\/home\.html'\)/);
-  assert.ok(sharedAuth.includes("urlParams.get('experience') === 'external'"));
-  assert.ok(sharedAuth.includes("meta.pathway === 'institutional_learning'"));
-  assert.ok(sharedAuth.includes("else if (dest.startsWith('/external/')) dest = 'home.html'"));
-  const resolverStart = sharedAuth.indexOf('async function resolveExperience(user)');
-  const resolverEnd = sharedAuth.indexOf('async function goNext(replace)', resolverStart);
-  const resolver = sharedAuth.slice(resolverStart, resolverEnd);
-  assert.ok(resolver.includes('if (!intent && explicitExperienceChoice) intent = selectedAuthExperience'));
-  assert.ok(resolver.indexOf('if (intent) return') < resolver.indexOf(".from('profiles')"),
-    'an explicitly selected sign-in pathway must win over a legacy University profile row');
-  assert.doesNotMatch(sharedAuth, /nextUrl\(\)\.startsWith\('\/external\/'\)/);
-  const universityStart = index.indexOf('<section class="university" id="university">');
-  const universityEnd = index.indexOf('<!-- EXTERNAL EXAMINATIONS -->', universityStart);
-  const universitySection = index.slice(universityStart, universityEnd);
-  assert.match(universitySection, /auth\.html\?mode=register/);
-  assert.doesNotMatch(universitySection, /\/external\/auth\.html/);
+  assert.match(index, /<section class="university" id="university">/);
+  assert.match(index, /University learning/);
+  assert.doesNotMatch(index, /External Exams|external examination|JAMB|WAEC|NECO|#external-exams|#pathways/i);
+  assert.doesNotMatch(index, /href="#pathways"/);
 });
-test('External registration uses the shared auth page and routes to the External Exams home', async () => {
-  const rootAuth = await read('auth.html');
-  const legacyAuth = await read('external/auth.html');
-  assert.match(rootAuth, /prime_experience:\s*'external_exams'/);
-  assert.ok(rootAuth.includes("meta.pathway === 'exam_preparation'"));
-  assert.ok(rootAuth.includes('const experience = await resolveExperience(session.user)'));
-  assert.ok(rootAuth.includes("window.location.replace('/external/home.html')"));
-  assert.ok(rootAuth.includes("sessionStorage.setItem(NEXT_KEY, '/external/home.html')"));
-  assert.match(legacyAuth, /prime-external-auth-v1/);
-  assert.match(legacyAuth, /prime_experience:'external_exams'/);
-  assert.match(legacyAuth, /signInWithPassword/);
-  assert.match(legacyAuth, /signInWithOAuth/);
-  assert.match(rootAuth, /if \(needsProfileSetup\(session\.user\)\)[\s\S]*?profile-setup\.html/);
+
+test('University authentication has one pathway and registers institutional accounts directly', async () => {
+  const auth = await read('auth.html');
+  assert.doesNotMatch(auth, /id="loginPathway"|data-login-experience|data-path="exam"|data-step="exam"/);
+  assert.doesNotMatch(auth, /selectedAuthExperience|requestedExperience|EXPERIENCE_KEY|resolveExperience\(/);
+  assert.match(auth, /let pathway = 'inst'/);
+  assert.match(auth, /let stepName = 'inst'/);
+  assert.match(auth, /pathway: 'institutional_learning'/);
+  assert.match(auth, /prime_experience: 'university_learning'/);
+  assert.match(auth, /legacyMeta\.pathway === 'exam_preparation'/);
+  assert.match(auth, /profile-setup\.html/);
+});
+
+test('The University Worker returns 404 for former External Exams routes', async () => {
+  const worker = await read('src/index.mjs');
+  assert.match(worker, /pathname === "\/external" \|\| incomingUrl\.pathname\.startsWith\("\/external\/"\)/);
+  assert.match(worker, /new Response\("Not Found", \{ status: 404 \}\)/);
 });
 
 test('External Exams uses the existing PRIME-CBT brand palette and normal responsive mobile sizing', async () => {
