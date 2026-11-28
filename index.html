@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<title>PRIME CBT | University Learning & External Exam Preparation</title>
-<meta name="description" content="PRIME CBT supports university students and external examination candidates with CBT practice, past questions, study materials and AI-powered learning assistance.">
+<title>PRIME CBT | University Learning Platform</title>
+<meta name="description" content="PRIME CBT helps university students learn, practise, access academic resources and improve their academic performance.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="https://prime-cbt.name.ng/">
 <meta name="theme-color" content="#070D1C">
@@ -13,14 +13,14 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PRIME CBT">
 <meta property="og:title" content="PRIME CBT | Learn. Practise. Achieve.">
-<meta property="og:description" content="One learning platform. Two pathways. University education and external examination preparation.">
+<meta property="og:description" content="A smarter digital learning space for university students.">
 <meta property="og:url" content="https://prime-cbt.name.ng/">
 <meta property="og:image" content="https://prime-cbt.name.ng/34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 <meta property="og:locale" content="en_NG">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="PRIME CBT">
-<meta name="twitter:description" content="University learning and external exam preparation in one place.">
+<meta name="twitter:description" content="University learning, CBT practice and academic resources in one place.">
 <meta name="twitter:image" content="https://prime-cbt.name.ng/34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png">
 
 <link rel="manifest" href="/manifest.webmanifest">
@@ -43,7 +43,7 @@
       "url": "https://prime-cbt.name.ng/",
       "logo": "https://prime-cbt.name.ng/34a8580a-ede3-4350-a224-6f298b16a670_removalai_preview.png",
       "slogan": "Prepare. Practise. Pass.",
-      "description": "An educational technology platform supporting university learning and external examination preparation.",
+      "description": "A digital learning platform supporting university students with academic resources and CBT practice.",
       "founder": {
         "@type": "Person",
         "name": "Micheal Aliu",
@@ -61,8 +61,8 @@
       "@type": "WebPage",
       "@id": "https://prime-cbt.name.ng/#webpage",
       "url": "https://prime-cbt.name.ng/",
-      "name": "PRIME CBT - University Learning and Exam Preparation",
-      "description": "University learning, CBT practice, JAMB, WAEC, NECO, Post-UTME preparation and academic resources.",
+      "name": "PRIME CBT - University Learning Platform",
+      "description": "University learning, CBT practice and academic resources.",
       "inLanguage": "en-NG"
     }
   ]
@@ -70,31 +70,7 @@
 </script>
 
 <script>
-(function () {
-  try {
-    var h = location.hash + location.search;
-
-    if (/access_token|refresh_token|code=|error/.test(h)) return;
-    if (sessionStorage.getItem('pc_redirected')) return;
-
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-
-      if (/^sb-.*-auth-token$/.test(k)) {
-        var v = JSON.parse(localStorage.getItem(k) || '{}');
-
-        if (v && v.refresh_token) {
-          var userMeta = v && v.user && v.user.user_metadata || {};
-          var externalAccount = userMeta.prime_experience === 'external_exams' || userMeta.pathway === 'exam_preparation';
-          var universityAccount = userMeta.pathway === 'institutional_learning' || userMeta.prime_experience === 'university_learning' || userMeta.prime_experience === 'university';
-          sessionStorage.setItem('pc_redirected', '1');
-          location.replace(externalAccount ? '/external/home.html' : universityAccount ? 'home.html' : '/auth.html?mode=login');
-          return;
-        }
-      }
-    }
-  } catch (e) {}
-})();
+// University authentication redirects are handled by auth.html.
 </script>
 
 <style>
@@ -576,101 +552,6 @@ img {
   font-size: 14px;
 }
 
-/* TWO LEARNING PATHWAYS */
-
-.pathways {
-  padding: 65px 0 90px;
-  background: #0A1221;
-  border-top: 1px solid rgba(255,255,255,.04);
-  border-bottom: 1px solid rgba(255,255,255,.04);
-}
-
-.path-grid {
-  display: grid;
-  grid-template-columns: repeat(2,1fr);
-  gap: 22px;
-}
-
-.path-card {
-  position: relative;
-  padding: 34px;
-  background: linear-gradient(145deg,#142238,#0E192A);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  transition: .25s ease;
-}
-
-.path-card:hover {
-  border-color: rgba(49,211,162,.5);
-  transform: translateY(-4px);
-}
-
-.path-card::after {
-  content: "";
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  right: -100px;
-  top: -100px;
-  background: radial-gradient(circle,rgba(49,211,162,.12),transparent 70%);
-  pointer-events: none;
-}
-
-.path-icon {
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
-  background: rgba(49,211,162,.1);
-  border: 1px solid rgba(49,211,162,.17);
-  border-radius: 11px;
-  color: var(--green);
-  margin-bottom: 24px;
-}
-
-.path-icon svg {
-  width: 27px;
-  height: 27px;
-}
-
-.path-card h3 {
-  font-size: 23px;
-  margin-bottom: 10px;
-}
-
-.path-card > p {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.8;
-  margin-bottom: 23px;
-}
-
-.path-list {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 27px;
-}
-
-.path-list div {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: #D9E2EF;
-}
-
-.path-list svg {
-  width: 16px;
-  height: 16px;
-  color: var(--green);
-  flex-shrink: 0;
-}
-
-.path-card .btn {
-  min-height: 46px;
-}
-
 /* UNIVERSITY SECTION */
 
 .university {
@@ -731,70 +612,6 @@ img {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.7;
-}
-
-/* EXTERNAL EXAM SECTION */
-
-.external {
-  padding: 90px 0;
-  background: #0A1221;
-  border-block: 1px solid rgba(255,255,255,.05);
-}
-
-.exam-grid {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 16px;
-}
-
-.exam-card {
-  padding: 24px;
-  background: #10192B;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  transition: .2s;
-}
-
-.exam-card:hover {
-  border-color: var(--green);
-  transform: translateY(-3px);
-}
-
-.exam-code {
-  display: inline-block;
-  padding: 6px 10px;
-  color: var(--green);
-  background: rgba(49,211,162,.09);
-  border: 1px solid rgba(49,211,162,.18);
-  border-radius: 5px;
-  font-size: 11px;
-  font-weight: 800;
-  margin-bottom: 16px;
-}
-
-.exam-card h3 {
-  font-size: 17px;
-  margin-bottom: 7px;
-}
-
-.exam-card p {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.7;
-  margin-bottom: 15px;
-}
-
-.exam-card a {
-  color: var(--green);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.exam-note {
-  color: var(--muted);
-  font-size: 11px;
-  text-align: center;
-  margin-top: 24px;
 }
 
 /* FEATURES */
@@ -1384,9 +1201,7 @@ img {
     </a>
 
     <nav class="nav-links" aria-label="Main navigation">
-      <a href="#pathways">Our Platform</a>
       <a href="#university">University</a>
-      <a href="#external-exams">External Exams</a>
       <a href="#features">Features</a>
       <a href="/about">About</a>
     </nav>
@@ -1415,7 +1230,7 @@ img {
 
       <div class="eyebrow">
         <span class="eyebrow-dot"></span>
-        Education Without Limits
+        University Learning, Made Better
       </div>
 
       <h1>
@@ -1425,7 +1240,7 @@ img {
       </h1>
 
       <p class="hero-description">
-        Whether you're a university student working towards academic excellence or preparing for an important external examination, PRIME CBT gives you the tools to learn, practise and move forward with confidence.
+        PRIME CBT gives university students the tools to learn, practise, access academic resources and move forward with confidence.
       </p>
 
       <div class="hero-actions" aria-label="Account access">
@@ -1446,7 +1261,7 @@ img {
           <path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/>
           <path d="M8 12l3 3 5-6"/>
         </svg>
-        University learning and external examination preparation in one place.
+        A smarter digital learning space for university students.
       </div>
 
     </div>
@@ -1471,7 +1286,7 @@ img {
           <div class="dash-welcome">
             <div>
               <h3>Welcome to PRIME!</h3>
-              <p>Your academic journey starts here.</p>
+              <p>Your university journey starts here.</p>
             </div>
             <div class="dash-avatar">P</div>
           </div>
@@ -1484,13 +1299,7 @@ img {
               <div class="stat-sub">Learn and practise</div>
             </div>
 
-            <div class="stat">
-              <div class="stat-label">External examinations</div>
-              <div class="stat-value"><span>02</span></div>
-              <div class="stat-sub">Prepare with confidence</div>
-            </div>
-
-          </div>
+                      </div>
 
           <div class="dash-panel">
 
@@ -1510,18 +1319,7 @@ img {
               <span class="course-percent">→</span>
             </div>
 
-            <div class="course-row">
-              <div class="course-info">
-                <div class="course-icon">02</div>
-                <div>
-                  <strong>JAMB & UTME Preparation</strong>
-                  <small>Examination practice</small>
-                </div>
-              </div>
-              <span class="course-percent">→</span>
-            </div>
-
-            <div class="course-row">
+                        <div class="course-row">
               <div class="course-info">
                 <div class="course-icon">03</div>
                 <div>
@@ -1541,113 +1339,6 @@ img {
 </section>
 
 <!-- TWO MAIN PATHWAYS -->
-
-<section class="pathways" id="pathways">
-  <div class="container">
-
-    <div class="section-heading">
-      <span class="section-label">One platform. Two pathways.</span>
-      <h2>Designed for every stage of your <span class="green">education.</span></h2>
-      <p>Choose the learning experience that matches your academic journey.</p>
-    </div>
-
-    <div class="path-grid">
-
-      <!-- UNIVERSITY -->
-
-      <article class="path-card">
-
-        <div class="path-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-            <path d="M2 9l10-6 10 6-10 6L2 9z"/>
-            <path d="M6 12v5c4 3 8 3 12 0v-5"/>
-            <path d="M22 9v7"/>
-          </svg>
-        </div>
-
-        <span class="section-label">01 / University Education</span>
-
-        <h3>For University Students</h3>
-
-        <p>
-          Make your university experience more productive with academic resources and digital learning tools designed to support your studies throughout the semester.
-        </p>
-
-        <div class="path-list">
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            University CBT practice and past questions
-          </div>
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            Course materials and academic resources
-          </div>
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            AI-powered academic assistance
-          </div>
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            Practice history and performance tracking
-          </div>
-        </div>
-
-        <a href="#university" class="btn btn-outline">
-          Explore University Learning →
-        </a>
-
-      </article>
-
-      <!-- EXTERNAL EXAMS -->
-
-      <article class="path-card">
-
-        <div class="path-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-            <rect x="4" y="3" width="16" height="18" rx="2"/>
-            <path d="M8 7h8M8 11h8M8 15h4"/>
-            <path d="m14 17 2 2 4-4"/>
-          </svg>
-        </div>
-
-        <span class="section-label">02 / External Examinations</span>
-
-        <h3>For Exam Candidates</h3>
-
-        <p>
-          Prepare for important qualifying and secondary school examinations with structured practice, learning resources and tools that help you build confidence.
-        </p>
-
-        <div class="path-list">
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            JAMB UTME preparation
-          </div>
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            WAEC and NECO preparation
-          </div>
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            Post-UTME examination practice
-          </div>
-          <div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>
-            Subject-based revision and practice
-          </div>
-        </div>
-
-        <a href="#external-exams" class="btn btn-outline">
-          Explore Exam Preparation →
-        </a>
-
-      </article>
-
-    </div>
-  </div>
-</section>
-
-<!-- UNIVERSITY LEARNING -->
 
 <section class="university" id="university">
   <div class="container">
@@ -1716,79 +1407,6 @@ img {
 </section>
 
 <!-- EXTERNAL EXAMINATIONS -->
-
-<section class="external" id="external-exams">
-  <div class="container">
-
-    <div class="section-heading">
-      <span class="section-label">External examination preparation</span>
-      <h2>Your next big opportunity starts with <span class="green">preparation.</span></h2>
-      <p>
-        Whether you're seeking university admission or preparing for a major examination, build your confidence through consistent learning and practice.
-      </p>
-    </div>
-
-    <div style="display:flex;justify-content:center;margin:22px 0 28px;">
-      <div style="text-align:center;">
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external" class="btn">Enter External Exams →</a>
-        <p style="margin-top:12px;font-size:14px;">Already registered for External Exams? <a href="/auth.html?mode=login&next=%2Fexternal%2Fhome.html&experience=external" style="color:var(--green);font-weight:700;">Log in</a></p>
-      </div>
-    </div>
-
-    <div class="exam-grid">
-
-      <article class="exam-card">
-        <span class="exam-code">UTME</span>
-        <h3>JAMB Preparation</h3>
-        <p>Prepare for the Unified Tertiary Matriculation Examination with subject-based practice and revision.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
-      </article>
-
-      <article class="exam-card">
-        <span class="exam-code">WAEC</span>
-        <h3>WAEC Preparation</h3>
-        <p>Strengthen your knowledge and revise key subjects ahead of your West African examinations.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
-      </article>
-
-      <article class="exam-card">
-        <span class="exam-code">NECO</span>
-        <h3>NECO Preparation</h3>
-        <p>Build confidence with focused subject revision and examination practice.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
-      </article>
-
-      <article class="exam-card">
-        <span class="exam-code">POST-UTME</span>
-        <h3>Post-UTME Preparation</h3>
-        <p>Get ready for university admission screening with relevant practice and revision.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
-      </article>
-
-      <article class="exam-card">
-        <span class="exam-code">GCE</span>
-        <h3>GCE Preparation</h3>
-        <p>Support your examination preparation with structured learning and subject revision.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Get Started →</a>
-      </article>
-
-      <article class="exam-card">
-        <span class="exam-code">MORE</span>
-        <h3>Other Examinations</h3>
-        <p>Explore a growing learning platform designed to accommodate different examination needs.</p>
-        <a href="/auth.html?mode=register&next=%2Fexternal%2Fhome.html&experience=external">Join PRIME CBT →</a>
-      </article>
-
-    </div>
-
-    <p class="exam-note">
-      Examination categories describe PRIME CBT's intended learning pathways. Specific question banks and resources depend on what is available on the platform.
-    </p>
-
-  </div>
-</section>
-
-<!-- PLATFORM FEATURES -->
 
 <section class="features" id="features">
   <div class="container">
