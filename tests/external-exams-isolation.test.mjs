@@ -95,3 +95,9 @@ test('External study, chat, test and results screens use the External Exams shel
     assert.match(html, /bottomNav/);
   }
 });
+
+
+test('University auth page has an independent visibility fallback when session loading stalls', async () => {
+  const auth = await read('auth.html');
+  assert.match(auth, /window\.setTimeout\(function\s*\(\)\s*\{[\s\S]*?classList\.remove\('checking'\)[\s\S]*?\},\s*1200\)/);
+});
