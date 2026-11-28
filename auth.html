@@ -758,7 +758,7 @@
     .dd-list.no-results::after { content: "No matches found"; display: block; padding: 12px; font-size: 14px; color: var(--muted); }
 
     /* =====================================================================
-       PATHWAY SELECTION + EXAM CATEGORIES (layout sizes above are untouched)
+       UNIVERSITY REGISTRATION
        ===================================================================== */
     .path-list { display: flex; flex-direction: column; gap: 12px; }
     .path-card {
@@ -777,39 +777,7 @@
     .path-go { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--emerald); color: var(--emerald); display: grid; place-items: center; }
     .path-go svg { width: 16px; height: 16px; }
     .path-card.is-selected .path-go { background: var(--emerald); color: var(--on-emerald); }
-        .path-card.is-soon { opacity: .75; cursor: not-allowed; }
-    .path-card.is-soon:hover { background: rgba(5, 11, 28, .5); border-color: var(--emerald-line); }
-    .soon-badge {
-      flex: none; padding: 6px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
-      color: var(--emerald); background: rgba(10, 227, 162, .13); border: 1px solid var(--emerald-line);
-      white-space: nowrap;
-    }
     .empty-state { font-size: 14px; color: var(--muted); line-height: 1.55; text-align: center; padding: 18px 12px; border: 1px dashed var(--border); border-radius: 18px; }
-
-    .exam-list { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
-    .exam-card { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 18px; background: rgba(5, 11, 28, .5); transition: border-color .2s ease, background-color .2s ease; }
-    .exam-card:hover:not(.is-soon) { border-color: rgba(110, 160, 240, .6); }
-    .exam-card.is-selected { border-color: var(--emerald); background: rgba(10, 227, 162, .07); }
-    .exam-card.is-soon { opacity: .6; }
-    .exam-main {
-      flex: 1; min-width: 0; min-height: 60px; display: flex; align-items: center; gap: 12px;
-      padding: 10px 12px; background: none; border: 0; border-radius: 18px;
-      color: var(--text); font-family: inherit; text-align: left; cursor: pointer;
-    }
-    .exam-main:disabled { cursor: not-allowed; }
-    .exam-ico { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(10, 227, 162, .13); color: var(--emerald); }
-    .exam-ico svg { width: 20px; height: 20px; }
-    .exam-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .exam-title { font-weight: 700; font-size: 15px; color: #fff; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-    .exam-desc { font-size: 12.5px; line-height: 1.4; color: var(--muted); }
-    .exam-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(169, 182, 214, .16); color: var(--muted); }
-    .exam-badge.primary { background: var(--emerald); color: var(--on-emerald); }
-    .exam-tick { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--inactive); display: grid; place-items: center; transition: all .2s ease; }
-    .exam-tick svg { width: 12px; height: 12px; opacity: 0; }
-    .exam-card.is-selected .exam-tick { background: var(--emerald); border-color: var(--emerald); color: var(--on-emerald); }
-    .exam-card.is-selected .exam-tick svg { opacity: 1; }
-    .exam-make { flex: none; margin-right: 10px; padding: 10px 4px; background: none; border: 0; color: var(--emerald); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    .exam-make:hover { text-decoration: underline; }
 
     /* compact cards so both pathways are visible together on phones */
     .path-card { padding: 12px; gap: 12px; }
@@ -839,20 +807,10 @@
     .reg-step .subtext { margin-top: 6px; font-size: 13.5px; }
     .reg-step .form { margin-top: 14px !important; }
     .steps { margin-bottom: 14px; }
-    .exam-list { gap: 8px; margin-top: 12px !important; }
-    .exam-main { min-height: 52px; padding: 7px 12px; }
-    .exam-desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #examHint { margin-top: 8px !important; }
     .reg-actions { margin-top: 14px; }
     .form { gap: 12px; }
     @media (max-height: 840px) {
-      #examHint { display: none; }
-      .exam-main { min-height: 48px; }
-      .exam-ico { width: 34px; height: 34px; }
-      .steps { margin-bottom: 10px; }
-      .reg-step .headline.sm { font-size: 21px; }
     }
-    @media (max-height: 700px) { .exam-desc { display: none; } .exam-main { min-height: 44px; } }
     @media (min-width: 600px) { .stage { max-width: 520px; height: min(900px, calc(100dvh - 32px)); } }
 
 /* ===== BIGGER AUTH FORM ON PHONES ===== */
@@ -1249,7 +1207,6 @@ html body #panel-login.active {
           <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>CBT practice</span>
           <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Instant results</span>
         </div>
-        <p class="empty-state" id="pathEmpty" hidden>Registration is temporarily unavailable. Please check back soon, or sign in if you already have an account.</p>
       </div>
 
       <div class="reg-step" data-step="inst" data-index="1">
@@ -2564,7 +2521,7 @@ switcher.dataset.mode = mode;
     }
     return /^\+\d{10,15}$/.test(s) ? s : null;
   }
-  // ========== PATHWAYS, EXAM CATEGORIES & STEPS ==========
+  // ========== UNIVERSITY REGISTRATION STEPS ==========
   const regSteps = document.querySelectorAll('.reg-step');
   const stepsEl = document.getElementById('steps');
   const regActions = document.getElementById('regActions');
@@ -3168,7 +3125,7 @@ resendResetLink.addEventListener('click', async (e) => {
     if (v.level)      f3.level.value = v.level;
     if (v.matric)     f3.matric.value = v.matric;
 
-    // Put them back on the screen they were on (pathway + exam picks included)
+    // Put them back on the screen they were on (University registration progress)
     if (p.pathway === 'inst') pathway = p.pathway;
     if (flow().includes(p.step)) stepName = p.step;
     markPath();
