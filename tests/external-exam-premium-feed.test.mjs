@@ -66,7 +66,7 @@ test('University authentication is separate and does not route to the External E
   assert.ok(auth.includes("provider: 'google'"));
   assert.ok(auth.includes('This is an older External Exams account'));
   assert.ok(!auth.includes("window.location.replace('/external/home.html')"));
-  assert.ok(isolation.includes("meta.pathway === 'institutional_learning'"));
+  assert.ok(isolation.includes("pathway: 'institutional_learning'"));
 });
 
 test('Results page shows an empty state and the signed-in user’s own completed history', async () => {
