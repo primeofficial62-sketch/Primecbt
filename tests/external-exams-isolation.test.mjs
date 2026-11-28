@@ -105,8 +105,8 @@ test('University auth page has an independent visibility fallback when session l
 
 test('University auth inline JavaScript parses without syntax errors', async () => {
   const auth = await read('auth.html');
-  const inlineScripts = [...auth.matchAll(/<script([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
-    .filter(([, attrs, code]) => !/\\bsrc\\s*=/.test(attrs) && !/type\\s*=\\s*["']application\\/json["']/i.test(attrs) && code.trim());
+  const inlineScripts = [...auth.matchAll(/<script([^>]*)>([\s\S]*?)<\\/script>/gi)]
+    .filter(([, attrs, code]) => !/\bsrc\\s*=/.test(attrs) && !/type\\s*=\\s*["']application\\/json["']/i.test(attrs) && code.trim());
   assert.ok(inlineScripts.length > 0, 'expected inline authentication scripts');
   for (const [, , code] of inlineScripts) {
     assert.doesNotThrow(() => new vm.Script(code), 'University auth inline script must parse');
