@@ -758,7 +758,7 @@
     .dd-list.no-results::after { content: "No matches found"; display: block; padding: 12px; font-size: 14px; color: var(--muted); }
 
     /* =====================================================================
-       PATHWAY SELECTION + EXAM CATEGORIES (layout sizes above are untouched)
+       UNIVERSITY REGISTRATION
        ===================================================================== */
     .path-list { display: flex; flex-direction: column; gap: 12px; }
     .path-card {
@@ -777,41 +777,9 @@
     .path-go { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--emerald); color: var(--emerald); display: grid; place-items: center; }
     .path-go svg { width: 16px; height: 16px; }
     .path-card.is-selected .path-go { background: var(--emerald); color: var(--on-emerald); }
-        .path-card.is-soon { opacity: .75; cursor: not-allowed; }
-    .path-card.is-soon:hover { background: rgba(5, 11, 28, .5); border-color: var(--emerald-line); }
-    .soon-badge {
-      flex: none; padding: 6px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
-      color: var(--emerald); background: rgba(10, 227, 162, .13); border: 1px solid var(--emerald-line);
-      white-space: nowrap;
-    }
     .empty-state { font-size: 14px; color: var(--muted); line-height: 1.55; text-align: center; padding: 18px 12px; border: 1px dashed var(--border); border-radius: 18px; }
 
-    .exam-list { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
-    .exam-card { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 18px; background: rgba(5, 11, 28, .5); transition: border-color .2s ease, background-color .2s ease; }
-    .exam-card:hover:not(.is-soon) { border-color: rgba(110, 160, 240, .6); }
-    .exam-card.is-selected { border-color: var(--emerald); background: rgba(10, 227, 162, .07); }
-    .exam-card.is-soon { opacity: .6; }
-    .exam-main {
-      flex: 1; min-width: 0; min-height: 60px; display: flex; align-items: center; gap: 12px;
-      padding: 10px 12px; background: none; border: 0; border-radius: 18px;
-      color: var(--text); font-family: inherit; text-align: left; cursor: pointer;
-    }
-    .exam-main:disabled { cursor: not-allowed; }
-    .exam-ico { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(10, 227, 162, .13); color: var(--emerald); }
-    .exam-ico svg { width: 20px; height: 20px; }
-    .exam-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .exam-title { font-weight: 700; font-size: 15px; color: #fff; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-    .exam-desc { font-size: 12.5px; line-height: 1.4; color: var(--muted); }
-    .exam-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(169, 182, 214, .16); color: var(--muted); }
-    .exam-badge.primary { background: var(--emerald); color: var(--on-emerald); }
-    .exam-tick { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--inactive); display: grid; place-items: center; transition: all .2s ease; }
-    .exam-tick svg { width: 12px; height: 12px; opacity: 0; }
-    .exam-card.is-selected .exam-tick { background: var(--emerald); border-color: var(--emerald); color: var(--on-emerald); }
-    .exam-card.is-selected .exam-tick svg { opacity: 1; }
-    .exam-make { flex: none; margin-right: 10px; padding: 10px 4px; background: none; border: 0; color: var(--emerald); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    .exam-make:hover { text-decoration: underline; }
-
-    /* compact cards so both pathways are visible together on phones */
+    /* compact PRIME CAMPUS registration card on phones */
     .path-card { padding: 12px; gap: 12px; }
     .path-ico { width: 46px; height: 46px; }
     .path-ico svg { width: 23px; height: 23px; }
@@ -839,21 +807,9 @@
     .reg-step .subtext { margin-top: 6px; font-size: 13.5px; }
     .reg-step .form { margin-top: 14px !important; }
     .steps { margin-bottom: 14px; }
-    .exam-list { gap: 8px; margin-top: 12px !important; }
-    .exam-main { min-height: 52px; padding: 7px 12px; }
-    .exam-desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #examHint { margin-top: 8px !important; }
     .reg-actions { margin-top: 14px; }
     .form { gap: 12px; }
-    @media (max-height: 840px) {
-      #examHint { display: none; }
-      .exam-main { min-height: 48px; }
-      .exam-ico { width: 34px; height: 34px; }
-      .steps { margin-bottom: 10px; }
-      .reg-step .headline.sm { font-size: 21px; }
-    }
-    @media (max-height: 700px) { .exam-desc { display: none; } .exam-main { min-height: 44px; } }
-    @media (min-width: 600px) { .stage { max-width: 520px; height: min(900px, calc(100dvh - 32px)); } }
+        @media (min-width: 600px) { .stage { max-width: 520px; height: min(900px, calc(100dvh - 32px)); } }
 
 /* ===== BIGGER AUTH FORM ON PHONES ===== */
 /* PRIME-CBT: auth form sized like the earlier design (card ~87% of screen width,
@@ -1232,7 +1188,7 @@ html body #panel-login.active {
 
       <div class="steps" id="steps" role="group" aria-label="Registration progress" hidden></div>
 
-      <!-- Screen 1: pathway -->
+      <!-- Screen 1: University entry -->
       <div class="reg-step active" data-step="path" data-index="0">
         <div class="path-list" id="pathList">
                     <button type="button" class="path-card" data-path="inst" aria-pressed="false">
@@ -1249,11 +1205,7 @@ html body #panel-login.active {
           <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>CBT practice</span>
           <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Instant results</span>
         </div>
-        <p class="empty-state" id="pathEmpty" hidden>Registration is temporarily unavailable. Please check back soon, or sign in if you already have an account.</p>
       </div>
-
-      <!-- Exam pathway: category -->
-      <div id="examList" hidden></div><span id="examError" hidden></span>
 
       <div class="reg-step" data-step="inst" data-index="1">
         <h2 class="headline sm">PRIME CAMPUS<br><span class="accent">Your university</span></h2>
@@ -2567,7 +2519,7 @@ switcher.dataset.mode = mode;
     }
     return /^\+\d{10,15}$/.test(s) ? s : null;
   }
-  // ========== PATHWAYS, EXAM CATEGORIES & STEPS ==========
+  // ========== UNIVERSITY REGISTRATION STEPS ==========
   const regSteps = document.querySelectorAll('.reg-step');
   const stepsEl = document.getElementById('steps');
   const regActions = document.getElementById('regActions');
@@ -2577,9 +2529,6 @@ switcher.dataset.mode = mode;
   const ctaText = stepNext.querySelector('.cta-text');
   const cardBody = document.querySelector('.card-body');
   const pathList = document.getElementById('pathList');
-  const pathEmpty = document.getElementById('pathEmpty');
-  const examList = document.getElementById('examList');
-  const examError = document.getElementById('examError');
 
   // Prevents duplicate submissions and exposes busy state
   function setLoading(btn, on) {
@@ -2599,134 +2548,18 @@ switcher.dataset.mode = mode;
 
   // ----- state -----
   let pathway = 'inst';
-  let examSel = [];
   let stepName = 'inst';
   const FLOWS = { inst: ['inst', 'acad', 'account'] };
   const flow = () => FLOWS.inst;
 
-  // ----- icons (fixed set; the admin picks one by name) -----
-  const ICONS = {
-    monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
-    book: '<path d="M2 5.5C4.5 4 8 4 12 6c4-2 7.5-2 10-.5V19c-2.5-1.5-6-1.5-10 .5-4-2-7.5-2-10-.5z"/><path d="M12 6v13.5"/>',
-    file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
-    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
-    users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.5 0 4.5 2 4.5 5"/>',
-    clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 13l2 2 4-4"/>',
-    briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2M3 13h18"/>'
-  };
-  const svgIcon = k => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[k] || ICONS.file) + '</svg>';
-  const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-
-  // ----- admin-controlled config -----
-  // Read from the public `registration_pathways` and `exam_categories` tables
-  // (see registration-config.sql). If the tables don't exist yet, or the
-  // request fails, these built-in defaults are used so sign-up never breaks.
-  let pathCfg = { exam: false, inst: true };
-  let examCats = [];
-
-  const examVisible = c => c.visible !== false && (c.coming_soon || c.enabled !== false);
-  const examPickable = c => examVisible(c) && !c.coming_soon;
-
-  async function loadRegConfig() {
-    // External examination registration is no longer part of this application.
-    pathCfg = { exam: false, inst: true };
-    examCats = [];
-    applyConfig();
-  }
-
-  function applyConfig() {
-    pathList.querySelectorAll('.path-card').forEach(button => {
-      button.hidden = button.dataset.path !== 'inst';
-    });
-    pathEmpty.hidden = true;
-    examSel = [];
-    pathway = 'inst';
-    if (!flow().includes(stepName)) stepName = 'inst';
-    markPath();
-    renderExams();
-    updateSteps();
-  }
-
+  // University registration has one available route: PRIME CAMPUS.
   function markPath() {
-    pathList.querySelectorAll('.path-card').forEach(b => {
-      const on = b.dataset.path === pathway;
-      b.classList.toggle('is-selected', on);
-      b.setAttribute('aria-pressed', String(on));
+    pathList.querySelectorAll('.path-card').forEach(button => {
+      const selected = button.dataset.path === 'inst';
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
     });
   }
-
-  // ----- exam category cards -----
-  function renderExams() {
-    examList.innerHTML = '';
-    examCats.filter(examVisible).forEach(c => {
-      const soon = !!c.coming_soon;
-      const idx = examSel.indexOf(c.code);
-      const on = idx >= 0 && !soon;
-
-      const card = document.createElement('div');
-      card.className = 'exam-card' + (on ? ' is-selected' : '') + (soon ? ' is-soon' : '');
-
-      const main = document.createElement('button');
-      main.type = 'button';
-      main.className = 'exam-main';
-      main.dataset.code = c.code;
-      main.disabled = soon;
-      main.setAttribute('aria-pressed', String(on));
-
-      const ico = document.createElement('span');
-      ico.className = 'exam-ico';
-      ico.innerHTML = svgIcon(c.icon);
-
-      const txt = document.createElement('span');
-      txt.className = 'exam-txt';
-      const title = document.createElement('span');
-      title.className = 'exam-title';
-      title.append(document.createTextNode(c.title));
-      if (soon || (on && idx === 0)) {
-        const b = document.createElement('span');
-        b.className = 'exam-badge' + (soon ? '' : ' primary');
-        b.textContent = soon ? 'Coming soon' : 'Primary';
-        title.append(b);
-      }
-      const desc = document.createElement('span');
-      desc.className = 'exam-desc';
-      desc.textContent = c.description || '';
-      txt.append(title, desc);
-
-      main.append(ico, txt);
-      if (!soon) {
-        const tick = document.createElement('span');
-        tick.className = 'exam-tick';
-        tick.innerHTML = TICK;
-        main.append(tick);
-      }
-      card.append(main);
-
-      if (on && idx > 0) {
-        const mk = document.createElement('button');
-        mk.type = 'button';
-        mk.className = 'exam-make';
-        mk.dataset.code = c.code;
-        mk.textContent = 'Set primary';
-        card.append(mk);
-      }
-      examList.append(card);
-    });
-  }
-
-  examList.addEventListener('click', (e) => {
-    const mk = e.target.closest('.exam-make');
-    const main = e.target.closest('.exam-main');
-    if (mk) {
-      examSel = [mk.dataset.code, ...examSel.filter(c => c !== mk.dataset.code)];
-    } else if (main && !main.disabled) {
-      const code = main.dataset.code;
-      examSel = examSel.includes(code) ? examSel.filter(c => c !== code) : [...examSel, code];
-    } else return;
-    examError.style.display = examSel.length ? 'none' : examError.style.display;
-    saveProgress({ examSel });
-    renderExams();
-  });
 
   // ----- step navigation -----
   function updateSteps() {
@@ -2757,17 +2590,13 @@ switcher.dataset.mode = mode;
   }
 
     pathList.addEventListener('click', (e) => {
-    const b = e.target.closest('.path-card');
-    if (b && b.dataset.soon === 'true') {
-      showToast('Exam Preparation is coming soon. Choose Institutional Learning for now.', 'success', 3500);
-      return;
-    }
-    if (!b || b.hidden || !pathCfg[b.dataset.path]) return;
-    pathway = b.dataset.path;
+    const button = e.target.closest('.path-card');
+    if (!button || button.hidden) return;
+    pathway = 'inst';
     const pathHint = document.getElementById('accountPathHint');
     if (pathHint) pathHint.textContent = 'PRIME CAMPUS account — for university courses, academic resources and internal assessments.';
     markPath();
-    go(flow()[0]);
+    go('inst');
   });
 
   stepBack.addEventListener('click', () => {
@@ -2778,14 +2607,7 @@ switcher.dataset.mode = mode;
 
   stepNext.addEventListener('click', async () => {
     if (stepNext.classList.contains('loading')) return;
-
-    if (stepName === 'exam') {
-      const ok = examSel.length > 0;
-      examError.style.display = ok ? 'none' : 'block';
-      if (!ok) { showToast('Select the exam you are preparing for', 'error'); return; }
-    }
-
-    if (stepName === 'inst') {
+if (stepName === 'inst') {
       const form2 = document.getElementById('regForm2');
       if (!form2.school.value) {
         setFieldError(regSchool, true);
@@ -2851,15 +2673,7 @@ switcher.dataset.mode = mode;
         document.getElementById('termsError').style.display = 'block';
         return;
       }
-
-      // Never trust a stale pathway: it may have been switched off by an admin
-      if (!pathway || !pathCfg[pathway]) {
-        showToast('That registration pathway is currently unavailable', 'error');
-        go('inst');
-        return;
-      }
-
-      const meta = {
+const meta = {
         full_name: fullname,
         pathway: 'institutional_learning',
         prime_experience: 'university_learning'
@@ -3309,12 +3123,11 @@ resendResetLink.addEventListener('click', async (e) => {
     if (v.level)      f3.level.value = v.level;
     if (v.matric)     f3.matric.value = v.matric;
 
-    // Put them back on the screen they were on (pathway + exam picks included)
+    // Put them back on the screen they were on (University registration progress)
     if (p.pathway === 'inst') pathway = p.pathway;
-    if (Array.isArray(p.examSel)) examSel = p.examSel.filter(x => typeof x === 'string');
     if (flow().includes(p.step)) stepName = p.step;
     markPath();
-    renderExams();
+
     updateSteps();
 
     if (modeParam === 'login') return;
@@ -3347,9 +3160,9 @@ resendResetLink.addEventListener('click', async (e) => {
   }
   
   // Init
-  renderExams();
+
   updateSteps();
-  loadRegConfig();
+
   document.getElementById('termsCheck').addEventListener('change', (e) => {
     if (e.target.checked) document.getElementById('termsError').style.display = 'none';
   });

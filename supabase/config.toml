@@ -3,7 +3,3 @@ project_id = "prime-cbt"
 # The converter uses a server-only service-role bearer check in its handler.
 [functions.convert-to-pdf]
 verify_jwt = false
-
-# Require a valid Supabase Auth JWT before a user can start or manage a CBT attempt.
-[functions.external-exam-question-bank]
-verify_jwt = true

@@ -1,100 +1,12 @@
-  /* ================= ADDED: Exam Preparation switch + Institutions manager ================= */
+  /* ================= ADDED: Institutions manager ================= */
 
-  // Put both in the sidebar under "Sign-up lists", right after "Levels"
+  // Keep institution management available in the University admin.
   (function () {
     var at = SECTIONS.map(function (s) { return s.id; }).indexOf('levels') + 1 || SECTIONS.length - 1;
     SECTIONS.splice(at, 0,
-      { id: 'examprep', label: 'Exam Preparation', group: 'Sign-up lists', kind: 'examprep', icon: 'award' },
       { id: 'institutions', label: 'Institutions', group: 'Sign-up lists', kind: 'institutions', icon: 'school' }
     );
   })();
-
-  /* ---------- Exam Preparation: coming soon / live ---------- */
-  function examState(r) {
-    if (r.visible === false) return 'hidden';
-    if (r.coming_soon) return 'soon';
-    return r.enabled === false ? 'hidden' : 'live';
-  }
-  function examPatch(state) {
-    if (state === 'live') return { enabled: true, coming_soon: false, visible: true };
-    if (state === 'soon') return { enabled: true, coming_soon: true, visible: true };
-    return { visible: false };
-  }
-
-  async function renderExamPrep() {
-    var view = $('view');
-    view.innerHTML = '<div class="count">Loading…</div>';
-    var pw, ex;
-    try {
-      pw = (await api('list', { table: 'registration_pathways', limit: 20 })).rows || [];
-      ex = (await fetchAllRows('exam_categories')).rows || [];
-    } catch (e) { view.innerHTML = emptyHtml(e.message, true); return; }
-    if (current !== 'examprep') return;
-    ex.sort(function (a, b) { return (a.sort_order == null ? 999 : a.sort_order) - (b.sort_order == null ? 999 : b.sort_order); });
-    var row = pw.filter(function (r) { return r.key === 'exam_preparation'; })[0];
-    var mode = !row ? 'soon' : row.enabled === false ? 'hidden' : (row.coming_soon === false ? 'live' : 'soon');
-    var MODES = [
-      ['live', 'Live', 'Students can choose Exam Preparation, pick their exam and register.'],
-      ['soon', 'Coming soon', 'Students see a "Coming soon" card and cannot open it yet.'],
-      ['hidden', 'Hidden', 'The Exam Preparation option is not shown on sign-up at all.']
-    ];
-    var h = '<div class="card stack" style="max-width:640px"><div class="h3">Exam Preparation on sign-up</div>' +
-      '<div class="count">Controls the Exam Preparation card students see when they sign up (JAMB, WAEC, NECO and the other external exams).</div>';
-    MODES.forEach(function (m) {
-      h += '<label class="fld check" style="align-items:flex-start;gap:10px"><input type="radio" name="epMode" value="' + m[0] + '"' + (mode === m[0] ? ' checked' : '') + '>' +
-        '<span><b>' + m[1] + '</b><br><span class="count">' + m[2] + '</span></span></label>';
-    });
-    h += '<button class="btn primary" id="epSave">Save</button><div class="count" id="epSt"></div></div>';
-
-    h += '<div class="card stack" style="max-width:640px;margin-top:14px"><div class="h3">Exams students can choose (' + ex.length + ')</div>' +
-      '<div class="count">Set each exam to Live, Coming soon or Hidden. Only Live exams can be picked at sign-up.</div>';
-    if (!ex.length) h += '<div class="count">No exams yet. Add the first one below.</div>';
-    ex.forEach(function (r, i) {
-      var st = examState(r);
-      h += '<div class="row" style="align-items:center"><div class="row-main"><div class="row-title">' + esc(r.title || r.code) + '</div><div class="row-sub">' + esc(r.code || '') + '</div></div>' +
-        '<select data-ex="' + i + '" aria-label="Status of ' + esc(r.title || r.code) + '" style="max-width:150px">' +
-        '<option value="live"' + (st === 'live' ? ' selected' : '') + '>Live</option>' +
-        '<option value="soon"' + (st === 'soon' ? ' selected' : '') + '>Coming soon</option>' +
-        '<option value="hidden"' + (st === 'hidden' ? ' selected' : '') + '>Hidden</option></select></div>';
-    });
-    h += '<div class="h3" style="margin-top:6px">Add an exam</div>' +
-      '<div class="fld"><label for="exCode">Code *</label><input id="exCode" type="text" placeholder="e.g. jamb"><div class="hint">Short, lowercase, no spaces. Cannot be changed later.</div></div>' +
-      '<div class="fld"><label for="exTitle">Name *</label><input id="exTitle" type="text" placeholder="e.g. JAMB/UTME"></div>' +
-      '<div class="fld"><label for="exDesc">Short description</label><input id="exDesc" type="text" placeholder="One line students will read"></div>' +
-      '<button class="btn" id="exAdd">' + icon('plus') + 'Add exam (starts as Coming soon)</button></div>';
-    view.innerHTML = h;
-
-    $('epSave').onclick = async function () {
-      var sel = document.querySelector('input[name=epMode]:checked');
-      if (!sel) return;
-      if (sel.value === 'live' && !confirm('Make Exam Preparation LIVE? Students will be able to choose it and register.')) return;
-      var data = { enabled: sel.value !== 'hidden', coming_soon: sel.value === 'soon' };
-      try {
-        if (row && row.id != null) await api('save', { table: 'registration_pathways', id: row.id, data: data });
-        else await api('save', { table: 'registration_pathways', data: Object.assign({ key: 'exam_preparation' }, data) });
-        toast('Exam Preparation is now ' + (sel.value === 'live' ? 'live' : sel.value === 'soon' ? 'coming soon' : 'hidden'));
-        renderExamPrep();
-      } catch (e) { toast(e.message, true); }
-    };
-    view.querySelectorAll('select[data-ex]').forEach(function (s) {
-      s.onchange = async function () {
-        var r = ex[+s.getAttribute('data-ex')];
-        if (r.id == null) { toast('This exam has no id. Run the setup SQL first.', true); return; }
-        try { await api('save', { table: 'exam_categories', id: r.id, data: examPatch(s.value) }); toast((r.title || r.code) + ': ' + s.options[s.selectedIndex].text); }
-        catch (e) { toast(e.message, true); }
-      };
-    });
-    $('exAdd').onclick = async function () {
-      var code = $('exCode').value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
-      var title = $('exTitle').value.trim();
-      if (!code || !title) return toast('Enter a code and a name.', true);
-      if (ex.some(function (r) { return r.code === code; })) return toast('That code is already used.', true);
-      try {
-        await api('save', { table: 'exam_categories', data: { code: code, title: title, description: $('exDesc').value.trim(), icon: 'book', enabled: true, coming_soon: true, visible: true, sort_order: ex.length + 1 } });
-        toast('Added'); renderExamPrep();
-      } catch (e) { toast(e.message, true); }
-    };
-  }
 
   /* ---------- Institutions: universities, polytechnics, colleges ---------- */
   var INST_TYPES = [['university', 'University'], ['polytechnic', 'Polytechnic'], ['college', 'College']];
