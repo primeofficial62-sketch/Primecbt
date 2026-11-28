@@ -15,8 +15,13 @@ test('External Exams uses the shared PRIME-CBT auth page and enters its own app'
   const externalSection = index.slice(externalStart, externalEnd);
   assert.match(externalSection, /\/auth\.html\?mode=register&next=%2Fexternal%2Fhome\.html&experience=external/);
   assert.match(externalSection, /\/auth\.html\?mode=login&next=%2Fexternal%2Fhome\.html&experience=external/);
-  assert.ok(legacyAuth.includes('window.location.replace(destination)'));
-  assert.ok(legacyAuth.includes('experience=external'));
+  assert.ok(legacyAuth.includes("prime-external-auth-v1"));
+  assert.ok(legacyAuth.includes("prime_experience:'external_exams'"));
+  assert.ok(legacyAuth.includes("pathway:'exam_preparation'"));
+  assert.ok(legacyAuth.includes("auth.html?mode=register"));
+  assert.ok(legacyAuth.includes("Your University session has not been changed"));
+  assert.ok((await read('external/app.js')).includes("storageKey: 'prime-external-auth-v1'"));
+  assert.ok((await read('external/app.js')).includes("if (!belongsToExternal)"));
   assert.ok(index.includes("universityAccount ? 'home.html' : '/auth.html?mode=login'"));
   assert.match(sharedAuth, /prime_experience:\s*'external_exams'/);
   assert.ok(sharedAuth.includes("emailRedirectTo: window.location.origin + (pathway === 'exam' ? '/auth.html?mode=login&next=%2Fexternal%2Fhome.html&experience=external' : '/auth.html?mode=login')"));
@@ -45,8 +50,10 @@ test('External registration uses the shared auth page and routes to the External
   assert.ok(rootAuth.includes('const experience = await resolveExperience(session.user)'));
   assert.ok(rootAuth.includes("window.location.replace('/external/home.html')"));
   assert.ok(rootAuth.includes("sessionStorage.setItem(NEXT_KEY, '/external/home.html')"));
-  assert.ok(legacyAuth.includes('window.location.replace(destination)'));
-  assert.doesNotMatch(legacyAuth, /<form/i);
+  assert.match(legacyAuth, /prime-external-auth-v1/);
+  assert.match(legacyAuth, /prime_experience:'external_exams'/);
+  assert.match(legacyAuth, /signInWithPassword/);
+  assert.match(legacyAuth, /signInWithOAuth/);
   assert.match(rootAuth, /if \(needsProfileSetup\(session\.user\)\)[\s\S]*?profile-setup\.html/);
 });
 
