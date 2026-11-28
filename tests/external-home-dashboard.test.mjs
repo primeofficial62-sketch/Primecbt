@@ -22,7 +22,7 @@ test('External Exams redesigned home preserves the live dashboard data hooks', a
   assert.ok(home.includes('href="study.html"'));
 });
 
-test('External Exams home dashboard styles are scoped and responsive', async () => {
+test('External Exams home dashboard responsive styles remain page-scoped', async () => {
   const css = await read('external/home.css');
   assert.ok(css.includes('body[data-page="home"]'));
   assert.match(css, /@media\s*\(max-width:\s*(600|650)px\)/);
