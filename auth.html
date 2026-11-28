@@ -15,7 +15,14 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="stylesheet" href="responsive.css">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"></noscript>
-  <script>document.documentElement.classList.add('checking');</script>
+  <script>
+  // Never leave the authentication screen hidden if a remote script or
+  // Supabase session check is slow or unavailable.
+  document.documentElement.classList.add('checking');
+  window.setTimeout(function () {
+    document.documentElement.classList.remove('checking');
+  }, 1200);
+</script>
   <style>
     :root {
       --bg: #070D1C;
