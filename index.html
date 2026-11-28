@@ -174,6 +174,99 @@ img {
   border-color: var(--green);
 }
 
+/* GLASSMORPHISM — landing page surfaces */
+body {
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(49,211,162,.10), transparent 34%),
+    radial-gradient(ellipse at 88% 34%, rgba(54,104,164,.12), transparent 32%),
+    radial-gradient(ellipse at 48% 82%, rgba(49,211,162,.055), transparent 38%),
+    var(--bg);
+  background-attachment: fixed;
+}
+.header {
+  background: rgba(7,13,28,.68);
+  border-bottom-color: rgba(255,255,255,.10);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+.eyebrow,
+.stat,
+.dash-panel,
+.audience-card,
+.feature,
+.step,
+.about-box,
+.cta-box,
+.dashboard {
+  background: rgba(18,30,48,.48);
+  border: 1px solid rgba(220,245,255,.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.055), 0 14px 38px rgba(0,0,0,.16);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+.dashboard {
+  background: rgba(11,20,37,.66);
+  border-color: rgba(49,211,162,.25);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.30);
+}
+.stat,
+.dash-panel {
+  background: rgba(19,32,51,.62);
+  border-color: rgba(220,245,255,.10);
+}
+.audience-card:hover,
+.feature:hover {
+  background: rgba(25,48,62,.66);
+  border-color: rgba(49,211,162,.42);
+}
+.feature {
+  background: rgba(18,30,48,.48);
+}
+.how {
+  background: rgba(10,18,33,.46);
+  border-block-color: rgba(255,255,255,.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.about-box {
+  background: linear-gradient(120deg,rgba(16,43,42,.56),rgba(16,25,43,.52) 65%,rgba(16,43,43,.58));
+}
+.cta-box {
+  background: linear-gradient(105deg,rgba(16,43,42,.64),rgba(16,25,43,.58) 70%);
+}
+.footer {
+  background: rgba(5,10,20,.72);
+  border-top-color: rgba(220,245,255,.12);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.dash-top {
+  background: rgba(255,255,255,.025);
+  border-bottom-color: rgba(255,255,255,.10);
+}
+@media (max-width:700px) {
+  .header {
+    background: rgba(7,13,28,.78);
+  }
+  .dashboard,
+  .audience-card,
+  .feature,
+  .step,
+  .about-box,
+  .cta-box {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .header, .dashboard, .stat, .dash-panel, .audience-card, .feature, .step,
+  .about-box, .cta-box, .footer, .how {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: #10192B;
+  }
+}
+
 /* HEADER */
 
 .header {
@@ -1201,7 +1294,6 @@ img {
     </nav>
 
     <div class="nav-actions">
-      <a href="auth.html?mode=login" class="login-link">Log in</a>
       <a href="auth.html?mode=register" class="btn">
         Get Started
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1237,16 +1329,12 @@ img {
         PRIME CBT gives university students the tools to learn, practise, access academic resources and move forward with confidence.
       </p>
 
-      <div class="hero-actions" aria-label="Account access">
+      <div class="hero-actions" aria-label="Get started">
         <a href="/auth.html?mode=register" class="btn">
-          Create Account
+          Get Started
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M5 12h14M13 6l6 6-6 6"/>
           </svg>
-        </a>
-
-        <a href="/auth.html?mode=login" class="btn btn-outline">
-          Sign In
         </a>
       </div>
 
@@ -1390,7 +1478,7 @@ img {
 
     <div style="text-align:center;margin-top:32px;">
       <a href="auth.html?mode=register" class="btn">
-        Join PRIME CBT
+        Get Started
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 12h14M13 6l6 6-6 6"/>
         </svg>
@@ -1563,8 +1651,8 @@ img {
         <p>Take the next step in your university learning journey with PRIME CBT.</p>
       </div>
 
-      <a href="auth.html?mode=register" class="btn">
-        Create Your Account
+      <a href="auth.html" class="btn">
+        Get Started
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 12h14M13 6l6 6-6 6"/>
         </svg>
@@ -1601,7 +1689,7 @@ img {
         <h4>Platform</h4>
         <a href="#features">Features</a>
         <a href="#how">How It Works</a>
-        <a href="auth.html?mode=register">Get Started</a>
+        <a href="auth.html">Get Started</a>
       </div>
 
       <div class="footer-col">
