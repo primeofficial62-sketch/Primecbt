@@ -25,8 +25,8 @@ test('External Exams redesigned home preserves the live dashboard data hooks', a
 test('External Exams home dashboard styles are scoped and responsive', async () => {
   const css = await read('external/home.css');
   assert.ok(css.includes('body[data-page="home"]'));
-  assert.match(css, /@media\s*\(max-width:\s*650px\)/);
-  assert.match(css, /@media\s*\(max-width:\s*900px\)/);
+  assert.match(css, /@media\s*\(max-width:\s*600px\)/);
+  assert.match(css, /@media\s*\(min-width:\s*900px\)/);
   assert.ok(css.includes('.bottom-nav'));
   assert.ok(css.includes('grid-template-columns:repeat(5'));
   assert.ok(!/^(?!body\[data-page="home"\])[^@/\n][^{}]*\{/.test(css.split('\n').filter(Boolean).join('\n')));
