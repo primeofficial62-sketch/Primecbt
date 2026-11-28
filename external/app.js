@@ -22,7 +22,10 @@
   }
   const SUPABASE_URL = 'https://xuofkjjhupgmrphzgyun.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_GThKt7BvR1D81U939_EQkw_yCnTQ3xh';
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // External Exams keeps its own browser session, separate from PRIME CAMPUS.
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { storageKey: 'prime-external-auth-v1', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const icon = (name) => ({
@@ -88,6 +91,12 @@
     if(error || !session?.user){location.replace('auth.html?mode=login');return null;}
     const user=session.user;
     const meta=user.user_metadata||{};
+    const belongsToExternal = meta.prime_experience === 'external_exams' || meta.pathway === 'exam_preparation';
+    if (!belongsToExternal) {
+      console.warn('[external] blocked a non-External Exams account from this portal');
+      location.replace('auth.html?mode=login&error=wrong-account');
+      return null;
+    }
     const name=String(meta.full_name||meta.name||user.email?.split('@')[0]||'Student').slice(0,100);
     const {error:profileError}=await db.from('external_exam_profiles').upsert({
       user_id:user.id,full_name:name,email:user.email||null
