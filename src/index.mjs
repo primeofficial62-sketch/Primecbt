@@ -4,10 +4,10 @@ export default {
   async fetch(request, env) {
     const incomingUrl = new URL(request.url);
 
-    // Route the External Exams directory explicitly; the Worker asset binding
-    // does not consistently apply nested directory index resolution.
-    if (incomingUrl.pathname === "/external" || incomingUrl.pathname === "/external/") {
-      return Response.redirect(new URL("/external/home.html", incomingUrl), 302);
+    // External Exams is now a separate application.
+    // Keep its former routes unavailable on the University deployment.
+    if (incomingUrl.pathname === "/external" || incomingUrl.pathname.startsWith("/external/")) {
+      return new Response("Not Found", { status: 404 });
     }
 
     // Keep the existing Vercel serverless API as the backend while Cloudflare
