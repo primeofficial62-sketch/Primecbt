@@ -5,257 +5,115 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070D1C">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="PRIME-CBT External Examinations: JAMB and WAEC CBT practice, past questions, study resources and PRIME AI.">
+<meta name="description" content="Your PRIME-CBT External Examinations dashboard for JAMB, WAEC, NECO and more.">
 <meta name="robots" content="noindex,nofollow">
 <title>Home | PRIME-CBT External Exams</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="app.css">
-<style>
-  /* Icon + accessibility helpers (safe additions; do not override app.css layout) */
-  .icon{width:1.25em;height:1.25em;flex:none;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .btn-primary .icon,.card-action .icon,.ai-link .icon{width:1em;height:1em;margin-left:.35em}
-  .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  .skip-link{position:absolute;left:12px;top:-60px;z-index:1000;padding:10px 14px;border-radius:10px;background:#fff;color:#070D1C;font-weight:600;text-decoration:none}
-  .skip-link:focus{top:calc(env(safe-area-inset-top,0px) + 8px)}
-  a:focus-visible,button:focus-visible{outline:2px solid #6AA9FF;outline-offset:3px}
-  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-</style>
+<link rel="stylesheet" href="home.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script defer src="app.js"></script>
 </head>
 <body data-page="home">
-
-<!-- Icon sprite -->
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
-  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
   <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/></symbol>
-  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
-  <symbol id="i-store" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v9h14v-9"/></symbol>
-  <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
-  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.7 7L3 21l2-5.5A8 8 0 1 1 21 12z"/></symbol>
 </svg>
-
 <a class="skip-link" href="#main">Skip to main content</a>
-
-<main class="app-shell" id="main">
-
-  <header class="topbar">
+<div class="app-shell home-shell" id="main">
+  <header class="topbar home-topbar">
     <a class="brand" href="home.html" aria-label="PRIME-CBT External Examinations home">
       <span class="brand-mark" aria-hidden="true">P</span>
-      <span>
-        <span class="brand-name">PRIME-<span>CBT</span></span>
-        <span class="brand-caption">EXTERNAL EXAMINATIONS</span>
-      </span>
+      <span><span class="brand-name">PRIME-<span>CBT</span></span><span class="brand-caption">EXTERNAL EXAMINATIONS</span></span>
     </a>
-    <div class="top-actions">
-      <button class="icon-button" aria-label="Notifications" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-bell"/></svg></button>
-      <a class="icon-button" href="more.html" aria-label="Profile"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-user"/></svg></a>
+    <div class="home-header-meta"><span class="portal-pill"><i></i> EXTERNAL EXAMS PORTAL</span>
+      <div class="top-actions">
+        <a class="icon-button" href="news.html" aria-label="Examination news"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg></a>
+        <a class="icon-button profile-shortcut" href="more.html" aria-label="Profile"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></a>
+      </div>
     </div>
   </header>
 
-  <noscript><div class="empty-state" role="alert">JavaScript is required to load your progress, subjects and exam results. Please enable it and reload.</div></noscript>
+  <noscript><div class="empty-state" role="alert">JavaScript is required to load your External Exams dashboard. Enable it and reload this page.</div></noscript>
 
-  <section class="greeting" aria-labelledby="greetingTitle">
-    <h1 id="greetingTitle">Hello, <span id="studentName">Student</span></h1>
-    <p>Your future is built by what you do today.</p>
-  </section>
+  <main class="home-content">
+    <section class="welcome-row" aria-labelledby="greetingTitle">
+      <div><p class="home-overline">YOUR PREPARATION SPACE</p><h1 id="greetingTitle">Welcome back, <span id="studentName">Student</span></h1><p class="welcome-copy">Small, consistent practice today builds confidence for exam day.</p></div>
+      <a class="date-chip" href="news.html"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span>Exam updates</span></a>
+    </section>
 
-  <section class="hero-carousel" aria-roledescription="carousel" aria-label="PRIME PRO highlights">
-    <div class="hero-track">
-      <article class="hero-slide hero-slide-one" aria-roledescription="slide" aria-label="1 of 4">
-        <span class="eyebrow">External exams · PRIME PRO</span>
-        <h2>JAMB CBT + WAEC Past Questions</h2>
-        <p>Access structured exam practice, verified past questions and guided revision in one place.</p>
-        <a class="btn-primary" href="more.html#activation">Explore PRIME PRO <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
+    <section class="dashboard-hero-grid" aria-label="Get started">
+      <article class="welcome-hero">
+        <div class="hero-copy">
+          <span class="hero-kicker"><i></i> PRACTISE WITH PURPOSE</span>
+          <h2>Make every practice session <span>count.</span></h2>
+          <p>Prepare for JAMB, WAEC, NECO and other external examinations with focused CBT practice and structured study resources.</p>
+          <div class="hero-actions"><a class="btn-primary" href="test.html">Start a CBT session <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="hero-secondary" href="study.html">Explore study materials</a></div>
+        </div>
+        <div class="hero-art" aria-hidden="true"><div class="exam-sheet"><div class="sheet-top"><span></span><span></span><span></span></div><div class="sheet-label">PRACTICE SESSION</div><div class="sheet-line long"></div><div class="sheet-line"></div><div class="sheet-option active"><b>A</b><span></span><i>✓</i></div><div class="sheet-option"><b>B</b><span></span></div><div class="sheet-option"><b>C</b><span></span></div><div class="sheet-progress"><span></span></div></div><div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div></div>
       </article>
-      <article class="hero-slide hero-slide-two" aria-roledescription="slide" aria-label="2 of 4">
-        <span class="eyebrow">Prepare with confidence</span>
-        <h2>Past questions. Better preparation.</h2>
-        <p>Build familiarity with exam patterns and practise with questions organised by subject.</p>
-        <a class="btn-primary" href="study.html?type=past_question">Explore past questions <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
-      </article>
-      <article class="hero-slide hero-slide-three" aria-roledescription="slide" aria-label="3 of 4">
-        <span class="eyebrow">Real exam practice</span>
-        <h2>Make every practice count.</h2>
-        <p>Train with focused CBT sessions, timed attempts and clear performance feedback.</p>
-        <a class="btn-primary" href="test.html">Start a CBT session <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
-      </article>
-      <article class="hero-slide hero-slide-four" aria-roledescription="slide" aria-label="4 of 4">
-        <span class="eyebrow">Learn at your pace</span>
-        <h2>Turn revision into progress.</h2>
-        <p>Explore subjects, topic lessons and workbooks to strengthen your exam readiness.</p>
-        <a class="btn-primary" href="study.html">Explore study resources <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
-      </article>
-    </div>
-    <div class="hero-progress" aria-hidden="true"><span></span></div>
-  </section>
+      <aside class="next-step-card">
+        <div class="next-step-head"><span class="next-icon"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg></span><span class="mini-label">CBT Simulators · Your next step</span></div>
+        <h3>Keep your momentum going</h3>
+        <p>Continue a lesson, explore past questions or start a timed practice session.</p>
+        <a class="next-step-link" href="study.html" id="continueLearning"><span><strong>Continue learning</strong><small id="continueDescription">Pick up from your study resources.</small></span><b>→</b></a>
+        <a class="next-step-link" href="test.html"><span><strong>Take a mock exam</strong><small>Build speed and exam confidence.</small></span><b>→</b></a>
+      </aside>
+    </section>
 
-  <section class="section" aria-labelledby="simTitle">
-    <div class="section-head">
-      <h2 id="simTitle">CBT Simulators</h2>
-      <a class="section-link" href="test.html">General simulator <span aria-hidden="true">→</span></a>
-    </div>
-    <div class="cards-2 simulator-cards">
-      <a class="feature-card simulator-card" href="test.html">
-        <span class="feature-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-monitor"/></svg></span>
-        <h3>CBT Simulator</h3>
-        <p>Set up a practice session for your chosen external examination.</p>
-        <span class="card-action">Open simulator <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></span>
-      </a>
-      <a class="feature-card simulator-card" href="jamb-simulator.html">
-        <span class="feature-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg></span>
-        <h3>JAMB CBT Simulator</h3>
-        <p>Practise with JAMB-focused subject selection and timed sessions.</p>
-        <span class="card-action">Open JAMB simulator <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></span>
-      </a>
-    </div>
-  </section>
+    <section class="metric-grid" aria-label="Your progress">
+      <article class="metric-card"><span class="metric-icon"><svg class="icon"><use href="#i-file"/></svg></span><span class="metric-label">EXAMS COMPLETED</span><strong id="completedCount" aria-live="polite">—</strong><small>Submitted attempts</small></article>
+      <article class="metric-card"><span class="metric-icon"><svg class="icon"><use href="#i-chart"/></svg></span><span class="metric-label">AVERAGE SCORE</span><strong id="averageScore" aria-live="polite">—</strong><small>Across completed exams</small></article>
+      <article class="metric-card"><span class="metric-icon"><svg class="icon"><use href="#i-spark"/></svg></span><span class="metric-label">STUDY STREAK</span><strong id="studyStreak" aria-live="polite">—</strong><small>Consecutive practice days</small></article>
+      <article class="metric-card exam-date-metric"><span class="metric-icon"><svg class="icon"><use href="#i-calendar"/></svg></span><span class="metric-label">NEXT EXAM COUNTDOWN</span><strong id="examCountdown">To be announced</strong><small id="examCountdownDetail">Verified examination dates will appear here.</small></article>
+    </section>
 
-  <section class="section" aria-labelledby="progressTitle">
-    <div class="section-head">
-      <h2 id="progressTitle">Your progress</h2>
-      <span class="section-kicker">Personal overview</span>
-    </div>
-    <div class="progress-grid">
-      <article class="stat-card"><span class="stat-label">Exams completed</span><strong id="completedCount" aria-live="polite">—</strong><span class="stat-note">Submitted attempts</span></article>
-      <article class="stat-card"><span class="stat-label">Average score</span><strong id="averageScore" aria-live="polite">—</strong><span class="stat-note">Across completed exams</span></article>
-      <article class="stat-card"><span class="stat-label">Study streak</span><strong id="studyStreak" aria-live="polite">—</strong><span class="stat-note">Consecutive practice days</span></article>
-    </div>
-  </section>
+    <section class="home-quick-links" aria-labelledby="quickLinksTitle"><div class="quick-links-heading"><div><span class="home-overline">SHORTCUTS</span><h2 id="quickLinksTitle">Quick Links</h2></div><button class="quick-trigger" id="quickPlus" type="button" aria-label="Open quick actions" aria-expanded="false" aria-controls="quickSheet">Quick actions <span>+</span></button></div><div class="quick-sheet hidden" id="quickSheet" role="menu" aria-label="Quick actions"><a class="quick-action-button" data-action="exam" href="test.html" role="menuitem"><strong>Take a CBT exam</strong><i>›</i></a><a class="quick-action-button" data-action="buy" href="more.html#school-store" role="menuitem"><strong>Explore learning materials</strong><i>›</i></a><a class="quick-action-button" data-action="mimi" href="chat.html?tab=mimi" role="menuitem"><strong>Ask PRIME AI</strong><i>›</i></a></div></section>
 
-  <section class="section" aria-labelledby="continueTitle">
-    <div class="section-head"><h2 id="continueTitle">Pick up where you left off</h2></div>
-    <a class="continue-card" id="continueLearning" href="study.html">
-      <span class="continue-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg></span>
-      <span class="continue-copy">
-        <strong>Continue learning</strong>
-        <small id="continueDescription">Return to your study resources and keep making progress.</small>
-      </span>
-      <span class="continue-arrow" aria-hidden="true">→</span>
-    </a>
-  </section>
-
-  <section class="section" aria-labelledby="resultsTitle">
-    <div class="section-head">
-      <h2 id="resultsTitle">Recent exam results</h2>
-      <a class="section-link" href="results.html">View all <span aria-hidden="true">→</span></a>
-    </div>
-    <div id="recentResults" class="recent-results" aria-live="polite">
-      <div class="empty-state">Your completed exam results will appear here.</div>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="momentumTitle">
-    <div class="section-head"><h2 id="momentumTitle">Keep your momentum</h2></div>
-    <div class="cards-2">
-      <a class="challenge-card" href="test.html?mode=challenge">
-        <span class="mini-label">DAILY PRACTICE</span>
-        <span class="challenge-mark" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-spark"/></svg></span>
-        <h3>Daily practice challenge</h3>
-        <p>Take on a focused challenge and build a steady revision habit.</p>
-        <span class="card-action">Try a challenge <span aria-hidden="true">→</span></span>
-      </a>
-      <article class="countdown-card">
-        <span class="mini-label">UPCOMING EXAM</span>
-        <strong id="examCountdown">To be announced</strong>
-        <p id="examCountdownDetail">Verified examination dates will appear here.</p>
-        <a class="section-link" href="news.html">See exam updates <span aria-hidden="true">→</span></a>
-      </article>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="recoTitle">
-    <div class="section-head">
-      <h2 id="recoTitle">Recommended subjects</h2>
-      <a class="section-link" href="study.html">All subjects <span aria-hidden="true">→</span></a>
-    </div>
-    <p class="section-intro">A few places to focus your next revision session.</p>
-    <div class="chips" id="recommendedSubjects" aria-live="polite">
-      <div class="empty-state" role="status">Loading recommendations…</div>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="aiTitle">
-    <div class="prime-ai-card">
-      <div class="prime-ai-icon" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-spark"/></svg></div>
-      <div class="prime-ai-copy">
-        <span class="mini-label">YOUR STUDY COMPANION</span>
-        <h2 id="aiTitle">Meet PRIME AI</h2>
-        <p>Get help understanding topics, reviewing questions and planning your study sessions.</p>
-        <a href="chat.html?tab=mimi" class="ai-link">Open PRIME AI <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
+    <section class="home-main-grid">
+      <div class="home-primary-column">
+        <section class="home-panel" aria-labelledby="resultsTitle">
+          <div class="panel-heading"><div><span class="home-overline">YOUR CBT HISTORY</span><h2 id="resultsTitle">Recent exam results</h2></div><a class="panel-link" href="results.html">View all <span>{{ARROW}}</span></a></div>
+          <div id="recentResults" class="recent-results" aria-live="polite"><div class="empty-state">Your completed exam results will appear here.</div></div>
+        </section>
+        <section class="home-panel" aria-labelledby="subjectsTitle">
+          <div class="panel-heading"><div><span class="home-overline">LEARN BY SUBJECT</span><h2 id="subjectsTitle">Explore subjects</h2></div><a class="panel-link" href="study.html">View all <span>→</span></a></div>
+          <p class="panel-description">Browse available subjects and continue building your understanding topic by topic.</p>
+          <div class="subject-chip-list" id="examBrowseList" aria-live="polite"><div class="empty-state">Loading available subjects…</div></div>
+        </section>
+        <section class="home-panel" aria-labelledby="recommendTitle">
+          <div class="panel-heading"><div><span class="home-overline">A GOOD PLACE TO START</span><h2 id="recommendTitle">Recommended subjects</h2></div></div>
+          <p class="panel-description">A few places to focus your next revision session.</p>
+          <div class="subject-chip-list" id="recommendedSubjects" aria-live="polite"><div class="empty-state">Loading recommendations…</div></div>
+        </section>
       </div>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="quickTitle">
-    <div class="section-head"><h2 id="quickTitle">Quick Links</h2></div>
-    <div class="cards-2">
-      <a class="quick-card" href="study.html?type=past_question">
-        <span class="quick-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-book"/></svg></span>
-        <h3>Study Past Questions</h3><p>Browse available exam questions by subject.</p>
-      </a>
-      <a class="quick-card" href="more.html#school-store">
-        <span class="quick-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-store"/></svg></span>
-        <h3>My School Store</h3><p>Explore learning materials and student essentials.</p>
-      </a>
-      <a class="quick-card" href="study.html?type=topic_video">
-        <span class="quick-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-play"/></svg></span>
-        <h3>Topic Video Lessons</h3><p>Learn through topic-focused video resources.</p>
-      </a>
-      <a class="quick-card" href="study.html?type=workbook">
-        <span class="quick-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-file"/></svg></span>
-        <h3>JAMB Workbooks</h3><p>Find structured workbook resources.</p>
-      </a>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="exploreTitle">
-    <div class="section-head">
-      <h2 id="exploreTitle">Explore subjects</h2>
-      <a class="section-link" href="study.html">View all <span aria-hidden="true">→</span></a>
-    </div>
-    <div class="chips" id="examBrowseList" aria-live="polite">
-      <div class="empty-state" role="status">Loading available subjects…</div>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="eventsTitle">
-    <div class="section-head">
-      <h2 id="eventsTitle">Upcoming Events</h2>
-      <a class="section-link" href="news.html?tab=events">View all <span aria-hidden="true">→</span></a>
-    </div>
-    <div class="horizontal-scroll" id="eventsList" aria-live="polite">
-      <div class="empty-state" role="status" style="min-width:100%">Loading events…</div>
-    </div>
-  </section>
-
-  <section class="section" id="news" aria-labelledby="newsTitle">
-    <div class="section-head">
-      <h2 id="newsTitle">In the News</h2>
-      <a class="section-link" href="news.html">All news <span aria-hidden="true">→</span></a>
-    </div>
-    <p class="section-intro">Education announcements and external examination updates.</p>
-    <div class="horizontal-scroll" id="newsList" aria-live="polite">
-      <div class="empty-state" role="status" style="min-width:100%">Loading news…</div>
-    </div>
-  </section>
-
-  <div class="quick-sheet hidden" id="quickSheet" role="menu" aria-label="Quick actions">
-    <a class="quick-action-button" data-action="buy" href="more.html#school-store" role="menuitem"><span aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-store"/></svg></span><strong>Buy from my school</strong><i aria-hidden="true">›</i></a>
-    <a class="quick-action-button" data-action="exam" href="test.html" role="menuitem"><span aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-monitor"/></svg></span><strong>Take a CBT exam</strong><i aria-hidden="true">›</i></a>
-    <a class="quick-action-button" data-action="ask" href="chat.html" role="menuitem"><span aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-chat"/></svg></span><strong>Ask a question</strong><i aria-hidden="true">›</i></a>
-    <a class="quick-action-button" data-action="post" href="study.html?type=past_question" role="menuitem"><span aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-file"/></svg></span><strong>Post a past question</strong><i aria-hidden="true">›</i></a>
-    <a class="quick-action-button" data-action="mimi" href="chat.html?tab=mimi" role="menuitem"><span aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-spark"/></svg></span><strong>Talk to PRIME AI</strong><i aria-hidden="true">›</i></a>
-  </div>
-  <button class="floating-plus" id="quickPlus" type="button" aria-label="Open quick actions" aria-expanded="false" aria-controls="quickSheet" aria-haspopup="menu">+</button>
+      <div class="home-secondary-column">
+        <section class="home-panel" aria-labelledby="eventsTitle">
+          <div class="panel-heading"><div><span class="home-overline">STAY INFORMED</span><h2 id="eventsTitle">Upcoming Events</h2></div><a class="panel-link" href="news.html?tab=events">View all <span>→</span></a></div>
+          <div class="home-feed-list" id="eventsList" aria-live="polite"><div class="empty-state">Loading events…</div></div>
+        </section>
+        <section class="home-panel" aria-labelledby="newsTitle">
+          <div class="panel-heading"><div><span class="home-overline">LATEST UPDATES</span><h2 id="newsTitle">In the News</h2></div><a class="panel-link" href="news.html">All news <span>→</span></a></div>
+          <p class="panel-description">Education announcements and external examination updates.</p>
+          <div class="home-feed-list" id="newsList" aria-live="polite"><div class="empty-state">Loading news…</div></div>
+        </section>
+        <section class="prime-ai-card home-ai-card">
+          <div class="prime-ai-icon"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg></div>
+          <div class="prime-ai-copy"><span class="mini-label">YOUR STUDY COMPANION</span><h2>Meet PRIME AI</h2><p>Get help understanding topics, reviewing questions and planning your study sessions.</p><a href="chat.html?tab=mimi" class="ai-link">Open PRIME AI <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+        </section>
+      </div>
+    </section>
+  </main>
 
   <nav class="bottom-nav" id="bottomNav" aria-label="External Exams navigation"></nav>
-  <button id="logoutButton" class="hidden" type="button">Log out</button>
-
-</main>
+  <button id="logoutButton" class="hidden" type="button" aria-hidden="true" tabindex="-1">Log out</button>
+</div>
 </body>
 </html>

@@ -35,7 +35,7 @@ test('Study library opens lessons inside PRIME-CBT and has no off-site study lin
   assert.ok(study.includes('studyReader'));
   assert.ok(study.includes('Available learning materials'));
   assert.ok(study.includes('Inside the PRIME-CBT learning library'));
-  assert.ok(!study.includes('href="https://') && !study.includes("href='https://"));
+  assert.ok(!/<a\b[^>]*href=["']https?:\/\//i.test(study), 'Study resources should not navigate away from PRIME-CBT');
   assert.ok(app.includes('content_markdown'));
   assert.ok(app.includes('reader.showModal()'));
   assert.ok(app.includes('resource-tile'));
