@@ -1185,15 +1185,7 @@ html body #panel-login.active {
       <!-- Screen 1: pathway -->
       <div class="reg-step active" data-step="path" data-index="0">
         <div class="path-list" id="pathList">
-                    <button type="button" class="path-card is-soon" data-path="exam" data-soon="true" aria-disabled="true" aria-pressed="false">
-            <span class="path-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg></span>
-            <span class="path-txt">
-              <span class="path-title">EXAM PREP</span>
-              <span class="path-desc">Prepare for JAMB, WAEC, NECO, Post-UTME and other external examinations with CBT practice and study resources.</span>
-            </span>
-            <span class="soon-badge">Coming soon</span>
-          </button>
-          <button type="button" class="path-card" data-path="inst" aria-pressed="false">
+                    <button type="button" class="path-card" data-path="inst" aria-pressed="false">
             <span class="path-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="M2 10l10-6 10 6z"/></svg></span>
             <span class="path-txt">
               <span class="path-title">PRIME CAMPUS</span>
@@ -1211,15 +1203,8 @@ html body #panel-login.active {
       </div>
 
       <!-- Exam pathway: category -->
-      <div class="reg-step" data-step="exam" data-index="1">
-        <h2 class="headline sm">EXAM PREP<br><span class="accent">Choose your exams</span></h2>
-        <p class="subtext">Prepare for JAMB, WAEC, NECO, Post-UTME and more. Pick your main exam; you can add others too.</p>
-        <div class="exam-list" id="examList"></div>
-        <p class="field-hint" id="examHint" style="margin-top:12px">Your first pick is your primary exam. Use &ldquo;Set primary&rdquo; to switch.</p>
-        <span class="field-error" id="examError" role="alert" style="display:none;margin-top:8px">Select at least one examination to continue</span>
-      </div>
+      <div id="examList" hidden></div><span id="examError" hidden></span>
 
-      <!-- Institutional pathway: find institution -->
       <div class="reg-step" data-step="inst" data-index="1">
         <h2 class="headline sm">PRIME CAMPUS<br><span class="accent">Your university</span></h2>
         <p class="subtext">Select your university or tertiary institution to access its academic environment.</p>
@@ -2731,9 +2716,7 @@ switcher.dataset.mode = mode;
     if (!b || b.hidden || !pathCfg[b.dataset.path]) return;
     pathway = b.dataset.path;
     const pathHint = document.getElementById('accountPathHint');
-    if (pathHint) pathHint.textContent = pathway === 'exam'
-      ? 'EXAM PREP account — for JAMB, WAEC, NECO, Post-UTME and other external examinations.'
-      : 'PRIME CAMPUS account — for university courses, academic resources and internal assessments.';
+    if (pathHint) pathHint.textContent = 'PRIME CAMPUS account — for university courses, academic resources and internal assessments.';
     markPath();
     go(flow()[0]);
   });
@@ -2823,14 +2806,14 @@ switcher.dataset.mode = mode;
       // Never trust a stale pathway: it may have been switched off by an admin
       if (!pathway || !pathCfg[pathway]) {
         showToast('That registration pathway is currently unavailable', 'error');
-        go('path');
+        go('inst');
         return;
       }
 
       const meta = {
         full_name: fullname,
-        pathway: pathway === 'inst' ? 'institutional_learning' : 'exam_preparation',
-        ...(pathway === 'exam' ? { prime_experience: 'external_exams' } : {})
+        pathway: 'institutional_learning',
+        prime_experience: 'university_learning'
       };
 
       if (pathway === 'inst') {
@@ -2848,8 +2831,6 @@ switcher.dataset.mode = mode;
           level: form3.level.value,
           matric: form3.matric.value.trim()
         });
-      } else {
-        Object.assign(meta, { exam_primary: examSel[0], exam_interests: examSel });
       }
 
       setLoading(stepNext, true);
@@ -2857,7 +2838,7 @@ switcher.dataset.mode = mode;
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { data: meta, emailRedirectTo: window.location.origin + (pathway === 'exam' ? '/auth.html?mode=login&next=%2Fexternal%2Fhome.html&experience=external' : '/auth.html?mode=login') }
+        options: { data: meta, emailRedirectTo: window.location.origin + '/auth.html?mode=login' }
       });
 
       setLoading(stepNext, false);
@@ -3017,14 +2998,6 @@ switcher.dataset.mode = mode;
     }
 
     if (window.PrimeAnalytics) PrimeAnalytics.track('login', { method: 'email' });
-    const accountExperience = metadataExperience(data.user);
-    if (explicitExperienceChoice && accountExperience && ((accountExperience === 'external') !== (selectedAuthExperience === 'external'))) {
-      await supabaseClient.auth.signOut();
-      showToast(accountExperience === 'external'
-        ? 'This account is registered for EXAM PREP. Select EXAM PREP above and sign in again.'
-        : 'This account is registered for PRIME CAMPUS. Select PRIME CAMPUS above and sign in again.', 'error', 5500);
-      return;
-    }
     markReturningUser();
     showToast('Logged in successfully!', 'success');
     setTimeout(goNext, 1000);
@@ -3290,7 +3263,7 @@ resendResetLink.addEventListener('click', async (e) => {
     // Put them back on the screen they were on (pathway + exam picks included)
     if (p.pathway === 'inst') pathway = p.pathway;
     if (Array.isArray(p.examSel)) examSel = p.examSel.filter(x => typeof x === 'string');
-    if (pathway && flow().includes(p.step)) stepName = p.step;
+    if (flow().includes(p.step)) stepName = p.step;
     markPath();
     renderExams();
     updateSteps();
@@ -3338,29 +3311,18 @@ resendResetLink.addEventListener('click', async (e) => {
   async function routeAfterAuth(session) {
     if (routed) return;
     routed = true;
-
     markReturningUser();
 
-    // Resolve the account's registered pathway before considering the entry link.
-    // This prevents an old External Exams URL from hijacking a University account.
-    const experience = await resolveExperience(session.user);
-    if (explicitExperienceChoice && (experience === 'external') !== (selectedAuthExperience === 'external')) {
+    const legacyMeta = session.user?.user_metadata || {};
+    if (legacyMeta.prime_experience === 'external_exams' || legacyMeta.pathway === 'exam_preparation') {
       routed = false;
       await supabaseClient.auth.signOut();
       showPage();
       setMode('login');
-      showToast(experience === 'external'
-        ? 'This account belongs to EXAM PREP. Choose EXAM PREP above to continue.'
-        : 'This account belongs to PRIME CAMPUS. Choose PRIME CAMPUS above to continue.', 'error', 5500);
-      return;
-    }
-    if (experience === 'external') {
-      try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {}
-      window.location.replace('/external/home.html');
+      showToast('This is an older External Exams account. External Exams is being rebuilt as a separate service and cannot sign in here.', 'error', 6500);
       return;
     }
 
-    // University users retain the existing profile-setup and home routing.
     if (needsProfileSetup(session.user)) {
       window.location.replace('profile-setup.html');
       return;
@@ -3380,7 +3342,7 @@ resendResetLink.addEventListener('click', async (e) => {
 
   // While Supabase is still exchanging the Google code for a session, keep the
   // page hidden so the user never sees the Sign Up form flash up again.
-  if (!nextFromUrl && !requestedExperience && !isOAuthReturn) { try { sessionStorage.removeItem(NEXT_KEY); sessionStorage.removeItem(EXPERIENCE_KEY); } catch (e) {} }
+  if (!nextFromUrl && !isOAuthReturn) { try { sessionStorage.removeItem(NEXT_KEY); } catch (e) {} }
   setTimeout(showPage, isOAuthReturn ? 8000 : 4000);
 
   if (isOAuthReturn) {
