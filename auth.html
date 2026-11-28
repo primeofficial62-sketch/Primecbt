@@ -1105,6 +1105,50 @@ html body #panel-login.active {
   margin-top: 14px !important;
 }
 
+  
+    /* FINAL LAYOUT: centre the authentication form on every screen.
+       Keep the document scrollable on short screens so no form controls are clipped. */
+    html, body { min-height: 100% !important; height: auto !important; }
+    body {
+      min-height: 100vh !important;
+      min-height: 100svh !important;
+      height: auto !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      align-items: stretch !important;
+    }
+    .stage {
+      min-height: 100vh !important;
+      min-height: 100svh !important;
+      height: auto !important;
+      overflow: visible !important;
+      margin-inline: auto !important;
+    }
+    .topbar, .trust { flex: 0 0 auto !important; }
+    .content {
+      display: flex !important;
+      flex: 1 0 auto !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      min-height: 0 !important;
+      padding-top: clamp(12px, 3vh, 28px) !important;
+      padding-bottom: clamp(12px, 3vh, 28px) !important;
+    }
+    .mode-headline { flex: 0 0 auto !important; text-align: center; }
+    .auth-card {
+      flex: 0 0 auto !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 auto !important;
+    }
+    @media (min-width: 600px) {
+      body { align-items: stretch !important; }
+      .stage { margin-block: auto !important; }
+    }
+    @media (max-height: 700px) {
+      .content { justify-content: flex-start !important; }
+    }
+
   </style>
   <script>
 (function () {
