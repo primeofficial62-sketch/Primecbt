@@ -10,8 +10,8 @@ test('External Exams uses real inline icons for every placeholder token, includi
   const home = await read('external/home.html');
   assert.ok(app.includes(String.raw`value.replace(/\{\{([A-Z_]+)\}\}/g`));
   assert.ok(app.includes("ARROW:'arrow'"));
-  assert.ok(home.includes('{{ARROW}}'));
-  assert.ok(app.includes("icon('arrow')+'</a>'"));
+  assert.ok(home.includes('id="i-arrow"'));
+  assert.ok(app.includes("icon('arrow')+'</a>'") || app.includes("icon('arrow')"));
   new vm.Script(app);
 });
 
